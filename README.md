@@ -25,7 +25,7 @@ src/
 │   ├── page.tsx           # Главная
 │   ├── tools/page.tsx     # Инструменты
 │   ├── models/page.tsx    # Модели
-│   ├── digits/page.tsx    # Игра Digits
+│   ├── games/page.tsx     # Игры
 │   ├── projects/page.tsx  # Проекты
 │   ├── about/page.tsx     # О сайте
 │   └── not-found.tsx      # 404 страница
@@ -74,7 +74,6 @@ export const sections: Section[] = [
     description: "Описание раздела",
     href: "/my-section",
     icon: MyIcon,
-    status: "coming-soon",
   },
 ];
 ```

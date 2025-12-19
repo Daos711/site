@@ -1,28 +1,19 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { LineChart, Activity, Calculator } from "lucide-react";
+import { LineChart, Activity } from "lucide-react";
 
 const tools = [
   {
-    id: "beam-builder",
-    title: "Построитель эпюр",
-    description: "Интерактивный инструмент для построения эпюр моментов и поперечных сил.",
+    id: "beam",
+    title: "Расчёт балки",
+    description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров (МНП).",
     icon: LineChart,
-    status: "coming-soon" as const,
   },
   {
     id: "oscillator",
     title: "Осциллятор",
     description: "Демонстрация затухающих колебаний: масса, жёсткость, демпфирование.",
     icon: Activity,
-    status: "coming-soon" as const,
-  },
-  {
-    id: "unit-converter",
-    title: "Конвертер единиц",
-    description: "Перевод между системами единиц для инженерных расчётов.",
-    icon: Calculator,
-    status: "coming-soon" as const,
   },
 ];
 
@@ -41,7 +32,6 @@ export default function ToolsPage() {
             title={tool.title}
             description={tool.description}
             icon={tool.icon}
-            status={tool.status}
           />
         ))}
       </div>

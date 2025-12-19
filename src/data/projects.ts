@@ -9,9 +9,9 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: "digits",
-    title: "Digits",
+    title: "Цифры",
     description: "Головоломка с числами. Игра на логику и внимательность.",
-    tags: ["игра", "Python", "Pygame"],
+    tags: ["игра", "Python", "Pygame", "desktop"],
     status: "prototype",
   },
   {
@@ -23,9 +23,9 @@ export const projects: Project[] = [
   },
   {
     id: "beam-calculator",
-    title: "Калькулятор балок",
-    description: "Построение эпюр моментов и поперечных сил для различных схем нагружения.",
-    tags: ["инструмент", "сопромат", "эпюры"],
+    title: "Расчёт балки",
+    description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров.",
+    tags: ["инструмент", "сопромат"],
     status: "coming-soon",
   },
 ];

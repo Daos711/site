@@ -9,7 +9,7 @@ const navItems = [
   { href: "/", label: "Главная" },
   { href: "/tools", label: "Инструменты" },
   { href: "/models", label: "Модели" },
-  { href: "/digits", label: "Digits" },
+  { href: "/games", label: "Игры" },
   { href: "/projects", label: "Проекты" },
   { href: "/about", label: "О сайте" },
 ];

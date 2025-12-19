@@ -24,7 +24,6 @@ export default function Home() {
             description={section.description}
             href={section.href}
             icon={section.icon}
-            status={section.status}
           />
         ))}
       </div>

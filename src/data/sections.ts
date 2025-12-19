@@ -7,17 +7,15 @@ export interface Section {
   description: string;
   href: string;
   icon: LucideIcon;
-  status: "ready" | "prototype" | "coming-soon";
 }
 
 export const sections: Section[] = [
   {
     id: "tools",
     title: "Инструменты",
-    description: "Интерактивные калькуляторы и визуализации: эпюры, осцилляторы, демо-приложения.",
+    description: "Интерактивные калькуляторы и визуализации: расчёт балок, демонстрации.",
     href: "/tools",
     icon: Wrench,
-    status: "coming-soon",
   },
   {
     id: "models",
@@ -25,15 +23,13 @@ export const sections: Section[] = [
     description: "Инженерные расчётные модели: подшипники, опоры скольжения, уравнение Рейнольдса.",
     href: "/models",
     icon: Box,
-    status: "coming-soon",
   },
   {
-    id: "digits",
-    title: "Digits",
-    description: "Головоломка с числами. Игра на логику и внимательность.",
-    href: "/digits",
+    id: "games",
+    title: "Игры",
+    description: "Головоломки и мини-игры.",
+    href: "/games",
     icon: Gamepad2,
-    status: "coming-soon",
   },
   {
     id: "projects",
@@ -41,6 +37,5 @@ export const sections: Section[] = [
     description: "Галерея всех проектов с фильтрацией по тегам и поиском.",
     href: "/projects",
     icon: FolderOpen,
-    status: "ready",
   },
 ];

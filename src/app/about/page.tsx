@@ -25,10 +25,10 @@ export default function AboutPage() {
 
           <h2 className="text-xl font-semibold mb-4">Что планируется?</h2>
           <ul className="text-muted space-y-2">
-            <li>Построитель эпюр для балок</li>
+            <li>Расчёт балок: реакции, эпюры, прогиб</li>
             <li>Модели подшипников и опор скольжения</li>
-            <li>Интерактивные демонстрации физических процессов</li>
-            <li>Игра Digits</li>
+            <li>Интерактивные демонстрации</li>
+            <li>Игра «Цифры»</li>
           </ul>
         </div>
       </div>
