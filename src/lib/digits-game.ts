@@ -415,9 +415,11 @@ export function getTargetPosition(board: (Tile | null)[][], tile: Tile, directio
 }
 
 // Константы анимации (пропорционально Python)
-// Python: speed=3px/frame при tile=64px, ~60FPS
-// Время на ячейку = (tile+gap)/speed/fps = 67/3/60 ≈ 0.37с = 370мс
-const MS_PER_CELL = 370; // миллисекунд на одну ячейку
+// Python: speed=3px/frame НЕ масштабируется, это фиксированное значение
+// При 60 FPS: 3 × 60 = 180 px/sec
+// Веб ячейка = 48 + 2 = 50px
+// Время на ячейку = 50 / 180 = 0.278с ≈ 280мс
+const MS_PER_CELL = 280; // миллисекунд на одну ячейку
 
 // Запустить движение плитки (начало анимации)
 export function startMoveTile(state: GameState, tile: Tile, direction: Direction): GameState {

@@ -121,33 +121,37 @@ export default function DigitsGamePage() {
     });
   }, [isPaused]);
 
-  // Счётчик для перерисовки анимации движения
+  // Счётчик для перерисовки анимаций
   const [, forceUpdate] = useState(0);
 
-  // Анимация движения плитки
+  // Анимация движения плитки и попапов
   useEffect(() => {
-    if (!game?.movingTile) return;
+    const hasMovingTile = !!game?.movingTile;
+    const hasPopups = (game?.popups?.length ?? 0) > 0;
 
-    const { startTime, duration } = game.movingTile;
+    if (!hasMovingTile && !hasPopups) return;
+
     let animationId: number;
 
     const animate = () => {
-      const elapsed = Date.now() - startTime;
+      // Проверяем завершение движения
+      if (game?.movingTile) {
+        const { startTime, duration } = game.movingTile;
+        const elapsed = Date.now() - startTime;
 
-      if (elapsed >= duration) {
-        // Анимация закончилась
-        setGame((prev) => (prev ? finishMoveTile(prev) : prev));
-        return;
+        if (elapsed >= duration) {
+          setGame((prev) => (prev ? finishMoveTile(prev) : prev));
+        }
       }
 
-      // Перерисовываем для обновления позиции
+      // Перерисовываем для обновления позиции и попапов
       forceUpdate((n) => n + 1);
       animationId = requestAnimationFrame(animate);
     };
 
     animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, [game?.movingTile?.startTime]);
+  }, [game?.movingTile?.startTime, game?.popups?.length]);
 
   // Позиции стрелок для выбранной плитки (не показывать если есть движущаяся)
   const arrowPositions = (game?.selectedTile && !game?.movingTile)
@@ -427,10 +431,9 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         transform: "translate(-50%, -50%)",
                         opacity,
                         color: "rgb(80, 80, 80)", // серый для ВСЕХ попапов
-                        fontSize: "28px",
+                        fontSize: "27px", // Python: scale.scaled(36) при ratio 0.75 = 27px
                         fontWeight: 400,
                         fontFamily: "Arial, sans-serif",
-                        textShadow: "0 1px 2px rgba(255,255,255,0.8)",
                       }}
                     >
                       {popup.negative ? "-" : "+"}{popup.value}
