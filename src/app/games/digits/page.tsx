@@ -14,6 +14,9 @@ import {
   TILE_COLORS,
   BOARD_SIZE,
   getTileRGB,
+  getArrowPositions,
+  moveTile,
+  Direction,
 } from "@/lib/digits-game";
 import { getRandomPattern } from "@/lib/digits-patterns";
 import { RotateCcw, Play, Pause, ArrowLeft } from "lucide-react";
@@ -96,6 +99,19 @@ export default function DigitsGamePage() {
     if (isPaused || !tile.visible) return;
     setGame((prev) => (prev ? selectTile(prev, tile) : prev));
   }, [isPaused]);
+
+  const handleArrowClick = useCallback((direction: Direction) => {
+    if (isPaused) return;
+    setGame((prev) => {
+      if (!prev || !prev.selectedTile) return prev;
+      return moveTile(prev, prev.selectedTile, direction);
+    });
+  }, [isPaused]);
+
+  // Позиции стрелок для выбранной плитки
+  const arrowPositions = game?.selectedTile
+    ? getArrowPositions(game.board, game.selectedTile)
+    : [];
 
   const togglePause = useCallback(() => {
     setIsPaused((prev) => !prev);
@@ -201,8 +217,62 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   const row = Math.floor(index / BOARD_SIZE);
                   const col = index % BOARD_SIZE;
 
+                  // Проверяем есть ли стрелка в этой ячейке
+                  const arrow = arrowPositions.find(a => a.row === row && a.col === col);
+
                   if (!tile || !tile.visible) {
-                    // Пустая ячейка - прозрачная, чтобы видеть полосатый фон
+                    // Пустая ячейка - может содержать стрелку
+                    if (arrow) {
+                      // Рендерим стрелку
+                      const rotation = {
+                        right: 0,
+                        down: 90,
+                        left: 180,
+                        up: 270,
+                      }[arrow.direction];
+
+                      return (
+                        <button
+                          key={`arrow-${row}-${col}`}
+                          onClick={() => handleArrowClick(arrow.direction)}
+                          className="flex items-center justify-center cursor-pointer"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                          }}
+                        >
+                          <svg
+                            width="48"
+                            height="48"
+                            viewBox="0 0 65 65"
+                            style={{ transform: `rotate(${rotation}deg)` }}
+                          >
+                            {/* Стрелка: серая обводка → белая обводка → синяя заливка */}
+                            <polygon
+                              points="20,38 40,38 40,43 49,32 40,21 40,26 20,26"
+                              fill="rgb(94, 150, 233)"
+                              stroke="rgb(173, 179, 179)"
+                              strokeWidth="7"
+                              strokeLinejoin="round"
+                            />
+                            <polygon
+                              points="20,38 40,38 40,43 49,32 40,21 40,26 20,26"
+                              fill="rgb(94, 150, 233)"
+                              stroke="white"
+                              strokeWidth="4"
+                              strokeLinejoin="round"
+                            />
+                            <polygon
+                              points="20,38 40,38 40,43 49,32 40,21 40,26 20,26"
+                              fill="rgb(94, 150, 233)"
+                            />
+                          </svg>
+                        </button>
+                      );
+                    }
+
+                    // Обычная пустая ячейка
                     return (
                       <div
                         key={`empty-${row}-${col}`}

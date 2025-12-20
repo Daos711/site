@@ -273,3 +273,105 @@ export function formatTime(seconds: number): string {
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
+// Направления движения
+export type Direction = 'up' | 'down' | 'left' | 'right';
+
+// Проверка, можно ли двигаться в направлении
+export function canMove(board: (Tile | null)[][], tile: Tile, direction: Direction): boolean {
+  const { row, col } = tile;
+
+  let newRow = row;
+  let newCol = col;
+
+  if (direction === 'up') newRow = row - 1;
+  else if (direction === 'down') newRow = row + 1;
+  else if (direction === 'left') newCol = col - 1;
+  else if (direction === 'right') newCol = col + 1;
+
+  // Проверяем границы
+  if (newRow < 0 || newRow >= BOARD_SIZE || newCol < 0 || newCol >= BOARD_SIZE) {
+    return false;
+  }
+
+  // Проверяем что ячейка свободна
+  return board[newRow][newCol] === null;
+}
+
+// Получить позиции для стрелок
+export function getArrowPositions(board: (Tile | null)[][], tile: Tile): { direction: Direction; row: number; col: number }[] {
+  const arrows: { direction: Direction; row: number; col: number }[] = [];
+  const directions: Direction[] = ['up', 'down', 'left', 'right'];
+
+  for (const direction of directions) {
+    if (canMove(board, tile, direction)) {
+      let arrowRow = tile.row;
+      let arrowCol = tile.col;
+
+      if (direction === 'up') arrowRow--;
+      else if (direction === 'down') arrowRow++;
+      else if (direction === 'left') arrowCol--;
+      else if (direction === 'right') arrowCol++;
+
+      arrows.push({ direction, row: arrowRow, col: arrowCol });
+    }
+  }
+
+  return arrows;
+}
+
+// Вычислить целевую позицию для движения
+export function getTargetPosition(board: (Tile | null)[][], tile: Tile, direction: Direction): { row: number; col: number } {
+  let { row, col } = tile;
+
+  if (direction === 'up') {
+    while (row > 0 && board[row - 1][col] === null) row--;
+  } else if (direction === 'down') {
+    while (row < BOARD_SIZE - 1 && board[row + 1][col] === null) row++;
+  } else if (direction === 'left') {
+    while (col > 0 && board[row][col - 1] === null) col--;
+  } else if (direction === 'right') {
+    while (col < BOARD_SIZE - 1 && board[row][col + 1] === null) col++;
+  }
+
+  return { row, col };
+}
+
+// Переместить плитку и вычесть очки
+export function moveTile(state: GameState, tile: Tile, direction: Direction): GameState {
+  if (state.gameStatus !== 'playing') return state;
+
+  const target = getTargetPosition(state.board, tile, direction);
+
+  // Не двигаться если остаёмся на месте
+  if (target.row === tile.row && target.col === tile.col) {
+    return { ...state, selectedTile: null };
+  }
+
+  // Вычисляем штраф за движение: сумма 1+2+...+n где n = количество пройденных клеток
+  const cellsMoved = Math.abs(target.row - tile.row) + Math.abs(target.col - tile.col);
+  const penalty = (cellsMoved * (cellsMoved + 1)) / 2;
+
+  // Обновляем доску
+  const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
+
+  // Удаляем плитку со старой позиции
+  newBoard[tile.row][tile.col] = null;
+
+  // Создаём обновлённую плитку с новой позицией
+  const movedTile: Tile = {
+    ...tile,
+    row: target.row,
+    col: target.col,
+  };
+
+  // Ставим плитку на новую позицию
+  newBoard[target.row][target.col] = movedTile;
+
+  return {
+    ...state,
+    board: newBoard,
+    score: Math.max(0, state.score - penalty),
+    selectedTile: null,
+  };
+}
