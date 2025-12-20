@@ -19,6 +19,7 @@ export interface ScorePopup {
 
 // Информация о движущейся плитке
 export interface MovingTile {
+  id: number; // уникальный ID для отслеживания
   tile: Tile;
   fromRow: number;
   fromCol: number;
@@ -26,6 +27,8 @@ export interface MovingTile {
   toCol: number;
   startTime: number;
   duration: number; // мс на всё движение
+  penalty: number; // штраф за перемещение
+  direction: Direction;
 }
 
 export interface GameState {
@@ -38,8 +41,7 @@ export interface GameState {
   visibleTilesCount: number;
   spawnProgress: number; // 0-100 для полосы прогресса
   popups: ScorePopup[]; // анимации очков
-  movingTile: MovingTile | null; // текущая движущаяся плитка
-  pendingMove: { toRow: number; toCol: number; penalty: number } | null; // ожидающее обновление доски
+  movingTiles: MovingTile[]; // все движущиеся плитки
 }
 
 export const BOARD_SIZE = 10;
@@ -78,6 +80,7 @@ export function getTileRGB(num: number): [number, number, number] {
 
 let tileIdCounter = 0;
 let popupIdCounter = 0;
+let movingTileIdCounter = 0;
 
 // Создать новую плитку
 function createTile(row: number, col: number, visible = true): Tile {
@@ -94,6 +97,7 @@ function createTile(row: number, col: number, visible = true): Tile {
 export function initGame(pattern: [number, number][]): GameState {
   tileIdCounter = 0;
   popupIdCounter = 0;
+  movingTileIdCounter = 0;
   const board: (Tile | null)[][] = Array(BOARD_SIZE)
     .fill(null)
     .map(() => Array(BOARD_SIZE).fill(null));
@@ -115,8 +119,7 @@ export function initGame(pattern: [number, number][]): GameState {
     visibleTilesCount: 0,
     spawnProgress: 0,
     popups: [],
-    movingTile: null,
-    pendingMove: null,
+    movingTiles: [],
   };
 }
 
@@ -146,12 +149,62 @@ export function revealNextTile(state: GameState, pattern: [number, number][]): G
   };
 }
 
+// Проверка, движется ли плитка
+export function isTileMoving(state: GameState, tileId: number): boolean {
+  return state.movingTiles.some(mt => mt.tile.id === tileId);
+}
+
+// Получить текущую позицию движущейся плитки (в ячейках, дробное)
+export function getMovingTilePosition(mt: MovingTile, now: number): { row: number; col: number } {
+  const elapsed = now - mt.startTime;
+  const progress = Math.min(1, elapsed / mt.duration);
+
+  return {
+    row: mt.fromRow + (mt.toRow - mt.fromRow) * progress,
+    col: mt.fromCol + (mt.toCol - mt.fromCol) * progress,
+  };
+}
+
+// Получить ячейки, занятые движущимися плитками (для стрелок и коллизий)
+export function getOccupiedByMoving(state: GameState, now: number): Set<string> {
+  const occupied = new Set<string>();
+
+  for (const mt of state.movingTiles) {
+    const pos = getMovingTilePosition(mt, now);
+
+    // Плитка может занимать 1-2 ячейки (когда на границе)
+    const minRow = Math.floor(pos.row);
+    const maxRow = Math.ceil(pos.row);
+    const minCol = Math.floor(pos.col);
+    const maxCol = Math.ceil(pos.col);
+
+    for (let r = minRow; r <= maxRow && r < BOARD_SIZE; r++) {
+      for (let c = minCol; c <= maxCol && c < BOARD_SIZE; c++) {
+        if (r >= 0 && c >= 0) {
+          // Исключаем стартовую позицию - плитка оттуда уезжает
+          if (r !== mt.fromRow || c !== mt.fromCol) {
+            occupied.add(`${r},${c}`);
+          }
+        }
+      }
+    }
+  }
+
+  return occupied;
+}
+
 // Проверка, можно ли убрать две плитки
 export function canRemoveTiles(
   board: (Tile | null)[][],
   tile1: Tile,
-  tile2: Tile
+  tile2: Tile,
+  movingTiles: MovingTile[] = []
 ): boolean {
+  // Нельзя удалять движущиеся плитки
+  if (movingTiles.some(mt => mt.tile.id === tile1.id || mt.tile.id === tile2.id)) {
+    return false;
+  }
+
   // Проверка чисел: одинаковые или сумма = 10
   const numbersMatch =
     tile1.number === tile2.number || tile1.number + tile2.number === 10;
@@ -221,7 +274,7 @@ function getPath(tile1: Tile, tile2: Tile): { row: number; col: number }[] {
 
 // Удалить плитки
 export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameState {
-  if (!canRemoveTiles(state.board, tile1, tile2)) {
+  if (!canRemoveTiles(state.board, tile1, tile2, state.movingTiles)) {
     return { ...state, selectedTile: null };
   }
 
@@ -259,8 +312,8 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
 export function selectTile(state: GameState, tile: Tile): GameState {
   if (state.gameStatus !== 'playing') return state;
 
-  // Нельзя выбирать плитки пока идёт движение (как в Python - is_moving)
-  if (state.movingTile) return state;
+  // Нельзя выбирать движущуюся плитку
+  if (isTileMoving(state, tile.id)) return state;
 
   // Если ничего не выбрано — выбираем
   if (!state.selectedTile) {
@@ -273,7 +326,7 @@ export function selectTile(state: GameState, tile: Tile): GameState {
   }
 
   // Пробуем удалить пару
-  if (canRemoveTiles(state.board, state.selectedTile, tile)) {
+  if (canRemoveTiles(state.board, state.selectedTile, tile, state.movingTiles)) {
     return removeTiles(state, state.selectedTile, tile);
   }
 
@@ -285,11 +338,14 @@ export function selectTile(state: GameState, tile: Tile): GameState {
 export function spawnTile(state: GameState): GameState {
   if (state.gameStatus !== 'playing') return state;
 
-  // Найти пустые клетки
+  // Найти пустые клетки (учитывая движущиеся плитки)
+  const now = Date.now();
+  const occupiedByMoving = getOccupiedByMoving(state, now);
+
   const emptyCells: { row: number; col: number }[] = [];
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
-      if (state.board[row][col] === null) {
+      if (state.board[row][col] === null && !occupiedByMoving.has(`${row},${col}`)) {
         emptyCells.push({ row, col });
       }
     }
@@ -357,8 +413,13 @@ export function cleanupPopups(state: GameState): GameState {
 // Направления движения
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
-// Проверка, можно ли двигаться в направлении
-export function canMove(board: (Tile | null)[][], tile: Tile, direction: Direction): boolean {
+// Проверка, можно ли двигаться в направлении (учитывает движущиеся плитки)
+export function canMove(
+  board: (Tile | null)[][],
+  tile: Tile,
+  direction: Direction,
+  movingTiles: MovingTile[] = []
+): boolean {
   const { row, col } = tile;
 
   let newRow = row;
@@ -374,17 +435,32 @@ export function canMove(board: (Tile | null)[][], tile: Tile, direction: Directi
     return false;
   }
 
-  // Проверяем что ячейка свободна
-  return board[newRow][newCol] === null;
+  const cell = board[newRow][newCol];
+
+  // Ячейка свободна или занята движущейся плиткой (она уезжает)
+  if (cell === null) return true;
+
+  // Если ячейка занята движущейся плиткой - можно двигаться (она уезжает)
+  if (movingTiles.some(mt => mt.tile.id === cell.id)) return true;
+
+  return false;
 }
 
-// Получить позиции для стрелок
-export function getArrowPositions(board: (Tile | null)[][], tile: Tile): { direction: Direction; row: number; col: number }[] {
+// Получить позиции для стрелок (с учётом движущихся плиток)
+export function getArrowPositions(
+  board: (Tile | null)[][],
+  tile: Tile,
+  movingTiles: MovingTile[] = [],
+  now: number = Date.now()
+): { direction: Direction; row: number; col: number }[] {
   const arrows: { direction: Direction; row: number; col: number }[] = [];
   const directions: Direction[] = ['up', 'down', 'left', 'right'];
 
+  // Получаем ячейки, занятые движущимися плитками прямо сейчас
+  const occupiedByMoving = getOccupiedByMoving({ movingTiles } as GameState, now);
+
   for (const direction of directions) {
-    if (canMove(board, tile, direction)) {
+    if (canMove(board, tile, direction, movingTiles)) {
       let arrowRow = tile.row;
       let arrowCol = tile.col;
 
@@ -393,48 +469,61 @@ export function getArrowPositions(board: (Tile | null)[][], tile: Tile): { direc
       else if (direction === 'left') arrowCol--;
       else if (direction === 'right') arrowCol++;
 
-      arrows.push({ direction, row: arrowRow, col: arrowCol });
+      // Стрелка не появляется где физически находится движущаяся плитка
+      if (!occupiedByMoving.has(`${arrowRow},${arrowCol}`)) {
+        arrows.push({ direction, row: arrowRow, col: arrowCol });
+      }
     }
   }
 
   return arrows;
 }
 
-// Вычислить целевую позицию для движения
-export function getTargetPosition(board: (Tile | null)[][], tile: Tile, direction: Direction): { row: number; col: number } {
+// Вычислить целевую позицию для движения (учитывает движущиеся плитки)
+export function getTargetPosition(
+  board: (Tile | null)[][],
+  tile: Tile,
+  direction: Direction,
+  movingTiles: MovingTile[] = []
+): { row: number; col: number } {
   let { row, col } = tile;
 
+  const cellIsPassable = (r: number, c: number): boolean => {
+    const cell = board[r][c];
+    // Ячейка проходима если пуста или занята движущейся плиткой (она уезжает)
+    if (cell === null) return true;
+    if (movingTiles.some(mt => mt.tile.id === cell.id)) return true;
+    return false;
+  };
+
   if (direction === 'up') {
-    while (row > 0 && board[row - 1][col] === null) row--;
+    while (row > 0 && cellIsPassable(row - 1, col)) row--;
   } else if (direction === 'down') {
-    while (row < BOARD_SIZE - 1 && board[row + 1][col] === null) row++;
+    while (row < BOARD_SIZE - 1 && cellIsPassable(row + 1, col)) row++;
   } else if (direction === 'left') {
-    while (col > 0 && board[row][col - 1] === null) col--;
+    while (col > 0 && cellIsPassable(row, col - 1)) col--;
   } else if (direction === 'right') {
-    while (col < BOARD_SIZE - 1 && board[row][col + 1] === null) col++;
+    while (col < BOARD_SIZE - 1 && cellIsPassable(row, col + 1)) col++;
   }
 
   return { row, col };
 }
 
-// Константы анимации (пропорционально Python)
-// Python very_fast: speed=8px/frame, это даёт быструю отзывчивую игру
-// При 60 FPS: 8 × 60 = 480 px/sec
-// Веб ячейка = 48 + 2 = 50px
-// Время на ячейку = 50 / 480 = 0.104с ≈ 100мс
-// 10 ячеек = ~1 секунда на весь путь
+// Константы анимации
 const MS_PER_CELL = 100; // миллисекунд на одну ячейку
 
 // Запустить движение плитки (начало анимации)
 export function startMoveTile(state: GameState, tile: Tile, direction: Direction): GameState {
   if (state.gameStatus !== 'playing') return state;
-  if (state.movingTile) return state; // уже есть движущаяся плитка
 
-  const target = getTargetPosition(state.board, tile, direction);
+  // Нельзя запустить плитку которая уже движется
+  if (isTileMoving(state, tile.id)) return state;
+
+  const target = getTargetPosition(state.board, tile, direction, state.movingTiles);
 
   // Не двигаться если остаёмся на месте
   if (target.row === tile.row && target.col === tile.col) {
-    return { ...state, selectedTile: null };
+    return state;
   }
 
   const cellsMoved = Math.abs(target.row - tile.row) + Math.abs(target.col - tile.col);
@@ -449,13 +538,10 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
   const now = Date.now();
   const newPopups: ScorePopup[] = [];
 
-  // Попапы появляются когда плитка ПОКИДАЕТ ячейку
-  // Первый попап появляется когда плитка уходит со стартовой позиции
   const stepRow = target.row > tile.row ? 1 : target.row < tile.row ? -1 : 0;
   const stepCol = target.col > tile.col ? 1 : target.col < tile.col ? -1 : 0;
 
   for (let i = 0; i < cellsMoved; i++) {
-    // Позиция попапа - откуда плитка ушла
     const popupRow = tile.row + stepRow * i;
     const popupCol = tile.col + stepCol * i;
 
@@ -465,39 +551,42 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
       row: popupRow,
       col: popupCol,
       negative: true,
-      createdAt: now + i * MS_PER_CELL, // появляется когда плитка проходит ячейку
+      createdAt: now + i * MS_PER_CELL,
     });
   }
+
+  const newMovingTile: MovingTile = {
+    id: movingTileIdCounter++,
+    tile,
+    fromRow: tile.row,
+    fromCol: tile.col,
+    toRow: target.row,
+    toCol: target.col,
+    startTime: now,
+    duration,
+    penalty,
+    direction,
+  };
+
+  // Сбрасываем выделение только если это была выбранная плитка
+  const newSelectedTile = state.selectedTile?.id === tile.id ? null : state.selectedTile;
 
   return {
     ...state,
     board: newBoard,
-    // selectedTile остаётся выбранной пока плитка движется (как в Python)
-    // Она будет сброшена в finishMoveTile
+    selectedTile: newSelectedTile,
     popups: [...state.popups, ...newPopups],
-    movingTile: {
-      tile,
-      fromRow: tile.row,
-      fromCol: tile.col,
-      toRow: target.row,
-      toCol: target.col,
-      startTime: now,
-      duration,
-    },
-    pendingMove: {
-      toRow: target.row,
-      toCol: target.col,
-      penalty,
-    },
+    movingTiles: [...state.movingTiles, newMovingTile],
   };
 }
 
-// Завершить движение плитки (после окончания анимации)
-export function finishMoveTile(state: GameState): GameState {
-  if (!state.movingTile || !state.pendingMove) return state;
+// Завершить движение одной плитки (после окончания анимации)
+export function finishMoveTile(state: GameState, movingTileId: number): GameState {
+  const mtIndex = state.movingTiles.findIndex(mt => mt.id === movingTileId);
+  if (mtIndex === -1) return state;
 
-  const { tile } = state.movingTile;
-  const { toRow, toCol, penalty } = state.pendingMove;
+  const mt = state.movingTiles[mtIndex];
+  const { tile, toRow, toCol, penalty } = mt;
 
   // Создаём обновлённую плитку с новой позицией
   const movedTile: Tile = {
@@ -510,18 +599,39 @@ export function finishMoveTile(state: GameState): GameState {
   const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
   newBoard[toRow][toCol] = movedTile;
 
+  // Убираем завершённую плитку из списка движущихся
+  const newMovingTiles = state.movingTiles.filter(m => m.id !== movingTileId);
+
   return {
     ...state,
     board: newBoard,
     score: Math.max(0, state.score - penalty),
-    selectedTile: null, // Сбрасываем выделение когда плитка приехала (как в Python)
-    movingTile: null,
-    pendingMove: null,
+    movingTiles: newMovingTiles,
   };
 }
 
-// Для обратной совместимости (мгновенное перемещение)
+// Проверить и завершить все плитки, которые доехали
+export function updateMovingTiles(state: GameState): GameState {
+  const now = Date.now();
+  let newState = state;
+
+  for (const mt of state.movingTiles) {
+    const elapsed = now - mt.startTime;
+    if (elapsed >= mt.duration) {
+      newState = finishMoveTile(newState, mt.id);
+    }
+  }
+
+  return newState;
+}
+
+// Для обратной совместимости
 export function moveTile(state: GameState, tile: Tile, direction: Direction): GameState {
-  // Теперь просто запускаем анимацию
   return startMoveTile(state, tile, direction);
+}
+
+// Legacy - для совместимости с page.tsx (будет удалено)
+export function finishMoveTileLegacy(state: GameState): GameState {
+  if (state.movingTiles.length === 0) return state;
+  return finishMoveTile(state, state.movingTiles[0].id);
 }

@@ -17,7 +17,9 @@ import {
   getTileRGB,
   getArrowPositions,
   startMoveTile,
-  finishMoveTile,
+  updateMovingTiles,
+  getMovingTilePosition,
+  isTileMoving,
   Direction,
 } from "@/lib/digits-game";
 import { getRandomPattern } from "@/lib/digits-patterns";
@@ -99,14 +101,14 @@ export default function DigitsGamePage() {
       for (let col = 0; col < BOARD_SIZE; col++) {
         const tile = game.board[row][col];
         if (tile && tile.visible && tile.id !== game.selectedTile.id) {
-          if (canRemoveTiles(game.board, game.selectedTile, tile)) {
+          if (canRemoveTiles(game.board, game.selectedTile, tile, game.movingTiles)) {
             highlighted.add(tile.id);
           }
         }
       }
     }
     setHighlightedTiles(highlighted);
-  }, [game?.selectedTile, game?.board]);
+  }, [game?.selectedTile, game?.board, game?.movingTiles]);
 
   const handleTileClick = useCallback((tile: Tile) => {
     if (isPaused || !tile.visible) return;
@@ -116,7 +118,9 @@ export default function DigitsGamePage() {
   const handleArrowClick = useCallback((direction: Direction) => {
     if (isPaused) return;
     setGame((prev) => {
-      if (!prev || !prev.selectedTile || prev.movingTile) return prev;
+      if (!prev || !prev.selectedTile) return prev;
+      // Нельзя запустить плитку которая уже движется
+      if (isTileMoving(prev, prev.selectedTile.id)) return prev;
       return startMoveTile(prev, prev.selectedTile, direction);
     });
   }, [isPaused]);
@@ -124,38 +128,32 @@ export default function DigitsGamePage() {
   // Счётчик для перерисовки анимаций
   const [, forceUpdate] = useState(0);
 
-  // Анимация движения плитки и попапов
+  // Анимация движения плиток и попапов
   useEffect(() => {
-    const hasMovingTile = !!game?.movingTile;
+    const hasMovingTiles = (game?.movingTiles?.length ?? 0) > 0;
     const hasPopups = (game?.popups?.length ?? 0) > 0;
 
-    if (!hasMovingTile && !hasPopups) return;
+    if (!hasMovingTiles && !hasPopups) return;
 
     let animationId: number;
 
     const animate = () => {
-      // Проверяем завершение движения
-      if (game?.movingTile) {
-        const { startTime, duration } = game.movingTile;
-        const elapsed = Date.now() - startTime;
+      // Обновляем состояние - завершаем плитки которые доехали
+      setGame((prev) => (prev ? updateMovingTiles(prev) : prev));
 
-        if (elapsed >= duration) {
-          setGame((prev) => (prev ? finishMoveTile(prev) : prev));
-        }
-      }
-
-      // Перерисовываем для обновления позиции и попапов
+      // Перерисовываем для обновления позиций и попапов
       forceUpdate((n) => n + 1);
       animationId = requestAnimationFrame(animate);
     };
 
     animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, [game?.movingTile?.startTime, game?.popups?.length]);
+  }, [game?.movingTiles?.length, game?.popups?.length]);
 
-  // Позиции стрелок для выбранной плитки (не показывать если есть движущаяся)
-  const arrowPositions = (game?.selectedTile && !game?.movingTile)
-    ? getArrowPositions(game.board, game.selectedTile)
+  // Позиции стрелок для выбранной плитки (динамически с учётом движущихся)
+  const now = Date.now();
+  const arrowPositions = (game?.selectedTile && !isTileMoving(game, game.selectedTile.id))
+    ? getArrowPositions(game.board, game.selectedTile, game.movingTiles, now)
     : [];
 
   const togglePause = useCallback(() => {
@@ -237,7 +235,6 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
           >
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
               {/* Игровое поле - диагональные линии 60° от горизонтали */}
-              {/* Пропорции: STRIPE_SPACING/TILE = 8/64 = 12.5%, при tile=48 → spacing=6 */}
               <div
                 style={{
                   position: "relative",
@@ -360,20 +357,13 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   );
                 })}
 
-                {/* Движущаяся плитка - всегда выделена оранжевым (как в Python) */}
-                {game.movingTile && (() => {
-                  const { tile, fromRow, fromCol, toRow, toCol, startTime, duration } = game.movingTile;
-                  const now = Date.now();
-                  const elapsed = now - startTime;
-                  const progress = Math.min(1, elapsed / duration);
-
-                  // Линейная интерполяция позиции
-                  const currentRow = fromRow + (toRow - fromRow) * progress;
-                  const currentCol = fromCol + (toCol - fromCol) * progress;
+                {/* Все движущиеся плитки - оранжевые (выделенные) */}
+                {game.movingTiles.map((mt) => {
+                  const pos = getMovingTilePosition(mt, now);
 
                   // Позиция в пикселях (padding 2px, cell 48px + gap 2px = 50px)
-                  const x = 2 + currentCol * 50;
-                  const y = 2 + currentRow * 50;
+                  const x = 2 + pos.col * 50;
+                  const y = 2 + pos.row * 50;
 
                   // Движущаяся плитка всегда оранжевая (выделенная)
                   const selectedColor = [255, 139, 2];
@@ -381,6 +371,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
 
                   return (
                     <div
+                      key={`moving-${mt.id}`}
                       className="absolute pointer-events-none flex items-center justify-center"
                       style={{
                         left: `${x}px`,
@@ -397,23 +388,19 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         zIndex: 10,
                       }}
                     >
-                      {tile.number}
+                      {mt.tile.number}
                     </div>
                   );
-                })()}
+                })}
 
                 {/* Попапы очков */}
                 {game.popups.map((popup) => {
-                  const now = Date.now();
                   const age = now - popup.createdAt;
 
                   // Попап не появился ещё
                   if (age < 0) return null;
 
-                  // Быстрое затухание как в Python: fade_speed = 1.5 за кадр при 60fps
-                  // 255 / 1.5 / 60 ≈ 2.8 секунды полное затухание
-                  // Но когда все появились - ещё быстрее
-                  // Для простоты: затухание за 400мс
+                  // Затухание за 400мс
                   const opacity = Math.max(0, 1 - age / 400);
 
                   if (opacity <= 0) return null;
@@ -432,7 +419,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         transform: "translate(-50%, -50%)",
                         opacity,
                         color: "rgb(80, 80, 80)", // серый для ВСЕХ попапов
-                        fontSize: "27px", // Python: scale.scaled(36) при ratio 0.75 = 27px
+                        fontSize: "27px",
                         fontWeight: 400,
                         fontFamily: "Arial, sans-serif",
                       }}
