@@ -610,12 +610,189 @@ export function finishMoveTile(state: GameState, movingTileId: number): GameStat
   };
 }
 
-// Проверить и завершить все плитки, которые доехали
+// Проверка пересечения двух прямоугольников (плиток)
+function tilesOverlap(pos1: { row: number; col: number }, pos2: { row: number; col: number }): boolean {
+  // Плитки пересекаются если их центры ближе чем 1 ячейка
+  const threshold = 0.9; // чуть меньше 1 для точности
+  return Math.abs(pos1.row - pos2.row) < threshold && Math.abs(pos1.col - pos2.col) < threshold;
+}
+
+// Округление до ближайшей ячейки
+function snapToGrid(pos: { row: number; col: number }): { row: number; col: number } {
+  return {
+    row: Math.round(pos.row),
+    col: Math.round(pos.col),
+  };
+}
+
+// Найти безопасную позицию для остановки (ближайшую свободную ячейку)
+function findSafeStopPosition(
+  mt: MovingTile,
+  currentPos: { row: number; col: number },
+  board: (Tile | null)[][],
+  otherMovingTiles: MovingTile[],
+  now: number
+): { row: number; col: number } {
+  const snapped = snapToGrid(currentPos);
+
+  // Проверяем что ячейка свободна
+  if (snapped.row >= 0 && snapped.row < BOARD_SIZE &&
+      snapped.col >= 0 && snapped.col < BOARD_SIZE &&
+      board[snapped.row][snapped.col] === null) {
+    // Проверяем что другие плитки не занимают эту ячейку
+    const otherOccupied = otherMovingTiles.some(other => {
+      const otherPos = getMovingTilePosition(other, now);
+      const otherSnapped = snapToGrid(otherPos);
+      return otherSnapped.row === snapped.row && otherSnapped.col === snapped.col;
+    });
+    if (!otherOccupied) {
+      return snapped;
+    }
+  }
+
+  // Если ячейка занята, ищем свободную в обратном направлении
+  const direction = mt.direction;
+  let searchRow = snapped.row;
+  let searchCol = snapped.col;
+
+  // Ищем в обратном направлении до стартовой позиции
+  while (true) {
+    if (direction === 'up') searchRow++;
+    else if (direction === 'down') searchRow--;
+    else if (direction === 'left') searchCol++;
+    else if (direction === 'right') searchCol--;
+
+    // Достигли стартовой позиции
+    if ((direction === 'up' && searchRow > mt.fromRow) ||
+        (direction === 'down' && searchRow < mt.fromRow) ||
+        (direction === 'left' && searchCol > mt.fromCol) ||
+        (direction === 'right' && searchCol < mt.fromCol)) {
+      return { row: mt.fromRow, col: mt.fromCol };
+    }
+
+    // Проверяем границы
+    if (searchRow < 0 || searchRow >= BOARD_SIZE || searchCol < 0 || searchCol >= BOARD_SIZE) {
+      return { row: mt.fromRow, col: mt.fromCol };
+    }
+
+    // Проверяем свободна ли ячейка
+    if (board[searchRow][searchCol] === null) {
+      const otherOccupied = otherMovingTiles.some(other => {
+        const otherPos = getMovingTilePosition(other, now);
+        const otherSnapped = snapToGrid(otherPos);
+        return otherSnapped.row === searchRow && otherSnapped.col === searchCol;
+      });
+      if (!otherOccupied) {
+        return { row: searchRow, col: searchCol };
+      }
+    }
+  }
+}
+
+// Остановить плитку немедленно на указанной позиции
+function stopMovingTile(state: GameState, mtId: number, stopPos: { row: number; col: number }): GameState {
+  const mtIndex = state.movingTiles.findIndex(m => m.id === mtId);
+  if (mtIndex === -1) return state;
+
+  const mt = state.movingTiles[mtIndex];
+
+  // Вычисляем реальный штраф (сколько ячеек прошли)
+  const cellsMoved = Math.abs(stopPos.row - mt.fromRow) + Math.abs(stopPos.col - mt.fromCol);
+  const penalty = (cellsMoved * (cellsMoved + 1)) / 2;
+
+  // Создаём плитку на новой позиции
+  const stoppedTile: Tile = {
+    ...mt.tile,
+    row: stopPos.row,
+    col: stopPos.col,
+  };
+
+  const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
+  newBoard[stopPos.row][stopPos.col] = stoppedTile;
+
+  const newMovingTiles = state.movingTiles.filter(m => m.id !== mtId);
+
+  return {
+    ...state,
+    board: newBoard,
+    score: Math.max(0, state.score - penalty),
+    movingTiles: newMovingTiles,
+  };
+}
+
+// Проверить и завершить все плитки, которые доехали или столкнулись
 export function updateMovingTiles(state: GameState): GameState {
   const now = Date.now();
   let newState = state;
 
-  for (const mt of state.movingTiles) {
+  // Сначала проверяем столкновения между движущимися плитками
+  const movingPositions = newState.movingTiles.map(mt => ({
+    mt,
+    pos: getMovingTilePosition(mt, now),
+  }));
+
+  const stoppedIds = new Set<number>();
+
+  // Проверяем каждую пару
+  for (let i = 0; i < movingPositions.length; i++) {
+    for (let j = i + 1; j < movingPositions.length; j++) {
+      const { mt: mt1, pos: pos1 } = movingPositions[i];
+      const { mt: mt2, pos: pos2 } = movingPositions[j];
+
+      if (stoppedIds.has(mt1.id) || stoppedIds.has(mt2.id)) continue;
+
+      if (tilesOverlap(pos1, pos2)) {
+        // Столкновение! Останавливаем обе плитки
+        const otherTiles1 = newState.movingTiles.filter(m => m.id !== mt1.id && m.id !== mt2.id);
+        const otherTiles2 = newState.movingTiles.filter(m => m.id !== mt1.id && m.id !== mt2.id);
+
+        const stopPos1 = findSafeStopPosition(mt1, pos1, newState.board, otherTiles1, now);
+        newState = stopMovingTile(newState, mt1.id, stopPos1);
+        stoppedIds.add(mt1.id);
+
+        const stopPos2 = findSafeStopPosition(mt2, pos2, newState.board, otherTiles2, now);
+        newState = stopMovingTile(newState, mt2.id, stopPos2);
+        stoppedIds.add(mt2.id);
+      }
+    }
+  }
+
+  // Проверяем столкновение со статичными плитками
+  for (const { mt, pos } of movingPositions) {
+    if (stoppedIds.has(mt.id)) continue;
+
+    // Проверяем ячейки которые плитка сейчас занимает
+    const minRow = Math.floor(pos.row);
+    const maxRow = Math.ceil(pos.row);
+    const minCol = Math.floor(pos.col);
+    const maxCol = Math.ceil(pos.col);
+
+    let hasStaticCollision = false;
+    for (let r = minRow; r <= maxRow && r < BOARD_SIZE; r++) {
+      for (let c = minCol; c <= maxCol && c < BOARD_SIZE; c++) {
+        if (r >= 0 && c >= 0 && r !== mt.fromRow && c !== mt.fromCol) {
+          const cell = newState.board[r][c];
+          if (cell !== null) {
+            hasStaticCollision = true;
+            break;
+          }
+        }
+      }
+      if (hasStaticCollision) break;
+    }
+
+    if (hasStaticCollision) {
+      const otherTiles = newState.movingTiles.filter(m => m.id !== mt.id);
+      const stopPos = findSafeStopPosition(mt, pos, newState.board, otherTiles, now);
+      newState = stopMovingTile(newState, mt.id, stopPos);
+      stoppedIds.add(mt.id);
+    }
+  }
+
+  // Завершаем плитки которые доехали до цели
+  for (const mt of newState.movingTiles) {
+    if (stoppedIds.has(mt.id)) continue;
+
     const elapsed = now - mt.startTime;
     if (elapsed >= mt.duration) {
       newState = finishMoveTile(newState, mt.id);
