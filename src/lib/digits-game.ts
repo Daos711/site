@@ -8,6 +8,15 @@ export interface Tile {
   visible: boolean; // для анимации появления
 }
 
+export interface ScorePopup {
+  id: number;
+  value: number;
+  row: number;
+  col: number;
+  negative: boolean;
+  createdAt: number;
+}
+
 export interface GameState {
   board: (Tile | null)[][];
   score: number;
@@ -17,6 +26,7 @@ export interface GameState {
   tilesCount: number;
   visibleTilesCount: number;
   spawnProgress: number; // 0-100 для полосы прогресса
+  popups: ScorePopup[]; // анимации очков
 }
 
 export const BOARD_SIZE = 10;
@@ -54,6 +64,7 @@ export function getTileRGB(num: number): [number, number, number] {
 }
 
 let tileIdCounter = 0;
+let popupIdCounter = 0;
 
 // Создать новую плитку
 function createTile(row: number, col: number, visible = true): Tile {
@@ -69,6 +80,7 @@ function createTile(row: number, col: number, visible = true): Tile {
 // Инициализация игры с полным заполнением
 export function initGame(pattern: [number, number][]): GameState {
   tileIdCounter = 0;
+  popupIdCounter = 0;
   const board: (Tile | null)[][] = Array(BOARD_SIZE)
     .fill(null)
     .map(() => Array(BOARD_SIZE).fill(null));
@@ -89,6 +101,7 @@ export function initGame(pattern: [number, number][]): GameState {
     tilesCount,
     visibleTilesCount: 0,
     spawnProgress: 0,
+    popups: [],
   };
 }
 
@@ -168,6 +181,29 @@ export function calculateScore(tile1: Tile, tile2: Tile): number {
   return ((distance + 1) * (distance + 2)) / 2;
 }
 
+// Получить путь между двумя плитками
+function getPath(tile1: Tile, tile2: Tile): { row: number; col: number }[] {
+  const path: { row: number; col: number }[] = [];
+  const { row: r1, col: c1 } = tile1;
+  const { row: r2, col: c2 } = tile2;
+
+  if (r1 === r2) {
+    // Горизонтальный путь
+    const step = c2 > c1 ? 1 : -1;
+    for (let c = c1; c !== c2 + step; c += step) {
+      path.push({ row: r1, col: c });
+    }
+  } else if (c1 === c2) {
+    // Вертикальный путь
+    const step = r2 > r1 ? 1 : -1;
+    for (let r = r1; r !== r2 + step; r += step) {
+      path.push({ row: r, col: c1 });
+    }
+  }
+
+  return path;
+}
+
 // Удалить плитки
 export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameState {
   if (!canRemoveTiles(state.board, tile1, tile2)) {
@@ -181,6 +217,18 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
   const points = calculateScore(tile1, tile2);
   const newTilesCount = state.tilesCount - 2;
 
+  // Создаём попапы вдоль пути
+  const path = getPath(tile1, tile2);
+  const now = Date.now();
+  const newPopups: ScorePopup[] = path.map((pos, index) => ({
+    id: popupIdCounter++,
+    value: index + 1,
+    row: pos.row,
+    col: pos.col,
+    negative: false,
+    createdAt: now + index * 80, // 80ms задержка между появлениями
+  }));
+
   return {
     ...state,
     board: newBoard,
@@ -188,6 +236,7 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
     selectedTile: null,
     tilesCount: newTilesCount,
     gameStatus: newTilesCount === 0 ? 'won' : state.gameStatus,
+    popups: [...state.popups, ...newPopups],
   };
 }
 
@@ -272,6 +321,19 @@ export function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Очистка старых попапов (старше 1.5 сек)
+export function cleanupPopups(state: GameState): GameState {
+  const now = Date.now();
+  const maxAge = 1500; // 1.5 секунды на анимацию
+  const newPopups = state.popups.filter(p => now - p.createdAt < maxAge);
+
+  if (newPopups.length === state.popups.length) {
+    return state;
+  }
+
+  return { ...state, popups: newPopups };
 }
 
 // Направления движения

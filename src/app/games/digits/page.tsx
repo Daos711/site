@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   GameState,
   Tile,
+  ScorePopup,
   initGame,
   selectTile,
   spawnTile,
@@ -11,6 +12,7 @@ import {
   formatTime,
   canRemoveTiles,
   revealNextTile,
+  cleanupPopups,
   TILE_COLORS,
   BOARD_SIZE,
   getTileRGB,
@@ -73,6 +75,17 @@ export default function DigitsGamePage() {
       setGame((prev) => (prev ? spawnTile(prev) : prev));
     }
   }, [game?.spawnProgress, game?.gameStatus, isPaused]);
+
+  // Очистка старых попапов
+  useEffect(() => {
+    if (!game || game.popups.length === 0) return;
+
+    const interval = setInterval(() => {
+      setGame((prev) => (prev ? cleanupPopups(prev) : prev));
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [game?.popups.length]);
 
   // Подсветка возможных ходов
   useEffect(() => {
@@ -195,6 +208,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
               {/* Пропорции: STRIPE_SPACING/TILE = 8/64 = 12.5%, при tile=48 → spacing=6 */}
               <div
                 style={{
+                  position: "relative",
                   background: "rgb(252, 250, 248)",
                   backgroundImage: `repeating-linear-gradient(
                     -60deg,
@@ -311,6 +325,41 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                     >
                       {tile.number}
                     </button>
+                  );
+                })}
+
+                {/* Попапы очков */}
+                {game.popups.map((popup) => {
+                  const now = Date.now();
+                  const age = now - popup.createdAt;
+                  // Попап появляется мгновенно, затухает за 1 секунду
+                  const opacity = age < 0 ? 0 : Math.max(0, 1 - age / 1000);
+
+                  if (opacity <= 0) return null;
+
+                  // Позиция: центр ячейки
+                  // Ячейка 48px + gap 2px, padding 2px
+                  const x = 2 + popup.col * 50 + 24; // center of cell
+                  const y = 2 + popup.row * 50 + 24;
+
+                  return (
+                    <div
+                      key={popup.id}
+                      className="absolute pointer-events-none"
+                      style={{
+                        left: `${x}px`,
+                        top: `${y}px`,
+                        transform: "translate(-50%, -50%)",
+                        opacity,
+                        color: popup.negative ? "rgb(200, 60, 60)" : "rgb(80, 80, 80)",
+                        fontSize: "28px",
+                        fontWeight: 400,
+                        fontFamily: "Arial, sans-serif",
+                        textShadow: "0 1px 2px rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      {popup.negative ? "-" : "+"}{popup.value}
+                    </div>
                   );
                 })}
               </div>
