@@ -17,6 +17,17 @@ export interface ScorePopup {
   createdAt: number;
 }
 
+// Информация о движущейся плитке
+export interface MovingTile {
+  tile: Tile;
+  fromRow: number;
+  fromCol: number;
+  toRow: number;
+  toCol: number;
+  startTime: number;
+  duration: number; // мс на всё движение
+}
+
 export interface GameState {
   board: (Tile | null)[][];
   score: number;
@@ -27,6 +38,8 @@ export interface GameState {
   visibleTilesCount: number;
   spawnProgress: number; // 0-100 для полосы прогресса
   popups: ScorePopup[]; // анимации очков
+  movingTile: MovingTile | null; // текущая движущаяся плитка
+  pendingMove: { toRow: number; toCol: number; penalty: number } | null; // ожидающее обновление доски
 }
 
 export const BOARD_SIZE = 10;
@@ -102,6 +115,8 @@ export function initGame(pattern: [number, number][]): GameState {
     visibleTilesCount: 0,
     spawnProgress: 0,
     popups: [],
+    movingTile: null,
+    pendingMove: null,
   };
 }
 
@@ -323,11 +338,11 @@ export function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Очистка старых попапов (старше 1.5 сек)
+// Очистка старых попапов (старше 500мс после появления)
 export function cleanupPopups(state: GameState): GameState {
   const now = Date.now();
-  const maxAge = 1500; // 1.5 секунды на анимацию
-  const newPopups = state.popups.filter(p => now - p.createdAt < maxAge);
+  const fadeTime = 400; // время затухания
+  const newPopups = state.popups.filter(p => now - p.createdAt < fadeTime);
 
   if (newPopups.length === state.popups.length) {
     return state;
@@ -399,33 +414,15 @@ export function getTargetPosition(board: (Tile | null)[][], tile: Tile, directio
   return { row, col };
 }
 
-// Получить путь движения плитки
-function getMovePath(tile: Tile, target: { row: number; col: number }): { row: number; col: number }[] {
-  const path: { row: number; col: number }[] = [];
-  const { row: r1, col: c1 } = tile;
-  const { row: r2, col: c2 } = target;
+// Константы анимации (пропорционально Python)
+// Python: speed=3px/frame при tile=64px, ~60FPS
+// Время на ячейку = (tile+gap)/speed/fps = 67/3/60 ≈ 0.37с = 370мс
+const MS_PER_CELL = 370; // миллисекунд на одну ячейку
 
-  if (r1 === r2) {
-    // Горизонтальное движение
-    const step = c2 > c1 ? 1 : -1;
-    // Пропускаем стартовую позицию (там плитка)
-    for (let c = c1 + step; c !== c2 + step; c += step) {
-      path.push({ row: r1, col: c });
-    }
-  } else if (c1 === c2) {
-    // Вертикальное движение
-    const step = r2 > r1 ? 1 : -1;
-    for (let r = r1 + step; r !== r2 + step; r += step) {
-      path.push({ row: r, col: c1 });
-    }
-  }
-
-  return path;
-}
-
-// Переместить плитку и вычесть очки
-export function moveTile(state: GameState, tile: Tile, direction: Direction): GameState {
+// Запустить движение плитки (начало анимации)
+export function startMoveTile(state: GameState, tile: Tile, direction: Direction): GameState {
   if (state.gameStatus !== 'playing') return state;
+  if (state.movingTile) return state; // уже есть движущаяся плитка
 
   const target = getTargetPosition(state.board, tile, direction);
 
@@ -434,43 +431,89 @@ export function moveTile(state: GameState, tile: Tile, direction: Direction): Ga
     return { ...state, selectedTile: null };
   }
 
-  // Вычисляем штраф за движение: сумма 1+2+...+n где n = количество пройденных клеток
   const cellsMoved = Math.abs(target.row - tile.row) + Math.abs(target.col - tile.col);
+  const duration = cellsMoved * MS_PER_CELL;
   const penalty = (cellsMoved * (cellsMoved + 1)) / 2;
 
-  // Обновляем доску
+  // Убираем плитку с доски (она теперь "летит")
   const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
-
-  // Удаляем плитку со старой позиции
   newBoard[tile.row][tile.col] = null;
+
+  // Создаём попапы с задержкой = время достижения каждой ячейки
+  const now = Date.now();
+  const newPopups: ScorePopup[] = [];
+
+  // Попапы появляются когда плитка ПОКИДАЕТ ячейку
+  // Первый попап появляется когда плитка уходит со стартовой позиции
+  const stepRow = target.row > tile.row ? 1 : target.row < tile.row ? -1 : 0;
+  const stepCol = target.col > tile.col ? 1 : target.col < tile.col ? -1 : 0;
+
+  for (let i = 0; i < cellsMoved; i++) {
+    // Позиция попапа - откуда плитка ушла
+    const popupRow = tile.row + stepRow * i;
+    const popupCol = tile.col + stepCol * i;
+
+    newPopups.push({
+      id: popupIdCounter++,
+      value: i + 1,
+      row: popupRow,
+      col: popupCol,
+      negative: true,
+      createdAt: now + i * MS_PER_CELL, // появляется когда плитка проходит ячейку
+    });
+  }
+
+  return {
+    ...state,
+    board: newBoard,
+    selectedTile: null,
+    popups: [...state.popups, ...newPopups],
+    movingTile: {
+      tile,
+      fromRow: tile.row,
+      fromCol: tile.col,
+      toRow: target.row,
+      toCol: target.col,
+      startTime: now,
+      duration,
+    },
+    pendingMove: {
+      toRow: target.row,
+      toCol: target.col,
+      penalty,
+    },
+  };
+}
+
+// Завершить движение плитки (после окончания анимации)
+export function finishMoveTile(state: GameState): GameState {
+  if (!state.movingTile || !state.pendingMove) return state;
+
+  const { tile } = state.movingTile;
+  const { toRow, toCol, penalty } = state.pendingMove;
 
   // Создаём обновлённую плитку с новой позицией
   const movedTile: Tile = {
     ...tile,
-    row: target.row,
-    col: target.col,
+    row: toRow,
+    col: toCol,
   };
 
   // Ставим плитку на новую позицию
-  newBoard[target.row][target.col] = movedTile;
-
-  // Создаём отрицательные попапы вдоль пути
-  const path = getMovePath(tile, target);
-  const now = Date.now();
-  const newPopups: ScorePopup[] = path.map((pos, index) => ({
-    id: popupIdCounter++,
-    value: index + 1,
-    row: pos.row,
-    col: pos.col,
-    negative: true,
-    createdAt: now + index * 80,
-  }));
+  const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
+  newBoard[toRow][toCol] = movedTile;
 
   return {
     ...state,
     board: newBoard,
     score: Math.max(0, state.score - penalty),
-    selectedTile: null,
-    popups: [...state.popups, ...newPopups],
+    movingTile: null,
+    pendingMove: null,
   };
+}
+
+// Для обратной совместимости (мгновенное перемещение)
+export function moveTile(state: GameState, tile: Tile, direction: Direction): GameState {
+  // Теперь просто запускаем анимацию
+  return startMoveTile(state, tile, direction);
 }
