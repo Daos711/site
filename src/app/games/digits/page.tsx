@@ -236,6 +236,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         fontSize: "30px",
                         border: "1px solid rgb(71, 74, 72)",
                         boxShadow: `inset -2px -2px 0 ${darkColor}`,
+                        transition: "none", // мгновенное выделение
                       }}
                     >
                       {tile.number}
