@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Шрифт для игры Цифры */
+@font-face {
+  font-family: 'Digits Font';
+  src: url('/fonts/2204.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;

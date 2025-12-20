@@ -38,21 +38,16 @@ export default function DigitsGamePage() {
     startNewGame();
   }, [startNewGame]);
 
-  // Анимация заполнения поля
+  // Анимация заполнения поля (25ms на 1 плитку как в оригинале)
   useEffect(() => {
     if (!game || game.gameStatus !== "filling") return;
 
     const interval = setInterval(() => {
       setGame((prev) => {
         if (!prev) return prev;
-        // Показываем по 3 плитки за раз для быстрой анимации
-        let newState = prev;
-        for (let i = 0; i < 3 && newState.gameStatus === "filling"; i++) {
-          newState = revealNextTile(newState, pattern);
-        }
-        return newState;
+        return revealNextTile(prev, pattern);
       });
-    }, 20);
+    }, 25);
 
     return () => clearInterval(interval);
   }, [game?.gameStatus, pattern]);
@@ -146,17 +141,18 @@ export default function DigitsGamePage() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Игровое поле */}
           <div
-            className="rounded-2xl p-3 shadow-lg"
+            className="rounded-lg shadow-lg"
             style={{
               background: "rgb(71, 74, 72)",
-              border: "4px solid rgb(71, 74, 72)",
+              padding: "3px",
             }}
           >
             <div
-              className="grid gap-1"
+              className="grid"
               style={{
                 gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-                width: "min(500px, calc(100vw - 60px))",
+                gap: "3px", // Оригинал: 3px при плитке 64px
+                width: "min(540px, calc(100vw - 60px))",
                 aspectRatio: "1",
               }}
             >
@@ -168,8 +164,8 @@ export default function DigitsGamePage() {
                   return (
                     <div
                       key={`empty-${row}-${col}`}
-                      className="rounded"
-                      style={{ background: "rgb(200, 200, 200)", aspectRatio: "1" }}
+                      className="rounded-sm"
+                      style={{ background: "rgb(220, 218, 215)", aspectRatio: "1" }}
                     />
                   );
                 }
@@ -183,17 +179,19 @@ export default function DigitsGamePage() {
                     onClick={() => handleTileClick(tile)}
                     disabled={isPaused || isFilling}
                     className={`
-                      rounded font-bold text-lg flex items-center justify-center
-                      transition-all duration-150 shadow-sm
-                      ${isSelected ? "scale-110 ring-4 ring-white shadow-lg z-10" : ""}
-                      ${isHighlighted ? "ring-2 ring-green-500" : ""}
-                      ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer hover:scale-105"}
+                      rounded-sm flex items-center justify-center
+                      transition-all duration-150
+                      ${isSelected ? "scale-105 ring-2 ring-white shadow-lg z-10" : ""}
+                      ${isHighlighted ? "ring-2 ring-green-400" : ""}
+                      ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer hover:brightness-110"}
                     `}
                     style={{
                       background: TILE_COLORS[tile.number],
-                      color: "rgb(71, 74, 72)",
+                      color: "black",
                       aspectRatio: "1",
-                      border: "2px solid rgb(71, 74, 72)",
+                      fontFamily: "'Digits Font', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "clamp(22px, 4vw, 38px)",
                     }}
                   >
                     {tile.number}
