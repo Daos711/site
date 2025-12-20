@@ -145,6 +145,7 @@ export default function DigitsGamePage() {
           >
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
               {/* Игровое поле - диагональные полосы 60° */}
+              {/* Пропорции оригинала: tile=64, gap=3, всего 10*64 + 11*3 = 673 */}
               <div
                 style={{
                   background: "rgb(252, 250, 248)",
@@ -155,16 +156,17 @@ export default function DigitsGamePage() {
                     transparent 1px,
                     transparent 8px
                   )`,
-                  padding: "3px",
                 }}
               >
                 <div
                   className="grid"
                   style={{
                     gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-                    gap: "3px",
-                    width: "min(470px, calc(100vw - 100px))",
+                    gap: "2px",
+                    padding: "2px", // gap по краям как в оригинале
+                    width: "min(450px, calc(100vw - 120px))",
                     aspectRatio: "1",
+                    boxSizing: "border-box",
                   }}
                 >
                   {game.board.flat().map((tile, index) => {
