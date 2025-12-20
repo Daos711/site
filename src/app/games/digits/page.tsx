@@ -54,9 +54,11 @@ function DigitsGamePage() {
 
   // Инициализация игры
   const startNewGame = useCallback(() => {
-    const { positions } = isTestMode ? getTestPattern() : getRandomPattern();
-    setPattern(positions as [number, number][]);
-    setGame(initGame(positions as [number, number][]));
+    const patternData = isTestMode ? getTestPattern() : getRandomPattern();
+    const positions = patternData.positions as [number, number][];
+    const numbers = 'numbers' in patternData ? patternData.numbers : undefined;
+    setPattern(positions);
+    setGame(initGame(positions, numbers));
     setIsPaused(false);
     setScreen("playing");
   }, [isTestMode]);
@@ -178,10 +180,15 @@ function DigitsGamePage() {
   const [, forceUpdate] = useState(0);
 
   // Анимация движения плиток, попапов и прогресс-бара спавна
+  const movingTilesCount = game?.movingTiles?.length ?? 0;
+  const popupsCount = game?.popups?.length ?? 0;
+  const spawnTimerActive = game?.spawnTimerRunning ?? false;
+  const currentGameStatus = game?.gameStatus ?? null;
+
   useEffect(() => {
-    const hasMovingTiles = (game?.movingTiles?.length ?? 0) > 0;
-    const hasPopups = (game?.popups?.length ?? 0) > 0;
-    const hasSpawnBar = game?.spawnTimerRunning && game?.gameStatus === 'playing' && !isPaused;
+    const hasMovingTiles = movingTilesCount > 0;
+    const hasPopups = popupsCount > 0;
+    const hasSpawnBar = spawnTimerActive && currentGameStatus === 'playing' && !isPaused;
 
     if (!hasMovingTiles && !hasPopups && !hasSpawnBar) return;
 
@@ -204,7 +211,7 @@ function DigitsGamePage() {
 
     animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, [game?.movingTiles?.length, game?.popups?.length, game?.spawnTimerRunning, game?.gameStatus, isPaused]);
+  }, [movingTilesCount, popupsCount, spawnTimerActive, currentGameStatus, isPaused]);
 
   // Позиции стрелок для выбранной плитки (динамически с учётом движущихся)
   const now = Date.now();

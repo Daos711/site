@@ -97,10 +97,10 @@ let popupIdCounter = 0;
 let movingTileIdCounter = 0;
 
 // Создать новую плитку
-function createTile(row: number, col: number, visible = true): Tile {
+function createTile(row: number, col: number, visible = true, number?: number): Tile {
   return {
     id: tileIdCounter++,
-    number: Math.floor(Math.random() * 9) + 1, // 1-9
+    number: number ?? (Math.floor(Math.random() * 9) + 1), // 1-9
     row,
     col,
     visible,
@@ -108,7 +108,8 @@ function createTile(row: number, col: number, visible = true): Tile {
 }
 
 // Инициализация игры с полным заполнением
-export function initGame(pattern: [number, number][]): GameState {
+// numbers - опциональный массив чисел для плиток (для тестового режима)
+export function initGame(pattern: [number, number][], numbers?: number[]): GameState {
   tileIdCounter = 0;
   popupIdCounter = 0;
   movingTileIdCounter = 0;
@@ -118,8 +119,10 @@ export function initGame(pattern: [number, number][]): GameState {
 
   // Заполняем все клетки (но плитки пока невидимы)
   let tilesCount = 0;
-  for (const [row, col] of pattern) {
-    board[row][col] = createTile(row, col, false);
+  for (let i = 0; i < pattern.length; i++) {
+    const [row, col] = pattern[i];
+    const tileNumber = numbers?.[i];
+    board[row][col] = createTile(row, col, false, tileNumber);
     tilesCount++;
   }
 
@@ -442,8 +445,8 @@ export function getSpawnBarProgress(state: GameState, now: number): number {
     // Бар заполняется: 0 → 1 за 0.5 секунд
     return Math.min(1, elapsed / SPAWN_BAR_FILL_DURATION);
   } else {
-    // waiting - бар на нуле
-    return 0;
+    // waiting - бар полный, ждём пока освободится место
+    return 1;
   }
 }
 
@@ -492,11 +495,9 @@ export function onSpawnComplete(state: GameState): GameState {
   };
 }
 
-// Форматирование времени
+// Форматирование времени (просто секунды)
 export function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return String(seconds);
 }
 
 // Очистка старых попапов (старше 500мс после появления)

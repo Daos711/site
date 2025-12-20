@@ -282,12 +282,16 @@ export function getRandomPattern(): { name: string; positions: Position[] } {
 
 // Тестовый паттерн: 6 плиток (3 пары) в центре поля
 // Удобно для тестирования механики и быстрого получения окна победы
-export function getTestPattern(): { name: string; positions: Position[] } {
-  // 6 плиток в центре: 2 ряда × 3 столбца
-  // Позиции: строки 4-5, столбцы 3-5
+// Пары расположены так, чтобы их можно было сразу убрать (на одной линии)
+export function getTestPattern(): { name: string; positions: Position[]; numbers?: number[] } {
+  // 6 плиток - 3 пары на одной строке, каждая пара рядом:
+  // [5][5] ... [3][7] ... [4][6]
+  // Все пары на строке 4, столбцы: 1-2, 4-5, 7-8
   const positions: Position[] = [
-    [4, 3], [4, 4], [4, 5],
-    [5, 3], [5, 4], [5, 5],
+    [4, 1], [4, 2],  // пара 1: две 5
+    [4, 4], [4, 5],  // пара 2: 3+7=10
+    [4, 7], [4, 8],  // пара 3: 4+6=10
   ];
-  return { name: "test_pattern", positions };
+  const numbers = [5, 5, 3, 7, 4, 6];
+  return { name: "test_pattern", positions, numbers };
 }
