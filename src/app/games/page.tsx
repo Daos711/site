@@ -6,9 +6,10 @@ const games = [
   {
     id: "digits",
     title: "Цифры",
-    description: "Головоломка с числами. Игра на логику и внимательность.",
+    description: "Головоломка с числами. Убирай пары: одинаковые или сумма 10.",
+    href: "/games/digits",
     icon: Grid3X3,
-    status: "coming-soon" as const,
+    status: "prototype" as const,
   },
 ];
 
@@ -26,6 +27,7 @@ export default function GamesPage() {
             key={game.id}
             title={game.title}
             description={game.description}
+            href={game.href}
             icon={game.icon}
             status={game.status}
           />
