@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   GameState,
   Tile,
@@ -24,12 +24,10 @@ export default function DigitsGamePage() {
   const [isPaused, setIsPaused] = useState(false);
   const [highlightedTiles, setHighlightedTiles] = useState<Set<number>>(new Set());
   const [pattern, setPattern] = useState<[number, number][]>([]);
-  const [patternName, setPatternName] = useState("");
 
   // Инициализация игры
   const startNewGame = useCallback(() => {
     const { name, positions } = getRandomPattern();
-    setPatternName(name);
     setPattern(positions as [number, number][]);
     setGame(initGame(positions as [number, number][]));
     setIsPaused(false);
@@ -109,21 +107,18 @@ export default function DigitsGamePage() {
   const isFilling = game.gameStatus === "filling";
 
   return (
-    <div className="min-h-screen" style={{ background: "rgb(252, 250, 248)" }}>
-      {/* Диагональные полоски на фоне */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-50"
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            60deg,
-            transparent,
-            transparent 7px,
-            rgb(240, 238, 235) 7px,
-            rgb(240, 238, 235) 8px
-          )`,
-        }}
-      />
-
+    <div
+      className="min-h-screen"
+      style={{
+        background: "white",
+        // Клетчатый фон как в школьной тетради
+        backgroundImage: `
+          linear-gradient(rgb(218, 236, 241) 1px, transparent 1px),
+          linear-gradient(90deg, rgb(218, 236, 241) 1px, transparent 1px)
+        `,
+        backgroundSize: "18px 18px",
+      }}
+    >
       <div className="relative max-w-4xl mx-auto px-4 py-6">
         {/* Заголовок */}
         <div className="flex items-center gap-4 mb-6">
@@ -139,106 +134,128 @@ export default function DigitsGamePage() {
           </h1>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Игровое поле */}
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Жёлтая рамка + игровое поле */}
           <div
-            className="rounded-lg shadow-lg"
             style={{
-              background: "rgb(71, 74, 72)",
-              padding: "3px",
+              // Внешняя граница
+              border: "1px solid rgb(162, 140, 40)",
+              padding: "8px",
+              background: "rgb(247, 204, 74)", // Жёлтая рамка
             }}
           >
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-                gap: "3px", // Оригинал: 3px при плитке 64px
-                width: "min(540px, calc(100vw - 60px))",
-                aspectRatio: "1",
-              }}
-            >
-              {game.board.flat().map((tile, index) => {
-                const row = Math.floor(index / BOARD_SIZE);
-                const col = index % BOARD_SIZE;
+            {/* Внутренняя граница */}
+            <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
+              {/* Игровое поле с диагональным фоном */}
+              <div
+                style={{
+                  background: "rgb(252, 250, 248)",
+                  backgroundImage: `repeating-linear-gradient(
+                    60deg,
+                    transparent,
+                    transparent 7px,
+                    rgb(240, 238, 235) 7px,
+                    rgb(240, 238, 235) 8px
+                  )`,
+                  padding: "3px",
+                }}
+              >
+                <div
+                  className="grid"
+                  style={{
+                    gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
+                    gap: "3px",
+                    width: "min(500px, calc(100vw - 80px))",
+                    aspectRatio: "1",
+                  }}
+                >
+                  {game.board.flat().map((tile, index) => {
+                    const row = Math.floor(index / BOARD_SIZE);
+                    const col = index % BOARD_SIZE;
 
-                if (!tile || !tile.visible) {
-                  return (
-                    <div
-                      key={`empty-${row}-${col}`}
-                      style={{ background: "rgb(220, 218, 215)", aspectRatio: "1" }}
-                    />
-                  );
-                }
+                    if (!tile || !tile.visible) {
+                      return (
+                        <div
+                          key={`empty-${row}-${col}`}
+                          style={{
+                            background: "rgb(252, 250, 248)",
+                            aspectRatio: "1",
+                          }}
+                        />
+                      );
+                    }
 
-                const isSelected = game.selectedTile?.id === tile.id;
-                const isHighlighted = highlightedTiles.has(tile.id);
+                    const isSelected = game.selectedTile?.id === tile.id;
+                    const isHighlighted = highlightedTiles.has(tile.id);
 
-                // Цвета как в оригинале: выделение = оранжевый фон + светлый текст
-                const bgColor = isSelected ? "rgb(255, 139, 2)" : TILE_COLORS[tile.number];
-                const textColor = isSelected ? "rgb(255, 255, 202)" : "black";
+                    // Цвета как в оригинале: выделение = оранжевый фон + светлый текст
+                    const bgColor = isSelected ? "rgb(255, 139, 2)" : TILE_COLORS[tile.number];
+                    const textColor = isSelected ? "rgb(255, 255, 202)" : "black";
 
-                // Bevel эффект: тёмная грань (40% от цвета) снизу и справа
-                const baseColor = isSelected ? [255, 139, 2] : getTileRGB(tile.number);
-                const darkColor = `rgb(${Math.floor(baseColor[0] * 0.4)}, ${Math.floor(baseColor[1] * 0.4)}, ${Math.floor(baseColor[2] * 0.4)})`;
+                    // Bevel эффект: тёмная грань (40% от цвета) снизу и справа
+                    const baseColor = isSelected ? [255, 139, 2] : getTileRGB(tile.number);
+                    const darkColor = `rgb(${Math.floor(baseColor[0] * 0.4)}, ${Math.floor(baseColor[1] * 0.4)}, ${Math.floor(baseColor[2] * 0.4)})`;
 
-                return (
-                  <button
-                    key={tile.id}
-                    onClick={() => handleTileClick(tile)}
-                    disabled={isPaused || isFilling}
-                    className={`
-                      flex items-center justify-center relative
-                      ${isHighlighted ? "ring-2 ring-green-400" : ""}
-                      ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer"}
-                    `}
-                    style={{
-                      background: bgColor,
-                      color: textColor,
-                      aspectRatio: "1",
-                      fontFamily: "'Open Sans', system-ui, sans-serif",
-                      fontWeight: 600,
-                      fontSize: "clamp(20px, 3.8vw, 36px)",
-                      border: "1px solid rgb(71, 74, 72)",
-                      boxShadow: `inset -3px -3px 0 ${darkColor}`,
-                    }}
-                  >
-                    {tile.number}
-                  </button>
-                );
-              })}
+                    return (
+                      <button
+                        key={tile.id}
+                        onClick={() => handleTileClick(tile)}
+                        disabled={isPaused || isFilling}
+                        className={`
+                          flex items-center justify-center
+                          ${isHighlighted ? "ring-2 ring-green-400" : ""}
+                          ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer"}
+                        `}
+                        style={{
+                          background: bgColor,
+                          color: textColor,
+                          aspectRatio: "1",
+                          fontFamily: "'Open Sans', system-ui, sans-serif",
+                          fontWeight: 400,
+                          fontSize: "clamp(18px, 3.5vw, 32px)",
+                          border: "1px solid rgb(71, 74, 72)",
+                          boxShadow: `inset -2px -2px 0 ${darkColor}`,
+                        }}
+                      >
+                        {tile.number}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Панель справа */}
+          {/* Панель справа - синяя как в оригинале */}
           <div
-            className="flex-1 rounded-2xl p-6 shadow-lg"
-            style={{ background: "rgb(70, 130, 180)" }}
+            className="flex-1 p-5 min-w-[200px]"
+            style={{ background: "rgb(62, 157, 203)" }}
           >
             {/* Счёт */}
-            <div className="text-center mb-6">
-              <div className="text-5xl font-bold text-white">{game.score}</div>
-              <div className="text-white/70 text-sm">Очки</div>
+            <div className="text-center mb-5">
+              <div className="text-4xl font-bold text-white">{game.score}</div>
+              <div className="text-white/80 text-sm">Очки</div>
             </div>
 
             {/* Таймер */}
-            <div className="text-center mb-6">
-              <div className="text-4xl font-bold font-mono text-white">
+            <div className="text-center mb-5">
+              <div className="text-3xl font-bold font-mono text-white">
                 {formatTime(game.timeLeft)}
               </div>
-              <div className="text-white/70 text-sm">Время</div>
+              <div className="text-white/80 text-sm">Время</div>
             </div>
 
             {/* Плиток осталось */}
-            <div className="text-center mb-6">
-              <div className="text-3xl font-bold text-white">{game.tilesCount}</div>
-              <div className="text-white/70 text-sm">Плиток</div>
+            <div className="text-center mb-5">
+              <div className="text-2xl font-bold text-white">{game.tilesCount}</div>
+              <div className="text-white/80 text-sm">Плиток</div>
             </div>
 
             {/* Полоса прогресса спавна */}
             {isPlaying && (
-              <div className="mb-6">
-                <div className="text-white/70 text-xs mb-1">Новая плитка через:</div>
-                <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+              <div className="mb-5">
+                <div className="text-white/80 text-xs mb-1">Новая плитка через:</div>
+                <div className="h-3 bg-white/20 overflow-hidden">
                   <div
                     className="h-full bg-yellow-400 transition-all duration-1000"
                     style={{ width: `${game.spawnProgress}%` }}
@@ -252,23 +269,23 @@ export default function DigitsGamePage() {
               {isPlaying && (
                 <button
                   onClick={togglePause}
-                  className="p-3 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
+                  className="p-3 bg-white/20 text-white hover:bg-white/30 transition-colors"
                   title={isPaused ? "Продолжить" : "Пауза"}
                 >
-                  {isPaused ? <Play size={24} /> : <Pause size={24} />}
+                  {isPaused ? <Play size={22} /> : <Pause size={22} />}
                 </button>
               )}
               <button
                 onClick={startNewGame}
-                className="p-3 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors"
+                className="p-3 bg-white/20 text-white hover:bg-white/30 transition-colors"
                 title="Новая игра"
               >
-                <RotateCcw size={24} />
+                <RotateCcw size={22} />
               </button>
             </div>
 
             {/* Подсказка */}
-            <div className="mt-6 text-center text-white/60 text-xs">
+            <div className="mt-5 text-center text-white/70 text-xs">
               <p>Убирай пары: одинаковые числа</p>
               <p>или сумма = 10</p>
             </div>
@@ -278,14 +295,14 @@ export default function DigitsGamePage() {
         {/* Оверлей паузы */}
         {isPaused && isPlaying && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="text-center bg-white rounded-2xl p-8 shadow-2xl">
+            <div className="text-center bg-white p-8 shadow-2xl">
               <div className="text-3xl font-bold mb-4" style={{ color: "rgb(71, 74, 72)" }}>
                 Пауза
               </div>
               <button
                 onClick={togglePause}
-                className="px-6 py-3 rounded-xl font-medium text-white transition-colors"
-                style={{ background: "rgb(70, 130, 180)" }}
+                className="px-6 py-3 font-medium text-white transition-colors"
+                style={{ background: "rgb(62, 157, 203)" }}
               >
                 Продолжить
               </button>
@@ -296,7 +313,7 @@ export default function DigitsGamePage() {
         {/* Оверлей победы */}
         {game.gameStatus === "won" && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="text-center bg-white rounded-2xl p-8 shadow-2xl">
+            <div className="text-center bg-white p-8 shadow-2xl">
               <div className="text-4xl font-bold mb-2 text-green-500">Победа!</div>
               <div className="text-2xl mb-4" style={{ color: "rgb(71, 74, 72)" }}>
                 Очки: {game.score}
@@ -306,8 +323,8 @@ export default function DigitsGamePage() {
               </div>
               <button
                 onClick={startNewGame}
-                className="px-6 py-3 rounded-xl font-medium text-white transition-colors"
-                style={{ background: "rgb(70, 130, 180)" }}
+                className="px-6 py-3 font-medium text-white transition-colors"
+                style={{ background: "rgb(62, 157, 203)" }}
               >
                 Играть снова
               </button>
@@ -318,7 +335,7 @@ export default function DigitsGamePage() {
         {/* Оверлей поражения */}
         {game.gameStatus === "lost" && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="text-center bg-white rounded-2xl p-8 shadow-2xl">
+            <div className="text-center bg-white p-8 shadow-2xl">
               <div className="text-4xl font-bold mb-2 text-red-500">Время вышло!</div>
               <div className="text-2xl mb-4" style={{ color: "rgb(71, 74, 72)" }}>
                 Очки: {game.score}
@@ -328,8 +345,8 @@ export default function DigitsGamePage() {
               </div>
               <button
                 onClick={startNewGame}
-                className="px-6 py-3 rounded-xl font-medium text-white transition-colors"
-                style={{ background: "rgb(70, 130, 180)" }}
+                className="px-6 py-3 font-medium text-white transition-colors"
+                style={{ background: "rgb(62, 157, 203)" }}
               >
                 Попробовать снова
               </button>
