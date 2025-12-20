@@ -30,6 +30,10 @@ export interface MovingTile {
   duration: number; // мс на всё движение
   penalty: number; // штраф за перемещение
   direction: Direction;
+  // Для динамического создания попапов (как в Python)
+  lastCellRow: number; // последняя целая ячейка
+  lastCellCol: number;
+  cellsLeftCount: number; // сколько ячеек покинуто
 }
 
 export interface GameState {
@@ -535,29 +539,10 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
   const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
   newBoard[tile.row][tile.col] = null;
 
-  // Создаём попапы с задержкой = время достижения каждой ячейки
   const now = Date.now();
   const movingTileId = movingTileIdCounter++;
-  const newPopups: ScorePopup[] = [];
 
-  const stepRow = target.row > tile.row ? 1 : target.row < tile.row ? -1 : 0;
-  const stepCol = target.col > tile.col ? 1 : target.col < tile.col ? -1 : 0;
-
-  for (let i = 0; i < cellsMoved; i++) {
-    const popupRow = tile.row + stepRow * i;
-    const popupCol = tile.col + stepCol * i;
-
-    newPopups.push({
-      id: popupIdCounter++,
-      value: i + 1,
-      row: popupRow,
-      col: popupCol,
-      negative: true,
-      createdAt: now + i * MS_PER_CELL,
-      movingTileId, // связь с движущейся плиткой
-    });
-  }
-
+  // Попапы создаются динамически в updateMovingTiles когда плитка пересекает ячейку
   const newMovingTile: MovingTile = {
     id: movingTileId,
     tile,
@@ -569,6 +554,10 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
     duration,
     penalty,
     direction,
+    // Инициализация для динамических попапов
+    lastCellRow: tile.row,
+    lastCellCol: tile.col,
+    cellsLeftCount: 0,
   };
 
   // Сбрасываем выделение только если это была выбранная плитка
@@ -578,7 +567,6 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
     ...state,
     board: newBoard,
     selectedTile: newSelectedTile,
-    popups: [...state.popups, ...newPopups],
     movingTiles: [...state.movingTiles, newMovingTile],
   };
 }
@@ -716,17 +704,13 @@ function stopMovingTile(state: GameState, mtId: number, stopPos: { row: number; 
 
   const newMovingTiles = state.movingTiles.filter(m => m.id !== mtId);
 
-  // Удаляем попапы этой плитки которые ещё не появились
-  const newPopups = state.popups.filter(p =>
-    p.movingTileId !== mtId || p.createdAt <= now
-  );
+  // Попапы теперь создаются динамически, поэтому ничего удалять не нужно
 
   return {
     ...state,
     board: newBoard,
     score: Math.max(0, state.score - penalty),
     movingTiles: newMovingTiles,
-    popups: newPopups,
   };
 }
 
@@ -734,6 +718,44 @@ function stopMovingTile(state: GameState, mtId: number, stopPos: { row: number; 
 export function updateMovingTiles(state: GameState): GameState {
   const now = Date.now();
   let newState = state;
+  const newPopups: ScorePopup[] = [];
+
+  // Динамическое создание попапов когда плитка покидает ячейку
+  const updatedMovingTiles = newState.movingTiles.map(mt => {
+    const pos = getMovingTilePosition(mt, now);
+    const currentCellRow = Math.floor(pos.row);
+    const currentCellCol = Math.floor(pos.col);
+
+    // Проверяем, покинула ли плитка свою последнюю ячейку
+    if (currentCellRow !== mt.lastCellRow || currentCellCol !== mt.lastCellCol) {
+      // Плитка покинула ячейку - создаём popup там
+      const newCellsLeftCount = mt.cellsLeftCount + 1;
+
+      newPopups.push({
+        id: popupIdCounter++,
+        value: newCellsLeftCount,
+        row: mt.lastCellRow,
+        col: mt.lastCellCol,
+        negative: true,
+        createdAt: now,
+        movingTileId: mt.id,
+      });
+
+      return {
+        ...mt,
+        lastCellRow: currentCellRow,
+        lastCellCol: currentCellCol,
+        cellsLeftCount: newCellsLeftCount,
+      };
+    }
+    return mt;
+  });
+
+  newState = {
+    ...newState,
+    movingTiles: updatedMovingTiles,
+    popups: [...newState.popups, ...newPopups],
+  };
 
   // Сначала проверяем столкновения между движущимися плитками
   const movingPositions = newState.movingTiles.map(mt => ({
