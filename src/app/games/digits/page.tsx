@@ -13,6 +13,7 @@ import {
   revealNextTile,
   TILE_COLORS,
   BOARD_SIZE,
+  getTileRGB,
 } from "@/lib/digits-game";
 import { getRandomPattern } from "@/lib/digits-patterns";
 import { RotateCcw, Play, Pause, ArrowLeft } from "lucide-react";
@@ -164,7 +165,6 @@ export default function DigitsGamePage() {
                   return (
                     <div
                       key={`empty-${row}-${col}`}
-                      className="rounded-sm"
                       style={{ background: "rgb(220, 218, 215)", aspectRatio: "1" }}
                     />
                   );
@@ -173,25 +173,33 @@ export default function DigitsGamePage() {
                 const isSelected = game.selectedTile?.id === tile.id;
                 const isHighlighted = highlightedTiles.has(tile.id);
 
+                // Цвета как в оригинале: выделение = оранжевый фон + светлый текст
+                const bgColor = isSelected ? "rgb(255, 139, 2)" : TILE_COLORS[tile.number];
+                const textColor = isSelected ? "rgb(255, 255, 202)" : "black";
+
+                // Bevel эффект: тёмная грань (40% от цвета) снизу и справа
+                const baseColor = isSelected ? [255, 139, 2] : getTileRGB(tile.number);
+                const darkColor = `rgb(${Math.floor(baseColor[0] * 0.4)}, ${Math.floor(baseColor[1] * 0.4)}, ${Math.floor(baseColor[2] * 0.4)})`;
+
                 return (
                   <button
                     key={tile.id}
                     onClick={() => handleTileClick(tile)}
                     disabled={isPaused || isFilling}
                     className={`
-                      rounded-sm flex items-center justify-center
-                      transition-all duration-150
-                      ${isSelected ? "scale-105 ring-2 ring-white shadow-lg z-10" : ""}
+                      flex items-center justify-center relative
                       ${isHighlighted ? "ring-2 ring-green-400" : ""}
-                      ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer hover:brightness-110"}
+                      ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer"}
                     `}
                     style={{
-                      background: TILE_COLORS[tile.number],
-                      color: "black",
+                      background: bgColor,
+                      color: textColor,
                       aspectRatio: "1",
-                      fontFamily: "'Digits Font', sans-serif",
-                      fontWeight: 700,
-                      fontSize: "clamp(22px, 4vw, 38px)",
+                      fontFamily: "'Open Sans', system-ui, sans-serif",
+                      fontWeight: 600,
+                      fontSize: "clamp(20px, 3.8vw, 36px)",
+                      border: "1px solid rgb(71, 74, 72)",
+                      boxShadow: `inset -3px -3px 0 ${darkColor}`,
                     }}
                   >
                     {tile.number}

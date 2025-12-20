@@ -36,6 +36,23 @@ export const TILE_COLORS: Record<number, string> = {
   9: 'rgb(255, 152, 123)', // оранжевый
 };
 
+// RGB компоненты для bevel эффекта
+export const TILE_RGB: Record<number, [number, number, number]> = {
+  1: [250, 130, 124],
+  2: [98, 120, 255],
+  3: [249, 204, 122],
+  4: [127, 254, 138],
+  5: [251, 94, 223],
+  6: [126, 253, 205],
+  7: [239, 255, 127],
+  8: [174, 121, 251],
+  9: [255, 152, 123],
+};
+
+export function getTileRGB(num: number): [number, number, number] {
+  return TILE_RGB[num] || [200, 200, 200];
+}
+
 let tileIdCounter = 0;
 
 // Создать новую плитку
