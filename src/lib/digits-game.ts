@@ -5,6 +5,7 @@ export interface Tile {
   number: number;
   row: number;
   col: number;
+  visible: boolean; // для анимации появления
 }
 
 export interface GameState {
@@ -12,41 +13,54 @@ export interface GameState {
   score: number;
   timeLeft: number;
   selectedTile: Tile | null;
-  gameStatus: 'idle' | 'playing' | 'won' | 'lost';
+  gameStatus: 'filling' | 'playing' | 'won' | 'lost' | 'paused';
   tilesCount: number;
+  visibleTilesCount: number;
+  spawnProgress: number; // 0-100 для полосы прогресса
 }
 
-const BOARD_SIZE = 10;
+export const BOARD_SIZE = 10;
 const GAME_TIME = 300; // 5 минут
+const SPAWN_INTERVAL = 10; // секунд
+
+// Цвета плиток (RGB)
+export const TILE_COLORS: Record<number, string> = {
+  1: 'rgb(250, 130, 124)', // розовый/красный
+  2: 'rgb(98, 120, 255)',  // синий
+  3: 'rgb(249, 204, 122)', // жёлтый
+  4: 'rgb(127, 254, 138)', // зелёный
+  5: 'rgb(251, 94, 223)',  // пурпурный
+  6: 'rgb(126, 253, 205)', // бирюзовый
+  7: 'rgb(239, 255, 127)', // жёлто-зелёный
+  8: 'rgb(174, 121, 251)', // фиолетовый
+  9: 'rgb(255, 152, 123)', // оранжевый
+};
 
 let tileIdCounter = 0;
 
 // Создать новую плитку
-function createTile(row: number, col: number): Tile {
+function createTile(row: number, col: number, visible = true): Tile {
   return {
     id: tileIdCounter++,
     number: Math.floor(Math.random() * 9) + 1, // 1-9
     row,
     col,
+    visible,
   };
 }
 
-// Инициализация игры
-export function initGame(): GameState {
+// Инициализация игры с полным заполнением
+export function initGame(pattern: [number, number][]): GameState {
   tileIdCounter = 0;
   const board: (Tile | null)[][] = Array(BOARD_SIZE)
     .fill(null)
     .map(() => Array(BOARD_SIZE).fill(null));
 
-  // Заполняем начальными плитками (примерно 30-40%)
+  // Заполняем все клетки (но плитки пока невидимы)
   let tilesCount = 0;
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      if (Math.random() < 0.35) {
-        board[row][col] = createTile(row, col);
-        tilesCount++;
-      }
-    }
+  for (const [row, col] of pattern) {
+    board[row][col] = createTile(row, col, false);
+    tilesCount++;
   }
 
   return {
@@ -54,8 +68,36 @@ export function initGame(): GameState {
     score: 0,
     timeLeft: GAME_TIME,
     selectedTile: null,
-    gameStatus: 'playing',
+    gameStatus: 'filling', // начинаем с анимации заполнения
     tilesCount,
+    visibleTilesCount: 0,
+    spawnProgress: 0,
+  };
+}
+
+// Показать следующую плитку (для анимации заполнения)
+export function revealNextTile(state: GameState, pattern: [number, number][]): GameState {
+  const nextIndex = state.visibleTilesCount;
+
+  if (nextIndex >= pattern.length) {
+    // Все плитки показаны, начинаем игру
+    return {
+      ...state,
+      gameStatus: 'playing',
+    };
+  }
+
+  const [row, col] = pattern[nextIndex];
+  const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
+
+  if (newBoard[row][col]) {
+    newBoard[row][col]!.visible = true;
+  }
+
+  return {
+    ...state,
+    board: newBoard,
+    visibleTilesCount: state.visibleTilesCount + 1,
   };
 }
 
@@ -168,7 +210,7 @@ export function spawnTile(state: GameState): GameState {
 
   // Выбрать случайную пустую клетку
   const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-  const newTile = createTile(randomCell.row, randomCell.col);
+  const newTile = createTile(randomCell.row, randomCell.col, true);
 
   const newBoard = state.board.map((row) => [...row]);
   newBoard[randomCell.row][randomCell.col] = newTile;
@@ -177,6 +219,7 @@ export function spawnTile(state: GameState): GameState {
     ...state,
     board: newBoard,
     tilesCount: state.tilesCount + 1,
+    spawnProgress: 0, // сброс прогресса
   };
 }
 
@@ -185,6 +228,7 @@ export function tick(state: GameState): GameState {
   if (state.gameStatus !== 'playing') return state;
 
   const newTimeLeft = state.timeLeft - 1;
+  const newSpawnProgress = Math.min(100, state.spawnProgress + (100 / SPAWN_INTERVAL));
 
   if (newTimeLeft <= 0) {
     return {
@@ -197,6 +241,7 @@ export function tick(state: GameState): GameState {
   return {
     ...state,
     timeLeft: newTimeLeft,
+    spawnProgress: newSpawnProgress,
   };
 }
 
