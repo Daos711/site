@@ -107,19 +107,50 @@ export default function DigitsGamePage() {
   const isFilling = game.gameStatus === "filling";
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: "white",
-        // Клетчатый фон как в школьной тетради
-        backgroundImage: `
-          linear-gradient(rgb(218, 236, 241) 1px, transparent 1px),
-          linear-gradient(90deg, rgb(218, 236, 241) 1px, transparent 1px)
-        `,
-        backgroundSize: "18px 18px",
-      }}
-    >
-      <div className="relative max-w-4xl mx-auto px-4 py-6">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Математический фон */}
+      <div
+        className="fixed inset-0 pointer-events-none select-none overflow-hidden"
+        style={{
+          background: "linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)",
+        }}
+      >
+        {/* Математические символы на фоне */}
+        <div
+          className="absolute inset-0 opacity-10 text-blue-300"
+          style={{
+            fontFamily: "monospace",
+            fontSize: "14px",
+            lineHeight: "1.8",
+            whiteSpace: "pre-wrap",
+            padding: "20px",
+          }}
+        >
+          {`∑ ∫ π √ ∞ ≈ ± × ÷ = ≠ < > ≤ ≥ α β γ δ ε θ λ μ σ φ ω Δ Σ Π
+f(x) = ax² + bx + c    lim x→∞    d/dx    ∂/∂x    ∇·F    ∮
+E = mc²    F = ma    PV = nRT    ∫₀^∞ e^(-x²) dx = √π/2
+sin²θ + cos²θ = 1    e^(iπ) + 1 = 0    ∑(n=1→∞) 1/n²  = π²/6
+∂²u/∂t² = c²∇²u    det(A) = ∑ sgn(σ)∏aᵢσ(ᵢ)    rank(A) ≤ min(m,n)
+∫∫∫ ρ dV    curl F = ∇×F    div F = ∇·F    grad f = ∇f
+λ₁ + λ₂ + ... + λₙ = tr(A)    Ax = λx    ||v|| = √(v·v)
+P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
+        </div>
+      </div>
+
+      {/* Клетчатый фон поверх */}
+      <div
+        className="relative"
+        style={{
+          background: "white",
+          backgroundImage: `
+            linear-gradient(rgb(218, 236, 241) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(218, 236, 241) 1px, transparent 1px)
+          `,
+          backgroundSize: "18px 18px",
+          minHeight: "100vh",
+        }}
+      >
+        <div className="relative max-w-4xl mx-auto px-4 py-6">
         {/* Заголовок */}
         <div className="flex items-center gap-4 mb-6">
           <Link
@@ -144,13 +175,13 @@ export default function DigitsGamePage() {
             }}
           >
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
-              {/* Игровое поле - диагональные полосы 60° */}
+              {/* Игровое поле - диагональные полосы 60° от горизонтали (снизу-слева вверх-вправо) */}
               {/* Расчёт: 10*tile + 11*gap. При tile=48, gap=2: 10*48 + 11*2 = 480+22 = 502px */}
               <div
                 style={{
                   background: "rgb(252, 250, 248)",
                   backgroundImage: `repeating-linear-gradient(
-                    120deg,
+                    30deg,
                     rgb(240, 238, 235),
                     rgb(240, 238, 235) 1px,
                     transparent 1px,
@@ -341,6 +372,7 @@ export default function DigitsGamePage() {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

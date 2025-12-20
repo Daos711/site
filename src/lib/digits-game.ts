@@ -206,7 +206,12 @@ export function selectTile(state: GameState, tile: Tile): GameState {
   }
 
   // Пробуем удалить пару
-  return removeTiles(state, state.selectedTile, tile);
+  if (canRemoveTiles(state.board, state.selectedTile, tile)) {
+    return removeTiles(state, state.selectedTile, tile);
+  }
+
+  // Если не удалось удалить — просто выбираем новую плитку
+  return { ...state, selectedTile: tile };
 }
 
 // Добавить новую плитку (спавн)
