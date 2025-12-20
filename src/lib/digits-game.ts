@@ -399,6 +399,30 @@ export function getTargetPosition(board: (Tile | null)[][], tile: Tile, directio
   return { row, col };
 }
 
+// Получить путь движения плитки
+function getMovePath(tile: Tile, target: { row: number; col: number }): { row: number; col: number }[] {
+  const path: { row: number; col: number }[] = [];
+  const { row: r1, col: c1 } = tile;
+  const { row: r2, col: c2 } = target;
+
+  if (r1 === r2) {
+    // Горизонтальное движение
+    const step = c2 > c1 ? 1 : -1;
+    // Пропускаем стартовую позицию (там плитка)
+    for (let c = c1 + step; c !== c2 + step; c += step) {
+      path.push({ row: r1, col: c });
+    }
+  } else if (c1 === c2) {
+    // Вертикальное движение
+    const step = r2 > r1 ? 1 : -1;
+    for (let r = r1 + step; r !== r2 + step; r += step) {
+      path.push({ row: r, col: c1 });
+    }
+  }
+
+  return path;
+}
+
 // Переместить плитку и вычесть очки
 export function moveTile(state: GameState, tile: Tile, direction: Direction): GameState {
   if (state.gameStatus !== 'playing') return state;
@@ -430,10 +454,23 @@ export function moveTile(state: GameState, tile: Tile, direction: Direction): Ga
   // Ставим плитку на новую позицию
   newBoard[target.row][target.col] = movedTile;
 
+  // Создаём отрицательные попапы вдоль пути
+  const path = getMovePath(tile, target);
+  const now = Date.now();
+  const newPopups: ScorePopup[] = path.map((pos, index) => ({
+    id: popupIdCounter++,
+    value: index + 1,
+    row: pos.row,
+    col: pos.col,
+    negative: true,
+    createdAt: now + index * 80,
+  }));
+
   return {
     ...state,
     board: newBoard,
     score: Math.max(0, state.score - penalty),
     selectedTile: null,
+    popups: [...state.popups, ...newPopups],
   };
 }
