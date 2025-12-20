@@ -176,17 +176,16 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
           >
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
               {/* Игровое поле - диагональные линии 60° от горизонтали */}
-              {/* Python: линия 1px каждые 8px, снизу-слева вверх-вправо */}
-              {/* Расчёт: 10*tile + 11*gap. При tile=48, gap=2: 10*48 + 11*2 = 480+22 = 502px */}
+              {/* Пропорции: STRIPE_SPACING/TILE = 8/64 = 12.5%, при tile=48 → spacing=6 */}
               <div
                 style={{
                   background: "rgb(252, 250, 248)",
                   backgroundImage: `repeating-linear-gradient(
                     -60deg,
                     transparent,
-                    transparent 7px,
-                    rgb(240, 238, 235) 7px,
-                    rgb(240, 238, 235) 8px
+                    transparent 5px,
+                    rgb(240, 238, 235) 5px,
+                    rgb(240, 238, 235) 6px
                   )`,
                   width: "502px",
                   height: "502px",
