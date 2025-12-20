@@ -172,27 +172,34 @@ function DigitsGamePage() {
   // Счётчик для перерисовки анимаций
   const [, forceUpdate] = useState(0);
 
-  // Анимация движения плиток и попапов
+  // Анимация движения плиток, попапов и прогресс-бара спавна
   useEffect(() => {
     const hasMovingTiles = (game?.movingTiles?.length ?? 0) > 0;
     const hasPopups = (game?.popups?.length ?? 0) > 0;
+    const hasSpawnBar = game?.spawnTimerRunning && game?.gameStatus === 'playing' && !isPaused;
 
-    if (!hasMovingTiles && !hasPopups) return;
+    if (!hasMovingTiles && !hasPopups && !hasSpawnBar) return;
 
     let animationId: number;
 
     const animate = () => {
       // Обновляем состояние - завершаем плитки которые доехали
-      setGame((prev) => (prev ? updateMovingTiles(prev) : prev));
+      setGame((prev) => {
+        if (!prev) return prev;
+        if (prev.movingTiles.length > 0) {
+          return updateMovingTiles(prev);
+        }
+        return prev;
+      });
 
-      // Перерисовываем для обновления позиций и попапов
+      // Перерисовываем для обновления позиций, попапов и прогресс-бара
       forceUpdate((n) => n + 1);
       animationId = requestAnimationFrame(animate);
     };
 
     animationId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationId);
-  }, [game?.movingTiles?.length, game?.popups?.length]);
+  }, [game?.movingTiles?.length, game?.popups?.length, game?.spawnTimerRunning, game?.gameStatus, isPaused]);
 
   // Позиции стрелок для выбранной плитки (динамически с учётом движущихся)
   const now = Date.now();
@@ -503,8 +510,8 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
               <div className="text-white/80 text-sm">Плиток</div>
             </div>
 
-            {/* Полоса прогресса спавна */}
-            {isPlaying && game.spawnTimerRunning && (
+            {/* Полоса прогресса спавна - всегда видна во время игры */}
+            {isPlaying && (
               <div className="mb-5">
                 <div className="text-white/80 text-xs mb-1">Новая плитка:</div>
                 <div
@@ -515,15 +522,14 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                     border: "1px solid rgba(255,255,255,0.3)",
                   }}
                 >
-                  {/* Прогресс-бар с градиентом (выравнивание справа - пустеет справа налево) */}
+                  {/* Прогресс-бар с градиентом (left-0 = уменьшается справа налево) */}
                   <div
-                    className="h-full absolute right-0 top-0"
+                    className="h-full absolute left-0 top-0"
                     style={{
-                      width: `${getSpawnBarProgress(game, now) * 100}%`,
+                      width: `${(game.spawnTimerRunning ? getSpawnBarProgress(game, now) : 1) * 100}%`,
                       background: "linear-gradient(180deg, #FFE066 0%, #F0C030 50%, #E0A820 100%)",
                       borderRadius: "9px",
                       boxShadow: "inset 0 1px 2px rgba(255,255,255,0.4)",
-                      transition: game.spawnBarPhase === 'filling' ? 'width 0.05s linear' : 'none',
                     }}
                   />
                 </div>
