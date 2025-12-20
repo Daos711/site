@@ -314,8 +314,11 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
     createdAt: now + index * 80, // 80ms задержка между появлениями
   }));
 
-  // Запускаем таймер спавна при первом удалении
+  // Логика таймера спавна:
+  // 1. Если таймер не запущен - запускаем (первое удаление)
+  // 2. Если бар был в 'waiting' (ждал места для спавна) - сбрасываем на полный
   const shouldStartTimer = !state.spawnTimerRunning;
+  const shouldResetBar = state.spawnBarPhase === 'waiting';
 
   return {
     ...state,
@@ -325,10 +328,10 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
     tilesCount: newTilesCount,
     gameStatus: newTilesCount === 0 ? 'won' : state.gameStatus,
     popups: [...state.popups, ...newPopups],
-    // Запускаем таймер спавна
+    // Запускаем/сбрасываем таймер спавна
     spawnTimerRunning: true,
-    spawnBarPhase: shouldStartTimer ? 'emptying' : state.spawnBarPhase,
-    spawnBarPhaseStart: shouldStartTimer ? Date.now() : state.spawnBarPhaseStart,
+    spawnBarPhase: (shouldStartTimer || shouldResetBar) ? 'emptying' : state.spawnBarPhase,
+    spawnBarPhaseStart: (shouldStartTimer || shouldResetBar) ? Date.now() : state.spawnBarPhaseStart,
   };
 }
 

@@ -23,13 +23,15 @@ import {
   Direction,
   getSpawnBarProgress,
   updateSpawnBar,
-  SPAWN_BAR_EMPTY_DURATION,
-  SPAWN_BAR_FILL_DURATION,
 } from "@/lib/digits-game";
 import { getRandomPattern, getTestPattern } from "@/lib/digits-patterns";
 import { RotateCcw, Play, Pause, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { StartMenu } from "./components/StartMenu";
+import { ResultWindow } from "./components/ResultWindow";
+
+type GameScreen = "menu" | "playing" | "result";
 
 // Обёртка для страницы с Suspense (для useSearchParams)
 export default function DigitsGamePageWrapper() {
@@ -44,6 +46,7 @@ function DigitsGamePage() {
   const searchParams = useSearchParams();
   const isTestMode = searchParams.get("test") === "true";
 
+  const [screen, setScreen] = useState<GameScreen>("menu");
   const [game, setGame] = useState<GameState | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [highlightedTiles, setHighlightedTiles] = useState<Set<number>>(new Set());
@@ -51,15 +54,17 @@ function DigitsGamePage() {
 
   // Инициализация игры
   const startNewGame = useCallback(() => {
-    const { name, positions } = isTestMode ? getTestPattern() : getRandomPattern();
+    const { positions } = isTestMode ? getTestPattern() : getRandomPattern();
     setPattern(positions as [number, number][]);
     setGame(initGame(positions as [number, number][]));
     setIsPaused(false);
+    setScreen("playing");
   }, [isTestMode]);
 
-  useEffect(() => {
-    startNewGame();
-  }, [startNewGame]);
+  const goToMenu = useCallback(() => {
+    setScreen("menu");
+    setGame(null);
+  }, []);
 
   // Анимация заполнения поля (25ms на 1 плитку как в оригинале)
   useEffect(() => {
@@ -210,6 +215,11 @@ function DigitsGamePage() {
   const togglePause = useCallback(() => {
     setIsPaused((prev) => !prev);
   }, []);
+
+  // Стартовое меню
+  if (screen === "menu") {
+    return <StartMenu onStart={startNewGame} />;
+  }
 
   if (!game) return null;
 
@@ -582,48 +592,15 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
           </div>
         )}
 
-        {/* Оверлей победы */}
-        {game.gameStatus === "won" && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="text-center bg-white p-8 shadow-2xl">
-              <div className="text-4xl font-bold mb-2 text-green-500">Победа!</div>
-              <div className="text-2xl mb-4" style={{ color: "rgb(71, 74, 72)" }}>
-                Очки: {game.score}
-              </div>
-              <div className="text-sm mb-6 text-gray-500">
-                Осталось времени: {formatTime(game.timeLeft)}
-              </div>
-              <button
-                onClick={startNewGame}
-                className="px-6 py-3 font-medium text-white transition-colors"
-                style={{ background: "rgb(62, 157, 203)" }}
-              >
-                Играть снова
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Оверлей поражения */}
-        {game.gameStatus === "lost" && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="text-center bg-white p-8 shadow-2xl">
-              <div className="text-4xl font-bold mb-2 text-red-500">Время вышло!</div>
-              <div className="text-2xl mb-4" style={{ color: "rgb(71, 74, 72)" }}>
-                Очки: {game.score}
-              </div>
-              <div className="text-sm mb-6 text-gray-500">
-                Осталось плиток: {game.tilesCount}
-              </div>
-              <button
-                onClick={startNewGame}
-                className="px-6 py-3 font-medium text-white transition-colors"
-                style={{ background: "rgb(62, 157, 203)" }}
-              >
-                Попробовать снова
-              </button>
-            </div>
-          </div>
+        {/* Окно результатов */}
+        {(game.gameStatus === "won" || game.gameStatus === "lost") && (
+          <ResultWindow
+            gameScore={game.score}
+            remainingTime={game.timeLeft}
+            onNewGame={startNewGame}
+            onMenu={goToMenu}
+            isWin={game.gameStatus === "won"}
+          />
         )}
         </div>
       </div>
