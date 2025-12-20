@@ -138,24 +138,22 @@ export default function DigitsGamePage() {
           {/* Жёлтая рамка + игровое поле */}
           <div
             style={{
-              // Внешняя граница
               border: "1px solid rgb(162, 140, 40)",
               padding: "8px",
-              background: "rgb(247, 204, 74)", // Жёлтая рамка
+              background: "rgb(247, 204, 74)",
             }}
           >
-            {/* Внутренняя граница */}
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
-              {/* Игровое поле с диагональным фоном */}
+              {/* Игровое поле - диагональные полосы 60° */}
               <div
                 style={{
                   background: "rgb(252, 250, 248)",
                   backgroundImage: `repeating-linear-gradient(
-                    60deg,
-                    transparent,
-                    transparent 7px,
-                    rgb(240, 238, 235) 7px,
-                    rgb(240, 238, 235) 8px
+                    120deg,
+                    rgb(240, 238, 235),
+                    rgb(240, 238, 235) 1px,
+                    transparent 1px,
+                    transparent 8px
                   )`,
                   padding: "3px",
                 }}
@@ -165,7 +163,7 @@ export default function DigitsGamePage() {
                   style={{
                     gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
                     gap: "3px",
-                    width: "min(500px, calc(100vw - 80px))",
+                    width: "min(470px, calc(100vw - 100px))",
                     aspectRatio: "1",
                   }}
                 >
