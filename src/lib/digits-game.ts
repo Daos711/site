@@ -36,6 +36,9 @@ export interface MovingTile {
   cellsLeftCount: number; // сколько ячеек покинуто
 }
 
+// Фазы прогресс-бара спавна
+export type SpawnBarPhase = 'emptying' | 'filling' | 'waiting';
+
 export interface GameState {
   board: (Tile | null)[][];
   score: number;
@@ -44,14 +47,20 @@ export interface GameState {
   gameStatus: 'filling' | 'playing' | 'won' | 'lost' | 'paused';
   tilesCount: number;
   visibleTilesCount: number;
-  spawnProgress: number; // 0-100 для полосы прогресса
+  // Новая система прогресс-бара
+  spawnBarPhase: SpawnBarPhase;
+  spawnBarPhaseStart: number; // timestamp начала фазы
+  spawnTimerRunning: boolean; // запущен ли таймер спавна
   popups: ScorePopup[]; // анимации очков
   movingTiles: MovingTile[]; // все движущиеся плитки
 }
 
 export const BOARD_SIZE = 10;
 const GAME_TIME = 300; // 5 минут
-const SPAWN_INTERVAL = 10; // секунд
+
+// Тайминги прогресс-бара (как в Python)
+export const SPAWN_BAR_EMPTY_DURATION = 9800; // 9.8 секунд - бар пустеет
+export const SPAWN_BAR_FILL_DURATION = 500;   // 0.5 секунд - бар заполняется
 
 // Цвета плиток (RGB)
 export const TILE_COLORS: Record<number, string> = {
@@ -122,7 +131,10 @@ export function initGame(pattern: [number, number][]): GameState {
     gameStatus: 'filling', // начинаем с анимации заполнения
     tilesCount,
     visibleTilesCount: 0,
-    spawnProgress: 0,
+    // Прогресс-бар спавна
+    spawnBarPhase: 'emptying' as SpawnBarPhase,
+    spawnBarPhaseStart: 0,
+    spawnTimerRunning: false,
     popups: [],
     movingTiles: [],
   };
@@ -302,6 +314,9 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
     createdAt: now + index * 80, // 80ms задержка между появлениями
   }));
 
+  // Запускаем таймер спавна при первом удалении
+  const shouldStartTimer = !state.spawnTimerRunning;
+
   return {
     ...state,
     board: newBoard,
@@ -310,6 +325,10 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
     tilesCount: newTilesCount,
     gameStatus: newTilesCount === 0 ? 'won' : state.gameStatus,
     popups: [...state.popups, ...newPopups],
+    // Запускаем таймер спавна
+    spawnTimerRunning: true,
+    spawnBarPhase: shouldStartTimer ? 'emptying' : state.spawnBarPhase,
+    spawnBarPhaseStart: shouldStartTimer ? Date.now() : state.spawnBarPhaseStart,
   };
 }
 
@@ -369,16 +388,17 @@ export function spawnTile(state: GameState): GameState {
     ...state,
     board: newBoard,
     tilesCount: state.tilesCount + 1,
-    spawnProgress: 0, // сброс прогресса
+    // После спавна бар начинает заполняться
+    spawnBarPhase: 'filling' as SpawnBarPhase,
+    spawnBarPhaseStart: Date.now(),
   };
 }
 
-// Обновление таймера
+// Обновление таймера (только время, спавн-бар теперь отдельно)
 export function tick(state: GameState): GameState {
   if (state.gameStatus !== 'playing') return state;
 
   const newTimeLeft = state.timeLeft - 1;
-  const newSpawnProgress = Math.min(100, state.spawnProgress + (100 / SPAWN_INTERVAL));
 
   if (newTimeLeft <= 0) {
     return {
@@ -391,7 +411,81 @@ export function tick(state: GameState): GameState {
   return {
     ...state,
     timeLeft: newTimeLeft,
-    spawnProgress: newSpawnProgress,
+  };
+}
+
+// Запустить таймер спавна (после первого удаления плиток)
+export function startSpawnTimer(state: GameState): GameState {
+  if (state.spawnTimerRunning) return state;
+
+  return {
+    ...state,
+    spawnTimerRunning: true,
+    spawnBarPhase: 'emptying',
+    spawnBarPhaseStart: Date.now(),
+  };
+}
+
+// Получить прогресс бара (0-1, где 1 = полный)
+export function getSpawnBarProgress(state: GameState, now: number): number {
+  if (!state.spawnTimerRunning) return 1;
+
+  const elapsed = now - state.spawnBarPhaseStart;
+
+  if (state.spawnBarPhase === 'emptying') {
+    // Бар пустеет: 1 → 0 за 9.8 секунд
+    return Math.max(0, 1 - elapsed / SPAWN_BAR_EMPTY_DURATION);
+  } else if (state.spawnBarPhase === 'filling') {
+    // Бар заполняется: 0 → 1 за 0.5 секунд
+    return Math.min(1, elapsed / SPAWN_BAR_FILL_DURATION);
+  } else {
+    // waiting - бар на нуле
+    return 0;
+  }
+}
+
+// Обновить фазу спавн-бара (вызывать в игровом цикле)
+export function updateSpawnBar(state: GameState, now: number): { state: GameState; shouldSpawn: boolean } {
+  if (!state.spawnTimerRunning || state.gameStatus !== 'playing') {
+    return { state, shouldSpawn: false };
+  }
+
+  const elapsed = now - state.spawnBarPhaseStart;
+
+  if (state.spawnBarPhase === 'emptying') {
+    if (elapsed >= SPAWN_BAR_EMPTY_DURATION) {
+      // Бар опустел - переходим в waiting и сигнализируем о спавне
+      return {
+        state: {
+          ...state,
+          spawnBarPhase: 'waiting',
+        },
+        shouldSpawn: true,
+      };
+    }
+  } else if (state.spawnBarPhase === 'filling') {
+    if (elapsed >= SPAWN_BAR_FILL_DURATION) {
+      // Бар заполнился - начинаем снова пустеть
+      return {
+        state: {
+          ...state,
+          spawnBarPhase: 'emptying',
+          spawnBarPhaseStart: now,
+        },
+        shouldSpawn: false,
+      };
+    }
+  }
+
+  return { state, shouldSpawn: false };
+}
+
+// После успешного спавна - начать заполнение бара
+export function onSpawnComplete(state: GameState): GameState {
+  return {
+    ...state,
+    spawnBarPhase: 'filling',
+    spawnBarPhaseStart: Date.now(),
   };
 }
 

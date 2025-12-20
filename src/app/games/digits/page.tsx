@@ -21,6 +21,10 @@ import {
   getMovingTilePosition,
   isTileMoving,
   Direction,
+  getSpawnBarProgress,
+  updateSpawnBar,
+  SPAWN_BAR_EMPTY_DURATION,
+  SPAWN_BAR_FILL_DURATION,
 } from "@/lib/digits-game";
 import { getRandomPattern, getTestPattern } from "@/lib/digits-patterns";
 import { RotateCcw, Play, Pause, ArrowLeft } from "lucide-react";
@@ -82,14 +86,41 @@ function DigitsGamePage() {
     return () => clearInterval(timer);
   }, [game?.gameStatus, isPaused]);
 
-  // Спавн новых плиток (отключен в тестовом режиме)
+  // Обновление прогресс-бара спавна и спавн плиток
   useEffect(() => {
     if (!game || game.gameStatus !== "playing" || isPaused || isTestMode) return;
+    if (!game.spawnTimerRunning) return;
 
-    if (game.spawnProgress >= 100) {
-      setGame((prev) => (prev ? spawnTile(prev) : prev));
-    }
-  }, [game?.spawnProgress, game?.gameStatus, isPaused, isTestMode]);
+    let animationId: number;
+
+    const updateBar = () => {
+      const now = Date.now();
+
+      setGame((prev) => {
+        if (!prev || prev.gameStatus !== "playing") return prev;
+
+        const { state: newState, shouldSpawn } = updateSpawnBar(prev, now);
+
+        if (shouldSpawn) {
+          // Пора спавнить
+          return spawnTile(newState);
+        }
+
+        // Если фаза изменилась, обновляем состояние
+        if (newState.spawnBarPhase !== prev.spawnBarPhase ||
+            newState.spawnBarPhaseStart !== prev.spawnBarPhaseStart) {
+          return newState;
+        }
+
+        return prev;
+      });
+
+      animationId = requestAnimationFrame(updateBar);
+    };
+
+    animationId = requestAnimationFrame(updateBar);
+    return () => cancelAnimationFrame(animationId);
+  }, [game?.spawnTimerRunning, game?.gameStatus, isPaused, isTestMode]);
 
   // Очистка старых попапов
   useEffect(() => {
@@ -473,13 +504,27 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
             </div>
 
             {/* Полоса прогресса спавна */}
-            {isPlaying && (
+            {isPlaying && game.spawnTimerRunning && (
               <div className="mb-5">
-                <div className="text-white/80 text-xs mb-1">Новая плитка через:</div>
-                <div className="h-3 bg-white/20 overflow-hidden">
+                <div className="text-white/80 text-xs mb-1">Новая плитка:</div>
+                <div
+                  className="h-5 overflow-hidden relative"
+                  style={{
+                    background: "rgba(255,255,255,0.15)",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  {/* Прогресс-бар с градиентом (выравнивание справа - пустеет справа налево) */}
                   <div
-                    className="h-full bg-yellow-400 transition-all duration-1000"
-                    style={{ width: `${game.spawnProgress}%` }}
+                    className="h-full absolute right-0 top-0"
+                    style={{
+                      width: `${getSpawnBarProgress(game, now) * 100}%`,
+                      background: "linear-gradient(180deg, #FFE066 0%, #F0C030 50%, #E0A820 100%)",
+                      borderRadius: "9px",
+                      boxShadow: "inset 0 1px 2px rgba(255,255,255,0.4)",
+                      transition: game.spawnBarPhase === 'filling' ? 'width 0.05s linear' : 'none',
+                    }}
                   />
                 </div>
               </div>
