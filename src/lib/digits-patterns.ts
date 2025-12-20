@@ -279,3 +279,15 @@ export function getRandomPattern(): { name: string; positions: Position[] } {
   const [name, patternFunc] = ALL_PATTERNS[Math.floor(Math.random() * ALL_PATTERNS.length)];
   return { name, positions: patternFunc() };
 }
+
+// Тестовый паттерн: 6 плиток (3 пары) в центре поля
+// Удобно для тестирования механики и быстрого получения окна победы
+export function getTestPattern(): { name: string; positions: Position[] } {
+  // 6 плиток в центре: 2 ряда × 3 столбца
+  // Позиции: строки 4-5, столбцы 3-5
+  const positions: Position[] = [
+    [4, 3], [4, 4], [4, 5],
+    [5, 3], [5, 4], [5, 5],
+  ];
+  return { name: "test_pattern", positions };
+}

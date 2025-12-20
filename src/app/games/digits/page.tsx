@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import {
   GameState,
   Tile,
@@ -22,11 +22,24 @@ import {
   isTileMoving,
   Direction,
 } from "@/lib/digits-game";
-import { getRandomPattern } from "@/lib/digits-patterns";
+import { getRandomPattern, getTestPattern } from "@/lib/digits-patterns";
 import { RotateCcw, Play, Pause, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
-export default function DigitsGamePage() {
+// Обёртка для страницы с Suspense (для useSearchParams)
+export default function DigitsGamePageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Загрузка...</div>}>
+      <DigitsGamePage />
+    </Suspense>
+  );
+}
+
+function DigitsGamePage() {
+  const searchParams = useSearchParams();
+  const isTestMode = searchParams.get("test") === "true";
+
   const [game, setGame] = useState<GameState | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [highlightedTiles, setHighlightedTiles] = useState<Set<number>>(new Set());
@@ -34,11 +47,11 @@ export default function DigitsGamePage() {
 
   // Инициализация игры
   const startNewGame = useCallback(() => {
-    const { name, positions } = getRandomPattern();
+    const { name, positions } = isTestMode ? getTestPattern() : getRandomPattern();
     setPattern(positions as [number, number][]);
     setGame(initGame(positions as [number, number][]));
     setIsPaused(false);
-  }, []);
+  }, [isTestMode]);
 
   useEffect(() => {
     startNewGame();
@@ -69,14 +82,14 @@ export default function DigitsGamePage() {
     return () => clearInterval(timer);
   }, [game?.gameStatus, isPaused]);
 
-  // Спавн новых плиток
+  // Спавн новых плиток (отключен в тестовом режиме)
   useEffect(() => {
-    if (!game || game.gameStatus !== "playing" || isPaused) return;
+    if (!game || game.gameStatus !== "playing" || isPaused || isTestMode) return;
 
     if (game.spawnProgress >= 100) {
       setGame((prev) => (prev ? spawnTile(prev) : prev));
     }
-  }, [game?.spawnProgress, game?.gameStatus, isPaused]);
+  }, [game?.spawnProgress, game?.gameStatus, isPaused, isTestMode]);
 
   // Очистка старых попапов
   useEffect(() => {
@@ -350,6 +363,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         border: "1px solid rgb(71, 74, 72)",
                         boxShadow: `inset -2px -2px 0 ${darkColor}`,
                         transition: "none", // мгновенное выделение
+                        userSelect: "none", // запрет выделения текста
                       }}
                     >
                       {tile.number}
@@ -386,6 +400,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         border: "1px solid rgb(71, 74, 72)",
                         boxShadow: `inset -2px -2px 0 ${darkColor}`,
                         zIndex: 10,
+                        userSelect: "none", // запрет выделения текста
                       }}
                     >
                       {mt.tile.number}

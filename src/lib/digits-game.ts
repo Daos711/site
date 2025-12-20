@@ -15,6 +15,7 @@ export interface ScorePopup {
   col: number;
   negative: boolean;
   createdAt: number;
+  movingTileId?: number; // ID движущейся плитки (для удаления при коллизии)
 }
 
 // Информация о движущейся плитке
@@ -536,6 +537,7 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
 
   // Создаём попапы с задержкой = время достижения каждой ячейки
   const now = Date.now();
+  const movingTileId = movingTileIdCounter++;
   const newPopups: ScorePopup[] = [];
 
   const stepRow = target.row > tile.row ? 1 : target.row < tile.row ? -1 : 0;
@@ -552,11 +554,12 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
       col: popupCol,
       negative: true,
       createdAt: now + i * MS_PER_CELL,
+      movingTileId, // связь с движущейся плиткой
     });
   }
 
   const newMovingTile: MovingTile = {
-    id: movingTileIdCounter++,
+    id: movingTileId,
     tile,
     fromRow: tile.row,
     fromCol: tile.col,
@@ -695,6 +698,7 @@ function stopMovingTile(state: GameState, mtId: number, stopPos: { row: number; 
   if (mtIndex === -1) return state;
 
   const mt = state.movingTiles[mtIndex];
+  const now = Date.now();
 
   // Вычисляем реальный штраф (сколько ячеек прошли)
   const cellsMoved = Math.abs(stopPos.row - mt.fromRow) + Math.abs(stopPos.col - mt.fromCol);
@@ -712,11 +716,17 @@ function stopMovingTile(state: GameState, mtId: number, stopPos: { row: number; 
 
   const newMovingTiles = state.movingTiles.filter(m => m.id !== mtId);
 
+  // Удаляем попапы этой плитки которые ещё не появились
+  const newPopups = state.popups.filter(p =>
+    p.movingTileId !== mtId || p.createdAt <= now
+  );
+
   return {
     ...state,
     board: newBoard,
     score: Math.max(0, state.score - penalty),
     movingTiles: newMovingTiles,
+    popups: newPopups,
   };
 }
 
