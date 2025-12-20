@@ -572,23 +572,49 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
 }
 
 // Завершить движение одной плитки (после окончания анимации)
-export function finishMoveTile(state: GameState, movingTileId: number): GameState {
+// justPlacedPositions - позиции только что размещённых плиток (для коллизий в одном кадре)
+export function finishMoveTile(
+  state: GameState,
+  movingTileId: number,
+  justPlacedPositions: Set<string> = new Set()
+): GameState {
   const mtIndex = state.movingTiles.findIndex(mt => mt.id === movingTileId);
   if (mtIndex === -1) return state;
 
   const mt = state.movingTiles[mtIndex];
-  const { tile, toRow, toCol, penalty } = mt;
+
+  // Проверяем, свободна ли целевая ячейка
+  let finalRow = mt.toRow;
+  let finalCol = mt.toCol;
+
+  const targetOccupied =
+    state.board[mt.toRow][mt.toCol] !== null ||
+    justPlacedPositions.has(`${mt.toRow},${mt.toCol}`);
+
+  if (targetOccupied) {
+    // Целевая ячейка занята - ищем безопасную позицию
+    const now = Date.now();
+    const currentPos = { row: mt.toRow, col: mt.toCol };
+    const otherTiles = state.movingTiles.filter(m => m.id !== movingTileId);
+    const safePos = findSafeStopPosition(mt, currentPos, state.board, otherTiles, now);
+    finalRow = safePos.row;
+    finalCol = safePos.col;
+  }
+
+  // Вычисляем реальный штраф (сколько ячеек прошли)
+  const cellsMoved = Math.abs(finalRow - mt.fromRow) + Math.abs(finalCol - mt.fromCol);
+  const actualPenalty = (cellsMoved * (cellsMoved + 1)) / 2;
 
   // Создаём обновлённую плитку с новой позицией
   const movedTile: Tile = {
-    ...tile,
-    row: toRow,
-    col: toCol,
+    ...mt.tile,
+    row: finalRow,
+    col: finalCol,
   };
 
   // Ставим плитку на новую позицию
   const newBoard = state.board.map(r => r.map(t => t ? { ...t } : null));
-  newBoard[toRow][toCol] = movedTile;
+  newBoard[finalRow][finalCol] = movedTile;
 
   // Убираем завершённую плитку из списка движущихся
   const newMovingTiles = state.movingTiles.filter(m => m.id !== movingTileId);
@@ -596,7 +622,7 @@ export function finishMoveTile(state: GameState, movingTileId: number): GameStat
   return {
     ...state,
     board: newBoard,
-    score: Math.max(0, state.score - penalty),
+    score: Math.max(0, state.score - actualPenalty),
     movingTiles: newMovingTiles,
   };
 }
@@ -802,7 +828,9 @@ export function updateMovingTiles(state: GameState): GameState {
     let hasStaticCollision = false;
     for (let r = minRow; r <= maxRow && r < BOARD_SIZE; r++) {
       for (let c = minCol; c <= maxCol && c < BOARD_SIZE; c++) {
-        if (r >= 0 && c >= 0 && r !== mt.fromRow && c !== mt.fromCol) {
+        // Исключаем ТОЛЬКО стартовую ячейку (откуда плитка уехала)
+        // Было: r !== mt.fromRow && c !== mt.fromCol - это исключало всю строку/столбец!
+        if (r >= 0 && c >= 0 && !(r === mt.fromRow && c === mt.fromCol)) {
           const cell = newState.board[r][c];
           if (cell !== null) {
             hasStaticCollision = true;
@@ -822,12 +850,31 @@ export function updateMovingTiles(state: GameState): GameState {
   }
 
   // Завершаем плитки которые доехали до цели
+  // Отслеживаем только что размещённые позиции для коллизий в одном кадре
+  const justPlacedPositions = new Set<string>();
+
   for (const mt of newState.movingTiles) {
     if (stoppedIds.has(mt.id)) continue;
 
     const elapsed = now - mt.startTime;
     if (elapsed >= mt.duration) {
-      newState = finishMoveTile(newState, mt.id);
+      // Определяем финальную позицию до вызова finishMoveTile
+      let finalRow = mt.toRow;
+      let finalCol = mt.toCol;
+      const targetOccupied =
+        newState.board[mt.toRow][mt.toCol] !== null ||
+        justPlacedPositions.has(`${mt.toRow},${mt.toCol}`);
+
+      if (targetOccupied) {
+        const currentPos = { row: mt.toRow, col: mt.toCol };
+        const otherTiles = newState.movingTiles.filter(m => m.id !== mt.id);
+        const safePos = findSafeStopPosition(mt, currentPos, newState.board, otherTiles, now);
+        finalRow = safePos.row;
+        finalCol = safePos.col;
+      }
+
+      justPlacedPositions.add(`${finalRow},${finalCol}`);
+      newState = finishMoveTile(newState, mt.id, justPlacedPositions);
     }
   }
 
