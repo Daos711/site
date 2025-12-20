@@ -145,7 +145,7 @@ export default function DigitsGamePage() {
           >
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
               {/* Игровое поле - диагональные полосы 60° */}
-              {/* Пропорции оригинала: tile=64, gap=3, всего 10*64 + 11*3 = 673 */}
+              {/* Расчёт: 10*tile + 11*gap. При tile=48, gap=2: 10*48 + 11*2 = 480+22 = 502px */}
               <div
                 style={{
                   background: "rgb(252, 250, 248)",
@@ -156,72 +156,60 @@ export default function DigitsGamePage() {
                     transparent 1px,
                     transparent 8px
                   )`,
+                  width: "502px",
+                  height: "502px",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(10, 48px)",
+                  gridTemplateRows: "repeat(10, 48px)",
+                  gap: "2px",
+                  padding: "2px",
+                  boxSizing: "border-box",
                 }}
               >
-                <div
-                  className="grid"
-                  style={{
-                    gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-                    gap: "2px",
-                    padding: "2px", // gap по краям как в оригинале
-                    width: "min(450px, calc(100vw - 120px))",
-                    aspectRatio: "1",
-                    boxSizing: "border-box",
-                  }}
-                >
-                  {game.board.flat().map((tile, index) => {
-                    const row = Math.floor(index / BOARD_SIZE);
-                    const col = index % BOARD_SIZE;
+                {game.board.flat().map((tile, index) => {
+                  const row = Math.floor(index / BOARD_SIZE);
+                  const col = index % BOARD_SIZE;
 
-                    if (!tile || !tile.visible) {
-                      return (
-                        <div
-                          key={`empty-${row}-${col}`}
-                          style={{
-                            background: "rgb(252, 250, 248)",
-                            aspectRatio: "1",
-                          }}
-                        />
-                      );
-                    }
-
-                    const isSelected = game.selectedTile?.id === tile.id;
-                    const isHighlighted = highlightedTiles.has(tile.id);
-
-                    // Цвета как в оригинале: выделение = оранжевый фон + светлый текст
-                    const bgColor = isSelected ? "rgb(255, 139, 2)" : TILE_COLORS[tile.number];
-                    const textColor = isSelected ? "rgb(255, 255, 202)" : "black";
-
-                    // Bevel эффект: тёмная грань (40% от цвета) снизу и справа
-                    const baseColor = isSelected ? [255, 139, 2] : getTileRGB(tile.number);
-                    const darkColor = `rgb(${Math.floor(baseColor[0] * 0.4)}, ${Math.floor(baseColor[1] * 0.4)}, ${Math.floor(baseColor[2] * 0.4)})`;
-
+                  if (!tile || !tile.visible) {
                     return (
-                      <button
-                        key={tile.id}
-                        onClick={() => handleTileClick(tile)}
-                        disabled={isPaused || isFilling}
-                        className={`
-                          flex items-center justify-center
-                          ${isHighlighted ? "ring-2 ring-green-400" : ""}
-                          ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer"}
-                        `}
-                        style={{
-                          background: bgColor,
-                          color: textColor,
-                          aspectRatio: "1",
-                          fontFamily: "'Open Sans', system-ui, sans-serif",
-                          fontWeight: 400,
-                          fontSize: "clamp(18px, 3.5vw, 32px)",
-                          border: "1px solid rgb(71, 74, 72)",
-                          boxShadow: `inset -2px -2px 0 ${darkColor}`,
-                        }}
-                      >
-                        {tile.number}
-                      </button>
+                      <div
+                        key={`empty-${row}-${col}`}
+                        style={{ background: "rgb(252, 250, 248)" }}
+                      />
                     );
-                  })}
-                </div>
+                  }
+
+                  const isSelected = game.selectedTile?.id === tile.id;
+                  const isHighlighted = highlightedTiles.has(tile.id);
+                  const bgColor = isSelected ? "rgb(255, 139, 2)" : TILE_COLORS[tile.number];
+                  const textColor = isSelected ? "rgb(255, 255, 202)" : "black";
+                  const baseColor = isSelected ? [255, 139, 2] : getTileRGB(tile.number);
+                  const darkColor = `rgb(${Math.floor(baseColor[0] * 0.4)}, ${Math.floor(baseColor[1] * 0.4)}, ${Math.floor(baseColor[2] * 0.4)})`;
+
+                  return (
+                    <button
+                      key={tile.id}
+                      onClick={() => handleTileClick(tile)}
+                      disabled={isPaused || isFilling}
+                      className={`
+                        flex items-center justify-center
+                        ${isHighlighted ? "ring-2 ring-green-400" : ""}
+                        ${isPaused || isFilling ? "cursor-not-allowed" : "cursor-pointer"}
+                      `}
+                      style={{
+                        background: bgColor,
+                        color: textColor,
+                        fontFamily: "'Open Sans', system-ui, sans-serif",
+                        fontWeight: 400,
+                        fontSize: "30px",
+                        border: "1px solid rgb(71, 74, 72)",
+                        boxShadow: `inset -2px -2px 0 ${darkColor}`,
+                      }}
+                    >
+                      {tile.number}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
