@@ -202,10 +202,11 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   const col = index % BOARD_SIZE;
 
                   if (!tile || !tile.visible) {
+                    // Пустая ячейка - прозрачная, чтобы видеть полосатый фон
                     return (
                       <div
                         key={`empty-${row}-${col}`}
-                        style={{ background: "rgb(252, 250, 248)" }}
+                        style={{ background: "transparent" }}
                       />
                     );
                   }
