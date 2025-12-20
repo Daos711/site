@@ -259,6 +259,9 @@ export function removeTiles(state: GameState, tile1: Tile, tile2: Tile): GameSta
 export function selectTile(state: GameState, tile: Tile): GameState {
   if (state.gameStatus !== 'playing') return state;
 
+  // Нельзя выбирать плитки пока идёт движение (как в Python - is_moving)
+  if (state.movingTile) return state;
+
   // Если ничего не выбрано — выбираем
   if (!state.selectedTile) {
     return { ...state, selectedTile: tile };
@@ -469,7 +472,8 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
   return {
     ...state,
     board: newBoard,
-    selectedTile: null,
+    // selectedTile остаётся выбранной пока плитка движется (как в Python)
+    // Она будет сброшена в finishMoveTile
     popups: [...state.popups, ...newPopups],
     movingTile: {
       tile,
@@ -510,6 +514,7 @@ export function finishMoveTile(state: GameState): GameState {
     ...state,
     board: newBoard,
     score: Math.max(0, state.score - penalty),
+    selectedTile: null, // Сбрасываем выделение когда плитка приехала (как в Python)
     movingTile: null,
     pendingMove: null,
   };

@@ -360,7 +360,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   );
                 })}
 
-                {/* Движущаяся плитка */}
+                {/* Движущаяся плитка - всегда выделена оранжевым (как в Python) */}
                 {game.movingTile && (() => {
                   const { tile, fromRow, fromCol, toRow, toCol, startTime, duration } = game.movingTile;
                   const now = Date.now();
@@ -375,8 +375,9 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   const x = 2 + currentCol * 50;
                   const y = 2 + currentRow * 50;
 
-                  const baseColor = getTileRGB(tile.number);
-                  const darkColor = `rgb(${Math.floor(baseColor[0] * 0.4)}, ${Math.floor(baseColor[1] * 0.4)}, ${Math.floor(baseColor[2] * 0.4)})`;
+                  // Движущаяся плитка всегда оранжевая (выделенная)
+                  const selectedColor = [255, 139, 2];
+                  const darkColor = `rgb(${Math.floor(selectedColor[0] * 0.4)}, ${Math.floor(selectedColor[1] * 0.4)}, ${Math.floor(selectedColor[2] * 0.4)})`;
 
                   return (
                     <div
@@ -386,8 +387,8 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         top: `${y}px`,
                         width: "48px",
                         height: "48px",
-                        background: TILE_COLORS[tile.number],
-                        color: "black",
+                        background: "rgb(255, 139, 2)", // оранжевый - выделение
+                        color: "rgb(255, 255, 202)", // кремовый текст
                         fontFamily: "'Open Sans', system-ui, sans-serif",
                         fontWeight: 400,
                         fontSize: "30px",
