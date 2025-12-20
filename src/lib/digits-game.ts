@@ -264,9 +264,9 @@ export function selectTile(state: GameState, tile: Tile): GameState {
     return { ...state, selectedTile: tile };
   }
 
-  // Если кликнули на ту же плитку — снимаем выбор
+  // Если кликнули на ту же плитку — ничего не делаем (выделение остаётся)
   if (state.selectedTile.id === tile.id) {
-    return { ...state, selectedTile: null };
+    return state;
   }
 
   // Пробуем удалить пару
@@ -415,11 +415,12 @@ export function getTargetPosition(board: (Tile | null)[][], tile: Tile, directio
 }
 
 // Константы анимации (пропорционально Python)
-// Python: speed=3px/frame НЕ масштабируется, это фиксированное значение
-// При 60 FPS: 3 × 60 = 180 px/sec
+// Python very_fast: speed=8px/frame, это даёт быструю отзывчивую игру
+// При 60 FPS: 8 × 60 = 480 px/sec
 // Веб ячейка = 48 + 2 = 50px
-// Время на ячейку = 50 / 180 = 0.278с ≈ 280мс
-const MS_PER_CELL = 280; // миллисекунд на одну ячейку
+// Время на ячейку = 50 / 480 = 0.104с ≈ 100мс
+// 10 ячеек = ~1 секунда на весь путь
+const MS_PER_CELL = 100; // миллисекунд на одну ячейку
 
 // Запустить движение плитки (начало анимации)
 export function startMoveTile(state: GameState, tile: Tile, direction: Direction): GameState {
