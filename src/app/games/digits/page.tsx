@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Download, Trophy, Calendar, User, RefreshCw } from "lucide-react";
-import { getRank, RANKS } from "@/lib/game-ranks";
+import { getRank, RANKS, LEGENDARY_GRADIENTS } from "@/lib/game-ranks";
 
 // Версии игры для скачивания
 const versions = [
@@ -122,9 +122,6 @@ export default function DigitsGamePage() {
           ))}
         </div>
 
-        <p className="text-muted text-sm mt-4">
-          Требования: Python 3.8+, pygame. Запуск: <code className="bg-card px-2 py-1 rounded">python -m game_digits</code>
-        </p>
       </section>
 
       {/* Система рангов */}
@@ -132,23 +129,29 @@ export default function DigitsGamePage() {
         <h2 className="text-2xl font-bold mb-6">Система рангов</h2>
         <div className="bg-card border border-border rounded-lg p-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {RANKS.map(([score, name, textColor, bgColor]) => (
-              <div
-                key={score}
-                className="flex items-center gap-2 p-2 rounded"
-                style={{ backgroundColor: bgColor }}
-              >
-                <span
-                  className="text-sm font-medium"
-                  style={{ color: textColor }}
+            {RANKS.map(([score, name, textColor, bgColor]) => {
+              const gradient = LEGENDARY_GRADIENTS[score];
+              const bgStyle = gradient
+                ? { background: `linear-gradient(135deg, ${gradient.join(", ")})` }
+                : { backgroundColor: bgColor };
+              return (
+                <div
+                  key={score}
+                  className="flex items-center gap-2 p-2 rounded"
+                  style={bgStyle}
                 >
-                  {name}
-                </span>
-                <span className="text-xs opacity-70" style={{ color: textColor }}>
-                  {score}+
-                </span>
-              </div>
-            ))}
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: textColor }}
+                  >
+                    {name}
+                  </span>
+                  <span className="text-xs opacity-70" style={{ color: textColor }}>
+                    {score}+
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -217,7 +220,9 @@ export default function DigitsGamePage() {
                         <span
                           className="px-2 py-1 rounded text-sm font-medium"
                           style={{
-                            backgroundColor: rankInfo.bgColor,
+                            ...(rankInfo.gradient
+                              ? { background: `linear-gradient(135deg, ${rankInfo.gradient.join(", ")})` }
+                              : { backgroundColor: rankInfo.bgColor }),
                             color: rankInfo.textColor,
                           }}
                         >
