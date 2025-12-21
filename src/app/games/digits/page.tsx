@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
+import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from "react";
 import {
   GameState,
   Tile,
@@ -57,6 +57,7 @@ function DigitsGamePage() {
 
   const [screen, setScreen] = useState<GameScreen>("menu");
   const [game, setGame] = useState<GameState | null>(null);
+  const gameRef = useRef<GameState | null>(null); // Синхронный доступ к game для быстрых кликов
   const [isPaused, setIsPaused] = useState(false);
   const [highlightedTiles, setHighlightedTiles] = useState<Set<number>>(new Set());
   const [pattern, setPattern] = useState<[number, number][]>([]);
@@ -112,6 +113,11 @@ function DigitsGamePage() {
       }
     }
   }, [pendingSizeChange, game, startNewGame]);
+
+  // Синхронизируем ref с state для быстрого доступа
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
 
   // Анимация заполнения поля (25ms на 1 плитку как в оригинале)
   useEffect(() => {
@@ -213,17 +219,25 @@ function DigitsGamePage() {
       // Берём плитку по координатам (как в Python)
       const tile = prev.board[row][col];
       if (!tile || !tile.visible) return prev;
-      return selectTile(prev, tile);
+      const newState = selectTile(prev, tile);
+      gameRef.current = newState; // Синхронное обновление для быстрых кликов
+      return newState;
     });
   }, [isPaused]);
 
   const handleArrowClick = useCallback((direction: Direction) => {
     if (isPaused) return;
+    // Используем gameRef для синхронного доступа к selectedTile
+    const currentGame = gameRef.current;
+    if (!currentGame || !currentGame.selectedTile) return;
+    if (isTileMoving(currentGame, currentGame.selectedTile.id)) return;
+
     setGame((prev) => {
       if (!prev || !prev.selectedTile) return prev;
-      // Нельзя запустить плитку которая уже движется
       if (isTileMoving(prev, prev.selectedTile.id)) return prev;
-      return startMoveTile(prev, prev.selectedTile, direction, msPerCell);
+      const newState = startMoveTile(prev, prev.selectedTile, direction, msPerCell);
+      gameRef.current = newState;
+      return newState;
     });
   }, [isPaused, msPerCell]);
 
