@@ -365,6 +365,7 @@ export function selectTile(state: GameState, tile: Tile): GameState {
 }
 
 // Добавить новую плитку (спавн)
+// Логика как в Python: число выбирается из existing_numbers или их пар (10-num)
 export function spawnTile(state: GameState): GameState {
   if (state.gameStatus !== 'playing') return state;
 
@@ -383,9 +384,42 @@ export function spawnTile(state: GameState): GameState {
 
   if (emptyCells.length === 0) return state;
 
+  // Собираем все числа которые есть на поле (как в Python)
+  const existingNumbers = new Set<number>();
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const tile = state.board[row][col];
+      if (tile && tile.visible) {
+        existingNumbers.add(tile.number);
+      }
+    }
+  }
+  // Добавляем числа из движущихся плиток
+  for (const mt of state.movingTiles) {
+    existingNumbers.add(mt.tile.number);
+  }
+
+  // Возможные числа: каждое существующее число и его пара (10 - num)
+  const possibleNumbers = new Set<number>();
+  for (const num of existingNumbers) {
+    possibleNumbers.add(num);
+    const pair = 10 - num;
+    if (pair >= 1 && pair <= 9) {
+      possibleNumbers.add(pair);
+    }
+  }
+
+  // Если нет возможных чисел - не спавним
+  if (possibleNumbers.size === 0) return state;
+
   // Выбрать случайную пустую клетку
   const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-  const newTile = createTile(randomCell.row, randomCell.col, true);
+
+  // Выбрать случайное число из возможных
+  const possibleArray = Array.from(possibleNumbers);
+  const randomNumber = possibleArray[Math.floor(Math.random() * possibleArray.length)];
+
+  const newTile = createTile(randomCell.row, randomCell.col, true, randomNumber);
 
   const newBoard = state.board.map((row) => [...row]);
   newBoard[randomCell.row][randomCell.col] = newTile;

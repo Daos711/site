@@ -4,12 +4,12 @@
 
 // ============================================
 // БАЗОВЫЕ РАЗМЕРЫ (при scale = 1.0)
-// Python: 64, 3, 240 — делим на 1.65 для визуального соответствия
+// Подобраны для визуального соответствия Python-версии
 // ============================================
-export const BASE_TILE_SIZE = 39;  // Python 64 / 1.65
-export const BASE_GAP = 2;          // Python 3 / 1.65
-export const BASE_PANEL_WIDTH = 145; // Python 240 / 1.65
-export const BASE_FRAME_WIDTH = 6;   // Python 10 / 1.65
+export const BASE_TILE_SIZE = 41;   // Увеличено для соответствия Python
+export const BASE_GAP = 2;
+export const BASE_PANEL_WIDTH = 155;
+export const BASE_FRAME_WIDTH = 6;
 
 // ============================================
 // ПРЕСЕТЫ РАЗМЕРОВ
@@ -27,15 +27,13 @@ export const SIZE_ORDER: SizePreset[] = ['small', 'medium', 'large', 'xlarge'];
 
 // ============================================
 // ПРЕСЕТЫ СКОРОСТИ
-// Фиксированные ms/cell как в Python (НЕ зависят от размера плитки в браузере)
-// Python при BASE_TILE_SIZE=64: cellSize=67, speed в px/frame
-// msPerCell = 67 / (speed * 60) * 1000
+// msPerCell уменьшены для визуального соответствия Python
 // ============================================
 export const SPEED_PRESETS = {
-  slow: { name: 'Медленно', msPerCell: 558 },      // 67/(2*60)*1000
-  normal: { name: 'Нормально', msPerCell: 372 },   // 67/(3*60)*1000
-  fast: { name: 'Быстро', msPerCell: 223 },        // 67/(5*60)*1000
-  very_fast: { name: 'Очень быстро', msPerCell: 140 }, // 67/(8*60)*1000
+  slow: { name: 'Медленно', msPerCell: 150 },
+  normal: { name: 'Нормально', msPerCell: 100 },
+  fast: { name: 'Быстро', msPerCell: 60 },
+  very_fast: { name: 'Очень быстро', msPerCell: 35 },
 } as const;
 
 export type SpeedPreset = keyof typeof SPEED_PRESETS;
