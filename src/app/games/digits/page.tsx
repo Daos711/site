@@ -346,13 +346,14 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
           </h1>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Жёлтая рамка + игровое поле */}
           <div
             style={{
               border: "1px solid rgb(162, 140, 40)",
               padding: `${Math.round(gap * 2.5)}px`,
               background: "rgb(247, 204, 74)",
+              flexShrink: 0,
             }}
           >
             <div style={{ border: "1px solid rgb(162, 140, 40)" }}>
@@ -556,55 +557,59 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
             </div>
           </div>
 
-          {/* Панель справа - синяя как в оригинале, с масштабируемой шириной */}
+          {/* Панель справа - синяя, высота = высоте поля */}
           <div
             style={{
               background: "rgb(62, 157, 203)",
               width: `${panelWidth}px`,
+              height: `${tileAreaSize + Math.round(gap * 2.5) * 2 + 4}px`,
               flexShrink: 0,
-              padding: `${Math.round(20 * scale)}px`,
+              padding: `${Math.round(12 * scale)}px`,
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             {/* Счёт */}
-            <div className="text-center" style={{ marginBottom: `${Math.round(20 * scale)}px` }}>
-              <div className="font-bold text-white" style={{ fontSize: `${Math.round(36 * scale)}px` }}>{game.score}</div>
-              <div className="text-white/80" style={{ fontSize: `${Math.round(14 * scale)}px` }}>Очки</div>
+            <div className="text-center" style={{ marginBottom: `${Math.round(10 * scale)}px` }}>
+              <div className="font-bold text-white" style={{ fontSize: `${Math.round(32 * scale)}px` }}>{game.score}</div>
+              <div className="text-white/80" style={{ fontSize: `${Math.round(12 * scale)}px` }}>Очки</div>
             </div>
 
             {/* Таймер */}
-            <div className="text-center" style={{ marginBottom: `${Math.round(20 * scale)}px` }}>
-              <div className="font-bold font-mono text-white" style={{ fontSize: `${Math.round(30 * scale)}px` }}>
+            <div className="text-center" style={{ marginBottom: `${Math.round(10 * scale)}px` }}>
+              <div className="font-bold font-mono text-white" style={{ fontSize: `${Math.round(26 * scale)}px` }}>
                 {formatTime(game.timeLeft)}
               </div>
-              <div className="text-white/80" style={{ fontSize: `${Math.round(14 * scale)}px` }}>Время</div>
+              <div className="text-white/80" style={{ fontSize: `${Math.round(12 * scale)}px` }}>Время</div>
             </div>
 
             {/* Плиток осталось */}
-            <div className="text-center" style={{ marginBottom: `${Math.round(20 * scale)}px` }}>
-              <div className="font-bold text-white" style={{ fontSize: `${Math.round(24 * scale)}px` }}>{game.tilesCount}</div>
-              <div className="text-white/80" style={{ fontSize: `${Math.round(14 * scale)}px` }}>Плиток</div>
+            <div className="text-center" style={{ marginBottom: `${Math.round(10 * scale)}px` }}>
+              <div className="font-bold text-white" style={{ fontSize: `${Math.round(20 * scale)}px` }}>{game.tilesCount}</div>
+              <div className="text-white/80" style={{ fontSize: `${Math.round(12 * scale)}px` }}>Плиток</div>
             </div>
 
             {/* Полоса прогресса спавна - всегда видна во время игры */}
             {isPlaying && (
-              <div style={{ marginBottom: `${Math.round(20 * scale)}px` }}>
-                <div className="text-white/80" style={{ fontSize: `${Math.round(12 * scale)}px`, marginBottom: `${Math.round(4 * scale)}px` }}>Новая плитка:</div>
+              <div style={{ marginBottom: `${Math.round(10 * scale)}px` }}>
+                <div className="text-white/80" style={{ fontSize: `${Math.round(10 * scale)}px`, marginBottom: `${Math.round(3 * scale)}px` }}>Новая плитка:</div>
                 <div
                   className="overflow-hidden relative"
                   style={{
-                    height: `${Math.round(20 * scale)}px`,
+                    height: `${Math.round(16 * scale)}px`,
                     background: "rgba(255,255,255,0.15)",
-                    borderRadius: `${Math.round(10 * scale)}px`,
+                    borderRadius: `${Math.round(8 * scale)}px`,
                     border: "1px solid rgba(255,255,255,0.3)",
                   }}
                 >
-                  {/* Прогресс-бар с градиентом (left-0 = уменьшается справа налево) */}
+                  {/* Прогресс-бар с градиентом */}
                   <div
                     className="h-full absolute left-0 top-0"
                     style={{
                       width: `${(game.spawnTimerRunning ? getSpawnBarProgress(game, now) : 1) * 100}%`,
                       background: "linear-gradient(180deg, #FFE066 0%, #F0C030 50%, #E0A820 100%)",
-                      borderRadius: `${Math.round(9 * scale)}px`,
+                      borderRadius: `${Math.round(7 * scale)}px`,
                       boxShadow: "inset 0 1px 2px rgba(255,255,255,0.4)",
                     }}
                   />
@@ -613,38 +618,38 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
             )}
 
             {/* Кнопки управления */}
-            <div className="flex justify-center" style={{ gap: `${Math.round(12 * scale)}px` }}>
+            <div className="flex justify-center" style={{ gap: `${Math.round(8 * scale)}px` }}>
               {isPlaying && (
                 <button
                   onClick={togglePause}
                   className="bg-white/20 text-white hover:bg-white/30 transition-colors"
-                  style={{ padding: `${Math.round(12 * scale)}px` }}
+                  style={{ padding: `${Math.round(8 * scale)}px` }}
                   title={isPaused ? "Продолжить" : "Пауза"}
                 >
-                  {isPaused ? <Play size={Math.round(22 * scale)} /> : <Pause size={Math.round(22 * scale)} />}
+                  {isPaused ? <Play size={Math.round(18 * scale)} /> : <Pause size={Math.round(18 * scale)} />}
                 </button>
               )}
               <button
                 onClick={startNewGame}
                 className="bg-white/20 text-white hover:bg-white/30 transition-colors"
-                style={{ padding: `${Math.round(12 * scale)}px` }}
+                style={{ padding: `${Math.round(8 * scale)}px` }}
                 title="Новая игра"
               >
-                <RotateCcw size={Math.round(22 * scale)} />
+                <RotateCcw size={Math.round(18 * scale)} />
               </button>
               <button
                 onClick={() => setShowSettings(true)}
                 className="bg-white/20 text-white hover:bg-white/30 transition-colors"
-                style={{ padding: `${Math.round(12 * scale)}px` }}
+                style={{ padding: `${Math.round(8 * scale)}px` }}
                 title="Настройки"
               >
-                <Settings size={Math.round(22 * scale)} />
+                <Settings size={Math.round(18 * scale)} />
               </button>
             </div>
 
-            {/* Подсказка */}
-            <div className="text-center text-white/70" style={{ marginTop: `${Math.round(20 * scale)}px`, fontSize: `${Math.round(12 * scale)}px` }}>
-              <p>Убирай пары: одинаковые числа</p>
+            {/* Подсказка - в самом низу */}
+            <div className="text-center text-white/70 mt-auto" style={{ fontSize: `${Math.round(10 * scale)}px` }}>
+              <p>Убирай пары: одинаковые</p>
               <p>или сумма = 10</p>
             </div>
           </div>
