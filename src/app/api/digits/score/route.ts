@@ -6,7 +6,8 @@ import path from "path";
 const SCORES_FILE = path.join(process.cwd(), "data", "digits-scores.json");
 
 interface ScoreEntry {
-  id: string;
+  id: string;        // ID записи
+  playerId: string;  // Уникальный ID игрока (с его машины)
   name: string;
   score: number;
   gameScore: number;
@@ -65,7 +66,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Валидация
-    const { name, gameScore, remainingTime } = body;
+    const { playerId, name, gameScore, remainingTime } = body;
+
+    if (!playerId || typeof playerId !== "string") {
+      return NextResponse.json(
+        { success: false, error: "playerId is required" },
+        { status: 400 }
+      );
+    }
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
       return NextResponse.json(
@@ -92,32 +100,80 @@ export async function POST(request: NextRequest) {
     const timeBonus = 300 + 5 * Math.round(remainingTime);
     const totalScore = gameScore + timeBonus;
 
-    const entry: ScoreEntry = {
-      id: crypto.randomUUID(),
-      name: name.trim().slice(0, 50), // Ограничение длины имени
-      score: totalScore,
-      gameScore,
-      timeBonus,
-      remainingTime,
-      date: new Date().toISOString(),
-    };
-
-    // Добавляем результат
+    // Загружаем существующие записи
     const scores = await loadScores();
-    scores.push(entry);
+
+    // Ищем существующую запись этого игрока
+    const existingIndex = scores.findIndex((s) => s.playerId === playerId);
+
+    let entry: ScoreEntry;
+    let isUpdate = false;
+
+    if (existingIndex >= 0) {
+      // Игрок уже есть в таблице
+      const existing = scores[existingIndex];
+
+      if (totalScore > existing.score) {
+        // Новый результат лучше — обновляем
+        entry = {
+          ...existing,
+          name: name.trim().slice(0, 50),
+          score: totalScore,
+          gameScore,
+          timeBonus,
+          remainingTime,
+          date: new Date().toISOString(),
+        };
+        scores[existingIndex] = entry;
+        isUpdate = true;
+      } else {
+        // Старый результат лучше — только обновляем имя если изменилось
+        if (existing.name !== name.trim()) {
+          existing.name = name.trim().slice(0, 50);
+          scores[existingIndex] = existing;
+          await saveScores(scores);
+        }
+
+        // Возвращаем текущую позицию
+        const sorted = [...scores].sort((a, b) => b.score - a.score);
+        const position = sorted.findIndex((s) => s.playerId === playerId) + 1;
+
+        return NextResponse.json({
+          success: true,
+          entry: existing,
+          position,
+          total: scores.length,
+          message: "Score not improved",
+        });
+      }
+    } else {
+      // Новый игрок
+      entry = {
+        id: crypto.randomUUID(),
+        playerId,
+        name: name.trim().slice(0, 50),
+        score: totalScore,
+        gameScore,
+        timeBonus,
+        remainingTime,
+        date: new Date().toISOString(),
+      };
+      scores.push(entry);
+    }
 
     // Сохраняем (оставляем только топ-1000)
     const sorted = scores.sort((a, b) => b.score - a.score).slice(0, 1000);
     await saveScores(sorted);
 
     // Находим позицию в рейтинге
-    const position = sorted.findIndex((s) => s.id === entry.id) + 1;
+    const position = sorted.findIndex((s) => s.playerId === playerId) + 1;
 
     return NextResponse.json({
       success: true,
       entry,
       position,
       total: sorted.length,
+      isUpdate,
     });
   } catch (error) {
     console.error("Error saving score:", error);
