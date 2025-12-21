@@ -1,9 +1,6 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Download, Trophy, Calendar, User, RefreshCw } from "lucide-react";
-import { getRank, RANKS, LEGENDARY_GRADIENTS } from "@/lib/game-ranks";
+import { Download, Trophy, Calendar } from "lucide-react";
+import { RANKS, LEGENDARY_GRADIENTS } from "@/lib/game-ranks";
 
 // Версии игры для скачивания (новые сверху)
 const versions = [
@@ -15,35 +12,7 @@ const versions = [
   },
 ];
 
-interface LeaderboardEntry {
-  id: string;
-  name: string;
-  score: number;
-  date: string;
-}
-
 export default function DigitsGamePage() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/digits/score?limit=50");
-      const data = await res.json();
-      if (data.success) {
-        setLeaderboard(data.scores);
-      }
-    } catch (error) {
-      console.error("Failed to fetch leaderboard:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLeaderboard();
-  }, []);
   return (
     <div>
       <PageHeader
@@ -144,91 +113,17 @@ export default function DigitsGamePage() {
         </div>
       </section>
 
-      {/* Таблица лидеров */}
+      {/* Таблица лидеров - заглушка */}
       <section className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Trophy className="w-6 h-6" />
-            Таблица лидеров
-          </h2>
-          <button
-            onClick={fetchLeaderboard}
-            disabled={loading}
-            className="p-2 text-muted hover:text-foreground transition-colors disabled:opacity-50"
-            title="Обновить"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+          <Trophy className="w-6 h-6" />
+          Таблица лидеров
+        </h2>
 
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="w-16 text-center p-4 text-muted font-medium">#</th>
-                <th className="text-left p-4 text-muted font-medium">Игрок</th>
-                <th className="text-center p-4 text-muted font-medium">Ранг</th>
-                <th className="text-center p-4 text-muted font-medium">Счёт</th>
-                <th className="text-center p-4 text-muted font-medium hidden sm:table-cell">Дата</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted">
-                    Загрузка...
-                  </td>
-                </tr>
-              ) : leaderboard.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted">
-                    Пока нет результатов. Будьте первым!
-                  </td>
-                </tr>
-              ) : (
-                leaderboard.map((entry, index) => {
-                  const position = index + 1;
-                  const rankInfo = getRank(entry.score);
-                  const dateStr = new Date(entry.date).toLocaleDateString("ru-RU");
-                  return (
-                    <tr key={entry.id} className="border-b border-border last:border-0">
-                      <td className="w-16 text-center p-4 text-lg">
-                        {position === 1 && "🥇"}
-                        {position === 2 && "🥈"}
-                        {position === 3 && "🥉"}
-                        {position > 3 && position}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <User className="w-5 h-5 text-muted" />
-                          {entry.name}
-                        </div>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span
-                          className="px-3 py-1 rounded text-sm font-medium inline-block"
-                          style={{
-                            ...(rankInfo.gradient
-                              ? { background: `linear-gradient(135deg, ${rankInfo.gradient.join(", ")})` }
-                              : { backgroundColor: rankInfo.bgColor }),
-                            color: rankInfo.textColor,
-                          }}
-                        >
-                          {rankInfo.name}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center text-xl font-bold text-accent">
-                        {entry.score}
-                      </td>
-                      <td className="p-4 text-center text-muted hidden sm:table-cell">
-                        {dateStr}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+        <div className="bg-card border border-border rounded-lg p-8 text-center">
+          <p className="text-muted">
+            Таблица лидеров скоро появится. Пока что результаты сохраняются локально в игре.
+          </p>
         </div>
       </section>
     </div>
