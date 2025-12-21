@@ -9,7 +9,7 @@ import { getRank, RANKS, LEGENDARY_GRADIENTS } from "@/lib/game-ranks";
 const versions = [
   {
     version: "1.0",
-    date: "2024-12-21",
+    date: "2025-12-21",
     downloadUrl: "/downloads/digits-1.0.zip",
     changelog: "Первый релиз игры",
   },
