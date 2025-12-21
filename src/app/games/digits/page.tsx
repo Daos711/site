@@ -72,7 +72,7 @@ function DigitsGamePage() {
   const msPerCell = useMemo(() => getMsPerCell(speedPreset, sizePreset), [speedPreset, sizePreset]);
 
   // Размеры для отрисовки
-  const { tileSize, gap, tileAreaSize } = dimensions;
+  const { tileSize, gap, tileAreaSize, panelWidth, frameWidth, bevel } = dimensions;
   const cellStep = tileSize + gap; // шаг между ячейками
 
   // Инициализация игры
@@ -470,7 +470,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         fontWeight: 400,
                         fontSize: `${tileFontSize}px`,
                         border: "1px solid rgb(71, 74, 72)",
-                        boxShadow: `inset -2px -2px 0 ${darkColor}`,
+                        boxShadow: `inset -${bevel}px -${bevel}px 0 ${darkColor}`,
                         transition: "none", // мгновенное выделение
                         userSelect: "none", // запрет выделения текста
                       }}
@@ -507,7 +507,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         fontWeight: 400,
                         fontSize: `${tileFontSize}px`,
                         border: "1px solid rgb(71, 74, 72)",
-                        boxShadow: `inset -2px -2px 0 ${darkColor}`,
+                        boxShadow: `inset -${bevel}px -${bevel}px 0 ${darkColor}`,
                         zIndex: 10,
                         userSelect: "none", // запрет выделения текста
                       }}
@@ -556,10 +556,14 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
             </div>
           </div>
 
-          {/* Панель справа - синяя как в оригинале */}
+          {/* Панель справа - синяя как в оригинале, с масштабируемой шириной */}
           <div
-            className="flex-1 p-5 min-w-[200px]"
-            style={{ background: "rgb(62, 157, 203)" }}
+            className="p-5"
+            style={{
+              background: "rgb(62, 157, 203)",
+              width: `${panelWidth}px`,
+              flexShrink: 0,
+            }}
           >
             {/* Счёт */}
             <div className="text-center mb-5">
