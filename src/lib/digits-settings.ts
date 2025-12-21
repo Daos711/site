@@ -6,9 +6,9 @@
 // БАЗОВЫЕ РАЗМЕРЫ (при scale = 1.0)
 // Подобраны для визуального соответствия Python-версии
 // ============================================
-export const BASE_TILE_SIZE = 41;   // Увеличено для соответствия Python
+export const BASE_TILE_SIZE = 41;
 export const BASE_GAP = 2;
-export const BASE_PANEL_WIDTH = 155;
+export const BASE_PANEL_WIDTH = 200;  // Увеличено чтобы кнопки помещались
 export const BASE_FRAME_WIDTH = 6;
 
 // ============================================
@@ -63,8 +63,8 @@ export function getScaledValues(sizePreset: SizePreset) {
     gap: scaled(BASE_GAP, scale),
     panelWidth: scaled(BASE_PANEL_WIDTH, scale),
     frameWidth: scaled(BASE_FRAME_WIDTH, scale),
-    // Тень плитки: пропорционально размеру (как в Python tile.py)
-    bevel: Math.max(2, Math.round(tileSize * 3 / 64)),
+    // Тень плитки: 4.7% от размера плитки (пропорционально)
+    bevel: Math.max(1, Math.round(tileSize * 0.047)),
     // Масштаб для элементов панели
     scale,
   };
