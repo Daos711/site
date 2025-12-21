@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
@@ -23,16 +22,16 @@ export function Navigation() {
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="text-lg font-semibold hover:text-accent transition-colors">
+          <a href="/" className="text-lg font-semibold hover:text-accent transition-colors">
             Lab
-          </Link>
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
-                <Link
+                <a
                   key={item.href}
                   href={item.href}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -42,7 +41,7 @@ export function Navigation() {
                   }`}
                 >
                   {item.label}
-                </Link>
+                </a>
               );
             })}
           </div>
@@ -64,7 +63,7 @@ export function Navigation() {
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
-                  <Link
+                  <a
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
@@ -75,7 +74,7 @@ export function Navigation() {
                     }`}
                   >
                     {item.label}
-                  </Link>
+                  </a>
                 );
               })}
             </div>

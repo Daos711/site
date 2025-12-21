@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
 import { Badge } from "./Badge";
 
@@ -55,7 +54,7 @@ export function Card({ title, description, href, icon: Icon, status, tags }: Car
   );
 
   if (href) {
-    return <Link href={href}>{content}</Link>;
+    return <a href={href}>{content}</a>;
   }
 
   return content;
