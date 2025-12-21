@@ -5,18 +5,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { Download, Trophy, Calendar, User, RefreshCw } from "lucide-react";
 import { getRank, RANKS, LEGENDARY_GRADIENTS } from "@/lib/game-ranks";
 
-// Версии игры для скачивания
+// Версии игры для скачивания (новые сверху)
 const versions = [
   {
-    version: "1.0.0",
+    version: "1.0",
     date: "2024-12-21",
-    downloadUrl: "/downloads/digits-1.0.0.zip",
-    changelog: [
-      "Первый релиз",
-      "10x10 игровое поле",
-      "Паттерны появления плиток",
-      "Система рангов",
-    ],
+    downloadUrl: "/downloads/digits-1.0.zip",
+    changelog: "Первый релиз игры",
   },
 ];
 
@@ -110,14 +105,7 @@ export default function DigitsGamePage() {
                 </a>
               </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-muted mb-2">Изменения:</h4>
-                <ul className="text-sm text-muted list-disc list-inside space-y-1">
-                  {v.changelog.map((change, i) => (
-                    <li key={i}>{change}</li>
-                  ))}
-                </ul>
-              </div>
+              <p className="text-sm text-muted">{v.changelog}</p>
             </div>
           ))}
         </div>
@@ -177,11 +165,11 @@ export default function DigitsGamePage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left p-4 text-muted font-medium">#</th>
+                <th className="w-16 text-center p-4 text-muted font-medium">#</th>
                 <th className="text-left p-4 text-muted font-medium">Игрок</th>
-                <th className="text-left p-4 text-muted font-medium">Ранг</th>
-                <th className="text-right p-4 text-muted font-medium">Счёт</th>
-                <th className="text-right p-4 text-muted font-medium hidden sm:table-cell">Дата</th>
+                <th className="text-center p-4 text-muted font-medium">Ранг</th>
+                <th className="text-center p-4 text-muted font-medium">Счёт</th>
+                <th className="text-center p-4 text-muted font-medium hidden sm:table-cell">Дата</th>
               </tr>
             </thead>
             <tbody>
@@ -204,7 +192,7 @@ export default function DigitsGamePage() {
                   const dateStr = new Date(entry.date).toLocaleDateString("ru-RU");
                   return (
                     <tr key={entry.id} className="border-b border-border last:border-0">
-                      <td className="p-4 font-bold text-lg">
+                      <td className="w-16 text-center p-4 text-lg">
                         {position === 1 && "🥇"}
                         {position === 2 && "🥈"}
                         {position === 3 && "🥉"}
@@ -216,9 +204,9 @@ export default function DigitsGamePage() {
                           {entry.name}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 text-center">
                         <span
-                          className="px-2 py-1 rounded text-sm font-medium"
+                          className="px-3 py-1 rounded text-sm font-medium inline-block"
                           style={{
                             ...(rankInfo.gradient
                               ? { background: `linear-gradient(135deg, ${rankInfo.gradient.join(", ")})` }
@@ -229,10 +217,10 @@ export default function DigitsGamePage() {
                           {rankInfo.name}
                         </span>
                       </td>
-                      <td className="p-4 text-right font-mono font-bold">
-                        {entry.score.toLocaleString()}
+                      <td className="p-4 text-center text-xl font-bold text-accent">
+                        {entry.score}
                       </td>
-                      <td className="p-4 text-right text-muted hidden sm:table-cell">
+                      <td className="p-4 text-center text-muted hidden sm:table-cell">
                         {dateStr}
                       </td>
                     </tr>
