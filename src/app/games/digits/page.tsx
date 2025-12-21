@@ -206,13 +206,13 @@ function DigitsGamePage() {
     setHighlightedTiles(highlighted);
   }, [game?.selectedTile, game?.board, game?.movingTiles]);
 
-  const handleTileClick = useCallback((tileId: number, row: number, col: number) => {
+  const handleTileClick = useCallback((row: number, col: number) => {
     if (isPaused) return;
     setGame((prev) => {
       if (!prev) return prev;
-      // Ищем актуальную плитку на доске по координатам
+      // Берём плитку по координатам (как в Python)
       const tile = prev.board[row][col];
-      if (!tile || !tile.visible || tile.id !== tileId) return prev;
+      if (!tile || !tile.visible) return prev;
       return selectTile(prev, tile);
     });
   }, [isPaused]);
@@ -457,7 +457,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   return (
                     <button
                       key={tile.id}
-                      onClick={() => handleTileClick(tile.id, row, col)}
+                      onClick={() => handleTileClick(row, col)}
                       disabled={isPaused || isFilling}
                       className={`
                         flex items-center justify-center
