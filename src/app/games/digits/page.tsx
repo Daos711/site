@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
 import {
   GameState,
   Tile,
@@ -25,11 +25,20 @@ import {
   updateSpawnBar,
 } from "@/lib/digits-game";
 import { getRandomPattern, getTestPattern } from "@/lib/digits-patterns";
-import { RotateCcw, Play, Pause, ArrowLeft } from "lucide-react";
+import {
+  SizePreset,
+  SpeedPreset,
+  DEFAULT_SIZE,
+  DEFAULT_SPEED,
+  getBoardDimensions,
+  getMsPerCell,
+} from "@/lib/digits-settings";
+import { RotateCcw, Play, Pause, ArrowLeft, Settings } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { StartMenu } from "./components/StartMenu";
 import { ResultWindow } from "./components/ResultWindow";
+import { SettingsWindow } from "./components/SettingsWindow";
 
 type GameScreen = "menu" | "playing" | "result";
 
@@ -52,6 +61,20 @@ function DigitsGamePage() {
   const [highlightedTiles, setHighlightedTiles] = useState<Set<number>>(new Set());
   const [pattern, setPattern] = useState<[number, number][]>([]);
 
+  // Настройки
+  const [sizePreset, setSizePreset] = useState<SizePreset>(DEFAULT_SIZE);
+  const [speedPreset, setSpeedPreset] = useState<SpeedPreset>(DEFAULT_SPEED);
+  const [showSettings, setShowSettings] = useState(false);
+  const [pendingSizeChange, setPendingSizeChange] = useState<SizePreset | null>(null);
+
+  // Рассчитываем размеры на основе настроек
+  const dimensions = useMemo(() => getBoardDimensions(sizePreset), [sizePreset]);
+  const msPerCell = useMemo(() => getMsPerCell(speedPreset, sizePreset), [speedPreset, sizePreset]);
+
+  // Размеры для отрисовки
+  const { tileSize, gap, tileAreaSize } = dimensions;
+  const cellStep = tileSize + gap; // шаг между ячейками
+
   // Инициализация игры
   const startNewGame = useCallback(() => {
     const patternData = isTestMode ? getTestPattern() : getRandomPattern();
@@ -61,12 +84,34 @@ function DigitsGamePage() {
     setGame(initGame(positions, numbers));
     setIsPaused(false);
     setScreen("playing");
+    setPendingSizeChange(null);
   }, [isTestMode]);
 
   const goToMenu = useCallback(() => {
     setScreen("menu");
     setGame(null);
   }, []);
+
+  // Обработка изменения размера
+  const handleSizeChange = useCallback((newSize: SizePreset) => {
+    if (newSize !== sizePreset) {
+      setPendingSizeChange(newSize);
+    }
+  }, [sizePreset]);
+
+  // Закрытие настроек
+  const handleCloseSettings = useCallback(() => {
+    setShowSettings(false);
+    if (pendingSizeChange) {
+      // Размер изменился - нужен перезапуск игры
+      setSizePreset(pendingSizeChange);
+      setPendingSizeChange(null);
+      if (game) {
+        // Перезапускаем игру с новым размером
+        startNewGame();
+      }
+    }
+  }, [pendingSizeChange, game, startNewGame]);
 
   // Анимация заполнения поля (25ms на 1 плитку как в оригинале)
   useEffect(() => {
@@ -178,9 +223,9 @@ function DigitsGamePage() {
       if (!prev || !prev.selectedTile) return prev;
       // Нельзя запустить плитку которая уже движется
       if (isTileMoving(prev, prev.selectedTile.id)) return prev;
-      return startMoveTile(prev, prev.selectedTile, direction);
+      return startMoveTile(prev, prev.selectedTile, direction, msPerCell);
     });
-  }, [isPaused]);
+  }, [isPaused, msPerCell]);
 
   // Счётчик для перерисовки анимаций
   const [, forceUpdate] = useState(0);
@@ -238,6 +283,9 @@ function DigitsGamePage() {
 
   const isPlaying = game.gameStatus === "playing";
   const isFilling = game.gameStatus === "filling";
+
+  // Размер шрифта плитки пропорционально размеру
+  const tileFontSize = Math.round(tileSize * 0.625); // ~40px при 64px плитке
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -303,7 +351,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
           <div
             style={{
               border: "1px solid rgb(162, 140, 40)",
-              padding: "8px",
+              padding: `${Math.round(gap * 2.5)}px`,
               background: "rgb(247, 204, 74)",
             }}
           >
@@ -320,13 +368,13 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                     rgb(240, 238, 235) 5px,
                     rgb(240, 238, 235) 6px
                   )`,
-                  width: "502px",
-                  height: "502px",
+                  width: `${tileAreaSize}px`,
+                  height: `${tileAreaSize}px`,
                   display: "grid",
-                  gridTemplateColumns: "repeat(10, 48px)",
-                  gridTemplateRows: "repeat(10, 48px)",
-                  gap: "2px",
-                  padding: "2px",
+                  gridTemplateColumns: `repeat(10, ${tileSize}px)`,
+                  gridTemplateRows: `repeat(10, ${tileSize}px)`,
+                  gap: `${gap}px`,
+                  padding: `${gap}px`,
                   boxSizing: "border-box",
                 }}
               >
@@ -360,8 +408,8 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                           }}
                         >
                           <svg
-                            width="48"
-                            height="48"
+                            width={tileSize}
+                            height={tileSize}
                             viewBox="0 0 65 65"
                             style={{ transform: `rotate(${rotation}deg)` }}
                           >
@@ -420,7 +468,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         color: textColor,
                         fontFamily: "'Open Sans', system-ui, sans-serif",
                         fontWeight: 400,
-                        fontSize: "30px",
+                        fontSize: `${tileFontSize}px`,
                         border: "1px solid rgb(71, 74, 72)",
                         boxShadow: `inset -2px -2px 0 ${darkColor}`,
                         transition: "none", // мгновенное выделение
@@ -436,9 +484,9 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                 {game.movingTiles.map((mt) => {
                   const pos = getMovingTilePosition(mt, now);
 
-                  // Позиция в пикселях (padding 2px, cell 48px + gap 2px = 50px)
-                  const x = 2 + pos.col * 50;
-                  const y = 2 + pos.row * 50;
+                  // Позиция в пикселях
+                  const x = gap + pos.col * cellStep;
+                  const y = gap + pos.row * cellStep;
 
                   // Движущаяся плитка всегда оранжевая (выделенная)
                   const selectedColor = [255, 139, 2];
@@ -451,13 +499,13 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                       style={{
                         left: `${x}px`,
                         top: `${y}px`,
-                        width: "48px",
-                        height: "48px",
+                        width: `${tileSize}px`,
+                        height: `${tileSize}px`,
                         background: "rgb(255, 139, 2)", // оранжевый - выделение
                         color: "rgb(255, 255, 202)", // кремовый текст
                         fontFamily: "'Open Sans', system-ui, sans-serif",
                         fontWeight: 400,
-                        fontSize: "30px",
+                        fontSize: `${tileFontSize}px`,
                         border: "1px solid rgb(71, 74, 72)",
                         boxShadow: `inset -2px -2px 0 ${darkColor}`,
                         zIndex: 10,
@@ -482,8 +530,8 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   if (opacity <= 0) return null;
 
                   // Позиция: центр ячейки
-                  const x = 2 + popup.col * 50 + 24;
-                  const y = 2 + popup.row * 50 + 24;
+                  const x = gap + popup.col * cellStep + tileSize / 2;
+                  const y = gap + popup.row * cellStep + tileSize / 2;
 
                   return (
                     <div
@@ -495,7 +543,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                         transform: "translate(-50%, -50%)",
                         opacity,
                         color: "rgb(80, 80, 80)", // серый для ВСЕХ попапов
-                        fontSize: "27px",
+                        fontSize: `${Math.round(tileFontSize * 0.9)}px`,
                         fontWeight: 400,
                         fontFamily: "Arial, sans-serif",
                       }}
@@ -577,6 +625,13 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
               >
                 <RotateCcw size={22} />
               </button>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-3 bg-white/20 text-white hover:bg-white/30 transition-colors"
+                title="Настройки"
+              >
+                <Settings size={22} />
+              </button>
             </div>
 
             {/* Подсказка */}
@@ -613,6 +668,17 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
             onNewGame={startNewGame}
             onMenu={goToMenu}
             isWin={game.gameStatus === "won"}
+          />
+        )}
+
+        {/* Окно настроек */}
+        {showSettings && (
+          <SettingsWindow
+            currentSize={pendingSizeChange ?? sizePreset}
+            currentSpeed={speedPreset}
+            onSizeChange={handleSizeChange}
+            onSpeedChange={setSpeedPreset}
+            onClose={handleCloseSettings}
           />
         )}
         </div>

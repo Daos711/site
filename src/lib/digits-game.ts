@@ -450,6 +450,19 @@ export function getSpawnBarProgress(state: GameState, now: number): number {
   }
 }
 
+// Проверить есть ли свободное место на доске
+export function hasEmptyCell(state: GameState): boolean {
+  const occupiedByMoving = getOccupiedByMoving(state, Date.now());
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      if (state.board[row][col] === null && !occupiedByMoving.has(`${row},${col}`)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Обновить фазу спавн-бара (вызывать в игровом цикле)
 export function updateSpawnBar(state: GameState, now: number): { state: GameState; shouldSpawn: boolean } {
   if (!state.spawnTimerRunning || state.gameStatus !== 'playing') {
@@ -471,15 +484,28 @@ export function updateSpawnBar(state: GameState, now: number): { state: GameStat
     }
   } else if (state.spawnBarPhase === 'filling') {
     if (elapsed >= SPAWN_BAR_FILL_DURATION) {
-      // Бар заполнился - начинаем снова пустеть
-      return {
-        state: {
-          ...state,
-          spawnBarPhase: 'emptying',
-          spawnBarPhaseStart: now,
-        },
-        shouldSpawn: false,
-      };
+      // Бар заполнился - проверяем есть ли место
+      const hasSpace = hasEmptyCell(state);
+      if (hasSpace) {
+        // Есть место - начинаем снова пустеть
+        return {
+          state: {
+            ...state,
+            spawnBarPhase: 'emptying',
+            spawnBarPhaseStart: now,
+          },
+          shouldSpawn: false,
+        };
+      } else {
+        // Нет места - ждём в заполненном состоянии
+        return {
+          state: {
+            ...state,
+            spawnBarPhase: 'waiting',
+          },
+          shouldSpawn: false,
+        };
+      }
     }
   }
 
@@ -612,11 +638,17 @@ export function getTargetPosition(
   return { row, col };
 }
 
-// Константы анимации
-const MS_PER_CELL = 100; // миллисекунд на одну ячейку
+// Скорость по умолчанию (ms на ячейку)
+export const DEFAULT_MS_PER_CELL = 355; // соответствует 'normal' скорости в Python
 
 // Запустить движение плитки (начало анимации)
-export function startMoveTile(state: GameState, tile: Tile, direction: Direction): GameState {
+// msPerCell - миллисекунд на перемещение одной ячейки (настраивается в настройках)
+export function startMoveTile(
+  state: GameState,
+  tile: Tile,
+  direction: Direction,
+  msPerCell: number = DEFAULT_MS_PER_CELL
+): GameState {
   if (state.gameStatus !== 'playing') return state;
 
   // Нельзя запустить плитку которая уже движется
@@ -630,7 +662,7 @@ export function startMoveTile(state: GameState, tile: Tile, direction: Direction
   }
 
   const cellsMoved = Math.abs(target.row - tile.row) + Math.abs(target.col - tile.col);
-  const duration = cellsMoved * MS_PER_CELL;
+  const duration = cellsMoved * msPerCell;
   const penalty = (cellsMoved * (cellsMoved + 1)) / 2;
 
   // Убираем плитку с доски (она теперь "летит")
