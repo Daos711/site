@@ -19,27 +19,26 @@ export type SizePreset = keyof typeof SIZE_PRESETS;
 export const SIZE_ORDER: SizePreset[] = ['small', 'medium', 'large', 'xlarge'];
 
 // Пресеты скорости (как в Python)
+// ВАЖНО: Скорость рассчитывается на основе PYTHON-размера плитки (64px),
+// а не браузерного, чтобы скорость была одинаковой независимо от размера
+const PYTHON_TILE_SIZE = 64; // Базовый размер плитки в Python версии
+
 // Скорость в Python: пиксели за кадр при 60fps
-// Конвертируем в ms на ячейку: (TILE_SIZE / speed) / 60 * 1000
+// Фиксированные ms на ячейку: (PYTHON_TILE_SIZE / speed) * 16.67
 export const SPEED_PRESETS = {
-  slow: { name: 'Медленно', pixelsPerFrame: 2 },      // ~533ms на ячейку
-  normal: { name: 'Нормально', pixelsPerFrame: 3 },   // ~355ms на ячейку
-  fast: { name: 'Быстро', pixelsPerFrame: 5 },        // ~213ms на ячейку
-  very_fast: { name: 'Очень быстро', pixelsPerFrame: 8 }, // ~133ms на ячейку
+  slow: { name: 'Медленно', pixelsPerFrame: 2, msPerCell: 533 },      // 64/2 * 16.67 = 533ms
+  normal: { name: 'Нормально', pixelsPerFrame: 3, msPerCell: 356 },   // 64/3 * 16.67 = 356ms
+  fast: { name: 'Быстро', pixelsPerFrame: 5, msPerCell: 213 },        // 64/5 * 16.67 = 213ms
+  very_fast: { name: 'Очень быстро', pixelsPerFrame: 8, msPerCell: 133 }, // 64/8 * 16.67 = 133ms
 } as const;
 
 export type SpeedPreset = keyof typeof SPEED_PRESETS;
 export const SPEED_ORDER: SpeedPreset[] = ['slow', 'normal', 'fast', 'very_fast'];
 
-// Рассчитать ms на ячейку для заданной скорости и размера
-export function getMsPerCell(speedPreset: SpeedPreset, sizePreset: SizePreset): number {
-  const tileSize = Math.round(BASE_TILE_SIZE * SIZE_PRESETS[sizePreset].scale);
-  const pixelsPerFrame = SPEED_PRESETS[speedPreset].pixelsPerFrame;
-  // При 60fps, 1 кадр = 16.67ms
-  // Кадров на ячейку = tileSize / pixelsPerFrame
-  // ms на ячейку = кадров * 16.67
-  const framesPerCell = tileSize / pixelsPerFrame;
-  return Math.round(framesPerCell * (1000 / 60));
+// Получить ms на ячейку для заданной скорости
+// ФИКСИРОВАННЫЕ значения, не зависящие от размера плитки в браузере
+export function getMsPerCell(speedPreset: SpeedPreset, _sizePreset?: SizePreset): number {
+  return SPEED_PRESETS[speedPreset].msPerCell;
 }
 
 // Получить масштабированные значения
