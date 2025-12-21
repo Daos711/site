@@ -56,7 +56,7 @@ function DigitsGamePage() {
   const startNewGame = useCallback(() => {
     const patternData = isTestMode ? getTestPattern() : getRandomPattern();
     const positions = patternData.positions as [number, number][];
-    const numbers = 'numbers' in patternData ? patternData.numbers : undefined;
+    const numbers = 'numbers' in patternData ? (patternData.numbers as number[]) : undefined;
     setPattern(positions);
     setGame(initGame(positions, numbers));
     setIsPaused(false);
@@ -161,9 +161,15 @@ function DigitsGamePage() {
     setHighlightedTiles(highlighted);
   }, [game?.selectedTile, game?.board, game?.movingTiles]);
 
-  const handleTileClick = useCallback((tile: Tile) => {
-    if (isPaused || !tile.visible) return;
-    setGame((prev) => (prev ? selectTile(prev, tile) : prev));
+  const handleTileClick = useCallback((tileId: number, row: number, col: number) => {
+    if (isPaused) return;
+    setGame((prev) => {
+      if (!prev) return prev;
+      // Ищем актуальную плитку на доске по координатам
+      const tile = prev.board[row][col];
+      if (!tile || !tile.visible || tile.id !== tileId) return prev;
+      return selectTile(prev, tile);
+    });
   }, [isPaused]);
 
   const handleArrowClick = useCallback((direction: Direction) => {
@@ -402,7 +408,7 @@ P(A|B) = P(B|A)P(A)/P(B)    σ² = E[(X-μ)²]    z = (x-μ)/σ`.repeat(15)}
                   return (
                     <button
                       key={tile.id}
-                      onClick={() => handleTileClick(tile)}
+                      onClick={() => handleTileClick(tile.id, row, col)}
                       disabled={isPaused || isFilling}
                       className={`
                         flex items-center justify-center
