@@ -63,8 +63,8 @@ export function getScaledValues(sizePreset: SizePreset) {
     gap: scaled(BASE_GAP, scale),
     panelWidth: scaled(BASE_PANEL_WIDTH, scale),
     frameWidth: scaled(BASE_FRAME_WIDTH, scale),
-    // Тень плитки: 4.7% от размера плитки (пропорционально)
-    bevel: Math.max(1, Math.round(tileSize * 0.047)),
+    // Тень плитки: 4.7% от размера плитки (как в Python: max(2, round(tileSize * 3/64)))
+    bevel: Math.max(2, Math.round(tileSize * 0.047)),
     // Масштаб для элементов панели
     scale,
   };
