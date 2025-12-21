@@ -1,17 +1,18 @@
 // Настройки игры "Цифры" - размеры и скорость как в Python версии
 
 // Базовые размеры (при scale = 1.0)
-export const BASE_TILE_SIZE = 64;
-export const BASE_GAP = 3;
-export const BASE_PANEL_WIDTH = 240;
-export const BASE_FRAME_WIDTH = 10;
+// Уменьшены для соответствия визуальному размеру Python версии
+export const BASE_TILE_SIZE = 48;  // было 64 в Python, но браузер рендерит крупнее
+export const BASE_GAP = 2;
+export const BASE_PANEL_WIDTH = 180;
+export const BASE_FRAME_WIDTH = 8;
 
 // Пресеты размеров (как в Python)
 export const SIZE_PRESETS = {
-  small: { name: 'Маленький', scale: 0.7 },
-  medium: { name: 'Средний', scale: 0.9 },
-  large: { name: 'Большой', scale: 1.0 },
-  xlarge: { name: 'Очень большой', scale: 1.2 },
+  small: { name: 'Маленький', scale: 0.75 },
+  medium: { name: 'Средний', scale: 0.95 },
+  large: { name: 'Большой', scale: 1.1 },
+  xlarge: { name: 'Очень большой', scale: 1.3 },
 } as const;
 
 export type SizePreset = keyof typeof SIZE_PRESETS;
