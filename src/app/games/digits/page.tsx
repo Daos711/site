@@ -11,7 +11,7 @@ const versions = [
   {
     version: "1.0",
     date: "2025-12-21",
-    downloadUrl: "/downloads/digits-1.0.zip",
+    downloadUrl: "https://github.com/Daos711/site/releases/download/v1.0/digits-1.0.zip",
     changelog: "Первый релиз игры",
   },
 ];
