@@ -27,8 +27,9 @@ export const projects: Project[] = [
     id: "beam-calculator",
     title: "Расчёт балки",
     description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров.",
-    tags: ["инструмент", "сопромат"],
-    status: "coming-soon",
+    tags: ["инструмент", "сопромат", "TypeScript", "web"],
+    status: "prototype",
+    href: "/tools/beam-calculator",
   },
 ];
 
