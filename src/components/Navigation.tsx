@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
+const basePath = "/site";
+
 const navItems = [
   { href: "/", label: "Главная" },
   { href: "/tools", label: "Инструменты" },
@@ -22,18 +24,19 @@ export function Navigation() {
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/" className="text-lg font-semibold hover:text-accent transition-colors">
+          <a href={basePath} className="text-lg font-semibold hover:text-accent transition-colors">
             Lab
           </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const fullHref = item.href === "/" ? basePath : basePath + item.href;
+              const isActive = pathname === item.href || pathname === fullHref;
               return (
                 <a
                   key={item.href}
-                  href={item.href}
+                  href={fullHref}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-card text-foreground"
@@ -61,11 +64,12 @@ export function Navigation() {
           <div className="md:hidden pb-4">
             <div className="flex flex-col gap-1">
               {navItems.map((item) => {
-                const isActive = pathname === item.href;
+                const fullHref = item.href === "/" ? basePath : basePath + item.href;
+                const isActive = pathname === item.href || pathname === fullHref;
                 return (
                   <a
                     key={item.href}
-                    href={item.href}
+                    href={fullHref}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
