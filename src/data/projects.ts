@@ -4,6 +4,7 @@ export interface Project {
   description: string;
   tags: string[];
   status: "ready" | "prototype" | "coming-soon";
+  href?: string;
 }
 
 export const projects: Project[] = [
@@ -13,6 +14,7 @@ export const projects: Project[] = [
     description: "Головоломка с числами. Игра на логику и внимательность.",
     tags: ["игра", "Python", "Pygame", "desktop"],
     status: "prototype",
+    href: "/games/digits",
   },
   {
     id: "reynolds",
