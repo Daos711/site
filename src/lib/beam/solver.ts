@@ -257,7 +257,10 @@ function createMFunction(
       } else if (load.type === "force") {
         M += load.F * macaulay(x, load.x, 1);
       } else if (load.type === "moment") {
-        M += load.M * macaulay(x, load.x, 0);
+        // Внешний момент даёт скачок ВНИЗ на M в эпюре изгибающих моментов
+        // (момент против часовой стрелки = +M в уравнении равновесия,
+        //  но −M в формуле внутреннего момента)
+        M -= load.M * macaulay(x, load.x, 0);
       }
     }
 
@@ -274,7 +277,10 @@ function computeDeflections(
   M: (x: number) => number
 ): { theta: (x: number) => number; y: (x: number) => number } {
   const { L, beamType, loads, E, I } = input;
-  const EI = E! * I!;
+  // E в Па (Н/м²), I в м⁴ => EI в Н·м²
+  // Нагрузки в кН => моменты в кН·м => интегралы в кН·м², кН·м³
+  // Чтобы получить прогиб в м, делим EI на 1000 (переводим в кН·м²)
+  const EI = (E! * I!) / 1000;
 
   // Интегралы M(x) для theta и y
   // theta = (1/EI) * ∫M dx + C1
@@ -313,7 +319,8 @@ function computeDeflections(
       } else if (load.type === "force") {
         result += load.F * macaulayIntegral(x, load.x, 1);
       } else if (load.type === "moment") {
-        result += load.M * macaulayIntegral(x, load.x, 0);
+        // Знак минус, как в M(x)
+        result -= load.M * macaulayIntegral(x, load.x, 0);
       }
     }
 
@@ -353,7 +360,8 @@ function computeDeflections(
       } else if (load.type === "force") {
         result += load.F * macaulayDoubleIntegral(x, load.x, 1);
       } else if (load.type === "moment") {
-        result += load.M * macaulayDoubleIntegral(x, load.x, 0);
+        // Знак минус, как в M(x)
+        result -= load.M * macaulayDoubleIntegral(x, load.x, 0);
       }
     }
 
