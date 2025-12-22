@@ -1,8 +1,6 @@
 import { type LucideIcon } from "lucide-react";
 import { Badge } from "./Badge";
 
-const basePath = "/site";
-
 interface CardProps {
   title: string;
   description: string;
@@ -56,8 +54,7 @@ export function Card({ title, description, href, icon: Icon, status, tags }: Car
   );
 
   if (href) {
-    const fullHref = href.startsWith("/") && !href.startsWith("/site") ? basePath + href : href;
-    return <a href={fullHref}>{content}</a>;
+    return <a href={href}>{content}</a>;
   }
 
   return content;
