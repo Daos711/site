@@ -122,7 +122,6 @@ export function BeamResults({ input, result }: Props) {
           unit="кН·м"
           color="rgb(34, 197, 94)"
           fillColor="rgba(34, 197, 94, 0.2)"
-          invertY
         />
 
         {yData && (
