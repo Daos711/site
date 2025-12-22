@@ -41,12 +41,12 @@ export function BeamInput({ onCalculate }: Props) {
   const addDistributedLoad = () => {
     setLoads([
       ...loads,
-      { type: "distributed", q: -10, a: 0, b: L / 2 },
+      { type: "distributed", q: 10, a: 0, b: L / 2 },
     ]);
   };
 
   const addPointForce = () => {
-    setLoads([...loads, { type: "force", F: -20, x: L / 2 }]);
+    setLoads([...loads, { type: "force", F: 20, x: L / 2 }]);
   };
 
   const addMoment = () => {
@@ -188,7 +188,7 @@ export function BeamInput({ onCalculate }: Props) {
         </div>
 
         <p className="text-sm text-muted mb-4">
-          Знак: + вверх / против часовой, − вниз / по часовой
+          Знак: q, F + вниз (↓), M + против часовой (↺)
         </p>
 
         {loads.length === 0 ? (

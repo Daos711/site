@@ -53,27 +53,34 @@ export function solveBeam(input: BeamInput): BeamResult {
 
 /**
  * Вычисление реакций опор
+ *
+ * Конвенция знаков (инженерная):
+ * - q, F: положительные = вниз (по направлению силы тяжести)
+ * - M: положительный = против часовой стрелки
+ * - Реакции: положительные = вверх
  */
 function computeReactions(input: BeamInput): Reactions {
   const { L, beamType, loads, supports } = input;
 
-  // Суммы от нагрузок
-  let sumF = 0; // сумма вертикальных сил
+  // Суммы от нагрузок (инвертируем q и F, так как + = вниз)
+  let sumF = 0; // сумма вертикальных сил (в нашей системе + вверх)
   let sumM0 = 0; // сумма моментов относительно x=0
 
   for (const load of loads) {
     if (load.type === "distributed") {
       const { q, a, b } = load;
       const length = b - a;
-      const resultant = q * length;
+      // q положительный = вниз, в формулах нужен отрицательный
+      const resultant = -q * length;
       const arm = (a + b) / 2;
       sumF += resultant;
       sumM0 += resultant * arm;
     } else if (load.type === "force") {
-      sumF += load.F;
-      sumM0 += load.F * load.x;
+      // F положительный = вниз, в формулах нужен отрицательный
+      sumF -= load.F;
+      sumM0 -= load.F * load.x;
     } else if (load.type === "moment") {
-      sumM0 += load.M; // момент не влияет на sumF
+      sumM0 += load.M; // момент: + = против часовой (оставляем)
     }
   }
 
@@ -82,20 +89,17 @@ function computeReactions(input: BeamInput): Reactions {
     const xA = supports.find((s) => s.type === "pin")?.x ?? 0;
     const xB = supports.find((s) => s.type === "roller")?.x ?? L;
 
-    // ΣM_A = 0: RB * (xB - xA) + sumM0_relative_to_A = 0
-    // ΣFy = 0: RA + RB + sumF = 0
-
     // Моменты относительно A
     let sumMA = 0;
     for (const load of loads) {
       if (load.type === "distributed") {
         const { q, a, b } = load;
         const length = b - a;
-        const resultant = q * length;
+        const resultant = -q * length; // инверсия
         const arm = (a + b) / 2 - xA;
         sumMA += resultant * arm;
       } else if (load.type === "force") {
-        sumMA += load.F * (load.x - xA);
+        sumMA -= load.F * (load.x - xA); // инверсия
       } else if (load.type === "moment") {
         sumMA += load.M;
       }
@@ -122,11 +126,11 @@ function computeReactions(input: BeamInput): Reactions {
       if (load.type === "distributed") {
         const { q, a, b } = load;
         const length = b - a;
-        const resultant = q * length;
+        const resultant = -q * length; // инверсия
         const arm = (a + b) / 2 - xf;
         sumMf += resultant * arm;
       } else if (load.type === "force") {
-        sumMf += load.F * (load.x - xf);
+        sumMf -= load.F * (load.x - xf); // инверсия
       } else if (load.type === "moment") {
         sumMf += load.M;
       }
@@ -141,6 +145,7 @@ function computeReactions(input: BeamInput): Reactions {
 
 /**
  * Создание функции Q(x) через Маколея
+ * Конвенция: q, F положительные = вниз (инвертируем в формулах)
  */
 function createQFunction(
   input: BeamInput,
@@ -151,7 +156,7 @@ function createQFunction(
   return (x: number): number => {
     let Q = 0;
 
-    // Вклад реакций
+    // Реакции (уже с правильным знаком: + = вверх)
     if (beamType === "simply-supported") {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         Q += reactions.RA * macaulay(x, reactions.xA, 0);
@@ -165,51 +170,20 @@ function createQFunction(
       }
     }
 
-    // Вклад нагрузок
-    for (const load of loads) {
-      if (load.type === "distributed") {
-        const { q, a, b } = load;
-        // Q от распределённой: q * (<x-a>^1 - <x-b>^1)
-        // Но для Q нужен скачок в начале и конце
-        Q += q * (macaulay(x, a, 1) - macaulay(x, b, 1)) / 1;
-        // Корректировка: для Q это интеграл от q
-        // Q = -∫q dx = -q*(x-a) для x>=a, до x>=b
-        // Проще: Q += q * <x-a>^0 * (x-a) для участка [a,b]
-      } else if (load.type === "force") {
-        Q += load.F * macaulay(x, load.x, 0);
-      }
-      // Момент не влияет на Q
-    }
-
-    // Пересчёт для распределённой нагрузки (правильная формула)
-    Q = 0;
-
-    // Реакции
-    if (beamType === "simply-supported") {
-      if (reactions.xA !== undefined && reactions.RA !== undefined) {
-        Q += reactions.RA * macaulay(x, reactions.xA, 0);
-      }
-      if (reactions.xB !== undefined && reactions.RB !== undefined) {
-        Q += reactions.RB * macaulay(x, reactions.xB, 0);
-      }
-    } else {
-      if (reactions.xf !== undefined && reactions.Rf !== undefined) {
-        Q += reactions.Rf * macaulay(x, reactions.xf, 0);
-      }
-    }
-
-    // Нагрузки
+    // Нагрузки (инвертируем: пользователь вводит + = вниз)
     for (const load of loads) {
       if (load.type === "distributed") {
         const { q, a, b } = load;
         // Q от q: линейное изменение на участке [a, b]
+        // Минус, потому что q+ = вниз
         if (x >= a && x < b) {
-          Q += q * (x - a);
+          Q -= q * (x - a);
         } else if (x >= b) {
-          Q += q * (b - a);
+          Q -= q * (b - a);
         }
       } else if (load.type === "force") {
-        Q += load.F * macaulay(x, load.x, 0);
+        // Минус, потому что F+ = вниз
+        Q -= load.F * macaulay(x, load.x, 0);
       }
     }
 
@@ -219,6 +193,7 @@ function createQFunction(
 
 /**
  * Создание функции M(x) через Маколея
+ * Конвенция: q, F положительные = вниз (инвертируем в формулах)
  */
 function createMFunction(
   input: BeamInput,
@@ -229,7 +204,7 @@ function createMFunction(
   return (x: number): number => {
     let M = 0;
 
-    // Вклад реакций
+    // Вклад реакций (уже с правильным знаком: + = вверх)
     if (beamType === "simply-supported") {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         M += reactions.RA * macaulay(x, reactions.xA, 1);
@@ -248,14 +223,16 @@ function createMFunction(
       }
     }
 
-    // Вклад нагрузок
+    // Вклад нагрузок (инвертируем: пользователь вводит + = вниз)
     for (const load of loads) {
       if (load.type === "distributed") {
         const { q, a, b } = load;
-        // M от распределённой: (q/2) * (<x-a>^2 - <x-b>^2)
-        M += (q / 2) * (macaulay(x, a, 2) - macaulay(x, b, 2));
+        // M от распределённой: -(q/2) * (<x-a>^2 - <x-b>^2)
+        // Минус, потому что q+ = вниз
+        M -= (q / 2) * (macaulay(x, a, 2) - macaulay(x, b, 2));
       } else if (load.type === "force") {
-        M += load.F * macaulay(x, load.x, 1);
+        // Минус, потому что F+ = вниз
+        M -= load.F * macaulay(x, load.x, 1);
       } else if (load.type === "moment") {
         // Внешний момент даёт скачок ВНИЗ на M в эпюре изгибающих моментов
         // (момент против часовой стрелки = +M в уравнении равновесия,
@@ -309,15 +286,17 @@ function computeDeflections(
       }
     }
 
-    // От нагрузок
+    // От нагрузок (инвертируем: + = вниз)
     for (const load of loads) {
       if (load.type === "distributed") {
         const { q, a, b } = load;
-        result +=
+        // Минус, потому что q+ = вниз
+        result -=
           (q / 2) *
           (macaulayIntegral(x, a, 2) - macaulayIntegral(x, b, 2));
       } else if (load.type === "force") {
-        result += load.F * macaulayIntegral(x, load.x, 1);
+        // Минус, потому что F+ = вниз
+        result -= load.F * macaulayIntegral(x, load.x, 1);
       } else if (load.type === "moment") {
         // Знак минус, как в M(x)
         result -= load.M * macaulayIntegral(x, load.x, 0);
@@ -350,15 +329,17 @@ function computeDeflections(
       }
     }
 
-    // От нагрузок
+    // От нагрузок (инвертируем: + = вниз)
     for (const load of loads) {
       if (load.type === "distributed") {
         const { q, a, b } = load;
-        result +=
+        // Минус, потому что q+ = вниз
+        result -=
           (q / 2) *
           (macaulayDoubleIntegral(x, a, 2) - macaulayDoubleIntegral(x, b, 2));
       } else if (load.type === "force") {
-        result += load.F * macaulayDoubleIntegral(x, load.x, 1);
+        // Минус, потому что F+ = вниз
+        result -= load.F * macaulayDoubleIntegral(x, load.x, 1);
       } else if (load.type === "moment") {
         // Знак минус, как в M(x)
         result -= load.M * macaulayDoubleIntegral(x, load.x, 0);
