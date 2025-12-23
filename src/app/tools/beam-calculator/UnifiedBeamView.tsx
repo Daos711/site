@@ -245,10 +245,10 @@ export function UnifiedBeamView({ input, result }: Props) {
           />
         )}
 
-        {/* Панель: w(x) — прогиб вниз (отрицательный, но физичный) */}
+        {/* Панель: y(x) — прогиб вниз (отрицательный, но физичный) */}
         {hasDeflection && (
           <DiagramPanel
-            title="w(x)"
+            title="y(x)"
             unit="мм"
             segments={wSegments}
             xToPx={xToPx}
@@ -578,7 +578,7 @@ function DistributedLoadArrows({
               x1={px}
               y1={baseY - arrowLen}
               x2={px}
-              y2={baseY - 3}
+              y2={baseY - 8}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd="url(#arrowBlue)"
@@ -604,7 +604,7 @@ function DistributedLoadArrows({
               x1={px}
               y1={baseY + arrowLen}
               x2={px}
-              y2={baseY + 3}
+              y2={baseY + 8}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd="url(#arrowBlueUp)"
@@ -624,7 +624,7 @@ function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label
   const arrowLen = 50;
   return (
     <g>
-      <line x1={x} y1={y - arrowLen} x2={x} y2={y - 5} stroke={COLORS.pointForce} strokeWidth={3} markerEnd="url(#arrowRed)" />
+      <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={3} markerEnd="url(#arrowRed)" />
       <text x={x + 10} y={y - arrowLen + 10} fill={COLORS.pointForce} fontSize={14} fontWeight="600">
         {label}
       </text>
@@ -796,8 +796,8 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               y={textY}
               textAnchor="start"
               fill={color}
-              fontSize={10}
-              fillOpacity={0.8}
+              fontSize={12}
+              fontWeight="500"
             >
               {formatNum(first.value, 1)}
             </text>
@@ -814,8 +814,8 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               y={textY}
               textAnchor="end"
               fill={color}
-              fontSize={10}
-              fillOpacity={0.8}
+              fontSize={12}
+              fontWeight="500"
             >
               {formatNum(last.value, 1)}
             </text>
