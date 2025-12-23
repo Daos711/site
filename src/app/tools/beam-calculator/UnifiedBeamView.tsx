@@ -184,12 +184,12 @@ export function UnifiedBeamView({ input, result }: Props) {
           </clipPath>
         </defs>
 
-        {/* Сквозные вертикальные пунктирные линии границ */}
+        {/* Сквозные вертикальные пунктирные линии границ - от балки до низа */}
         {boundaries.map((b, i) => (
           <line
             key={`boundary-${i}`}
             x1={xToPx(b)}
-            y1={BEAM_HEIGHT - 30}
+            y1={BEAM_HEIGHT / 2 + 20}
             x2={xToPx(b)}
             y2={totalHeight - 45}
             stroke={COLORS.boundary}
@@ -217,6 +217,7 @@ export function UnifiedBeamView({ input, result }: Props) {
           height={DIAGRAM_HEIGHT}
           color={COLORS.Q}
           chartWidth={chartWidth}
+          boundaries={boundaries}
         />
 
         {/* Панель: M(x) - КРАСНЫЙ */}
@@ -229,6 +230,7 @@ export function UnifiedBeamView({ input, result }: Props) {
           height={DIAGRAM_HEIGHT}
           color={COLORS.M}
           chartWidth={chartWidth}
+          boundaries={boundaries}
         />
 
         {/* Панель: θ(x) */}
@@ -242,6 +244,7 @@ export function UnifiedBeamView({ input, result }: Props) {
             height={DIAGRAM_HEIGHT}
             color={COLORS.theta}
             chartWidth={chartWidth}
+            boundaries={boundaries}
           />
         )}
 
@@ -257,6 +260,7 @@ export function UnifiedBeamView({ input, result }: Props) {
             color={COLORS.w}
             chartWidth={chartWidth}
             scale={1000}
+            boundaries={boundaries}
           />
         )}
 
@@ -419,7 +423,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           baseY={beamY - beamThickness / 2}
           value={reactions.RB}
           label={`R_B = ${formatNum(reactions.RB)} кН`}
-          labelSide="right"
+          labelSide="left"
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -432,11 +436,11 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         />
       )}
 
-      {/* Подписи A и B */}
+      {/* Подписи A и B - сдвинуты от пунктиров */}
       {beamType === "simply-supported" && (
         <>
           <text
-            x={xToPx(0)}
+            x={xToPx(0) - 25}
             y={beamY + 75}
             textAnchor="middle"
             fill={COLORS.text}
@@ -446,7 +450,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
             A
           </text>
           <text
-            x={xToPx(L)}
+            x={xToPx(L) + 25}
             y={beamY + 75}
             textAnchor="middle"
             fill={COLORS.text}
@@ -461,32 +465,52 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
   );
 }
 
-// Шарнирная опора
+// Шарнирная опора с заделкой (штриховкой)
 function PinSupport({ x, y }: { x: number; y: number }) {
   const size = 24;
+  const baseY = y + size; // низ треугольника
+  const lineHalfWidth = size / 2 + 8;
   return (
     <g>
       <polygon
-        points={`${x},${y} ${x - size / 2},${y + size} ${x + size / 2},${y + size}`}
+        points={`${x},${y} ${x - size / 2},${baseY} ${x + size / 2},${baseY}`}
         fill="none"
         stroke={COLORS.support}
         strokeWidth={3}
       />
+      {/* Горизонтальная линия через основание треугольника */}
       <line
-        x1={x - size / 2 - 6}
-        y1={y + size + 4}
-        x2={x + size / 2 + 6}
-        y2={y + size + 4}
+        x1={x - lineHalfWidth}
+        y1={baseY}
+        x2={x + lineHalfWidth}
+        y2={baseY}
         stroke={COLORS.support}
         strokeWidth={3}
       />
+      {/* Штриховка под линией (заделка) */}
+      {Array.from({ length: 7 }).map((_, i) => {
+        const hx = x - lineHalfWidth + 5 + i * 8;
+        return (
+          <line
+            key={i}
+            x1={hx}
+            y1={baseY}
+            x2={hx - 8}
+            y2={baseY + 10}
+            stroke={COLORS.support}
+            strokeWidth={2}
+          />
+        );
+      })}
     </g>
   );
 }
 
-// Каток
+// Каток с штриховкой
 function RollerSupport({ x, y }: { x: number; y: number }) {
   const size = 24;
+  const baseY = y + size + 15; // линия под колёсами
+  const lineHalfWidth = size / 2 + 8;
   return (
     <g>
       <polygon
@@ -497,14 +521,30 @@ function RollerSupport({ x, y }: { x: number; y: number }) {
       />
       <circle cx={x - size / 4} cy={y + size + 7} r={6} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
       <circle cx={x + size / 4} cy={y + size + 7} r={6} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
+      {/* Горизонтальная линия под колёсами */}
       <line
-        x1={x - size / 2 - 6}
-        y1={y + size + 15}
-        x2={x + size / 2 + 6}
-        y2={y + size + 15}
+        x1={x - lineHalfWidth}
+        y1={baseY}
+        x2={x + lineHalfWidth}
+        y2={baseY}
         stroke={COLORS.support}
         strokeWidth={3}
       />
+      {/* Штриховка под линией (заделка) */}
+      {Array.from({ length: 7 }).map((_, i) => {
+        const hx = x - lineHalfWidth + 5 + i * 8;
+        return (
+          <line
+            key={i}
+            x1={hx}
+            y1={baseY}
+            x2={hx - 8}
+            y2={baseY + 10}
+            stroke={COLORS.support}
+            strokeWidth={2}
+          />
+        );
+      })}
     </g>
   );
 }
@@ -670,9 +710,10 @@ interface DiagramPanelProps {
   color: string;
   chartWidth: number;
   scale?: number;
+  boundaries?: number[];
 }
 
-function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWidth, scale = 1 }: DiagramPanelProps) {
+function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWidth, scale = 1, boundaries = [] }: DiagramPanelProps) {
   const scaledSegments = segments.map((seg) =>
     seg.map((p) => ({ ...p, value: p.value * scale }))
   );
@@ -805,7 +846,8 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         }
 
         // Подпись в конце сегмента (сдвиг влево от пунктира)
-        if (segIdx < scaledSegments.length - 1 && Math.abs(last.value) > 0.01 && !isNearExtreme(last.x, last.value)) {
+        // Показываем для всех сегментов, включая последний
+        if (Math.abs(last.value) > 0.01 && !isNearExtreme(last.x, last.value)) {
           const textY = last.value >= 0 ? scaleY(last.value) - 8 : scaleY(last.value) + 14;
           labels.push(
             <text
@@ -825,23 +867,35 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         return <g key={`labels-${segIdx}`}>{labels}</g>;
       })}
 
-      {/* Маркеры экстремумов */}
-      {Math.abs(extremes.maxP.value) > 0.01 && (
-        <g>
-          <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={color} />
-          <text x={xToPx(extremes.maxP.x)} y={scaleY(extremes.maxP.value) - 10} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
-            {formatNum(extremes.maxP.value)}
-          </text>
-        </g>
-      )}
-      {Math.abs(extremes.minP.value) > 0.01 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (
-        <g>
-          <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={color} />
-          <text x={xToPx(extremes.minP.x)} y={scaleY(extremes.minP.value) + 14} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
-            {formatNum(extremes.minP.value)}
-          </text>
-        </g>
-      )}
+      {/* Маркеры экстремумов - сдвигаем подписи от границ */}
+      {Math.abs(extremes.maxP.value) > 0.01 && (() => {
+        // Проверяем, находится ли экстремум на границе
+        const onBoundary = boundaries.some(b => Math.abs(b - extremes.maxP.x) < 0.05);
+        const offset = onBoundary ? 15 : 0;
+        const textAnchor = onBoundary ? "start" : "middle";
+        return (
+          <g>
+            <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={color} />
+            <text x={xToPx(extremes.maxP.x) + offset} y={scaleY(extremes.maxP.value) - 10} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
+              {formatNum(extremes.maxP.value)}
+            </text>
+          </g>
+        );
+      })()}
+      {Math.abs(extremes.minP.value) > 0.01 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (() => {
+        // Проверяем, находится ли экстремум на границе
+        const onBoundary = boundaries.some(b => Math.abs(b - extremes.minP.x) < 0.05);
+        const offset = onBoundary ? 15 : 0;
+        const textAnchor = onBoundary ? "start" : "middle";
+        return (
+          <g>
+            <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={color} />
+            <text x={xToPx(extremes.minP.x) + offset} y={scaleY(extremes.minP.value) + 14} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
+              {formatNum(extremes.minP.value)}
+            </text>
+          </g>
+        );
+      })()}
     </g>
   );
 }
