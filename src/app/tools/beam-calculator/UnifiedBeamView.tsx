@@ -729,11 +729,17 @@ function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label
 }
 
 // Момент (дуговая стрелка, ФИОЛЕТОВАЯ)
+// M > 0: против часовой (↺), M < 0: по часовой (↻)
 function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; label: string }) {
-  const r = 22;
-  const sweep = M >= 0 ? 0 : 1;
-  const startAngle = -30;
-  const endAngle = 210;
+  const r = 18;
+  const isPositive = M >= 0;
+
+  // Для положительного момента (против часовой): дуга идёт против часовой, стрелка справа
+  // Для отрицательного момента (по часовой): дуга идёт по часовой, стрелка слева
+  const startAngle = isPositive ? -60 : 240;
+  const endAngle = isPositive ? 240 : -60;
+  const sweep = isPositive ? 0 : 1; // 0 = против часовой, 1 = по часовой
+
   const x1 = x + r * Math.cos((startAngle * Math.PI) / 180);
   const y1 = y - r * Math.sin((startAngle * Math.PI) / 180);
   const x2 = x + r * Math.cos((endAngle * Math.PI) / 180);
@@ -745,10 +751,11 @@ function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; labe
         d={`M ${x1} ${y1} A ${r} ${r} 0 1 ${sweep} ${x2} ${y2}`}
         fill="none"
         stroke={COLORS.moment}
-        strokeWidth={3}
+        strokeWidth={2.5}
         markerEnd="url(#arrowPurple)"
       />
-      <text x={x} y={y - r - 15} textAnchor="middle" fill={COLORS.moment} fontSize={14} fontWeight="600">
+      {/* Подпись сбоку от момента, чтобы не накладываться на q */}
+      <text x={x + r + 8} y={y - r - 5} textAnchor="start" fill={COLORS.moment} fontSize={12} fontWeight="600">
         {label}
       </text>
     </g>
@@ -791,25 +798,18 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
   const zeroY = scaleY(0);
 
-  // Находим экстремумы (исключая границы x=0 и x=L)
+  // Находим экстремумы
   const extremes = useMemo(() => {
-    const xMin = boundaries.length > 0 ? boundaries[0] : 0;
-    const xMax = boundaries.length > 0 ? boundaries[boundaries.length - 1] : 0;
-    const eps = 0.05; // Допуск для определения границы
-
     let maxP = { x: 0, value: 0 };
     let minP = { x: 0, value: 0 };
     for (const seg of scaledSegments) {
       for (const p of seg) {
-        // Пропускаем точки на границах балки
-        if (Math.abs(p.x - xMin) < eps || Math.abs(p.x - xMax) < eps) continue;
-
         if (p.value > maxP.value) maxP = p;
         if (p.value < minP.value) minP = p;
       }
     }
     return { maxP, minP };
-  }, [scaledSegments, boundaries]);
+  }, [scaledSegments]);
 
   return (
     <g>
@@ -918,16 +918,16 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           if (isNearExtreme(bx, value)) continue;
 
           // Размещаем подпись СНАРУЖИ от заливки диаграммы
-          // Для положительных значений: выше нулевой линии (но не на кривой)
-          // Для отрицательных: ниже нулевой линии (но не на кривой)
+          // Вертикально: над кривой для положительных, под кривой для отрицательных
           const curveY = scaleY(value);
           const textY = value >= 0
             ? Math.min(curveY - 12, zeroY - 12) // Выше кривой И выше нуля
             : Math.max(curveY + 16, zeroY + 16); // Ниже кривой И ниже нуля
 
-          // На первой границе - сдвиг вправо, на последней - влево, остальные - по центру или влево
-          const xOffset = isFirst ? 12 : -12;
-          const anchor = isFirst ? "start" : "end";
+          // Горизонтально: ставим СПРАВА от границы (там пусто), кроме последней границы
+          // На последней границе - влево, т.к. справа нет места
+          const xOffset = isLast ? -12 : 12;
+          const anchor = isLast ? "end" : "start";
 
           labels.push(
             <text
