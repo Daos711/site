@@ -385,17 +385,25 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           }
         }
 
-        return mergedSegments.map((seg, i) => (
-          <DistributedLoadArrows
-            key={`dist-${i}`}
-            x1={xToPx(seg.a)}
-            x2={xToPx(seg.b)}
-            beamTopY={beamY - beamThickness / 2}
-            beamBottomY={beamY + beamThickness / 2}
-            q={seg.q}
-            label={`q = ${Math.abs(seg.q)} кН/м`}
-          />
-        ));
+        // Добавляем зазоры между сегментами (3px с каждой стороны)
+        const gap = 3;
+        return mergedSegments.map((seg, i) => {
+          const isFirst = i === 0;
+          const isLast = i === mergedSegments.length - 1;
+          const x1 = xToPx(seg.a) + (isFirst ? 0 : gap);
+          const x2 = xToPx(seg.b) - (isLast ? 0 : gap);
+          return (
+            <DistributedLoadArrows
+              key={`dist-${i}`}
+              x1={x1}
+              x2={x2}
+              beamTopY={beamY - beamThickness / 2}
+              beamBottomY={beamY + beamThickness / 2}
+              q={seg.q}
+              label={`q = ${Math.abs(seg.q)} кН/м`}
+            />
+          );
+        });
       })()}
       {/* Сосредоточенные силы и моменты */}
       {loads.map((load, i) => {
@@ -844,59 +852,69 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         );
       })}
 
-      {/* Подписи на границах участков — сдвинуты от пунктиров */}
-      {scaledSegments.map((segment, segIdx) => {
-        if (segment.length < 2) return null;
-        const first = segment[0];
-        const last = segment[segment.length - 1];
+      {/* Подписи значений на всех границах участков */}
+      {(() => {
         const labels: React.ReactNode[] = [];
 
         // Проверяем, не слишком ли близко к экстремумам
         const isNearExtreme = (x: number, val: number) => {
-          const nearMax = Math.abs(x - extremes.maxP.x) < 0.3 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.1;
-          const nearMin = Math.abs(x - extremes.minP.x) < 0.3 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.1;
+          const nearMax = Math.abs(x - extremes.maxP.x) < 0.2 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.15;
+          const nearMin = Math.abs(x - extremes.minP.x) < 0.2 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.15;
           return nearMax || nearMin;
         };
 
-        // Подпись в начале сегмента (сдвиг вправо от пунктира)
-        if (Math.abs(first.value) > 0.01 && !isNearExtreme(first.x, first.value)) {
-          const textY = first.value >= 0 ? scaleY(first.value) - 8 : scaleY(first.value) + 14;
+        // Для каждой границы находим значение и показываем
+        for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
+          const bx = boundaries[bIdx];
+          const isFirst = bIdx === 0;
+          const isLast = bIdx === boundaries.length - 1;
+
+          // Находим значение на этой границе из сегментов
+          let value: number | null = null;
+          for (const seg of scaledSegments) {
+            for (const p of seg) {
+              if (Math.abs(p.x - bx) < 0.01) {
+                value = p.value;
+                break;
+              }
+            }
+            if (value !== null) break;
+            // Интерполяция если точка между точками сегмента
+            for (let i = 0; i < seg.length - 1; i++) {
+              if (seg[i].x <= bx && seg[i + 1].x >= bx) {
+                const t = (bx - seg[i].x) / (seg[i + 1].x - seg[i].x);
+                value = seg[i].value + t * (seg[i + 1].value - seg[i].value);
+                break;
+              }
+            }
+            if (value !== null) break;
+          }
+
+          if (value === null || Math.abs(value) < 0.01) continue;
+          if (isNearExtreme(bx, value)) continue;
+
+          const textY = value >= 0 ? scaleY(value) - 8 : scaleY(value) + 14;
+          // На первой границе - сдвиг вправо, на последней - влево, остальные - по центру или влево
+          const xOffset = isFirst ? 12 : -12;
+          const anchor = isFirst ? "start" : "end";
+
           labels.push(
             <text
-              key={`start-${segIdx}`}
-              x={xToPx(first.x) + 12}
+              key={`boundary-${bIdx}`}
+              x={xToPx(bx) + xOffset}
               y={textY}
-              textAnchor="start"
+              textAnchor={anchor}
               fill={color}
               fontSize={12}
               fontWeight="500"
             >
-              {formatNum(first.value, 1)}
+              {formatNum(value, 1)}
             </text>
           );
         }
 
-        // Подпись в конце сегмента (сдвиг влево от пунктира)
-        // Показываем для всех сегментов, включая последний
-        if (Math.abs(last.value) > 0.01 && !isNearExtreme(last.x, last.value)) {
-          const textY = last.value >= 0 ? scaleY(last.value) - 8 : scaleY(last.value) + 14;
-          labels.push(
-            <text
-              key={`end-${segIdx}`}
-              x={xToPx(last.x) - 12}
-              y={textY}
-              textAnchor="end"
-              fill={color}
-              fontSize={12}
-              fontWeight="500"
-            >
-              {formatNum(last.value, 1)}
-            </text>
-          );
-        }
-
-        return <g key={`labels-${segIdx}`}>{labels}</g>;
-      })}
+        return <g>{labels}</g>;
+      })()}
 
       {/* Маркеры экстремумов - сдвигаем подписи от границ */}
       {Math.abs(extremes.maxP.value) > 0.01 && (() => {
