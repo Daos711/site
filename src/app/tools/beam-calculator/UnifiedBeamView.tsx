@@ -330,33 +330,59 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         <FixedSupport x={xToPx(L)} y={beamY} side="right" />
       )}
 
-      {/* Нагрузки */}
-      {loads.map((load, i) => {
-        if (load.type === "distributed") {
+      {/* Нагрузки - распределённые с учётом слоёв */}
+      {(() => {
+        // Группируем распределённые нагрузки по знаку и считаем слои для наложения
+        const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
+        const positiveLoads = distributedLoads.filter(l => l.q >= 0);
+        const negativeLoads = distributedLoads.filter(l => l.q < 0);
+
+        // Функция для определения слоя (сколько нагрузок перекрываются с текущей)
+        const getLayer = (load: { a: number; b: number }, sameSideLods: typeof distributedLoads) => {
+          let layer = 0;
+          for (const other of sameSideLods) {
+            if (other === load) break;
+            // Проверяем перекрытие
+            if (!(other.b <= load.a || other.a >= load.b)) {
+              layer++;
+            }
+          }
+          return layer;
+        };
+
+        return distributedLoads.map((load, i) => {
+          const sameSideLoads = load.q >= 0 ? positiveLoads : negativeLoads;
+          const layer = getLayer(load, sameSideLoads);
           return (
             <DistributedLoadArrows
-              key={i}
+              key={`dist-${i}`}
               x1={xToPx(load.a)}
               x2={xToPx(load.b)}
-              y={beamY - beamThickness / 2}
+              beamTopY={beamY - beamThickness / 2}
+              beamBottomY={beamY + beamThickness / 2}
               q={load.q}
               label={`q = ${Math.abs(load.q)} кН/м`}
+              layer={layer}
             />
           );
-        } else if (load.type === "force") {
+        });
+      })()}
+      {/* Сосредоточенные силы и моменты */}
+      {loads.map((load, i) => {
+        if (load.type === "force") {
           return (
             <ForceArrow
-              key={i}
+              key={`force-${i}`}
               x={xToPx(load.x)}
               y={beamY - beamThickness / 2}
               F={load.F}
               label={`F = ${Math.abs(load.F)} кН`}
             />
           );
-        } else {
+        } else if (load.type === "moment") {
           return (
             <MomentArrow
-              key={i}
+              key={`moment-${i}`}
               x={xToPx(load.x)}
               y={beamY}
               M={load.M}
@@ -364,6 +390,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
             />
           );
         }
+        return null; // distributed уже обработаны выше
       })}
 
       {/* Реакции - ЗЕЛЁНЫЕ стрелки ОТ балки ВВЕРХ */}
@@ -508,33 +535,71 @@ function ReactionArrow({ x, baseY, value, label }: { x: number; baseY: number; v
 }
 
 // Распределённая нагрузка (СИНЯЯ)
-function DistributedLoadArrows({ x1, x2, y, q, label }: { x1: number; x2: number; y: number; q: number; label: string }) {
-  const arrowLen = 35;
-  const numArrows = Math.max(5, Math.floor((x2 - x1) / 30));
+// q > 0: сверху балки, стрелки вниз
+// q < 0: снизу балки, стрелки вверх
+// layer: смещение для наложения нескольких q
+function DistributedLoadArrows({
+  x1, x2, beamTopY, beamBottomY, q, label, layer = 0
+}: {
+  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; layer?: number
+}) {
+  const arrowLen = 30;
+  const layerOffset = layer * 25; // Смещение между слоями
+  const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
-  return (
-    <g>
-      <line x1={x1} y1={y - arrowLen} x2={x2} y2={y - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2.5} />
-      {Array.from({ length: numArrows }).map((_, i) => {
-        const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
-        return (
-          <line
-            key={i}
-            x1={px}
-            y1={y - arrowLen}
-            x2={px}
-            y2={y - 5}
-            stroke={COLORS.distributedLoad}
-            strokeWidth={2.5}
-            markerEnd="url(#arrowBlue)"
-          />
-        );
-      })}
-      <text x={(x1 + x2) / 2} y={y - arrowLen - 12} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={14} fontWeight="600">
-        {label}
-      </text>
-    </g>
-  );
+  if (q >= 0) {
+    // Положительная q: сверху балки, стрелки вниз
+    const baseY = beamTopY - layerOffset;
+    return (
+      <g>
+        <line x1={x1} y1={baseY - arrowLen} x2={x2} y2={baseY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
+        {Array.from({ length: numArrows }).map((_, i) => {
+          const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
+          return (
+            <line
+              key={i}
+              x1={px}
+              y1={baseY - arrowLen}
+              x2={px}
+              y2={baseY - 3}
+              stroke={COLORS.distributedLoad}
+              strokeWidth={2}
+              markerEnd="url(#arrowBlue)"
+            />
+          );
+        })}
+        <text x={(x1 + x2) / 2} y={baseY - arrowLen - 8} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
+          {label}
+        </text>
+      </g>
+    );
+  } else {
+    // Отрицательная q: снизу балки, стрелки вверх
+    const baseY = beamBottomY + layerOffset;
+    return (
+      <g>
+        <line x1={x1} y1={baseY + arrowLen} x2={x2} y2={baseY + arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
+        {Array.from({ length: numArrows }).map((_, i) => {
+          const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
+          return (
+            <line
+              key={i}
+              x1={px}
+              y1={baseY + arrowLen}
+              x2={px}
+              y2={baseY + 3}
+              stroke={COLORS.distributedLoad}
+              strokeWidth={2}
+              markerStart="url(#arrowBlue)"
+            />
+          );
+        })}
+        <text x={(x1 + x2) / 2} y={baseY + arrowLen + 18} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
+          {label}
+        </text>
+      </g>
+    );
+  }
 }
 
 // Сосредоточенная сила (КРАСНАЯ)
@@ -688,6 +753,59 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
             <path d={lineD} stroke={color} strokeWidth={2.5} fill="none" />
           </g>
         );
+      })}
+
+      {/* Подписи на границах участков */}
+      {scaledSegments.map((segment, segIdx) => {
+        if (segment.length < 2) return null;
+        const first = segment[0];
+        const last = segment[segment.length - 1];
+        const labels: React.ReactNode[] = [];
+
+        // Проверяем, не слишком ли близко к экстремумам
+        const isNearExtreme = (x: number, val: number) => {
+          const nearMax = Math.abs(x - extremes.maxP.x) < 0.3 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.1;
+          const nearMin = Math.abs(x - extremes.minP.x) < 0.3 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.1;
+          return nearMax || nearMin;
+        };
+
+        // Подпись в начале сегмента
+        if (Math.abs(first.value) > 0.01 && !isNearExtreme(first.x, first.value)) {
+          const textY = first.value >= 0 ? scaleY(first.value) - 8 : scaleY(first.value) + 14;
+          labels.push(
+            <text
+              key={`start-${segIdx}`}
+              x={xToPx(first.x)}
+              y={textY}
+              textAnchor="middle"
+              fill={color}
+              fontSize={10}
+              fillOpacity={0.8}
+            >
+              {first.value.toFixed(1)}
+            </text>
+          );
+        }
+
+        // Подпись в конце сегмента (если это не последний сегмент и значение отличается)
+        if (segIdx < scaledSegments.length - 1 && Math.abs(last.value) > 0.01 && !isNearExtreme(last.x, last.value)) {
+          const textY = last.value >= 0 ? scaleY(last.value) - 8 : scaleY(last.value) + 14;
+          labels.push(
+            <text
+              key={`end-${segIdx}`}
+              x={xToPx(last.x)}
+              y={textY}
+              textAnchor="middle"
+              fill={color}
+              fontSize={10}
+              fillOpacity={0.8}
+            >
+              {last.value.toFixed(1)}
+            </text>
+          );
+        }
+
+        return <g key={`labels-${segIdx}`}>{labels}</g>;
       })}
 
       {/* Маркеры экстремумов */}
