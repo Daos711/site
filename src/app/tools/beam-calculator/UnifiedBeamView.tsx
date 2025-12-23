@@ -8,30 +8,30 @@ interface Props {
   result: BeamResult;
 }
 
-// Размеры (адаптивные)
-const PADDING = { left: 70, right: 50, top: 15, bottom: 15 };
+// Увеличенные размеры для читаемости
+const PADDING = { left: 80, right: 60, top: 20, bottom: 20 };
 
-// Высоты панелей (увеличенные)
-const BEAM_HEIGHT = 140;
-const DIAGRAM_HEIGHT = 120;
-const GAP = 12;
+// Высоты панелей (значительно увеличены)
+const BEAM_HEIGHT = 180;
+const DIAGRAM_HEIGHT = 160;
+const GAP = 16;
 
-// Цвета (разные для разных типов нагрузок)
+// Цвета как в sopromat: Q=синий, M=красный, реакции=зелёный
 const COLORS = {
-  beam: "rgb(100, 116, 139)", // slate-500
-  support: "rgb(148, 163, 184)", // slate-400
-  distributedLoad: "rgb(59, 130, 246)", // blue-500 (q - синий)
-  pointForce: "rgb(239, 68, 68)", // red-500 (F - красный)
-  moment: "rgb(168, 85, 247)", // purple-500 (M - фиолетовый)
-  reaction: "rgb(34, 197, 94)", // green-500 (реакции - зелёный)
-  Q: "rgb(239, 68, 68)", // red
-  M: "rgb(34, 197, 94)", // green
-  theta: "rgb(251, 146, 60)", // orange-400
-  w: "rgb(59, 130, 246)", // blue
-  grid: "rgba(255, 255, 255, 0.15)",
-  boundary: "rgba(255, 255, 255, 0.25)",
-  text: "rgba(255, 255, 255, 0.85)",
-  textMuted: "rgba(255, 255, 255, 0.5)",
+  beam: "rgb(100, 116, 139)",
+  support: "rgb(148, 163, 184)",
+  distributedLoad: "rgb(59, 130, 246)", // синий
+  pointForce: "rgb(239, 68, 68)", // красный
+  moment: "rgb(168, 85, 247)", // фиолетовый
+  reaction: "rgb(34, 197, 94)", // зелёный
+  Q: "rgb(59, 130, 246)", // СИНИЙ как в sopromat
+  M: "rgb(239, 68, 68)", // КРАСНЫЙ как в sopromat
+  theta: "rgb(251, 146, 60)", // оранжевый
+  w: "rgb(96, 165, 250)", // голубой
+  grid: "rgba(255, 255, 255, 0.2)",
+  boundary: "rgba(255, 255, 255, 0.5)", // более заметные
+  text: "rgba(255, 255, 255, 0.9)",
+  textMuted: "rgba(255, 255, 255, 0.6)",
 };
 
 export function UnifiedBeamView({ input, result }: Props) {
@@ -47,13 +47,11 @@ export function UnifiedBeamView({ input, result }: Props) {
     return Array.from(points).sort((a, b) => a - b);
   }, [events, L]);
 
-  // Точки разрывов (где есть скачки Q или M)
-  const discontinuities = useMemo(() => {
+  // Точки разрывов Q (сосредоточенные силы и опоры)
+  const qDiscontinuities = useMemo(() => {
     const disc = new Set<number>();
     for (const load of loads) {
       if (load.type === "force") {
-        disc.add(load.x);
-      } else if (load.type === "moment") {
         disc.add(load.x);
       }
     }
@@ -63,50 +61,62 @@ export function UnifiedBeamView({ input, result }: Props) {
     return disc;
   }, [loads, reactions]);
 
-  // Генерация данных для графика с учётом разрывов
-  const generateData = (
-    fn: (x: number) => number,
-    numPoints = 300
-  ): { x: number; value: number }[][] => {
-    const segments: { x: number; value: number }[][] = [];
-    let currentSegment: { x: number; value: number }[] = [];
-
-    const sortedBoundaries = [...boundaries];
-
-    for (let i = 0; i < sortedBoundaries.length - 1; i++) {
-      const start = sortedBoundaries[i];
-      const end = sortedBoundaries[i + 1];
-      const segmentPoints = Math.ceil((numPoints * (end - start)) / L);
-
-      for (let j = 0; j <= segmentPoints; j++) {
-        const x = start + (j / segmentPoints) * (end - start);
-        const value = fn(x);
-        currentSegment.push({ x, value });
-      }
-
-      if (discontinuities.has(end) && i < sortedBoundaries.length - 2) {
-        segments.push(currentSegment);
-        currentSegment = [];
+  // Точки разрывов M (внешние моменты)
+  const mDiscontinuities = useMemo(() => {
+    const disc = new Set<number>();
+    for (const load of loads) {
+      if (load.type === "moment") {
+        disc.add(load.x);
       }
     }
+    return disc;
+  }, [loads]);
 
-    if (currentSegment.length > 0) {
-      segments.push(currentSegment);
+  // Генерация данных для графика БЕЗ вертикальных соединений
+  const generateSegments = (
+    fn: (x: number) => number,
+    discontinuities: Set<number>,
+    numPoints = 400
+  ): { x: number; value: number }[][] => {
+    const segments: { x: number; value: number }[][] = [];
+    const sortedDisc = [0, ...Array.from(discontinuities).filter(d => d > 0 && d < L), L].sort((a, b) => a - b);
+
+    for (let i = 0; i < sortedDisc.length - 1; i++) {
+      const start = sortedDisc[i];
+      const end = sortedDisc[i + 1];
+      const segment: { x: number; value: number }[] = [];
+
+      const segmentPoints = Math.max(20, Math.ceil((numPoints * (end - start)) / L));
+
+      for (let j = 0; j <= segmentPoints; j++) {
+        const t = j / segmentPoints;
+        const x = start + t * (end - start);
+        // Для начала сегмента берём значение чуть правее точки разрыва
+        const evalX = (j === 0 && i > 0) ? x + 1e-9 : x;
+        // Для конца сегмента берём значение чуть левее
+        const evalXEnd = (j === segmentPoints && i < sortedDisc.length - 2) ? x - 1e-9 : evalX;
+        const value = fn(j === segmentPoints ? evalXEnd : evalX);
+        segment.push({ x, value });
+      }
+
+      if (segment.length > 1) {
+        segments.push(segment);
+      }
     }
 
     return segments;
   };
 
   // Данные для графиков
-  const qData = useMemo(() => generateData(Q), [Q, boundaries, discontinuities]);
-  const mData = useMemo(() => generateData(M), [M, boundaries, discontinuities]);
-  const thetaData = useMemo(
-    () => (theta ? generateData(theta) : []),
-    [theta, boundaries, discontinuities]
+  const qSegments = useMemo(() => generateSegments(Q, qDiscontinuities), [Q, qDiscontinuities]);
+  const mSegments = useMemo(() => generateSegments(M, mDiscontinuities), [M, mDiscontinuities]);
+  const thetaSegments = useMemo(
+    () => (theta ? generateSegments(theta, new Set()) : []),
+    [theta]
   );
-  const wData = useMemo(
-    () => (y ? generateData(y) : []),
-    [y, boundaries, discontinuities]
+  const wSegments = useMemo(
+    () => (y ? generateSegments(y, new Set()) : []),
+    [y]
   );
 
   // Вычисляем общую высоту
@@ -114,21 +124,18 @@ export function UnifiedBeamView({ input, result }: Props) {
   const totalHeight =
     BEAM_HEIGHT +
     GAP +
-    DIAGRAM_HEIGHT +
+    DIAGRAM_HEIGHT + // Q
     GAP +
-    DIAGRAM_HEIGHT +
-    (hasDeflection ? GAP + DIAGRAM_HEIGHT : 0) +
-    (hasDeflection ? GAP + DIAGRAM_HEIGHT : 0) +
-    40;
+    DIAGRAM_HEIGHT + // M
+    (hasDeflection ? GAP + DIAGRAM_HEIGHT : 0) + // theta
+    (hasDeflection ? GAP + DIAGRAM_HEIGHT : 0) + // w
+    50;
 
-  // Используем viewBox для масштабирования
-  const viewBoxWidth = 900;
+  const viewBoxWidth = 1000;
   const chartWidth = viewBoxWidth - PADDING.left - PADDING.right;
 
-  // Функция преобразования x -> px (единая для всех)
   const xToPx = (x: number) => PADDING.left + (x / L) * chartWidth;
 
-  // Вертикальные позиции панелей
   const beamY = 0;
   const qY = BEAM_HEIGHT + GAP;
   const mY = qY + DIAGRAM_HEIGHT + GAP;
@@ -136,67 +143,40 @@ export function UnifiedBeamView({ input, result }: Props) {
   const wY = thetaY + (hasDeflection ? DIAGRAM_HEIGHT + GAP : 0);
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="rounded-lg border border-border bg-card" style={{ minHeight: "700px" }}>
       <svg
         viewBox={`0 0 ${viewBoxWidth} ${totalHeight}`}
         className="w-full h-auto"
         preserveAspectRatio="xMidYMid meet"
+        style={{ minHeight: "700px" }}
       >
         {/* Определения маркеров-стрелок */}
         <defs>
-          <marker
-            id="arrowBlue"
-            markerWidth="10"
-            markerHeight="10"
-            refX="5"
-            refY="5"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 L3,5 Z" fill={COLORS.distributedLoad} />
+          <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.distributedLoad} />
           </marker>
-          <marker
-            id="arrowRed"
-            markerWidth="10"
-            markerHeight="10"
-            refX="5"
-            refY="5"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 L3,5 Z" fill={COLORS.pointForce} />
+          <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.pointForce} />
           </marker>
-          <marker
-            id="arrowGreen"
-            markerWidth="10"
-            markerHeight="10"
-            refX="5"
-            refY="5"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 L3,5 Z" fill={COLORS.reaction} />
+          <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.reaction} />
           </marker>
-          <marker
-            id="arrowPurple"
-            markerWidth="10"
-            markerHeight="10"
-            refX="5"
-            refY="5"
-            orient="auto"
-          >
-            <path d="M0,0 L10,5 L0,10 L3,5 Z" fill={COLORS.moment} />
+          <marker id="arrowPurple" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.moment} />
           </marker>
         </defs>
 
-        {/* Сквозные вертикальные линии границ */}
+        {/* Сквозные вертикальные пунктирные линии границ */}
         {boundaries.map((b, i) => (
           <line
             key={`boundary-${i}`}
             x1={xToPx(b)}
-            y1={BEAM_HEIGHT - 10}
+            y1={BEAM_HEIGHT - 30}
             x2={xToPx(b)}
-            y2={totalHeight - 35}
+            y2={totalHeight - 45}
             stroke={COLORS.boundary}
-            strokeDasharray="6,4"
-            strokeWidth={1}
+            strokeDasharray="8,6"
+            strokeWidth={1.5}
           />
         ))}
 
@@ -207,14 +187,13 @@ export function UnifiedBeamView({ input, result }: Props) {
           xToPx={xToPx}
           y={beamY}
           height={BEAM_HEIGHT}
-          chartWidth={chartWidth}
         />
 
-        {/* Панель: Q(x) */}
+        {/* Панель: Q(x) - СИНИЙ */}
         <DiagramPanel
           title="Q(x)"
           unit="кН"
-          segments={qData}
+          segments={qSegments}
           xToPx={xToPx}
           y={qY}
           height={DIAGRAM_HEIGHT}
@@ -222,11 +201,11 @@ export function UnifiedBeamView({ input, result }: Props) {
           chartWidth={chartWidth}
         />
 
-        {/* Панель: M(x) */}
+        {/* Панель: M(x) - КРАСНЫЙ */}
         <DiagramPanel
           title="M(x)"
           unit="кН·м"
-          segments={mData}
+          segments={mSegments}
           xToPx={xToPx}
           y={mY}
           height={DIAGRAM_HEIGHT}
@@ -239,13 +218,12 @@ export function UnifiedBeamView({ input, result }: Props) {
           <DiagramPanel
             title="θ(x)"
             unit="рад"
-            segments={thetaData}
+            segments={thetaSegments}
             xToPx={xToPx}
             y={thetaY}
             height={DIAGRAM_HEIGHT}
             color={COLORS.theta}
             chartWidth={chartWidth}
-            scale={1}
           />
         )}
 
@@ -254,7 +232,7 @@ export function UnifiedBeamView({ input, result }: Props) {
           <DiagramPanel
             title="w(x)"
             unit="мм"
-            segments={wData}
+            segments={wSegments}
             xToPx={xToPx}
             y={wY}
             height={DIAGRAM_HEIGHT}
@@ -265,33 +243,34 @@ export function UnifiedBeamView({ input, result }: Props) {
         )}
 
         {/* Ось X внизу */}
-        <g transform={`translate(0, ${totalHeight - 30})`}>
+        <g transform={`translate(0, ${totalHeight - 35})`}>
           <line
             x1={PADDING.left}
             y1={0}
             x2={PADDING.left + chartWidth}
             y2={0}
             stroke={COLORS.textMuted}
-            strokeWidth={1}
+            strokeWidth={1.5}
           />
-          <text x={PADDING.left} y={18} fill={COLORS.text} fontSize={13}>
+          <text x={PADDING.left} y={22} fill={COLORS.text} fontSize={15} fontWeight="500">
             0
           </text>
           <text
             x={PADDING.left + chartWidth}
-            y={18}
+            y={22}
             textAnchor="end"
             fill={COLORS.text}
-            fontSize={13}
+            fontSize={15}
+            fontWeight="500"
           >
             {L} м
           </text>
           <text
             x={PADDING.left + chartWidth / 2}
-            y={18}
+            y={22}
             textAnchor="middle"
             fill={COLORS.textMuted}
-            fontSize={13}
+            fontSize={15}
           >
             x, м
           </text>
@@ -308,15 +287,14 @@ interface BeamSchemaProps {
   xToPx: (x: number) => number;
   y: number;
   height: number;
-  chartWidth: number;
 }
 
-function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaProps) {
+function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
   const { L, loads, beamType } = input;
   const { reactions } = result;
 
   const beamY = y + height / 2;
-  const beamThickness = 12;
+  const beamThickness = 14;
 
   return (
     <g>
@@ -344,7 +322,7 @@ function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaP
         <FixedSupport x={xToPx(L)} y={beamY} side="right" />
       )}
 
-      {/* Нагрузки (рисуем первыми, чтобы были под реакциями) */}
+      {/* Нагрузки */}
       {loads.map((load, i) => {
         if (load.type === "distributed") {
           return (
@@ -380,11 +358,11 @@ function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaP
         }
       })}
 
-      {/* Реакции (зелёные стрелки вверх от опор) */}
+      {/* Реакции - ЗЕЛЁНЫЕ стрелки ОТ балки ВВЕРХ */}
       {reactions.RA !== undefined && reactions.RA !== 0 && (
         <ReactionArrow
           x={xToPx(reactions.xA ?? 0)}
-          y={beamY + beamThickness / 2 + 35}
+          baseY={beamY - beamThickness / 2}
           value={reactions.RA}
           label={`R_A = ${reactions.RA.toFixed(1)} кН`}
         />
@@ -392,7 +370,7 @@ function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaP
       {reactions.RB !== undefined && reactions.RB !== 0 && (
         <ReactionArrow
           x={xToPx(reactions.xB ?? L)}
-          y={beamY + beamThickness / 2 + 35}
+          baseY={beamY - beamThickness / 2}
           value={reactions.RB}
           label={`R_B = ${reactions.RB.toFixed(1)} кН`}
         />
@@ -400,7 +378,7 @@ function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaP
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
         <ReactionArrow
           x={xToPx(reactions.xf ?? 0)}
-          y={beamY + beamThickness / 2 + 35}
+          baseY={beamY - beamThickness / 2}
           value={reactions.Rf}
           label={`R = ${reactions.Rf.toFixed(1)} кН`}
         />
@@ -411,20 +389,20 @@ function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaP
         <>
           <text
             x={xToPx(0)}
-            y={beamY + 65}
+            y={beamY + 75}
             textAnchor="middle"
             fill={COLORS.text}
-            fontSize={16}
+            fontSize={18}
             fontWeight="bold"
           >
             A
           </text>
           <text
             x={xToPx(L)}
-            y={beamY + 65}
+            y={beamY + 75}
             textAnchor="middle"
             fill={COLORS.text}
-            fontSize={16}
+            fontSize={18}
             fontWeight="bold"
           >
             B
@@ -437,22 +415,22 @@ function BeamSchema({ input, result, xToPx, y, height, chartWidth }: BeamSchemaP
 
 // Шарнирная опора
 function PinSupport({ x, y }: { x: number; y: number }) {
-  const size = 20;
+  const size = 24;
   return (
     <g>
       <polygon
         points={`${x},${y} ${x - size / 2},${y + size} ${x + size / 2},${y + size}`}
         fill="none"
         stroke={COLORS.support}
-        strokeWidth={2.5}
+        strokeWidth={3}
       />
       <line
-        x1={x - size / 2 - 5}
-        y1={y + size + 3}
-        x2={x + size / 2 + 5}
-        y2={y + size + 3}
+        x1={x - size / 2 - 6}
+        y1={y + size + 4}
+        x2={x + size / 2 + 6}
+        y2={y + size + 4}
         stroke={COLORS.support}
-        strokeWidth={2.5}
+        strokeWidth={3}
       />
     </g>
   );
@@ -460,96 +438,57 @@ function PinSupport({ x, y }: { x: number; y: number }) {
 
 // Каток
 function RollerSupport({ x, y }: { x: number; y: number }) {
-  const size = 20;
+  const size = 24;
   return (
     <g>
       <polygon
         points={`${x},${y} ${x - size / 2},${y + size} ${x + size / 2},${y + size}`}
         fill="none"
         stroke={COLORS.support}
-        strokeWidth={2.5}
+        strokeWidth={3}
       />
-      <circle
-        cx={x - size / 4}
-        cy={y + size + 6}
-        r={5}
-        fill="none"
-        stroke={COLORS.support}
-        strokeWidth={2}
-      />
-      <circle
-        cx={x + size / 4}
-        cy={y + size + 6}
-        r={5}
-        fill="none"
-        stroke={COLORS.support}
-        strokeWidth={2}
-      />
+      <circle cx={x - size / 4} cy={y + size + 7} r={6} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
+      <circle cx={x + size / 4} cy={y + size + 7} r={6} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
       <line
-        x1={x - size / 2 - 5}
-        y1={y + size + 13}
-        x2={x + size / 2 + 5}
-        y2={y + size + 13}
+        x1={x - size / 2 - 6}
+        y1={y + size + 15}
+        x2={x + size / 2 + 6}
+        y2={y + size + 15}
         stroke={COLORS.support}
-        strokeWidth={2.5}
+        strokeWidth={3}
       />
     </g>
   );
 }
 
 // Заделка
-function FixedSupport({
-  x,
-  y,
-  side,
-}: {
-  x: number;
-  y: number;
-  side: "left" | "right";
-}) {
-  const h = 40;
+function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "right" }) {
+  const h = 50;
   const dir = side === "left" ? -1 : 1;
   return (
     <g>
-      <line
-        x1={x}
-        y1={y - h / 2}
-        x2={x}
-        y2={y + h / 2}
-        stroke={COLORS.support}
-        strokeWidth={4}
-      />
-      {[-15, -7.5, 0, 7.5, 15].map((dy, i) => (
+      <line x1={x} y1={y - h / 2} x2={x} y2={y + h / 2} stroke={COLORS.support} strokeWidth={5} />
+      {[-20, -10, 0, 10, 20].map((dy, i) => (
         <line
           key={i}
           x1={x}
           y1={y + dy}
-          x2={x + dir * 12}
-          y2={y + dy - 8}
+          x2={x + dir * 14}
+          y2={y + dy - 10}
           stroke={COLORS.support}
-          strokeWidth={2}
+          strokeWidth={2.5}
         />
       ))}
     </g>
   );
 }
 
-// Стрелка реакции (вверх от опоры)
-function ReactionArrow({
-  x,
-  y,
-  value,
-  label,
-}: {
-  x: number;
-  y: number;
-  value: number;
-  label: string;
-}) {
-  const arrowLen = 35;
-  // Реакция положительная = вверх, стрелка идёт снизу вверх
-  const startY = y;
-  const endY = y - arrowLen;
+// Стрелка реакции - ОТ балки ВВЕРХ (основание на балке, наконечник выше)
+function ReactionArrow({ x, baseY, value, label }: { x: number; baseY: number; value: number; label: string }) {
+  const arrowLen = 45;
+  // Стрелка начинается НА балке и идёт ВВЕРХ
+  const startY = baseY;
+  const endY = baseY - arrowLen;
 
   return (
     <g>
@@ -559,15 +498,15 @@ function ReactionArrow({
         x2={x}
         y2={endY}
         stroke={COLORS.reaction}
-        strokeWidth={2.5}
+        strokeWidth={3}
         markerEnd="url(#arrowGreen)"
       />
       <text
-        x={x + 8}
-        y={(startY + endY) / 2}
+        x={x + 10}
+        y={startY - arrowLen / 2}
         fill={COLORS.reaction}
-        fontSize={12}
-        fontWeight="500"
+        fontSize={14}
+        fontWeight="600"
         dominantBaseline="middle"
       >
         {label}
@@ -577,34 +516,13 @@ function ReactionArrow({
 }
 
 // Распределённая нагрузка (СИНЯЯ)
-function DistributedLoadArrows({
-  x1,
-  x2,
-  y,
-  q,
-  label,
-}: {
-  x1: number;
-  x2: number;
-  y: number;
-  q: number;
-  label: string;
-}) {
-  const arrowLen = 30;
-  const numArrows = Math.max(5, Math.floor((x2 - x1) / 25));
+function DistributedLoadArrows({ x1, x2, y, q, label }: { x1: number; x2: number; y: number; q: number; label: string }) {
+  const arrowLen = 35;
+  const numArrows = Math.max(5, Math.floor((x2 - x1) / 30));
 
   return (
     <g>
-      {/* Верхняя линия */}
-      <line
-        x1={x1}
-        y1={y - arrowLen}
-        x2={x2}
-        y2={y - arrowLen}
-        stroke={COLORS.distributedLoad}
-        strokeWidth={2}
-      />
-      {/* Стрелки */}
+      <line x1={x1} y1={y - arrowLen} x2={x2} y2={y - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2.5} />
       {Array.from({ length: numArrows }).map((_, i) => {
         const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
         return (
@@ -613,22 +531,14 @@ function DistributedLoadArrows({
             x1={px}
             y1={y - arrowLen}
             x2={px}
-            y2={y - 4}
+            y2={y - 5}
             stroke={COLORS.distributedLoad}
-            strokeWidth={2}
+            strokeWidth={2.5}
             markerEnd="url(#arrowBlue)"
           />
         );
       })}
-      {/* Подпись */}
-      <text
-        x={(x1 + x2) / 2}
-        y={y - arrowLen - 10}
-        textAnchor="middle"
-        fill={COLORS.distributedLoad}
-        fontSize={13}
-        fontWeight="500"
-      >
+      <text x={(x1 + x2) / 2} y={y - arrowLen - 12} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={14} fontWeight="600">
         {label}
       </text>
     </g>
@@ -636,36 +546,12 @@ function DistributedLoadArrows({
 }
 
 // Сосредоточенная сила (КРАСНАЯ)
-function ForceArrow({
-  x,
-  y,
-  F,
-  label,
-}: {
-  x: number;
-  y: number;
-  F: number;
-  label: string;
-}) {
-  const arrowLen = 40;
+function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label: string }) {
+  const arrowLen = 50;
   return (
     <g>
-      <line
-        x1={x}
-        y1={y - arrowLen}
-        x2={x}
-        y2={y - 4}
-        stroke={COLORS.pointForce}
-        strokeWidth={2.5}
-        markerEnd="url(#arrowRed)"
-      />
-      <text
-        x={x + 8}
-        y={y - arrowLen + 8}
-        fill={COLORS.pointForce}
-        fontSize={13}
-        fontWeight="500"
-      >
+      <line x1={x} y1={y - arrowLen} x2={x} y2={y - 5} stroke={COLORS.pointForce} strokeWidth={3} markerEnd="url(#arrowRed)" />
+      <text x={x + 10} y={y - arrowLen + 10} fill={COLORS.pointForce} fontSize={14} fontWeight="600">
         {label}
       </text>
     </g>
@@ -673,22 +559,11 @@ function ForceArrow({
 }
 
 // Момент (дуговая стрелка, ФИОЛЕТОВАЯ)
-function MomentArrow({
-  x,
-  y,
-  M,
-  label,
-}: {
-  x: number;
-  y: number;
-  M: number;
-  label: string;
-}) {
-  const r = 18;
+function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; label: string }) {
+  const r = 22;
   const sweep = M >= 0 ? 0 : 1;
   const startAngle = -30;
   const endAngle = 210;
-
   const x1 = x + r * Math.cos((startAngle * Math.PI) / 180);
   const y1 = y - r * Math.sin((startAngle * Math.PI) / 180);
   const x2 = x + r * Math.cos((endAngle * Math.PI) / 180);
@@ -700,17 +575,10 @@ function MomentArrow({
         d={`M ${x1} ${y1} A ${r} ${r} 0 1 ${sweep} ${x2} ${y2}`}
         fill="none"
         stroke={COLORS.moment}
-        strokeWidth={2.5}
+        strokeWidth={3}
         markerEnd="url(#arrowPurple)"
       />
-      <text
-        x={x}
-        y={y - r - 12}
-        textAnchor="middle"
-        fill={COLORS.moment}
-        fontSize={13}
-        fontWeight="500"
-      >
+      <text x={x} y={y - r - 15} textAnchor="middle" fill={COLORS.moment} fontSize={14} fontWeight="600">
         {label}
       </text>
     </g>
@@ -730,30 +598,18 @@ interface DiagramPanelProps {
   scale?: number;
 }
 
-function DiagramPanel({
-  title,
-  unit,
-  segments,
-  xToPx,
-  y,
-  height,
-  color,
-  chartWidth,
-  scale = 1,
-}: DiagramPanelProps) {
-  const scaledSegments = segments.map((seg) =>
-    seg.map((p) => ({ x: p.x, value: p.value * scale }))
-  );
+function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWidth, scale = 1 }: DiagramPanelProps) {
+  const scaledSegments = segments.map((seg) => seg.map((p) => ({ x: p.x, value: p.value * scale })));
 
   const allValues = scaledSegments.flat().map((p) => p.value);
   let minVal = Math.min(0, ...allValues);
   let maxVal = Math.max(0, ...allValues);
   const range = maxVal - minVal || 1;
-  minVal -= range * 0.15;
-  maxVal += range * 0.15;
+  minVal -= range * 0.12;
+  maxVal += range * 0.12;
 
-  const chartHeight = height - 25;
-  const chartY = y + 12;
+  const chartHeight = height - 30;
+  const chartY = y + 15;
 
   const scaleY = (val: number) => {
     const normalized = (val - minVal) / (maxVal - minVal);
@@ -762,6 +618,7 @@ function DiagramPanel({
 
   const zeroY = scaleY(0);
 
+  // Находим экстремумы
   const extremes = useMemo(() => {
     let maxP = { x: 0, value: 0 };
     let minP = { x: 0, value: 0 };
@@ -777,53 +634,26 @@ function DiagramPanel({
   return (
     <g>
       {/* Фон */}
-      <rect
-        x={PADDING.left}
-        y={chartY}
-        width={chartWidth}
-        height={chartHeight}
-        fill="rgba(0,0,0,0.2)"
-        rx={4}
-      />
+      <rect x={PADDING.left} y={chartY} width={chartWidth} height={chartHeight} fill="rgba(0,0,0,0.25)" rx={4} />
 
       {/* Нулевая линия */}
-      <line
-        x1={PADDING.left}
-        y1={zeroY}
-        x2={PADDING.left + chartWidth}
-        y2={zeroY}
-        stroke={COLORS.grid}
-        strokeWidth={1}
-      />
+      <line x1={PADDING.left} y1={zeroY} x2={PADDING.left + chartWidth} y2={zeroY} stroke={COLORS.grid} strokeWidth={1.5} />
 
       {/* Заголовок слева */}
-      <text
-        x={PADDING.left - 12}
-        y={chartY + chartHeight / 2}
-        textAnchor="end"
-        dominantBaseline="middle"
-        fill={color}
-        fontSize={16}
-        fontWeight="bold"
-      >
+      <text x={PADDING.left - 15} y={chartY + chartHeight / 2} textAnchor="end" dominantBaseline="middle" fill={color} fontSize={18} fontWeight="bold">
         {title}
       </text>
 
       {/* Единицы справа */}
-      <text
-        x={PADDING.left + chartWidth + 8}
-        y={chartY + chartHeight / 2}
-        dominantBaseline="middle"
-        fill={COLORS.textMuted}
-        fontSize={12}
-      >
+      <text x={PADDING.left + chartWidth + 10} y={chartY + chartHeight / 2} dominantBaseline="middle" fill={COLORS.textMuted} fontSize={14}>
         {unit}
       </text>
 
-      {/* Сегменты графика */}
+      {/* Сегменты графика - БЕЗ вертикальных соединений между ними */}
       {scaledSegments.map((segment, segIdx) => {
         if (segment.length < 2) return null;
 
+        // Путь заливки от нуля
         let fillD = `M ${xToPx(segment[0].x)} ${zeroY}`;
         fillD += ` L ${xToPx(segment[0].x)} ${scaleY(segment[0].value)}`;
         for (const p of segment.slice(1)) {
@@ -831,6 +661,7 @@ function DiagramPanel({
         }
         fillD += ` L ${xToPx(segment[segment.length - 1].x)} ${zeroY} Z`;
 
+        // Путь линии
         let lineD = `M ${xToPx(segment[0].x)} ${scaleY(segment[0].value)}`;
         for (const p of segment.slice(1)) {
           lineD += ` L ${xToPx(p.x)} ${scaleY(p.value)}`;
@@ -838,8 +669,8 @@ function DiagramPanel({
 
         return (
           <g key={segIdx}>
-            <path d={fillD} fill={color} fillOpacity={0.2} />
-            <path d={lineD} stroke={color} strokeWidth={2} fill="none" />
+            <path d={fillD} fill={color} fillOpacity={0.25} />
+            <path d={lineD} stroke={color} strokeWidth={2.5} fill="none" />
           </g>
         );
       })}
@@ -847,45 +678,20 @@ function DiagramPanel({
       {/* Маркеры экстремумов */}
       {Math.abs(extremes.maxP.value) > 0.01 && (
         <g>
-          <circle
-            cx={xToPx(extremes.maxP.x)}
-            cy={scaleY(extremes.maxP.value)}
-            r={4}
-            fill={color}
-          />
-          <text
-            x={xToPx(extremes.maxP.x)}
-            y={scaleY(extremes.maxP.value) - 10}
-            textAnchor="middle"
-            fill={color}
-            fontSize={12}
-            fontWeight="500"
-          >
+          <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={5} fill={color} />
+          <text x={xToPx(extremes.maxP.x)} y={scaleY(extremes.maxP.value) - 12} textAnchor="middle" fill={color} fontSize={14} fontWeight="600">
             {extremes.maxP.value.toFixed(2)}
           </text>
         </g>
       )}
-      {Math.abs(extremes.minP.value) > 0.01 &&
-        extremes.minP.x !== extremes.maxP.x && (
-          <g>
-            <circle
-              cx={xToPx(extremes.minP.x)}
-              cy={scaleY(extremes.minP.value)}
-              r={4}
-              fill={color}
-            />
-            <text
-              x={xToPx(extremes.minP.x)}
-              y={scaleY(extremes.minP.value) + 16}
-              textAnchor="middle"
-              fill={color}
-              fontSize={12}
-              fontWeight="500"
-            >
-              {extremes.minP.value.toFixed(2)}
-            </text>
-          </g>
-        )}
+      {Math.abs(extremes.minP.value) > 0.01 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (
+        <g>
+          <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={5} fill={color} />
+          <text x={xToPx(extremes.minP.x)} y={scaleY(extremes.minP.value) + 18} textAnchor="middle" fill={color} fontSize={14} fontWeight="600">
+            {extremes.minP.value.toFixed(2)}
+          </text>
+        </g>
+      )}
     </g>
   );
 }
