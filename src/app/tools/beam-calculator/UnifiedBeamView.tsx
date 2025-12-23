@@ -716,12 +716,14 @@ function DistributedLoadArrows({
 }
 
 // Сосредоточенная сила (КРАСНАЯ)
+// Стрелка длиннее чтобы подпись была выше q
 function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label: string }) {
-  const arrowLen = 50;
+  const arrowLen = 60; // Длиннее чем q (28px), чтобы подпись была выше
   return (
     <g>
       <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
-      <text x={x + 10} y={y - arrowLen + 10} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
+      {/* Подпись выше стрелки, чтобы не накладывалась на q */}
+      <text x={x + 10} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
         {label}
       </text>
     </g>
@@ -887,63 +889,46 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           return nearMax || nearMin;
         };
 
-        // Для каждой границы находим значение и показываем
-        for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
-          const bx = boundaries[bIdx];
-          const isFirst = bIdx === 0;
-          const isLast = bIdx === boundaries.length - 1;
-
-          // Находим значения СЛЕВА и СПРАВА от границы (могут отличаться при разрыве)
-          let leftValue: number | null = null;
-          let rightValue: number | null = null;
-
+        // Функция для поиска значения в точке (с интерполяцией)
+        const findValueAt = (x: number, fromLeft: boolean): number | null => {
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
-            const lastPoint = seg[seg.length - 1];
-            const firstPoint = seg[0];
 
-            // Сегмент заканчивается на этой границе → значение слева
-            if (Math.abs(lastPoint.x - bx) < 0.01) {
-              leftValue = lastPoint.value;
+            // Точное совпадение с концами сегмента
+            if (fromLeft) {
+              const last = seg[seg.length - 1];
+              if (Math.abs(last.x - x) < 0.01) return last.value;
+            } else {
+              const first = seg[0];
+              if (Math.abs(first.x - x) < 0.01) return first.value;
             }
-            // Сегмент начинается на этой границе → значение справа
-            if (Math.abs(firstPoint.x - bx) < 0.01) {
-              rightValue = firstPoint.value;
+
+            // Интерполяция внутри сегмента
+            for (let i = 0; i < seg.length - 1; i++) {
+              if (seg[i].x <= x && seg[i + 1].x >= x) {
+                const t = (x - seg[i].x) / (seg[i + 1].x - seg[i].x);
+                return seg[i].value + t * (seg[i + 1].value - seg[i].value);
+              }
             }
           }
+          return null;
+        };
 
-          // Выбираем значение для отображения (предпочитаем правое, как начало нового сегмента)
-          const value = rightValue ?? leftValue;
-          if (value === null || Math.abs(value) < 0.01) continue;
-          if (isNearExtreme(bx, value)) continue;
-
-          // Определяем, с какой стороны от границы меньше заливки
-          // Ставим подпись на более "пустую" сторону
-          const leftFill = Math.abs(leftValue ?? 0);
-          const rightFill = Math.abs(rightValue ?? 0);
-
-          let placeRight: boolean;
-          if (isFirst) {
-            placeRight = true; // На первой границе всегда справа
-          } else if (isLast) {
-            placeRight = false; // На последней границе всегда слева
-          } else {
-            // На промежуточных - выбираем сторону с меньшей заливкой
-            placeRight = rightFill <= leftFill;
-          }
+        // Добавление одной подписи
+        const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
+          if (Math.abs(value) < 0.01) return;
+          if (isNearExtreme(bx, value)) return;
 
           const xOffset = placeRight ? 12 : -12;
           const anchor = placeRight ? "start" : "end";
-
-          // Вертикально: над кривой для положительных, под кривой для отрицательных
           const curveY = scaleY(value);
           const textY = value >= 0
-            ? Math.min(curveY - 12, zeroY - 12) // Выше кривой И выше нуля
-            : Math.max(curveY + 16, zeroY + 16); // Ниже кривой И ниже нуля
+            ? Math.min(curveY - 12, zeroY - 12)
+            : Math.max(curveY + 16, zeroY + 16);
 
           labels.push(
             <text
-              key={`boundary-${bIdx}`}
+              key={key}
               x={xToPx(bx) + xOffset}
               y={textY}
               textAnchor={anchor}
@@ -954,6 +939,44 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               {formatNum(value, 1)}
             </text>
           );
+        };
+
+        // Для каждой границы находим значения
+        for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
+          const bx = boundaries[bIdx];
+          const isFirst = bIdx === 0;
+          const isLast = bIdx === boundaries.length - 1;
+
+          const leftValue = findValueAt(bx, true);
+          const rightValue = findValueAt(bx, false);
+
+          // Проверяем, есть ли разрыв (скачок)
+          const hasDiscontinuity = leftValue !== null && rightValue !== null &&
+            Math.abs(leftValue - rightValue) > 0.5;
+
+          if (hasDiscontinuity) {
+            // При скачке показываем ОБА значения
+            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`);  // слева от линии
+            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`); // справа от линии
+          } else {
+            // Непрерывная функция - одна подпись
+            const value = rightValue ?? leftValue;
+            if (value === null) continue;
+
+            let placeRight: boolean;
+            if (isFirst) {
+              placeRight = true;
+            } else if (isLast) {
+              placeRight = false;
+            } else {
+              // Выбираем сторону с меньшей заливкой
+              const leftFill = Math.abs(leftValue ?? 0);
+              const rightFill = Math.abs(rightValue ?? 0);
+              placeRight = rightFill <= leftFill;
+            }
+
+            addLabel(bx, value, placeRight, `boundary-${bIdx}`);
+          }
         }
 
         return <g>{labels}</g>;
