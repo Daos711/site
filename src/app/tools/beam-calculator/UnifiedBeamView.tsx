@@ -893,41 +893,53 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           const isFirst = bIdx === 0;
           const isLast = bIdx === boundaries.length - 1;
 
-          // Находим значение на этой границе из сегментов
-          let value: number | null = null;
+          // Находим значения СЛЕВА и СПРАВА от границы (могут отличаться при разрыве)
+          let leftValue: number | null = null;
+          let rightValue: number | null = null;
+
           for (const seg of scaledSegments) {
-            for (const p of seg) {
-              if (Math.abs(p.x - bx) < 0.01) {
-                value = p.value;
-                break;
-              }
+            if (seg.length < 2) continue;
+            const lastPoint = seg[seg.length - 1];
+            const firstPoint = seg[0];
+
+            // Сегмент заканчивается на этой границе → значение слева
+            if (Math.abs(lastPoint.x - bx) < 0.01) {
+              leftValue = lastPoint.value;
             }
-            if (value !== null) break;
-            // Интерполяция если точка между точками сегмента
-            for (let i = 0; i < seg.length - 1; i++) {
-              if (seg[i].x <= bx && seg[i + 1].x >= bx) {
-                const t = (bx - seg[i].x) / (seg[i + 1].x - seg[i].x);
-                value = seg[i].value + t * (seg[i + 1].value - seg[i].value);
-                break;
-              }
+            // Сегмент начинается на этой границе → значение справа
+            if (Math.abs(firstPoint.x - bx) < 0.01) {
+              rightValue = firstPoint.value;
             }
-            if (value !== null) break;
           }
 
+          // Выбираем значение для отображения (предпочитаем правое, как начало нового сегмента)
+          const value = rightValue ?? leftValue;
           if (value === null || Math.abs(value) < 0.01) continue;
           if (isNearExtreme(bx, value)) continue;
 
-          // Размещаем подпись СНАРУЖИ от заливки диаграммы
+          // Определяем, с какой стороны от границы меньше заливки
+          // Ставим подпись на более "пустую" сторону
+          const leftFill = Math.abs(leftValue ?? 0);
+          const rightFill = Math.abs(rightValue ?? 0);
+
+          let placeRight: boolean;
+          if (isFirst) {
+            placeRight = true; // На первой границе всегда справа
+          } else if (isLast) {
+            placeRight = false; // На последней границе всегда слева
+          } else {
+            // На промежуточных - выбираем сторону с меньшей заливкой
+            placeRight = rightFill <= leftFill;
+          }
+
+          const xOffset = placeRight ? 12 : -12;
+          const anchor = placeRight ? "start" : "end";
+
           // Вертикально: над кривой для положительных, под кривой для отрицательных
           const curveY = scaleY(value);
           const textY = value >= 0
             ? Math.min(curveY - 12, zeroY - 12) // Выше кривой И выше нуля
             : Math.max(curveY + 16, zeroY + 16); // Ниже кривой И ниже нуля
-
-          // Горизонтально: ставим СПРАВА от границы (там пусто), кроме последней границы
-          // На последней границе - влево, т.к. справа нет места
-          const xOffset = isLast ? -12 : 12;
-          const anchor = isLast ? "end" : "start";
 
           labels.push(
             <text
