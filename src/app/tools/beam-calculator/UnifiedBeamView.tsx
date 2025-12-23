@@ -889,25 +889,35 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           return nearMax || nearMin;
         };
 
-        // Функция для поиска значения в точке (с интерполяцией)
+        // Функция для поиска значения в точке
+        // fromLeft=true: ищем предел слева (конец сегмента, который ЗАКАНЧИВАЕТСЯ в x)
+        // fromLeft=false: ищем предел справа (начало сегмента, который НАЧИНАЕТСЯ в x)
         const findValueAt = (x: number, fromLeft: boolean): number | null => {
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
 
-            // Точное совпадение с концами сегмента
+            const first = seg[0];
+            const last = seg[seg.length - 1];
+
             if (fromLeft) {
-              const last = seg[seg.length - 1];
-              if (Math.abs(last.x - x) < 0.01) return last.value;
+              // Предел слева → сегмент должен ЗАКАНЧИВАТЬСЯ в x
+              if (Math.abs(last.x - x) < 0.01) {
+                return last.value;
+              }
             } else {
-              const first = seg[0];
-              if (Math.abs(first.x - x) < 0.01) return first.value;
+              // Предел справа → сегмент должен НАЧИНАТЬСЯ в x
+              if (Math.abs(first.x - x) < 0.01) {
+                return first.value;
+              }
             }
 
-            // Интерполяция внутри сегмента
-            for (let i = 0; i < seg.length - 1; i++) {
-              if (seg[i].x <= x && seg[i + 1].x >= x) {
-                const t = (x - seg[i].x) / (seg[i + 1].x - seg[i].x);
-                return seg[i].value + t * (seg[i + 1].value - seg[i].value);
+            // Интерполяция только для точек СТРОГО ВНУТРИ сегмента (не на границах)
+            if (first.x < x - 0.01 && last.x > x + 0.01) {
+              for (let i = 0; i < seg.length - 1; i++) {
+                if (seg[i].x <= x && seg[i + 1].x >= x) {
+                  const t = (x - seg[i].x) / (seg[i + 1].x - seg[i].x);
+                  return seg[i].value + t * (seg[i + 1].value - seg[i].value);
+                }
               }
             }
           }
