@@ -31,21 +31,20 @@ export default function BeamCalculatorPage() {
         description="Эпюры Q, M, прогибы методом начальных параметров"
       />
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div>
-          <BeamInput onCalculate={handleCalculate} />
-        </div>
-
-        <div>
-          {error && (
-            <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 mb-4">
-              {error}
-            </div>
-          )}
-
-          {result && input && <BeamResults input={input} result={result} />}
-        </div>
+      {/* Форма ввода */}
+      <div className="max-w-2xl mb-8">
+        <BeamInput onCalculate={handleCalculate} />
       </div>
+
+      {/* Ошибки */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* Результаты на всю ширину */}
+      {result && input && <BeamResults input={input} result={result} />}
     </div>
   );
 }

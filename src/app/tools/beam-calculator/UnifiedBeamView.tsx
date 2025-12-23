@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
 
 interface Props {
@@ -47,9 +47,9 @@ export function UnifiedBeamView({ input, result }: Props) {
     return Array.from(points).sort((a, b) => a - b);
   }, [events, L]);
 
-  // Точки разрывов Q (сосредоточенные силы и опоры)
+  // Точки разрывов Q (сосредоточенные силы и опоры — включая границы 0 и L)
   const qDiscontinuities = useMemo(() => {
-    const disc = new Set<number>();
+    const disc = new Set<number>([0, L]); // Границы тоже разрывы!
     for (const load of loads) {
       if (load.type === "force") {
         disc.add(load.x);
@@ -59,7 +59,7 @@ export function UnifiedBeamView({ input, result }: Props) {
     if (reactions.xB !== undefined) disc.add(reactions.xB);
     if (reactions.xf !== undefined) disc.add(reactions.xf);
     return disc;
-  }, [loads, reactions]);
+  }, [loads, reactions, L]);
 
   // Точки разрывов M (внешние моменты)
   const mDiscontinuities = useMemo(() => {
@@ -77,26 +77,30 @@ export function UnifiedBeamView({ input, result }: Props) {
     fn: (x: number) => number,
     discontinuities: Set<number>,
     numPoints = 400
-  ): { x: number; value: number }[][] => {
-    const segments: { x: number; value: number }[][] = [];
-    const sortedDisc = [0, ...Array.from(discontinuities).filter(d => d > 0 && d < L), L].sort((a, b) => a - b);
+  ): { x: number; value: number; isDiscontinuity: boolean }[][] => {
+    const segments: { x: number; value: number; isDiscontinuity: boolean }[][] = [];
+    const allPoints = Array.from(new Set([0, ...discontinuities, L])).sort((a, b) => a - b);
 
-    for (let i = 0; i < sortedDisc.length - 1; i++) {
-      const start = sortedDisc[i];
-      const end = sortedDisc[i + 1];
-      const segment: { x: number; value: number }[] = [];
+    for (let i = 0; i < allPoints.length - 1; i++) {
+      const start = allPoints[i];
+      const end = allPoints[i + 1];
+      const segment: { x: number; value: number; isDiscontinuity: boolean }[] = [];
 
-      const segmentPoints = Math.max(20, Math.ceil((numPoints * (end - start)) / L));
+      const segmentPoints = Math.max(30, Math.ceil((numPoints * (end - start)) / L));
 
       for (let j = 0; j <= segmentPoints; j++) {
         const t = j / segmentPoints;
         const x = start + t * (end - start);
-        // Для начала сегмента берём значение чуть правее точки разрыва
-        const evalX = (j === 0 && i > 0) ? x + 1e-9 : x;
-        // Для конца сегмента берём значение чуть левее
-        const evalXEnd = (j === segmentPoints && i < sortedDisc.length - 2) ? x - 1e-9 : evalX;
-        const value = fn(j === segmentPoints ? evalXEnd : evalX);
-        segment.push({ x, value });
+        // Сдвигаем точку от границы чтобы не попасть в разрыв
+        const eps = 1e-9;
+        let evalX = x;
+        if (j === 0) evalX = start + eps;
+        if (j === segmentPoints) evalX = end - eps;
+
+        const value = fn(evalX);
+        const isDiscontinuity = (j === 0 && discontinuities.has(start)) ||
+                                (j === segmentPoints && discontinuities.has(end));
+        segment.push({ x, value, isDiscontinuity });
       }
 
       if (segment.length > 1) {
@@ -150,7 +154,7 @@ export function UnifiedBeamView({ input, result }: Props) {
         preserveAspectRatio="xMidYMid meet"
         style={{ minHeight: "700px" }}
       >
-        {/* Определения маркеров-стрелок */}
+        {/* Определения маркеров-стрелок и clipPath для диаграмм */}
         <defs>
           <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
             <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.distributedLoad} />
@@ -164,6 +168,10 @@ export function UnifiedBeamView({ input, result }: Props) {
           <marker id="arrowPurple" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
             <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.moment} />
           </marker>
+          {/* ClipPath для обрезки вертикальных краёв заливки диаграмм */}
+          <clipPath id="diagramClip">
+            <rect x={PADDING.left + 1} y={0} width={chartWidth - 2} height={totalHeight} />
+          </clipPath>
         </defs>
 
         {/* Сквозные вертикальные пунктирные линии границ */}
@@ -485,30 +493,14 @@ function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "ri
 
 // Стрелка реакции - ОТ балки ВВЕРХ (основание на балке, наконечник выше)
 function ReactionArrow({ x, baseY, value, label }: { x: number; baseY: number; value: number; label: string }) {
-  const arrowLen = 45;
-  // Стрелка начинается НА балке и идёт ВВЕРХ
+  const arrowLen = 30;
   const startY = baseY;
   const endY = baseY - arrowLen;
 
   return (
     <g>
-      <line
-        x1={x}
-        y1={startY}
-        x2={x}
-        y2={endY}
-        stroke={COLORS.reaction}
-        strokeWidth={3}
-        markerEnd="url(#arrowGreen)"
-      />
-      <text
-        x={x + 10}
-        y={startY - arrowLen / 2}
-        fill={COLORS.reaction}
-        fontSize={14}
-        fontWeight="600"
-        dominantBaseline="middle"
-      >
+      <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#arrowGreen)" />
+      <text x={x + 8} y={startY - arrowLen / 2} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle">
         {label}
       </text>
     </g>
@@ -589,7 +581,7 @@ function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; labe
 interface DiagramPanelProps {
   title: string;
   unit: string;
-  segments: { x: number; value: number }[][];
+  segments: { x: number; value: number; isDiscontinuity?: boolean }[][];
   xToPx: (x: number) => number;
   y: number;
   height: number;
@@ -599,7 +591,9 @@ interface DiagramPanelProps {
 }
 
 function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWidth, scale = 1 }: DiagramPanelProps) {
-  const scaledSegments = segments.map((seg) => seg.map((p) => ({ x: p.x, value: p.value * scale })));
+  const scaledSegments = segments.map((seg) =>
+    seg.map((p) => ({ ...p, value: p.value * scale }))
+  );
 
   const allValues = scaledSegments.flat().map((p) => p.value);
   let minVal = Math.min(0, ...allValues);
@@ -640,36 +634,57 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       <line x1={PADDING.left} y1={zeroY} x2={PADDING.left + chartWidth} y2={zeroY} stroke={COLORS.grid} strokeWidth={1.5} />
 
       {/* Заголовок слева */}
-      <text x={PADDING.left - 15} y={chartY + chartHeight / 2} textAnchor="end" dominantBaseline="middle" fill={color} fontSize={18} fontWeight="bold">
+      <text x={PADDING.left - 15} y={chartY + chartHeight / 2} textAnchor="end" dominantBaseline="middle" fill={color} fontSize={16} fontWeight="bold">
         {title}
       </text>
 
       {/* Единицы справа */}
-      <text x={PADDING.left + chartWidth + 10} y={chartY + chartHeight / 2} dominantBaseline="middle" fill={COLORS.textMuted} fontSize={14}>
+      <text x={PADDING.left + chartWidth + 10} y={chartY + chartHeight / 2} dominantBaseline="middle" fill={COLORS.textMuted} fontSize={12}>
         {unit}
       </text>
 
-      {/* Сегменты графика - БЕЗ вертикальных соединений между ними */}
+      {/* Сегменты графика - БЕЗ вертикальных линий на границах */}
       {scaledSegments.map((segment, segIdx) => {
         if (segment.length < 2) return null;
 
-        // Путь заливки от нуля
-        let fillD = `M ${xToPx(segment[0].x)} ${zeroY}`;
-        fillD += ` L ${xToPx(segment[0].x)} ${scaleY(segment[0].value)}`;
-        for (const p of segment.slice(1)) {
-          fillD += ` L ${xToPx(p.x)} ${scaleY(p.value)}`;
-        }
-        fillD += ` L ${xToPx(segment[segment.length - 1].x)} ${zeroY} Z`;
+        const first = segment[0];
+        const last = segment[segment.length - 1];
 
-        // Путь линии
-        let lineD = `M ${xToPx(segment[0].x)} ${scaleY(segment[0].value)}`;
+        // Линия графика - только кривая, без вертикальных участков
+        let lineD = `M ${xToPx(first.x)} ${scaleY(first.value)}`;
         for (const p of segment.slice(1)) {
           lineD += ` L ${xToPx(p.x)} ${scaleY(p.value)}`;
         }
 
+        // Заливка: не рисуем вертикальные края - только горизонтальные штриховки
+        // Рисуем тонкие горизонтальные линии от нуля до значения
+        const fillLines: React.ReactNode[] = [];
+        const step = Math.max(1, Math.floor(segment.length / 40));
+        for (let i = 0; i < segment.length; i += step) {
+          const p = segment[i];
+          const px = xToPx(p.x);
+          const py = scaleY(p.value);
+          if (Math.abs(py - zeroY) > 1) {
+            fillLines.push(
+              <line
+                key={i}
+                x1={px}
+                y1={zeroY}
+                x2={px}
+                y2={py}
+                stroke={color}
+                strokeOpacity={0.15}
+                strokeWidth={2}
+              />
+            );
+          }
+        }
+
         return (
           <g key={segIdx}>
-            <path d={fillD} fill={color} fillOpacity={0.25} />
+            {/* Штриховка вместо сплошной заливки */}
+            {fillLines}
+            {/* Линия только по кривой */}
             <path d={lineD} stroke={color} strokeWidth={2.5} fill="none" />
           </g>
         );
@@ -678,16 +693,16 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       {/* Маркеры экстремумов */}
       {Math.abs(extremes.maxP.value) > 0.01 && (
         <g>
-          <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={5} fill={color} />
-          <text x={xToPx(extremes.maxP.x)} y={scaleY(extremes.maxP.value) - 12} textAnchor="middle" fill={color} fontSize={14} fontWeight="600">
+          <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={color} />
+          <text x={xToPx(extremes.maxP.x)} y={scaleY(extremes.maxP.value) - 10} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
             {extremes.maxP.value.toFixed(2)}
           </text>
         </g>
       )}
       {Math.abs(extremes.minP.value) > 0.01 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (
         <g>
-          <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={5} fill={color} />
-          <text x={xToPx(extremes.minP.x)} y={scaleY(extremes.minP.value) + 18} textAnchor="middle" fill={color} fontSize={14} fontWeight="600">
+          <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={color} />
+          <text x={xToPx(extremes.minP.x)} y={scaleY(extremes.minP.value) + 14} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
             {extremes.minP.value.toFixed(2)}
           </text>
         </g>
