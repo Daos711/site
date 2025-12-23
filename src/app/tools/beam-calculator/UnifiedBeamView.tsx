@@ -35,10 +35,27 @@ const COLORS = {
 };
 
 // Форматирование числа без лишних нулей: 31.00 → "31", 31.50 → "31.5"
+// Умная точность: для малых значений (< 0.1) показываем больше знаков
 function formatNum(val: number, decimals = 2): string {
-  const fixed = val.toFixed(decimals);
+  // Сначала проверяем на ноль (включая -0)
+  if (Math.abs(val) < 1e-10) return "0";
+
+  // Для малых значений увеличиваем точность
+  const absVal = Math.abs(val);
+  let actualDecimals = decimals;
+  if (absVal < 0.001) {
+    actualDecimals = 5; // Для очень малых значений (углы в радианах)
+  } else if (absVal < 0.01) {
+    actualDecimals = 4;
+  } else if (absVal < 0.1) {
+    actualDecimals = 3;
+  }
+
+  const fixed = val.toFixed(actualDecimals);
   // Убираем trailing zeros после точки
-  return fixed.replace(/\.?0+$/, "");
+  const result = fixed.replace(/\.?0+$/, "");
+  // Защита от "-0"
+  return result === "-0" ? "0" : result;
 }
 
 export function UnifiedBeamView({ input, result }: Props) {
@@ -448,7 +465,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.RB}
           label={`R_B = ${formatNum(reactions.RB)} кН`}
           labelSide="left"
-          labelYOffset={25}
+          labelYOffset={45}
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -893,7 +910,14 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           if (value === null || Math.abs(value) < 0.01) continue;
           if (isNearExtreme(bx, value)) continue;
 
-          const textY = value >= 0 ? scaleY(value) - 8 : scaleY(value) + 14;
+          // Размещаем подпись СНАРУЖИ от заливки диаграммы
+          // Для положительных значений: выше нулевой линии (но не на кривой)
+          // Для отрицательных: ниже нулевой линии (но не на кривой)
+          const curveY = scaleY(value);
+          const textY = value >= 0
+            ? Math.min(curveY - 12, zeroY - 12) // Выше кривой И выше нуля
+            : Math.max(curveY + 16, zeroY + 16); // Ниже кривой И ниже нуля
+
           // На первой границе - сдвиг вправо, на последней - влево, остальные - по центру или влево
           const xOffset = isFirst ? 12 : -12;
           const anchor = isFirst ? "start" : "end";
@@ -916,16 +940,19 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         return <g>{labels}</g>;
       })()}
 
-      {/* Маркеры экстремумов - сдвигаем подписи от границ */}
+      {/* Маркеры экстремумов - сдвигаем подписи от границ и от заливки */}
       {Math.abs(extremes.maxP.value) > 0.01 && (() => {
         // Проверяем, находится ли экстремум на границе
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.maxP.x) < 0.05);
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
+        // Подпись выше кривой И выше нуля, чтобы не попадала на заливку
+        const curveY = scaleY(extremes.maxP.value);
+        const textY = Math.min(curveY - 12, zeroY - 12);
         return (
           <g>
-            <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={color} />
-            <text x={xToPx(extremes.maxP.x) + offset} y={scaleY(extremes.maxP.value) - 10} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
+            <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
+            <text x={xToPx(extremes.maxP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
               {formatNum(extremes.maxP.value)}
             </text>
           </g>
@@ -936,10 +963,13 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.minP.x) < 0.05);
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
+        // Подпись ниже кривой И ниже нуля, чтобы не попадала на заливку
+        const curveY = scaleY(extremes.minP.value);
+        const textY = Math.max(curveY + 16, zeroY + 16);
         return (
           <g>
-            <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={color} />
-            <text x={xToPx(extremes.minP.x) + offset} y={scaleY(extremes.minP.value) + 14} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
+            <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
+            <text x={xToPx(extremes.minP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
               {formatNum(extremes.minP.value)}
             </text>
           </g>
