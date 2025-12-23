@@ -107,7 +107,7 @@ export function BeamResults({ input, result }: Props) {
             </div>
             {wMax && (
               <div className="flex justify-between">
-                <span className="text-muted">|w|_max:</span>
+                <span className="text-muted">|y|_max:</span>
                 <span className="font-mono">
                   {(Math.abs(wMax.value) * 1000).toFixed(2)} мм
                   <span className="text-muted ml-1">

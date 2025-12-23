@@ -791,18 +791,25 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
   const zeroY = scaleY(0);
 
-  // Находим экстремумы
+  // Находим экстремумы (исключая границы x=0 и x=L)
   const extremes = useMemo(() => {
+    const xMin = boundaries.length > 0 ? boundaries[0] : 0;
+    const xMax = boundaries.length > 0 ? boundaries[boundaries.length - 1] : 0;
+    const eps = 0.05; // Допуск для определения границы
+
     let maxP = { x: 0, value: 0 };
     let minP = { x: 0, value: 0 };
     for (const seg of scaledSegments) {
       for (const p of seg) {
+        // Пропускаем точки на границах балки
+        if (Math.abs(p.x - xMin) < eps || Math.abs(p.x - xMax) < eps) continue;
+
         if (p.value > maxP.value) maxP = p;
         if (p.value < minP.value) minP = p;
       }
     }
     return { maxP, minP };
-  }, [scaledSegments]);
+  }, [scaledSegments, boundaries]);
 
   return (
     <g>

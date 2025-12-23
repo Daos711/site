@@ -187,9 +187,9 @@ export function ResultCards({ input, result, className }: Props) {
           </div>
           {wMax && (
             <div className="flex justify-between">
-              <span className="text-muted">w_max:</span>
+              <span className="text-muted">|y|_max:</span>
               <span className="font-mono">
-                {(wMax.value * 1000).toFixed(2)} мм
+                {Math.abs(wMax.value * 1000).toFixed(2)} мм
                 <span className="text-muted ml-1">
                   (x = {wMax.x.toFixed(2)} м)
                 </span>
