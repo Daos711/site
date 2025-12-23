@@ -9,6 +9,12 @@ import type {
   BeamSupport,
 } from "@/lib/beam";
 
+// Парсинг числа из input - не сбрасывает при пустом вводе
+const parseNum = (e: React.ChangeEvent<HTMLInputElement>): number | null => {
+  const num = e.target.valueAsNumber;
+  return isNaN(num) ? null : num;
+};
+
 interface Props {
   onCalculate: (input: BeamInputType) => void;
 }
@@ -131,7 +137,7 @@ export function BeamInput({ onCalculate }: Props) {
             <input
               type="number"
               value={L}
-              onChange={(e) => setL(Number(e.target.value))}
+              onChange={(e) => { const n = parseNum(e); if (n !== null) setL(n); }}
               min={0.1}
               step={0.1}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
@@ -142,7 +148,7 @@ export function BeamInput({ onCalculate }: Props) {
             <input
               type="number"
               value={E / 1e9}
-              onChange={(e) => setE(Number(e.target.value) * 1e9)}
+              onChange={(e) => { const n = parseNum(e); if (n !== null) setE(n * 1e9); }}
               min={1}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
             />
@@ -152,7 +158,7 @@ export function BeamInput({ onCalculate }: Props) {
             <input
               type="number"
               value={I * 1e8}
-              onChange={(e) => setI(Number(e.target.value) / 1e8)}
+              onChange={(e) => { const n = parseNum(e); if (n !== null) setI(n / 1e8); }}
               min={0.01}
               step={0.01}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
@@ -234,7 +240,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
         <input
           type="number"
           value={load.q}
-          onChange={(e) => onChange({ q: Number(e.target.value) })}
+          onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ q: n }); }}
           className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
         <span className="text-muted text-sm">кН/м</span>
@@ -242,7 +248,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
         <input
           type="number"
           value={load.a}
-          onChange={(e) => onChange({ a: Number(e.target.value) })}
+          onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ a: n }); }}
           min={0}
           max={maxX}
           step={0.1}
@@ -252,7 +258,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
         <input
           type="number"
           value={load.b}
-          onChange={(e) => onChange({ b: Number(e.target.value) })}
+          onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ b: n }); }}
           min={0}
           max={maxX}
           step={0.1}
@@ -276,7 +282,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
         <input
           type="number"
           value={load.F}
-          onChange={(e) => onChange({ F: Number(e.target.value) })}
+          onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ F: n }); }}
           className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
         <span className="text-muted text-sm">кН</span>
@@ -284,7 +290,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
         <input
           type="number"
           value={load.x}
-          onChange={(e) => onChange({ x: Number(e.target.value) })}
+          onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ x: n }); }}
           min={0}
           max={maxX}
           step={0.1}
@@ -307,7 +313,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
       <input
         type="number"
         value={load.M}
-        onChange={(e) => onChange({ M: Number(e.target.value) })}
+        onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ M: n }); }}
         className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
       />
       <span className="text-muted text-sm">кН·м</span>
@@ -315,7 +321,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
       <input
         type="number"
         value={load.x}
-        onChange={(e) => onChange({ x: Number(e.target.value) })}
+        onChange={(e) => { const n = parseNum(e); if (n !== null) onChange({ x: n }); }}
         min={0}
         max={maxX}
         step={0.1}
