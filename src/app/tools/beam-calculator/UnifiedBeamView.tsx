@@ -156,17 +156,17 @@ export function UnifiedBeamView({ input, result }: Props) {
       >
         {/* Определения маркеров-стрелок и clipPath для диаграмм */}
         <defs>
-          <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
-            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.distributedLoad} />
+          <marker id="arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
           </marker>
-          <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
-            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.pointForce} />
+          <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.pointForce} />
           </marker>
-          <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
-            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.reaction} />
+          <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.reaction} />
           </marker>
-          <marker id="arrowPurple" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
-            <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.moment} />
+          <marker id="arrowPurple" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.moment} />
           </marker>
           {/* ClipPath для обрезки вертикальных краёв заливки диаграмм */}
           <clipPath id="diagramClip">
@@ -493,7 +493,7 @@ function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "ri
 
 // Стрелка реакции - ОТ балки ВВЕРХ (основание на балке, наконечник выше)
 function ReactionArrow({ x, baseY, value, label }: { x: number; baseY: number; value: number; label: string }) {
-  const arrowLen = 30;
+  const arrowLen = 40;
   const startY = baseY;
   const endY = baseY - arrowLen;
 
