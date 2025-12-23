@@ -737,7 +737,7 @@ function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label
     // Сила вверх: стрелка снизу к балке
     return (
       <g>
-        <line x1={x} y1={y + arrowLen} x2={x} y2={y + 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y + 18} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
         <text x={x + 10} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
           {label}
         </text>
