@@ -464,7 +464,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           baseY={beamY - beamThickness / 2}
           value={reactions.RB}
           label={`R_B = ${formatNum(reactions.RB)} кН`}
-          labelSide="right"
+          labelSide="left"
           labelYOffset={45}
         />
       )}
