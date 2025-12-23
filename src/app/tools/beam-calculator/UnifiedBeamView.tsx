@@ -567,8 +567,9 @@ function RollerSupport({ x, y }: { x: number; y: number }) {
         stroke={COLORS.support}
         strokeWidth={3}
       />
-      <circle cx={x - size / 4} cy={y + size + 7} r={6} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
-      <circle cx={x + size / 4} cy={y + size + 7} r={6} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
+      {/* Колёса разведены к углам треугольника */}
+      <circle cx={x - size / 2.5} cy={y + size + 7} r={5} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
+      <circle cx={x + size / 2.5} cy={y + size + 7} r={5} fill="none" stroke={COLORS.support} strokeWidth={2.5} />
       {/* Горизонтальная линия под колёсами */}
       <line
         x1={x - lineHalfWidth}
@@ -966,11 +967,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
           if (hasDiscontinuity) {
             // При скачке показываем ОБА значения
-            // Каждую подпись ставим на ПРОТИВОПОЛОЖНУЮ сторону от её заливки:
-            // - leftValue (конец левого сегмента) → ставим СПРАВА (там пусто от этого значения)
-            // - rightValue (начало правого сегмента) → ставим СЛЕВА (там пусто от этого значения)
-            addLabel(bx, leftValue!, true, `boundary-${bIdx}-left`);   // справа от линии
-            addLabel(bx, rightValue!, false, `boundary-${bIdx}-right`); // слева от линии
+            // Каждую подпись ставим на СВОЮ сторону (где её сегмент):
+            // - leftValue (конец левого сегмента) → ставим СЛЕВА
+            // - rightValue (начало правого сегмента) → ставим СПРАВА
+            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`);  // слева от линии
+            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`); // справа от линии
           } else {
             // Непрерывная функция - одна подпись
             const value = rightValue ?? leftValue;
