@@ -731,34 +731,74 @@ function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label
   );
 }
 
-// Момент (дуговая стрелка, ФИОЛЕТОВАЯ)
-// M > 0: против часовой (↺), M < 0: по часовой (↻)
+// Момент (ножка + дуга со стрелкой, ФИОЛЕТОВАЯ)
+// M > 0: против часовой (↺), стрелка слева
+// M < 0: по часовой (↻), стрелка справа
 function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; label: string }) {
-  const r = 18;
-  const isPositive = M >= 0;
+  // Параметры геометрии
+  const H = 35;      // высота центра дуги над балкой
+  const R = 20;      // радиус дуги
+  const gap = 6;     // зазор от балки
 
-  // Для положительного момента (против часовой): дуга идёт против часовой, стрелка справа
-  // Для отрицательного момента (по часовой): дуга идёт по часовой, стрелка слева
-  const startAngle = isPositive ? -60 : 240;
-  const endAngle = isPositive ? 240 : -60;
-  const sweep = isPositive ? 0 : 1; // 0 = против часовой, 1 = по часовой
+  // Центр дуги
+  const Cx = x;
+  const Cy = y - gap - H;
 
-  const x1 = x + r * Math.cos((startAngle * Math.PI) / 180);
-  const y1 = y - r * Math.sin((startAngle * Math.PI) / 180);
-  const x2 = x + r * Math.cos((endAngle * Math.PI) / 180);
-  const y2 = y - r * Math.sin((endAngle * Math.PI) / 180);
+  // Углы дуги (в экранных координатах: +y вниз)
+  // 240° = слева-снизу от центра, 330° = справа-снизу
+  const aLeft = (240 * Math.PI) / 180;
+  const aRight = (330 * Math.PI) / 180;
+
+  // Точки дуги
+  const pLeft = { x: Cx + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
+  const pRight = { x: Cx + R * Math.cos(aRight), y: Cy + R * Math.sin(aRight) };
+
+  // Начало ножки на балке
+  const legStart = { x: x, y: y - gap };
+
+  const isCW = M < 0; // по часовой
+
+  // Для CW: ножка к левой точке, дуга слева направо, стрелка справа
+  // Для CCW: ножка к правой точке, дуга справа налево, стрелка слева
+  const legEnd = isCW ? pLeft : pRight;
+  const arcStart = isCW ? pLeft : pRight;
+  const arcEnd = isCW ? pRight : pLeft;
+  const sweepFlag = isCW ? 1 : 0;
+
+  // Подпись рядом со стрелкой
+  const labelPos = isCW
+    ? { x: pRight.x + 8, y: pRight.y - 4 }
+    : { x: pLeft.x - 8, y: pLeft.y - 4 };
+  const labelAnchor = isCW ? "start" : "end";
 
   return (
     <g>
+      {/* Ножка от балки к дуге */}
+      <line
+        x1={legStart.x}
+        y1={legStart.y}
+        x2={legEnd.x}
+        y2={legEnd.y}
+        stroke={COLORS.moment}
+        strokeWidth={2}
+      />
+      {/* Дуга со стрелкой */}
       <path
-        d={`M ${x1} ${y1} A ${r} ${r} 0 1 ${sweep} ${x2} ${y2}`}
+        d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
         fill="none"
         stroke={COLORS.moment}
-        strokeWidth={2.5}
+        strokeWidth={2}
         markerEnd="url(#arrowPurple)"
       />
-      {/* Подпись сбоку от момента, чтобы не накладываться на q */}
-      <text x={x + r + 8} y={y - r - 5} textAnchor="start" fill={COLORS.moment} fontSize={12} fontWeight="600">
+      {/* Подпись */}
+      <text
+        x={labelPos.x}
+        y={labelPos.y}
+        textAnchor={labelAnchor}
+        fill={COLORS.moment}
+        fontSize={12}
+        fontWeight="600"
+      >
         {label}
       </text>
     </g>
