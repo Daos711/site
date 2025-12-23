@@ -34,6 +34,13 @@ const COLORS = {
   textMuted: "rgba(255, 255, 255, 0.6)",
 };
 
+// Форматирование числа без лишних нулей: 31.00 → "31", 31.50 → "31.5"
+function formatNum(val: number, decimals = 2): string {
+  const fixed = val.toFixed(decimals);
+  // Убираем trailing zeros после точки
+  return fixed.replace(/\.?0+$/, "");
+}
+
 export function UnifiedBeamView({ input, result }: Props) {
   const { L, loads, beamType } = input;
   const { reactions, Q, M, theta, y, events } = result;
@@ -157,6 +164,9 @@ export function UnifiedBeamView({ input, result }: Props) {
         {/* Определения маркеров-стрелок и clipPath для диаграмм */}
         <defs>
           <marker id="arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
+          </marker>
+          <marker id="arrowBlueUp" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
             <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
           </marker>
           <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
@@ -399,7 +409,8 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           x={xToPx(reactions.xA ?? 0)}
           baseY={beamY - beamThickness / 2}
           value={reactions.RA}
-          label={`R_A = ${reactions.RA.toFixed(1)} кН`}
+          label={`R_A = ${formatNum(reactions.RA)} кН`}
+          labelSide="left"
         />
       )}
       {reactions.RB !== undefined && reactions.RB !== 0 && (
@@ -407,7 +418,8 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           x={xToPx(reactions.xB ?? L)}
           baseY={beamY - beamThickness / 2}
           value={reactions.RB}
-          label={`R_B = ${reactions.RB.toFixed(1)} кН`}
+          label={`R_B = ${formatNum(reactions.RB)} кН`}
+          labelSide="right"
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -415,7 +427,8 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           x={xToPx(reactions.xf ?? 0)}
           baseY={beamY - beamThickness / 2}
           value={reactions.Rf}
-          label={`R = ${reactions.Rf.toFixed(1)} кН`}
+          label={`R = ${formatNum(reactions.Rf)} кН`}
+          labelSide="left"
         />
       )}
 
@@ -519,15 +532,19 @@ function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "ri
 }
 
 // Стрелка реакции - ОТ балки ВВЕРХ (основание на балке, наконечник выше)
-function ReactionArrow({ x, baseY, value, label }: { x: number; baseY: number; value: number; label: string }) {
+// labelSide: "left" или "right" для позиционирования подписи
+function ReactionArrow({ x, baseY, value, label, labelSide = "right" }: { x: number; baseY: number; value: number; label: string; labelSide?: "left" | "right" }) {
   const arrowLen = 40;
   const startY = baseY;
   const endY = baseY - arrowLen;
 
+  const textX = labelSide === "left" ? x - 8 : x + 8;
+  const textAnchor = labelSide === "left" ? "end" : "start";
+
   return (
     <g>
       <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#arrowGreen)" />
-      <text x={x + 8} y={startY - arrowLen / 2} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle">
+      <text x={textX} y={startY - arrowLen / 2} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle" textAnchor={textAnchor}>
         {label}
       </text>
     </g>
@@ -574,7 +591,7 @@ function DistributedLoadArrows({
       </g>
     );
   } else {
-    // Отрицательная q: снизу балки, стрелки вверх
+    // Отрицательная q: снизу балки, стрелки вверх (наконечник у балки)
     const baseY = beamBottomY + layerOffset;
     return (
       <g>
@@ -590,7 +607,7 @@ function DistributedLoadArrows({
               y2={baseY + 3}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
-              markerStart="url(#arrowBlue)"
+              markerEnd="url(#arrowBlueUp)"
             />
           );
         })}
@@ -755,7 +772,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         );
       })}
 
-      {/* Подписи на границах участков */}
+      {/* Подписи на границах участков — сдвинуты от пунктиров */}
       {scaledSegments.map((segment, segIdx) => {
         if (segment.length < 2) return null;
         const first = segment[0];
@@ -769,38 +786,38 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           return nearMax || nearMin;
         };
 
-        // Подпись в начале сегмента
+        // Подпись в начале сегмента (сдвиг вправо от пунктира)
         if (Math.abs(first.value) > 0.01 && !isNearExtreme(first.x, first.value)) {
           const textY = first.value >= 0 ? scaleY(first.value) - 8 : scaleY(first.value) + 14;
           labels.push(
             <text
               key={`start-${segIdx}`}
-              x={xToPx(first.x)}
+              x={xToPx(first.x) + 12}
               y={textY}
-              textAnchor="middle"
+              textAnchor="start"
               fill={color}
               fontSize={10}
               fillOpacity={0.8}
             >
-              {first.value.toFixed(1)}
+              {formatNum(first.value, 1)}
             </text>
           );
         }
 
-        // Подпись в конце сегмента (если это не последний сегмент и значение отличается)
+        // Подпись в конце сегмента (сдвиг влево от пунктира)
         if (segIdx < scaledSegments.length - 1 && Math.abs(last.value) > 0.01 && !isNearExtreme(last.x, last.value)) {
           const textY = last.value >= 0 ? scaleY(last.value) - 8 : scaleY(last.value) + 14;
           labels.push(
             <text
               key={`end-${segIdx}`}
-              x={xToPx(last.x)}
+              x={xToPx(last.x) - 12}
               y={textY}
-              textAnchor="middle"
+              textAnchor="end"
               fill={color}
               fontSize={10}
               fillOpacity={0.8}
             >
-              {last.value.toFixed(1)}
+              {formatNum(last.value, 1)}
             </text>
           );
         }
@@ -813,7 +830,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         <g>
           <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={color} />
           <text x={xToPx(extremes.maxP.x)} y={scaleY(extremes.maxP.value) - 10} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
-            {extremes.maxP.value.toFixed(2)}
+            {formatNum(extremes.maxP.value)}
           </text>
         </g>
       )}
@@ -821,7 +838,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         <g>
           <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={color} />
           <text x={xToPx(extremes.minP.x)} y={scaleY(extremes.minP.value) + 14} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
-            {extremes.minP.value.toFixed(2)}
+            {formatNum(extremes.minP.value)}
           </text>
         </g>
       )}
