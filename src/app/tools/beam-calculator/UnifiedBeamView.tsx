@@ -1044,15 +1044,18 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         return <g>{labels}</g>;
       })()}
 
-      {/* Маркеры экстремумов - сдвигаем подписи от границ и от заливки */}
+      {/* Маркеры экстремумов - но НЕ на крайних границах (там уже есть подпись границы) */}
       {Math.abs(extremes.maxP.value) > 0.01 && (() => {
-        // Проверяем, находится ли экстремум на границе
+        // Пропускаем если экстремум на крайней границе (x=0 или x=L)
+        const isEndpoint = Math.abs(extremes.maxP.x - boundaries[0]) < 0.05 ||
+                          Math.abs(extremes.maxP.x - boundaries[boundaries.length - 1]) < 0.05;
+        if (isEndpoint) return null;
+
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.maxP.x) < 0.05);
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
-        // Подпись выше кривой И выше нуля, чтобы не попадала на заливку
         const curveY = scaleY(extremes.maxP.value);
-        const textY = Math.min(curveY - 12, zeroY - 12);
+        const textY = extremes.maxP.value >= 0 ? curveY - 20 : curveY + 24;
         return (
           <g>
             <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
@@ -1063,13 +1066,16 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         );
       })()}
       {Math.abs(extremes.minP.value) > 0.01 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (() => {
-        // Проверяем, находится ли экстремум на границе
+        // Пропускаем если экстремум на крайней границе (x=0 или x=L)
+        const isEndpoint = Math.abs(extremes.minP.x - boundaries[0]) < 0.05 ||
+                          Math.abs(extremes.minP.x - boundaries[boundaries.length - 1]) < 0.05;
+        if (isEndpoint) return null;
+
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.minP.x) < 0.05);
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
-        // Подпись ниже кривой И ниже нуля, чтобы не попадала на заливку
         const curveY = scaleY(extremes.minP.value);
-        const textY = Math.max(curveY + 16, zeroY + 16);
+        const textY = extremes.minP.value >= 0 ? curveY - 20 : curveY + 24;
         return (
           <g>
             <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
