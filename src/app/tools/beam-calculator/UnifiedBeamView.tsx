@@ -12,7 +12,7 @@ interface Props {
 const PADDING = { left: 80, right: 60, top: 20, bottom: 20 };
 
 // Высоты панелей (значительно увеличены)
-const BEAM_HEIGHT = 260;
+const BEAM_HEIGHT = 200;
 const DIAGRAM_HEIGHT = 160;
 const GAP = 16;
 
@@ -344,52 +344,58 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         <FixedSupport x={xToPx(L)} y={beamY} side="right" />
       )}
 
-      {/* Нагрузки - распределённые с учётом слоёв */}
+      {/* Нагрузки - распределённые (результирующие по сегментам) */}
       {(() => {
-        // Группируем распределённые нагрузки по знаку
         const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
-        const positiveLoads = distributedLoads.filter(l => l.q >= 0);
-        const negativeLoads = distributedLoads.filter(l => l.q < 0);
+        if (distributedLoads.length === 0) return null;
 
-        // Правильный алгоритм назначения слоёв (interval graph coloring)
-        const assignLayers = (loadsArr: typeof distributedLoads): Map<typeof loadsArr[0], number> => {
-          const layerMap = new Map<typeof loadsArr[0], number>();
-          for (const load of loadsArr) {
-            // Находим все занятые слои от перекрывающихся нагрузок
-            const occupiedLayers = new Set<number>();
-            for (const [other, layer] of layerMap.entries()) {
-              // Проверяем перекрытие
-              if (!(other.b <= load.a || other.a >= load.b)) {
-                occupiedLayers.add(layer);
-              }
+        // Собираем все граничные точки
+        const points = new Set<number>();
+        for (const load of distributedLoads) {
+          points.add(load.a);
+          points.add(load.b);
+        }
+        const sortedPoints = Array.from(points).sort((a, b) => a - b);
+
+        // Для каждого сегмента считаем суммарную нагрузку
+        const segments: Array<{ a: number; b: number; q: number }> = [];
+        for (let i = 0; i < sortedPoints.length - 1; i++) {
+          const a = sortedPoints[i];
+          const b = sortedPoints[i + 1];
+          // Суммируем q от всех нагрузок, покрывающих этот сегмент
+          let totalQ = 0;
+          for (const load of distributedLoads) {
+            if (load.a <= a && load.b >= b) {
+              totalQ += load.q;
             }
-            // Находим минимальный свободный слой
-            let layer = 0;
-            while (occupiedLayers.has(layer)) layer++;
-            layerMap.set(load, layer);
           }
-          return layerMap;
-        };
+          if (Math.abs(totalQ) > 0.001) {
+            segments.push({ a, b, q: totalQ });
+          }
+        }
 
-        const positiveLayers = assignLayers(positiveLoads);
-        const negativeLayers = assignLayers(negativeLoads);
+        // Объединяем соседние сегменты с одинаковым q
+        const mergedSegments: typeof segments = [];
+        for (const seg of segments) {
+          const last = mergedSegments[mergedSegments.length - 1];
+          if (last && Math.abs(last.q - seg.q) < 0.001 && Math.abs(last.b - seg.a) < 0.001) {
+            last.b = seg.b;
+          } else {
+            mergedSegments.push({ ...seg });
+          }
+        }
 
-        return distributedLoads.map((load, i) => {
-          const layerMap = load.q >= 0 ? positiveLayers : negativeLayers;
-          const layer = layerMap.get(load) ?? 0;
-          return (
-            <DistributedLoadArrows
-              key={`dist-${i}`}
-              x1={xToPx(load.a)}
-              x2={xToPx(load.b)}
-              beamTopY={beamY - beamThickness / 2}
-              beamBottomY={beamY + beamThickness / 2}
-              q={load.q}
-              label={`q = ${Math.abs(load.q)} кН/м`}
-              layer={layer}
-            />
-          );
-        });
+        return mergedSegments.map((seg, i) => (
+          <DistributedLoadArrows
+            key={`dist-${i}`}
+            x1={xToPx(seg.a)}
+            x2={xToPx(seg.b)}
+            beamTopY={beamY - beamThickness / 2}
+            beamBottomY={beamY + beamThickness / 2}
+            q={seg.q}
+            label={`q = ${Math.abs(seg.q)} кН/м`}
+          />
+        ));
       })()}
       {/* Сосредоточенные силы и моменты */}
       {loads.map((load, i) => {
@@ -621,19 +627,17 @@ function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffs
 // Распределённая нагрузка (СИНЯЯ)
 // q > 0: сверху балки, стрелки вниз
 // q < 0: снизу балки, стрелки вверх
-// layer: смещение для наложения нескольких q
 function DistributedLoadArrows({
-  x1, x2, beamTopY, beamBottomY, q, label, layer = 0
+  x1, x2, beamTopY, beamBottomY, q, label
 }: {
-  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; layer?: number
+  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string
 }) {
-  const arrowLen = 25;
-  const layerOffset = layer * 28; // Смещение между слоями (равно длине стрелки, чтобы не было перекрытий)
+  const arrowLen = 28;
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
     // Положительная q: сверху балки, стрелки вниз
-    const baseY = beamTopY - layerOffset;
+    const baseY = beamTopY;
     return (
       <g>
         <line x1={x1} y1={baseY - arrowLen} x2={x2} y2={baseY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
@@ -659,7 +663,7 @@ function DistributedLoadArrows({
     );
   } else {
     // Отрицательная q: снизу балки, стрелки вверх (наконечник у балки)
-    const baseY = beamBottomY + layerOffset;
+    const baseY = beamBottomY;
     return (
       <g>
         <line x1={x1} y1={baseY + arrowLen} x2={x2} y2={baseY + arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
