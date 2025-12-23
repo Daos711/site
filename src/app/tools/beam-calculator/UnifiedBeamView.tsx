@@ -235,7 +235,7 @@ export function UnifiedBeamView({ input, result }: Props) {
           />
         )}
 
-        {/* Панель: w(x) */}
+        {/* Панель: w(x) — инвертируем знак (вниз = положительно) */}
         {hasDeflection && (
           <DiagramPanel
             title="w(x)"
@@ -246,7 +246,7 @@ export function UnifiedBeamView({ input, result }: Props) {
             height={DIAGRAM_HEIGHT}
             color={COLORS.w}
             chartWidth={chartWidth}
-            scale={1000}
+            scale={-1000}
           />
         )}
 
