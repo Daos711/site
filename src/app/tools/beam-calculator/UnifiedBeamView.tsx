@@ -966,16 +966,21 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         };
 
         // Добавление одной подписи
-        const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
+        // skipNearExtreme=false для крайних границ (0 и L), где экстремум должен быть подписан
+        const addLabel = (bx: number, value: number, placeRight: boolean, key: string, skipNearExtreme = true) => {
           if (Math.abs(value) < 0.01) return;
-          if (isNearExtreme(bx, value)) return;
+          if (skipNearExtreme && isNearExtreme(bx, value)) return;
 
           const xOffset = placeRight ? 12 : -12;
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);
+          // Подпись СНАРУЖИ от заливки:
+          // - положительные значения: заливка идёт вниз к нулю → подпись ВЫШЕ кривой
+          // - отрицательные значения: заливка идёт вверх к нулю → подпись НИЖЕ кривой
+          // Увеличенный отступ (20px) чтобы не накладываться на линию
           const textY = value >= 0
-            ? Math.min(curveY - 12, zeroY - 12)
-            : Math.max(curveY + 16, zeroY + 16);
+            ? curveY - 20
+            : curveY + 24;
 
           labels.push(
             <text
@@ -1005,13 +1010,16 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           const hasDiscontinuity = leftValue !== null && rightValue !== null &&
             Math.abs(leftValue - rightValue) > 0.5;
 
+          // На крайних границах (0 и L) показываем подпись даже если рядом экстремум
+          const isEndpoint = isFirst || isLast;
+
           if (hasDiscontinuity) {
             // При скачке показываем ОБА значения
             // Каждую подпись ставим на СВОЮ сторону (где её сегмент):
             // - leftValue (конец левого сегмента) → ставим СЛЕВА
             // - rightValue (начало правого сегмента) → ставим СПРАВА
-            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`);  // слева от линии
-            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`); // справа от линии
+            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, !isEndpoint);
+            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, !isEndpoint);
           } else {
             // Непрерывная функция - одна подпись
             const value = rightValue ?? leftValue;
@@ -1029,7 +1037,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               placeRight = rightFill <= leftFill;
             }
 
-            addLabel(bx, value, placeRight, `boundary-${bIdx}`);
+            addLabel(bx, value, placeRight, `boundary-${bIdx}`, !isEndpoint);
           }
         }
 
