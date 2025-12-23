@@ -475,6 +475,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.Rf}
           label={`R = ${formatNum(reactions.Rf)} кН`}
           labelSide="left"
+          labelYOffset={35}
         />
       )}
 
