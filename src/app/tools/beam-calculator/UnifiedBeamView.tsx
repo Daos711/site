@@ -424,6 +424,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.RB}
           label={`R_B = ${formatNum(reactions.RB)} кН`}
           labelSide="left"
+          labelYOffset={25}
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -470,6 +471,9 @@ function PinSupport({ x, y }: { x: number; y: number }) {
   const size = 24;
   const baseY = y + size; // низ треугольника
   const lineHalfWidth = size / 2 + 8;
+  const lineWidth = lineHalfWidth * 2;
+  const hatchSpacing = 7;
+  const numHatches = Math.floor(lineWidth / hatchSpacing);
   return (
     <g>
       <polygon
@@ -487,9 +491,9 @@ function PinSupport({ x, y }: { x: number; y: number }) {
         stroke={COLORS.support}
         strokeWidth={3}
       />
-      {/* Штриховка под линией (заделка) */}
-      {Array.from({ length: 7 }).map((_, i) => {
-        const hx = x - lineHalfWidth + 5 + i * 8;
+      {/* Штриховка под линией (заделка) - в пределах линии */}
+      {Array.from({ length: numHatches }).map((_, i) => {
+        const hx = x - lineHalfWidth + 8 + i * hatchSpacing;
         return (
           <line
             key={i}
@@ -511,6 +515,9 @@ function RollerSupport({ x, y }: { x: number; y: number }) {
   const size = 24;
   const baseY = y + size + 15; // линия под колёсами
   const lineHalfWidth = size / 2 + 8;
+  const lineWidth = lineHalfWidth * 2;
+  const hatchSpacing = 7;
+  const numHatches = Math.floor(lineWidth / hatchSpacing);
   return (
     <g>
       <polygon
@@ -530,9 +537,9 @@ function RollerSupport({ x, y }: { x: number; y: number }) {
         stroke={COLORS.support}
         strokeWidth={3}
       />
-      {/* Штриховка под линией (заделка) */}
-      {Array.from({ length: 7 }).map((_, i) => {
-        const hx = x - lineHalfWidth + 5 + i * 8;
+      {/* Штриховка под линией (заделка) - в пределах линии */}
+      {Array.from({ length: numHatches }).map((_, i) => {
+        const hx = x - lineHalfWidth + 8 + i * hatchSpacing;
         return (
           <line
             key={i}
@@ -571,20 +578,30 @@ function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "ri
   );
 }
 
-// Стрелка реакции - ОТ балки ВВЕРХ (основание на балке, наконечник выше)
+// Стрелка реакции - направление зависит от знака
+// value >= 0: вверх, value < 0: вниз
 // labelSide: "left" или "right" для позиционирования подписи
-function ReactionArrow({ x, baseY, value, label, labelSide = "right" }: { x: number; baseY: number; value: number; label: string; labelSide?: "left" | "right" }) {
+// labelYOffset: дополнительное смещение подписи вверх (для избежания пересечений)
+function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffset = 0 }: {
+  x: number; baseY: number; value: number; label: string; labelSide?: "left" | "right"; labelYOffset?: number
+}) {
   const arrowLen = 40;
-  const startY = baseY;
-  const endY = baseY - arrowLen;
+  const pointsUp = value >= 0;
+
+  // Если положительная - стрелка вверх, если отрицательная - вниз
+  const startY = pointsUp ? baseY : baseY;
+  const endY = pointsUp ? baseY - arrowLen : baseY + arrowLen;
 
   const textX = labelSide === "left" ? x - 8 : x + 8;
   const textAnchor = labelSide === "left" ? "end" : "start";
+  const textY = pointsUp
+    ? baseY - arrowLen / 2 - labelYOffset
+    : baseY + arrowLen / 2 + labelYOffset;
 
   return (
     <g>
       <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#arrowGreen)" />
-      <text x={textX} y={startY - arrowLen / 2} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle" textAnchor={textAnchor}>
+      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle" textAnchor={textAnchor}>
         {label}
       </text>
     </g>
@@ -664,8 +681,8 @@ function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label
   const arrowLen = 50;
   return (
     <g>
-      <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={3} markerEnd="url(#arrowRed)" />
-      <text x={x + 10} y={y - arrowLen + 10} fill={COLORS.pointForce} fontSize={14} fontWeight="600">
+      <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
+      <text x={x + 10} y={y - arrowLen + 10} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
         {label}
       </text>
     </g>
