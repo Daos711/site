@@ -52,57 +52,64 @@ export function ResultCards({ input, result, className }: Props) {
             <>
               <div className="flex justify-between">
                 <span className="text-muted">E:</span>
-                <span className="font-mono">{input.E} ГПа</span>
+                <span className="font-mono">{(input.E / 1e9).toFixed(0)} ГПа</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted">I:</span>
-                <span className="font-mono">{input.I} см⁴</span>
+                <span className="font-mono">{(input.I * 1e8).toFixed(0)} см⁴</span>
               </div>
             </>
           )}
         </div>
 
         {/* Список нагрузок */}
-        {input.loads.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-border">
-            <div className="text-xs text-muted mb-2">Нагрузки:</div>
-            <div className="space-y-1 text-xs">
-              {input.loads.map((load, i) => {
-                if (load.type === "distributed") {
-                  const sign = load.q >= 0 ? "↓" : "↑";
-                  return (
-                    <div key={i} className="flex justify-between text-blue-400">
-                      <span>q{i + 1}:</span>
-                      <span className="font-mono">
-                        {Math.abs(load.q)} кН/м {sign} [{load.a}–{load.b}]
-                      </span>
-                    </div>
-                  );
-                } else if (load.type === "force") {
-                  const sign = load.F >= 0 ? "↓" : "↑";
-                  return (
-                    <div key={i} className="flex justify-between text-red-400">
-                      <span>F{i + 1}:</span>
-                      <span className="font-mono">
-                        {Math.abs(load.F)} кН {sign} @ x={load.x}
-                      </span>
-                    </div>
-                  );
-                } else {
-                  const sign = load.M >= 0 ? "↺" : "↻";
-                  return (
-                    <div key={i} className="flex justify-between text-purple-400">
-                      <span>M{i + 1}:</span>
-                      <span className="font-mono">
-                        {Math.abs(load.M)} кН·м {sign} @ x={load.x}
-                      </span>
-                    </div>
-                  );
-                }
-              })}
+        {input.loads.length > 0 && (() => {
+          // Счётчики для каждого типа нагрузки
+          let qNum = 0, fNum = 0, mNum = 0;
+          return (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="text-xs text-muted mb-2">Нагрузки:</div>
+              <div className="space-y-1 text-xs">
+                {input.loads.map((load, i) => {
+                  if (load.type === "distributed") {
+                    qNum++;
+                    const sign = load.q >= 0 ? "↓" : "↑";
+                    return (
+                      <div key={i} className="flex justify-between text-blue-400">
+                        <span>q{qNum}:</span>
+                        <span className="font-mono">
+                          {Math.abs(load.q)} кН/м {sign} [{load.a}–{load.b}]
+                        </span>
+                      </div>
+                    );
+                  } else if (load.type === "force") {
+                    fNum++;
+                    const sign = load.F >= 0 ? "↓" : "↑";
+                    return (
+                      <div key={i} className="flex justify-between text-red-400">
+                        <span>F{fNum}:</span>
+                        <span className="font-mono">
+                          {Math.abs(load.F)} кН {sign} в x={load.x}
+                        </span>
+                      </div>
+                    );
+                  } else {
+                    mNum++;
+                    const sign = load.M >= 0 ? "↺" : "↻";
+                    return (
+                      <div key={i} className="flex justify-between text-purple-400">
+                        <span>M{mNum}:</span>
+                        <span className="font-mono">
+                          {Math.abs(load.M)} кН·м {sign} в x={load.x}
+                        </span>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Реакции */}

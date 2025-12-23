@@ -12,7 +12,7 @@ interface Props {
 const PADDING = { left: 80, right: 60, top: 20, bottom: 20 };
 
 // Высоты панелей (значительно увеличены)
-const BEAM_HEIGHT = 180;
+const BEAM_HEIGHT = 220;
 const DIAGRAM_HEIGHT = 160;
 const GAP = 16;
 
@@ -617,8 +617,8 @@ function DistributedLoadArrows({
 }: {
   x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; layer?: number
 }) {
-  const arrowLen = 30;
-  const layerOffset = layer * 25; // Смещение между слоями
+  const arrowLen = 28;
+  const layerOffset = layer * 18; // Смещение между слоями (уменьшено для большего числа слоёв)
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
