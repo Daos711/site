@@ -366,11 +366,13 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
         if (distributedLoads.length === 0) return null;
 
-        // Собираем все граничные точки
+        // Собираем все граничные точки (ограничиваем длиной балки)
         const points = new Set<number>();
+        points.add(0);
+        points.add(L);
         for (const load of distributedLoads) {
-          points.add(load.a);
-          points.add(load.b);
+          if (load.a >= 0 && load.a <= L) points.add(load.a);
+          if (load.b >= 0 && load.b <= L) points.add(load.b);
         }
         const sortedPoints = Array.from(points).sort((a, b) => a - b);
 
@@ -382,7 +384,10 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           // Суммируем q от всех нагрузок, покрывающих этот сегмент
           let totalQ = 0;
           for (const load of distributedLoads) {
-            if (load.a <= a && load.b >= b) {
+            // Нагрузка покрывает сегмент, если её диапазон включает [a, b]
+            const clampedA = Math.max(0, Math.min(L, load.a));
+            const clampedB = Math.max(0, Math.min(L, load.b));
+            if (clampedA <= a && clampedB >= b) {
               totalQ += load.q;
             }
           }
