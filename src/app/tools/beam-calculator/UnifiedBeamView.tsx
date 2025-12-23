@@ -718,18 +718,32 @@ function DistributedLoadArrows({
 }
 
 // Сосредоточенная сила (КРАСНАЯ)
-// Стрелка длиннее чтобы подпись была выше q
+// F > 0: вниз, F < 0: вверх
 function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label: string }) {
-  const arrowLen = 60; // Длиннее чем q (28px), чтобы подпись была выше
-  return (
-    <g>
-      <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
-      {/* Подпись выше стрелки, чтобы не накладывалась на q */}
-      <text x={x + 10} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
-        {label}
-      </text>
-    </g>
-  );
+  const arrowLen = 60;
+  const pointsDown = F >= 0;
+
+  if (pointsDown) {
+    // Сила вниз: стрелка сверху к балке
+    return (
+      <g>
+        <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
+        <text x={x + 10} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
+          {label}
+        </text>
+      </g>
+    );
+  } else {
+    // Сила вверх: стрелка снизу к балке
+    return (
+      <g>
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y + 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
+        <text x={x + 10} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
+          {label}
+        </text>
+      </g>
+    );
+  }
 }
 
 // Момент (ножка + дуга со стрелкой, ФИОЛЕТОВАЯ)
