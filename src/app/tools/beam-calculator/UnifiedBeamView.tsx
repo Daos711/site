@@ -12,7 +12,7 @@ interface Props {
 const PADDING = { left: 80, right: 60, top: 20, bottom: 20 };
 
 // Высоты панелей (значительно увеличены)
-const BEAM_HEIGHT = 220;
+const BEAM_HEIGHT = 260;
 const DIAGRAM_HEIGHT = 160;
 const GAP = 16;
 
@@ -346,27 +346,37 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
 
       {/* Нагрузки - распределённые с учётом слоёв */}
       {(() => {
-        // Группируем распределённые нагрузки по знаку и считаем слои для наложения
+        // Группируем распределённые нагрузки по знаку
         const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
         const positiveLoads = distributedLoads.filter(l => l.q >= 0);
         const negativeLoads = distributedLoads.filter(l => l.q < 0);
 
-        // Функция для определения слоя (сколько нагрузок перекрываются с текущей)
-        const getLayer = (load: { a: number; b: number }, sameSideLods: typeof distributedLoads) => {
-          let layer = 0;
-          for (const other of sameSideLods) {
-            if (other === load) break;
-            // Проверяем перекрытие
-            if (!(other.b <= load.a || other.a >= load.b)) {
-              layer++;
+        // Правильный алгоритм назначения слоёв (interval graph coloring)
+        const assignLayers = (loadsArr: typeof distributedLoads): Map<typeof loadsArr[0], number> => {
+          const layerMap = new Map<typeof loadsArr[0], number>();
+          for (const load of loadsArr) {
+            // Находим все занятые слои от перекрывающихся нагрузок
+            const occupiedLayers = new Set<number>();
+            for (const [other, layer] of layerMap.entries()) {
+              // Проверяем перекрытие
+              if (!(other.b <= load.a || other.a >= load.b)) {
+                occupiedLayers.add(layer);
+              }
             }
+            // Находим минимальный свободный слой
+            let layer = 0;
+            while (occupiedLayers.has(layer)) layer++;
+            layerMap.set(load, layer);
           }
-          return layer;
+          return layerMap;
         };
 
+        const positiveLayers = assignLayers(positiveLoads);
+        const negativeLayers = assignLayers(negativeLoads);
+
         return distributedLoads.map((load, i) => {
-          const sameSideLoads = load.q >= 0 ? positiveLoads : negativeLoads;
-          const layer = getLayer(load, sameSideLoads);
+          const layerMap = load.q >= 0 ? positiveLayers : negativeLayers;
+          const layer = layerMap.get(load) ?? 0;
           return (
             <DistributedLoadArrows
               key={`dist-${i}`}
@@ -617,8 +627,8 @@ function DistributedLoadArrows({
 }: {
   x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; layer?: number
 }) {
-  const arrowLen = 28;
-  const layerOffset = layer * 18; // Смещение между слоями (уменьшено для большего числа слоёв)
+  const arrowLen = 25;
+  const layerOffset = layer * 28; // Смещение между слоями (равно длине стрелки, чтобы не было перекрытий)
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
