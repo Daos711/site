@@ -5,9 +5,10 @@ import type { BeamInput, BeamResult } from "@/lib/beam";
 interface Props {
   input: BeamInput;
   result: BeamResult;
+  className?: string;
 }
 
-export function ResultCards({ input, result }: Props) {
+export function ResultCards({ input, result, className }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
 
   // Находим максимальный прогиб
@@ -28,7 +29,7 @@ export function ResultCards({ input, result }: Props) {
     : null;
 
   return (
-    <div className="space-y-4">
+    <div className={`flex flex-col gap-4 ${className || ""}`}>
       {/* Мини-превью схемы балки */}
       <MiniBeamPreview input={input} />
 
@@ -83,8 +84,8 @@ export function ResultCards({ input, result }: Props) {
         </div>
       </div>
 
-      {/* Экстремумы */}
-      <div className="p-4 rounded-lg border border-border bg-card">
+      {/* Экстремумы — растягивается на оставшееся место */}
+      <div className="p-4 rounded-lg border border-border bg-card flex-1">
         <h3 className="font-semibold mb-3 text-sm">Экстремальные значения</h3>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
@@ -109,7 +110,7 @@ export function ResultCards({ input, result }: Props) {
             <div className="flex justify-between">
               <span className="text-muted">w_max:</span>
               <span className="font-mono">
-                {(-wMax.value * 1000).toFixed(2)} мм
+                {(wMax.value * 1000).toFixed(2)} мм
                 <span className="text-muted ml-1">
                   (x = {wMax.x.toFixed(2)} м)
                 </span>

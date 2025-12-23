@@ -33,23 +33,23 @@ export default function BeamCalculatorPage() {
       />
 
       {/* Верхний блок: 2 колонки на десктопе */}
-      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8">
+      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8 items-stretch">
         {/* Левая колонка: Форма ввода */}
         <div>
           <BeamInput onCalculate={handleCalculate} />
         </div>
 
         {/* Правая колонка: Результаты (или плейсхолдер) */}
-        <div>
+        <div className="flex flex-col">
           {error && (
             <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 mb-4">
               {error}
             </div>
           )}
           {result && input ? (
-            <ResultCards input={input} result={result} />
+            <ResultCards input={input} result={result} className="flex-1" />
           ) : (
-            <div className="p-6 rounded-lg border border-border bg-card/50 text-muted text-center h-full flex items-center justify-center">
+            <div className="p-6 rounded-lg border border-border bg-card/50 text-muted text-center flex-1 flex items-center justify-center">
               <p>Введите параметры и нажмите «Рассчитать»</p>
             </div>
           )}
