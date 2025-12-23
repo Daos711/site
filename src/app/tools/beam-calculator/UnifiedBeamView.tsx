@@ -956,8 +956,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
           if (hasDiscontinuity) {
             // При скачке показываем ОБА значения
-            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`);  // слева от линии
-            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`); // справа от линии
+            // Каждую подпись ставим на ПРОТИВОПОЛОЖНУЮ сторону от её заливки:
+            // - leftValue (конец левого сегмента) → ставим СПРАВА (там пусто от этого значения)
+            // - rightValue (начало правого сегмента) → ставим СЛЕВА (там пусто от этого значения)
+            addLabel(bx, leftValue!, true, `boundary-${bIdx}-left`);   // справа от линии
+            addLabel(bx, rightValue!, false, `boundary-${bIdx}-right`); // слева от линии
           } else {
             // Непрерывная функция - одна подпись
             const value = rightValue ?? leftValue;
