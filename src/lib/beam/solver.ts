@@ -218,7 +218,9 @@ function createMFunction(
           M += reactions.Rf * macaulay(x, reactions.xf, 1);
         }
         if (reactions.Mf !== undefined) {
-          M += reactions.Mf * macaulay(x, reactions.xf, 0);
+          // Знак минус: реакция момента в заделке противодействует внешним нагрузкам,
+          // поэтому её вклад во внутренний момент отрицателен
+          M -= reactions.Mf * macaulay(x, reactions.xf, 0);
         }
       }
     }
@@ -281,7 +283,8 @@ function computeDeflections(
           result += reactions.Rf * macaulayIntegral(x, reactions.xf, 1);
         }
         if (reactions.Mf !== undefined) {
-          result += reactions.Mf * macaulayIntegral(x, reactions.xf, 0);
+          // Знак минус, как в M(x)
+          result -= reactions.Mf * macaulayIntegral(x, reactions.xf, 0);
         }
       }
     }
@@ -324,7 +327,8 @@ function computeDeflections(
           result += reactions.Rf * macaulayDoubleIntegral(x, reactions.xf, 1);
         }
         if (reactions.Mf !== undefined) {
-          result += reactions.Mf * macaulayDoubleIntegral(x, reactions.xf, 0);
+          // Знак минус, как в M(x)
+          result -= reactions.Mf * macaulayDoubleIntegral(x, reactions.xf, 0);
         }
       }
     }
