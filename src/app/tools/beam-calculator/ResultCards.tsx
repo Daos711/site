@@ -133,12 +133,12 @@ export function ResultCards({ input, result, className }: Props) {
       }
     }
 
-    // Формируем строку формулы
+    // Формируем строку формулы для LaTeX
     const buildFormula = (values: number[]): string => {
       return values.map((v, i) => {
         const absV = formatNum(Math.abs(v));
-        if (i === 0) return v >= 0 ? absV : `−${absV}`;
-        return v >= 0 ? ` + ${absV}` : ` − ${absV}`;
+        if (i === 0) return v >= 0 ? absV : `-${absV}`;
+        return v >= 0 ? ` + ${absV}` : ` - ${absV}`;
       }).join("");
     };
 
@@ -159,46 +159,34 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Реакции опор</h3>
         <div className="space-y-2">
           {reactions.RA !== undefined && (
-            <div className="flex justify-between items-baseline">
-              <Latex tex="R_A" />
-              <span className="font-mono text-base tabular-nums">
-                {formatNum(reactions.RA)} кН
-                <span className="text-muted-foreground ml-2">
-                  ({reactions.RA >= 0 ? "↑" : "↓"})
-                </span>
+            <div className="flex justify-between items-center">
+              <Latex tex={`R_A = ${formatNum(reactions.RA)} \\text{ кН}`} />
+              <span className="text-muted-foreground text-lg">
+                {reactions.RA >= 0 ? "↑" : "↓"}
               </span>
             </div>
           )}
           {reactions.RB !== undefined && (
-            <div className="flex justify-between items-baseline">
-              <Latex tex="R_B" />
-              <span className="font-mono text-base tabular-nums">
-                {formatNum(reactions.RB)} кН
-                <span className="text-muted-foreground ml-2">
-                  ({reactions.RB >= 0 ? "↑" : "↓"})
-                </span>
+            <div className="flex justify-between items-center">
+              <Latex tex={`R_B = ${formatNum(reactions.RB)} \\text{ кН}`} />
+              <span className="text-muted-foreground text-lg">
+                {reactions.RB >= 0 ? "↑" : "↓"}
               </span>
             </div>
           )}
           {reactions.Rf !== undefined && (
-            <div className="flex justify-between items-baseline">
-              <span>R</span>
-              <span className="font-mono text-base tabular-nums">
-                {formatNum(reactions.Rf)} кН
-                <span className="text-muted-foreground ml-2">
-                  ({reactions.Rf >= 0 ? "↑" : "↓"})
-                </span>
+            <div className="flex justify-between items-center">
+              <Latex tex={`R = ${formatNum(reactions.Rf)} \\text{ кН}`} />
+              <span className="text-muted-foreground text-lg">
+                {reactions.Rf >= 0 ? "↑" : "↓"}
               </span>
             </div>
           )}
           {reactions.Mf !== undefined && (
-            <div className="flex justify-between items-baseline">
-              <span>M</span>
-              <span className="font-mono text-base tabular-nums">
-                {formatNum(reactions.Mf)} кН·м
-                <span className="text-muted-foreground ml-2">
-                  ({reactions.Mf >= 0 ? "↺" : "↻"})
-                </span>
+            <div className="flex justify-between items-center">
+              <Latex tex={`M = ${formatNum(reactions.Mf)} \\text{ кН·м}`} />
+              <span className="text-muted-foreground text-lg">
+                {reactions.Mf >= 0 ? "↺" : "↻"}
               </span>
             </div>
           )}
@@ -209,33 +197,15 @@ export function ResultCards({ input, result, className }: Props) {
       <div className="p-4 rounded-lg border border-border bg-card">
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
-          <div className="flex justify-between items-baseline">
-            <Latex tex="|Q|_{\max}" />
-            <span className="font-mono text-base tabular-nums">
-              {formatNum(Math.abs(Qmax.value))} кН
-              <span className="text-muted-foreground ml-2">
-                (x = {formatNum(Qmax.x)} м)
-              </span>
-            </span>
+          <div>
+            <Latex tex={`|Q|_{\\max} = ${formatNum(Math.abs(Qmax.value))} \\text{ кН} \\quad (x = ${formatNum(Qmax.x)} \\text{ м})`} />
           </div>
-          <div className="flex justify-between items-baseline">
-            <Latex tex="|M|_{\max}" />
-            <span className="font-mono text-base tabular-nums">
-              {formatNum(Math.abs(Mmax.value))} кН·м
-              <span className="text-muted-foreground ml-2">
-                (x = {formatNum(Mmax.x)} м)
-              </span>
-            </span>
+          <div>
+            <Latex tex={`|M|_{\\max} = ${formatNum(Math.abs(Mmax.value))} \\text{ кН·м} \\quad (x = ${formatNum(Mmax.x)} \\text{ м})`} />
           </div>
           {wMax && (
-            <div className="flex justify-between items-baseline">
-              <Latex tex="|y|_{\max}" />
-              <span className="font-mono text-base tabular-nums">
-                {formatNum(Math.abs(wMax.value * 1000))} мм
-                <span className="text-muted-foreground ml-2">
-                  (x = {formatNum(wMax.x)} м)
-                </span>
-              </span>
+            <div>
+              <Latex tex={`|y|_{\\max} = ${formatNum(Math.abs(wMax.value * 1000))} \\text{ мм} \\quad (x = ${formatNum(wMax.x)} \\text{ м})`} />
             </div>
           )}
         </div>
@@ -253,26 +223,10 @@ export function ResultCards({ input, result, className }: Props) {
         </h3>
         <div className="space-y-3">
           <div>
-            <div className="flex items-baseline gap-2">
-              <Latex tex="\Sigma F_y" />
-              <span className="text-muted-foreground">=</span>
-              <span className="font-mono text-sm">{equilibrium.fyFormula}</span>
-              <span className="text-muted-foreground">=</span>
-              <span className={`font-mono font-semibold ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
-                {formatEquilibrium(equilibrium.sumFy)} кН
-              </span>
-            </div>
+            <Latex tex={`\\Sigma F_y = ${equilibrium.fyFormula} = ${Math.abs(equilibrium.sumFy) < 0.01 ? '\\textcolor{green}{0}' : `\\textcolor{red}{${formatEquilibrium(equilibrium.sumFy)}}`} \\text{ кН}`} />
           </div>
           <div>
-            <div className="flex items-baseline gap-2">
-              <Latex tex="\Sigma M_0" />
-              <span className="text-muted-foreground">=</span>
-              <span className="font-mono text-sm">{equilibrium.mFormula}</span>
-              <span className="text-muted-foreground">=</span>
-              <span className={`font-mono font-semibold ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
-                {formatEquilibrium(equilibrium.sumM)} кН·м
-              </span>
-            </div>
+            <Latex tex={`\\Sigma M_0 = ${equilibrium.mFormula} = ${Math.abs(equilibrium.sumM) < 0.01 ? '\\textcolor{green}{0}' : `\\textcolor{red}{${formatEquilibrium(equilibrium.sumM)}}`} \\text{ кН·м}`} />
           </div>
         </div>
       </div>
