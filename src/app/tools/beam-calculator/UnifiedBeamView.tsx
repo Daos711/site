@@ -1102,15 +1102,17 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         }
 
         // На границе с разрывом показываем только кружок (текст уже есть от подписи границы)
-        // На границе без разрыва показываем и кружок и текст
+        // На границе без разрыва показываем и кружок и текст (со смещением от пунктира)
         const textY = extremes.maxP.value >= 0 ? curveY - 20 : curveY + 24;
         if (onBoundary && hasDiscontinuityAtBoundary) {
           return <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />;
         }
+        const offset = onBoundary ? 15 : 0;
+        const textAnchor = onBoundary ? "start" : "middle";
         return (
           <g>
             <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
-            <text x={xToPx(extremes.maxP.x)} y={textY} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
+            <text x={xToPx(extremes.maxP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
               {formatNum(extremes.maxP.value)}
             </text>
           </g>
@@ -1148,10 +1150,12 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         if (onBoundary && hasDiscontinuityAtBoundary) {
           return <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />;
         }
+        const offset = onBoundary ? 15 : 0;
+        const textAnchor = onBoundary ? "start" : "middle";
         return (
           <g>
             <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
-            <text x={xToPx(extremes.minP.x)} y={textY} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
+            <text x={xToPx(extremes.minP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
               {formatNum(extremes.minP.value)}
             </text>
           </g>
