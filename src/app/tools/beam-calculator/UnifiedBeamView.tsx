@@ -437,6 +437,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
               y={beamY - beamThickness / 2}
               F={load.F}
               label={`F = ${Math.abs(load.F)} кН`}
+              maxX={xToPx(L) + PADDING.right - 10}
             />
           );
         } else if (load.type === "moment") {
@@ -521,9 +522,11 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         }
 
         if (rollerSupport) {
-          // Смещение: вправо если на краю справа, иначе влево если не на краю
+          // Смещение: вправо от пунктира (всегда, чтобы не накладываться на линию)
           const isAtRight = rollerSupport.x > L - 0.1;
-          const offset = isAtRight ? 25 : (rollerSupport.x < 0.1 ? -25 : 0);
+          const isAtLeft = rollerSupport.x < 0.1;
+          // На краю справа - вправо, на краю слева - влево, внутри - вправо
+          const offset = isAtRight ? 25 : (isAtLeft ? -25 : 20);
           labels.push(
             <text
               key="label-B"
@@ -659,7 +662,7 @@ function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "ri
 }
 
 // Стрелка реакции - направление зависит от знака
-// value >= 0: вверх, value < 0: вниз
+// value >= 0: вверх (от балки), value < 0: вниз (к балке сверху)
 // labelSide: "left" или "right" для позиционирования подписи
 // labelYOffset: дополнительное смещение подписи вверх (для избежания пересечений)
 function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffset = 0, labelXOffset = 0 }: {
@@ -668,16 +671,23 @@ function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffs
   const arrowLen = 40;
   const pointsUp = value >= 0;
 
-  // Если положительная - стрелка вверх, если отрицательная - вниз
-  const startY = pointsUp ? baseY : baseY;
-  const endY = pointsUp ? baseY - arrowLen : baseY + arrowLen;
+  // Положительная: стрелка от балки вверх (наконечник вверху)
+  // Отрицательная: стрелка сверху вниз К балке (наконечник у балки)
+  let startY: number, endY: number;
+  if (pointsUp) {
+    startY = baseY;
+    endY = baseY - arrowLen;
+  } else {
+    // Стрелка идёт сверху вниз, наконечник касается балки
+    startY = baseY - arrowLen;
+    endY = baseY;
+  }
 
   const baseXOffset = labelSide === "left" ? -8 : 8;
   const textX = x + baseXOffset + labelXOffset;
   const textAnchor = labelSide === "left" ? "end" : "start";
-  const textY = pointsUp
-    ? baseY - arrowLen / 2 - labelYOffset
-    : baseY + arrowLen / 2 + labelYOffset;
+  // Подпись всегда выше балки (рядом со стрелкой)
+  const textY = baseY - arrowLen / 2 - labelYOffset;
 
   return (
     <g>
@@ -757,16 +767,24 @@ function DistributedLoadArrows({
 
 // Сосредоточенная сила (КРАСНАЯ)
 // F > 0: вниз, F < 0: вверх
-function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label: string }) {
+// maxX: правая граница области для проверки выхода подписи
+function ForceArrow({ x, y, F, label, maxX }: { x: number; y: number; F: number; label: string; maxX?: number }) {
   const arrowLen = 60;
   const pointsDown = F >= 0;
+
+  // Проверяем, не выходит ли подпись за правую границу (примерно 100px на текст)
+  const labelWidth = 100;
+  const wouldOverflow = maxX !== undefined && (x + 10 + labelWidth > maxX);
+  // Если выходит - размещаем слева от стрелки
+  const labelX = wouldOverflow ? x - 10 : x + 10;
+  const textAnchor = wouldOverflow ? "end" : "start";
 
   if (pointsDown) {
     // Сила вниз: стрелка сверху к балке
     return (
       <g>
         <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
-        <text x={x + 10} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
+        <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
@@ -776,7 +794,7 @@ function ForceArrow({ x, y, F, label }: { x: number; y: number; F: number; label
     return (
       <g>
         <line x1={x} y1={y + arrowLen} x2={x} y2={y + 22} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
-        <text x={x + 10} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600">
+        <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
@@ -976,10 +994,10 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       {(() => {
         const labels: React.ReactNode[] = [];
 
-        // Проверяем, не слишком ли близко к экстремумам (увеличил порог с 0.2 до 1.0)
+        // Проверяем, не слишком ли близко к экстремумам (0.3м - только если почти совпадают)
         const isNearExtreme = (x: number, val: number) => {
-          const nearMax = Math.abs(x - extremes.maxP.x) < 1.0 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.2;
-          const nearMin = Math.abs(x - extremes.minP.x) < 1.0 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.2;
+          const nearMax = Math.abs(x - extremes.maxP.x) < 0.3 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.15;
+          const nearMin = Math.abs(x - extremes.minP.x) < 0.3 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.15;
           return nearMax || nearMin;
         };
 
@@ -1142,13 +1160,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         }
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
-        // Показываем координату x для экстремума (с точностью до сотых)
-        const xCoord = extremes.maxP.x.toFixed(2);
         return (
           <g>
             <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
             <text x={xToPx(extremes.maxP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
-              {formatNum(extremes.maxP.value)} (x={xCoord})
+              {formatNum(extremes.maxP.value)}
             </text>
           </g>
         );
@@ -1187,13 +1203,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         }
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
-        // Показываем координату x для экстремума (с точностью до сотых)
-        const xCoord = extremes.minP.x.toFixed(2);
         return (
           <g>
             <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
             <text x={xToPx(extremes.minP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
-              {formatNum(extremes.minP.value)} (x={xCoord})
+              {formatNum(extremes.minP.value)}
             </text>
           </g>
         );
