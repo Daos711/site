@@ -1,6 +1,7 @@
 "use client";
 
 import type { BeamInput, BeamResult } from "@/lib/beam";
+import { Latex } from "@/components/Latex";
 
 interface Props {
   input: BeamInput;
@@ -18,16 +19,6 @@ function formatNum(value: number, decimals: number = 2): string {
 function formatEquilibrium(value: number): string {
   if (Math.abs(value) < 0.0001) return "0";
   return value.toFixed(4).replace(/\.?0+$/, "");
-}
-
-// Компонент для отображения индексов через CSS
-function Sub({ children, sub }: { children: React.ReactNode; sub: string }) {
-  return (
-    <span className="inline-flex items-baseline">
-      <span>{children}</span>
-      <sub className="text-[0.65em] ml-px">{sub}</sub>
-    </span>
-  );
 }
 
 export function ResultCards({ input, result, className }: Props) {
@@ -169,7 +160,7 @@ export function ResultCards({ input, result, className }: Props) {
         <div className="space-y-2">
           {reactions.RA !== undefined && (
             <div className="flex justify-between items-baseline">
-              <Sub sub="A">R</Sub>
+              <Latex tex="R_A" />
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.RA)} кН
                 <span className="text-muted-foreground ml-2">
@@ -180,7 +171,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.RB !== undefined && (
             <div className="flex justify-between items-baseline">
-              <Sub sub="B">R</Sub>
+              <Latex tex="R_B" />
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.RB)} кН
                 <span className="text-muted-foreground ml-2">
@@ -219,7 +210,7 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <Sub sub="max">|Q|</Sub>
+            <Latex tex="|Q|_{\max}" />
             <span className="font-mono text-base tabular-nums">
               {formatNum(Math.abs(Qmax.value))} кН
               <span className="text-muted-foreground ml-2">
@@ -228,7 +219,7 @@ export function ResultCards({ input, result, className }: Props) {
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <Sub sub="max">|M|</Sub>
+            <Latex tex="|M|_{\max}" />
             <span className="font-mono text-base tabular-nums">
               {formatNum(Math.abs(Mmax.value))} кН·м
               <span className="text-muted-foreground ml-2">
@@ -238,7 +229,7 @@ export function ResultCards({ input, result, className }: Props) {
           </div>
           {wMax && (
             <div className="flex justify-between items-baseline">
-              <Sub sub="max">|y|</Sub>
+              <Latex tex="|y|_{\max}" />
               <span className="font-mono text-base tabular-nums">
                 {formatNum(Math.abs(wMax.value * 1000))} мм
                 <span className="text-muted-foreground ml-2">
@@ -263,7 +254,7 @@ export function ResultCards({ input, result, className }: Props) {
         <div className="space-y-3">
           <div>
             <div className="flex items-baseline gap-2">
-              <Sub sub="y">ΣF</Sub>
+              <Latex tex="\Sigma F_y" />
               <span className="text-muted-foreground">=</span>
               <span className="font-mono text-sm">{equilibrium.fyFormula}</span>
               <span className="text-muted-foreground">=</span>
@@ -274,7 +265,7 @@ export function ResultCards({ input, result, className }: Props) {
           </div>
           <div>
             <div className="flex items-baseline gap-2">
-              <Sub sub="0">ΣM</Sub>
+              <Latex tex="\Sigma M_0" />
               <span className="text-muted-foreground">=</span>
               <span className="font-mono text-sm">{equilibrium.mFormula}</span>
               <span className="text-muted-foreground">=</span>
