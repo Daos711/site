@@ -673,14 +673,16 @@ function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffs
 
   // Положительная: стрелка от балки вверх (наконечник вверху)
   // Отрицательная: стрелка сверху вниз К балке (наконечник у балки)
+  // Учитываем размер маркера (6px), чтобы наконечник только касался поверхности
+  const markerSize = 6;
   let startY: number, endY: number;
   if (pointsUp) {
     startY = baseY;
     endY = baseY - arrowLen;
   } else {
-    // Стрелка идёт сверху вниз, наконечник касается балки
+    // Стрелка идёт сверху вниз, наконечник касается балки (не заходит внутрь)
     startY = baseY - arrowLen;
-    endY = baseY;
+    endY = baseY - markerSize; // Останавливаем линию раньше, чтобы маркер касался поверхности
   }
 
   const baseXOffset = labelSide === "left" ? -8 : 8;
@@ -1068,7 +1070,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               fontSize={12}
               fontWeight="500"
             >
-              {formatNum(value, 1)}
+              {formatNum(value, 2)}
             </text>
           );
         };
