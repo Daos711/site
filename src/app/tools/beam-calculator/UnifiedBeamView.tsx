@@ -465,37 +465,73 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
       })}
 
       {/* Реакции - ЗЕЛЁНЫЕ стрелки (вверх = положительная, вниз = отрицательная) */}
-      {reactions.RA !== undefined && reactions.RA !== 0 && (
-        <ReactionArrow
-          x={xToPx(reactions.xA ?? 0)}
-          baseY={beamY - beamThickness / 2}
-          value={reactions.RA}
-          label={`R_A = ${formatNum(Math.abs(reactions.RA))} кН`}
-          labelSide="left"
-          labelYOffset={40}
-        />
-      )}
-      {reactions.RB !== undefined && reactions.RB !== 0 && (
-        <ReactionArrow
-          x={xToPx(reactions.xB ?? L)}
-          baseY={beamY - beamThickness / 2}
-          value={reactions.RB}
-          label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
-          labelSide="left"
-          labelYOffset={reactions.RB >= 0 ? 50 : 35}
-          labelXOffset={-30}
-        />
-      )}
-      {reactions.Rf !== undefined && reactions.Rf !== 0 && (
-        <ReactionArrow
-          x={xToPx(reactions.xf ?? 0)}
-          baseY={beamY - beamThickness / 2}
-          value={reactions.Rf}
-          label={`R = ${formatNum(Math.abs(reactions.Rf))} кН`}
-          labelSide="left"
-          labelYOffset={35}
-        />
-      )}
+      {(() => {
+        // Проверяем, есть ли нагрузка в точке (сила или момент)
+        const hasLoadAt = (x: number) => {
+          return loads.some(load => {
+            if (load.type === "force" || load.type === "moment") {
+              return Math.abs(load.x - x) < 0.01;
+            }
+            return false;
+          });
+        };
+
+        const elements = [];
+
+        // R_A
+        if (reactions.RA !== undefined && reactions.RA !== 0) {
+          const xA = reactions.xA ?? 0;
+          const hasLoadAtA = hasLoadAt(xA);
+          elements.push(
+            <ReactionArrow
+              key="RA"
+              x={xToPx(xA)}
+              baseY={beamY - beamThickness / 2}
+              value={reactions.RA}
+              label={`R_A = ${formatNum(Math.abs(reactions.RA))} кН`}
+              labelSide="left"
+              labelYOffset={hasLoadAtA ? 70 : 40}
+            />
+          );
+        }
+
+        // R_B
+        if (reactions.RB !== undefined && reactions.RB !== 0) {
+          const xB = reactions.xB ?? L;
+          const hasLoadAtB = hasLoadAt(xB);
+          elements.push(
+            <ReactionArrow
+              key="RB"
+              x={xToPx(xB)}
+              baseY={beamY - beamThickness / 2}
+              value={reactions.RB}
+              label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
+              labelSide="left"
+              labelYOffset={hasLoadAtB ? 80 : (reactions.RB >= 0 ? 50 : 35)}
+              labelXOffset={-30}
+            />
+          );
+        }
+
+        // R (заделка)
+        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
+          const xf = reactions.xf ?? 0;
+          const hasLoadAtF = hasLoadAt(xf);
+          elements.push(
+            <ReactionArrow
+              key="Rf"
+              x={xToPx(xf)}
+              baseY={beamY - beamThickness / 2}
+              value={reactions.Rf}
+              label={`R = ${formatNum(Math.abs(reactions.Rf))} кН`}
+              labelSide="left"
+              labelYOffset={hasLoadAtF ? 65 : 35}
+            />
+          );
+        }
+
+        return elements;
+      })()}
 
       {/* Подписи A и B - под опорами */}
       {(() => {
