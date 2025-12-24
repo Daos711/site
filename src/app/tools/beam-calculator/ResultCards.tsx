@@ -1,6 +1,7 @@
 "use client";
 
 import type { BeamInput, BeamResult } from "@/lib/beam";
+import { generateReport } from "@/lib/beam";
 import { Latex } from "@/components/Latex";
 
 interface Props {
@@ -224,10 +225,10 @@ export function ResultCards({ input, result, className }: Props) {
       {/* Кнопка отчёта */}
       <button
         className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-center"
-        onClick={() => window.print()}
+        onClick={() => generateReport({ input, result })}
       >
         <span className="text-muted-foreground">📄</span>
-        <span className="ml-2">Печать / Сохранить PDF</span>
+        <span className="ml-2">Открыть отчёт</span>
       </button>
     </div>
   );
