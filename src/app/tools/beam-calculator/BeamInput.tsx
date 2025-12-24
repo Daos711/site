@@ -59,17 +59,32 @@ const beamTypes: { value: BeamType; label: string; description: string }[] = [
   {
     value: "simply-supported",
     label: "Двухопорная",
-    description: "Шарнирные опоры на концах",
+    description: "Шарнирные опоры на концах (A в x=0, B в x=L)",
+  },
+  {
+    value: "simply-supported-overhang-left",
+    label: "С консолью слева",
+    description: "Опора A внутри балки, консоль слева",
+  },
+  {
+    value: "simply-supported-overhang-right",
+    label: "С консолью справа",
+    description: "Опора B внутри балки, консоль справа",
+  },
+  {
+    value: "simply-supported-overhang-both",
+    label: "Двухконсольная",
+    description: "Обе опоры внутри балки",
   },
   {
     value: "cantilever-left",
-    label: "Консоль (заделка слева)",
-    description: "Заделка в x = 0",
+    label: "Заделка слева",
+    description: "Жёсткая заделка в x = 0",
   },
   {
     value: "cantilever-right",
-    label: "Консоль (заделка справа)",
-    description: "Заделка в x = L",
+    label: "Заделка справа",
+    description: "Жёсткая заделка в x = L",
   },
 ];
 
@@ -79,6 +94,10 @@ export function BeamInput({ onCalculate }: Props) {
   const [loads, setLoads] = useState<Load[]>([]);
   const [E, setE] = useState<number>(200e9); // Па
   const [I, setI] = useState<number>(1e-4);  // м^4
+
+  // Позиции опор для балок с консолями
+  const [xA, setXA] = useState<number>(2);   // позиция опоры A
+  const [xB, setXB] = useState<number>(8);   // позиция опоры B
 
   const addDistributedLoad = () => {
     setLoads([
@@ -109,15 +128,41 @@ export function BeamInput({ onCalculate }: Props) {
     // Создаём опоры в зависимости от типа балки
     let supports: BeamSupport[] = [];
 
-    if (beamType === "simply-supported") {
-      supports = [
-        { type: "pin", x: 0 },
-        { type: "roller", x: L },
-      ];
-    } else if (beamType === "cantilever-left") {
-      supports = [{ type: "fixed", x: 0 }];
-    } else {
-      supports = [{ type: "fixed", x: L }];
+    switch (beamType) {
+      case "simply-supported":
+        // Опоры на концах
+        supports = [
+          { type: "pin", x: 0 },
+          { type: "roller", x: L },
+        ];
+        break;
+      case "simply-supported-overhang-left":
+        // Опора A внутри (консоль слева), опора B на правом конце
+        supports = [
+          { type: "pin", x: xA },
+          { type: "roller", x: L },
+        ];
+        break;
+      case "simply-supported-overhang-right":
+        // Опора A на левом конце, опора B внутри (консоль справа)
+        supports = [
+          { type: "pin", x: 0 },
+          { type: "roller", x: xB },
+        ];
+        break;
+      case "simply-supported-overhang-both":
+        // Обе опоры внутри балки
+        supports = [
+          { type: "pin", x: xA },
+          { type: "roller", x: xB },
+        ];
+        break;
+      case "cantilever-left":
+        supports = [{ type: "fixed", x: 0 }];
+        break;
+      case "cantilever-right":
+        supports = [{ type: "fixed", x: L }];
+        break;
     }
 
     const input: BeamInputType = {
@@ -198,6 +243,51 @@ export function BeamInput({ onCalculate }: Props) {
             />
           </div>
         </div>
+
+        {/* Позиции опор для балок с консолями */}
+        {(beamType === "simply-supported-overhang-left" ||
+          beamType === "simply-supported-overhang-right" ||
+          beamType === "simply-supported-overhang-both") && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <h4 className="text-sm font-medium mb-3">Позиции опор</h4>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {(beamType === "simply-supported-overhang-left" ||
+                beamType === "simply-supported-overhang-both") && (
+                <div>
+                  <label className="block text-sm text-muted mb-1">
+                    Опора A (xₐ), м
+                  </label>
+                  <NumInput
+                    value={xA}
+                    onChange={setXA}
+                    min={0.1}
+                    max={L - 0.1}
+                    step={0.1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                  <p className="text-xs text-muted mt-1">Консоль слева: 0 → xₐ</p>
+                </div>
+              )}
+              {(beamType === "simply-supported-overhang-right" ||
+                beamType === "simply-supported-overhang-both") && (
+                <div>
+                  <label className="block text-sm text-muted mb-1">
+                    Опора B (x_b), м
+                  </label>
+                  <NumInput
+                    value={xB}
+                    onChange={setXB}
+                    min={0.1}
+                    max={L - 0.1}
+                    step={0.1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                  <p className="text-xs text-muted mt-1">Консоль справа: x_b → L</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Нагрузки */}

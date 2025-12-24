@@ -1,9 +1,12 @@
 // Типы нагрузок и балок
 
 export type BeamType =
-  | "simply-supported"      // Двухопорная
-  | "cantilever-left"       // Заделка слева
-  | "cantilever-right";     // Заделка справа
+  | "simply-supported"           // Двухопорная (опоры на концах)
+  | "simply-supported-overhang-left"   // Двухопорная с консолью слева
+  | "simply-supported-overhang-right"  // Двухопорная с консолью справа
+  | "simply-supported-overhang-both"   // Двухконсольная (опоры внутри)
+  | "cantilever-left"            // Заделка слева
+  | "cantilever-right";          // Заделка справа
 
 export interface DistributedLoad {
   type: "distributed";

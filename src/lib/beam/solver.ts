@@ -84,8 +84,14 @@ function computeReactions(input: BeamInput): Reactions {
     }
   }
 
-  if (beamType === "simply-supported") {
-    // Двухопорная балка
+  // Все варианты двухопорных балок (с консолями и без)
+  const isSimplySupported = beamType === "simply-supported" ||
+    beamType === "simply-supported-overhang-left" ||
+    beamType === "simply-supported-overhang-right" ||
+    beamType === "simply-supported-overhang-both";
+
+  if (isSimplySupported) {
+    // Двухопорная балка (с консолями или без)
     const xA = supports.find((s) => s.type === "pin")?.x ?? 0;
     const xB = supports.find((s) => s.type === "roller")?.x ?? L;
 
@@ -153,11 +159,17 @@ function createQFunction(
 ): (x: number) => number {
   const { loads, beamType } = input;
 
+  // Все варианты двухопорных балок
+  const isSimplySupported = beamType === "simply-supported" ||
+    beamType === "simply-supported-overhang-left" ||
+    beamType === "simply-supported-overhang-right" ||
+    beamType === "simply-supported-overhang-both";
+
   return (x: number): number => {
     let Q = 0;
 
     // Реакции (уже с правильным знаком: + = вверх)
-    if (beamType === "simply-supported") {
+    if (isSimplySupported) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         Q += reactions.RA * macaulay(x, reactions.xA, 0);
       }
@@ -201,11 +213,17 @@ function createMFunction(
 ): (x: number) => number {
   const { loads, beamType } = input;
 
+  // Все варианты двухопорных балок
+  const isSimplySupported = beamType === "simply-supported" ||
+    beamType === "simply-supported-overhang-left" ||
+    beamType === "simply-supported-overhang-right" ||
+    beamType === "simply-supported-overhang-both";
+
   return (x: number): number => {
     let M = 0;
 
     // Вклад реакций (уже с правильным знаком: + = вверх)
-    if (beamType === "simply-supported") {
+    if (isSimplySupported) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         M += reactions.RA * macaulay(x, reactions.xA, 1);
       }
@@ -265,12 +283,18 @@ function computeDeflections(
   // theta = (1/EI) * ∫M dx + C1
   // y = (1/EI) * ∫∫M dx + C1*x + C2
 
+  // Все варианты двухопорных балок
+  const isSimplySupported = beamType === "simply-supported" ||
+    beamType === "simply-supported-overhang-left" ||
+    beamType === "simply-supported-overhang-right" ||
+    beamType === "simply-supported-overhang-both";
+
   // Функция однократного интеграла M
   const integralM = (x: number): number => {
     let result = 0;
 
     // От реакций
-    if (beamType === "simply-supported") {
+    if (isSimplySupported) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         result += reactions.RA * macaulayIntegral(x, reactions.xA, 1);
       }
@@ -314,7 +338,7 @@ function computeDeflections(
     let result = 0;
 
     // От реакций
-    if (beamType === "simply-supported") {
+    if (isSimplySupported) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         result += reactions.RA * macaulayDoubleIntegral(x, reactions.xA, 1);
       }
@@ -357,7 +381,7 @@ function computeDeflections(
   let C1 = 0;
   let C2 = 0;
 
-  if (beamType === "simply-supported") {
+  if (isSimplySupported) {
     const xA = reactions.xA ?? 0;
     const xB = reactions.xB ?? L;
 

@@ -347,19 +347,19 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         rx={3}
       />
 
-      {/* Опоры */}
-      {beamType === "simply-supported" && (
-        <>
-          <PinSupport x={xToPx(0)} y={beamY + beamThickness / 2} />
-          <RollerSupport x={xToPx(L)} y={beamY + beamThickness / 2} />
-        </>
-      )}
-      {beamType === "cantilever-left" && (
-        <FixedSupport x={xToPx(0)} y={beamY} side="left" />
-      )}
-      {beamType === "cantilever-right" && (
-        <FixedSupport x={xToPx(L)} y={beamY} side="right" />
-      )}
+      {/* Опоры - рисуем по позициям из supports */}
+      {input.supports.map((support, i) => {
+        if (support.type === "pin") {
+          return <PinSupport key={`support-${i}`} x={xToPx(support.x)} y={beamY + beamThickness / 2} />;
+        } else if (support.type === "roller") {
+          return <RollerSupport key={`support-${i}`} x={xToPx(support.x)} y={beamY + beamThickness / 2} />;
+        } else if (support.type === "fixed") {
+          // Определяем сторону заделки по позиции
+          const side = support.x < L / 2 ? "left" : "right";
+          return <FixedSupport key={`support-${i}`} x={xToPx(support.x)} y={beamY} side={side} />;
+        }
+        return null;
+      })}
 
       {/* Нагрузки - распределённые (результирующие по сегментам) */}
       {(() => {
@@ -485,31 +485,62 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         />
       )}
 
-      {/* Подписи A и B - сдвинуты от пунктиров */}
-      {beamType === "simply-supported" && (
-        <>
-          <text
-            x={xToPx(0) - 25}
-            y={beamY + 75}
-            textAnchor="middle"
-            fill={COLORS.text}
-            fontSize={18}
-            fontWeight="bold"
-          >
-            A
-          </text>
-          <text
-            x={xToPx(L) + 25}
-            y={beamY + 75}
-            textAnchor="middle"
-            fill={COLORS.text}
-            fontSize={18}
-            fontWeight="bold"
-          >
-            B
-          </text>
-        </>
-      )}
+      {/* Подписи A и B - под опорами */}
+      {(() => {
+        // Находим опоры A (pin) и B (roller)
+        const pinSupport = input.supports.find(s => s.type === "pin");
+        const rollerSupport = input.supports.find(s => s.type === "roller");
+
+        // Для двухопорных балок показываем A и B
+        const isSimplySupported = beamType === "simply-supported" ||
+          beamType === "simply-supported-overhang-left" ||
+          beamType === "simply-supported-overhang-right" ||
+          beamType === "simply-supported-overhang-both";
+
+        if (!isSimplySupported) return null;
+
+        const labels = [];
+
+        if (pinSupport) {
+          // Смещение от пунктира: влево если не на краю слева, иначе вправо
+          const isAtLeft = pinSupport.x < 0.1;
+          const offset = isAtLeft ? -25 : (pinSupport.x > L - 0.1 ? 25 : 0);
+          labels.push(
+            <text
+              key="label-A"
+              x={xToPx(pinSupport.x) + offset}
+              y={beamY + 75}
+              textAnchor="middle"
+              fill={COLORS.text}
+              fontSize={18}
+              fontWeight="bold"
+            >
+              A
+            </text>
+          );
+        }
+
+        if (rollerSupport) {
+          // Смещение: вправо если на краю справа, иначе влево если не на краю
+          const isAtRight = rollerSupport.x > L - 0.1;
+          const offset = isAtRight ? 25 : (rollerSupport.x < 0.1 ? -25 : 0);
+          labels.push(
+            <text
+              key="label-B"
+              x={xToPx(rollerSupport.x) + offset}
+              y={beamY + 75}
+              textAnchor="middle"
+              fill={COLORS.text}
+              fontSize={18}
+              fontWeight="bold"
+            >
+              B
+            </text>
+          );
+        }
+
+        return labels;
+      })()}
     </g>
   );
 }
