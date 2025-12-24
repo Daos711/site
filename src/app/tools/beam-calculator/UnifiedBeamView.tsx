@@ -470,7 +470,8 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.RB}
           label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
           labelSide="left"
-          labelYOffset={reactions.RB >= 0 ? 45 : 20}
+          labelYOffset={reactions.RB >= 0 ? 55 : 30}
+          labelXOffset={-25}
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -630,8 +631,8 @@ function FixedSupport({ x, y, side }: { x: number; y: number; side: "left" | "ri
 // value >= 0: вверх, value < 0: вниз
 // labelSide: "left" или "right" для позиционирования подписи
 // labelYOffset: дополнительное смещение подписи вверх (для избежания пересечений)
-function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffset = 0 }: {
-  x: number; baseY: number; value: number; label: string; labelSide?: "left" | "right"; labelYOffset?: number
+function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffset = 0, labelXOffset = 0 }: {
+  x: number; baseY: number; value: number; label: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number
 }) {
   const arrowLen = 40;
   const pointsUp = value >= 0;
@@ -640,7 +641,8 @@ function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffs
   const startY = pointsUp ? baseY : baseY;
   const endY = pointsUp ? baseY - arrowLen : baseY + arrowLen;
 
-  const textX = labelSide === "left" ? x - 8 : x + 8;
+  const baseXOffset = labelSide === "left" ? -8 : 8;
+  const textX = x + baseXOffset + labelXOffset;
   const textAnchor = labelSide === "left" ? "end" : "start";
   const textY = pointsUp
     ? baseY - arrowLen / 2 - labelYOffset
@@ -1035,12 +1037,12 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           const isEndpoint = isFirst || isLast;
 
           if (hasDiscontinuity) {
-            // При скачке показываем ОБА значения
+            // При скачке показываем ОБА значения - НЕ пропускаем даже если близко к экстремуму
             // Каждую подпись ставим на СВОЮ сторону (где её сегмент):
             // - leftValue (конец левого сегмента) → ставим СЛЕВА
             // - rightValue (начало правого сегмента) → ставим СПРАВА
-            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, !isEndpoint);
-            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, !isEndpoint);
+            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
+            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false);
           } else {
             // Непрерывная функция - одна подпись
             const value = rightValue ?? leftValue;
