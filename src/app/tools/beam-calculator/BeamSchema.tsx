@@ -213,7 +213,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
 
         if (pinSupport) {
           const isAtLeft = pinSupport.x < 0.1;
-          const offset = isAtLeft ? -25 : (pinSupport.x > L - 0.1 ? 25 : 0);
+          const isAtRight = pinSupport.x > L - 0.1;
+          // Всегда смещаем влево от пунктира, кроме правого края
+          const offset = isAtRight ? 25 : -25;
           labels.push(
             <text
               key="label-A"
