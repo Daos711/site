@@ -27,6 +27,8 @@ const UNIT_KN = "\\,\\text{кН}";
 const UNIT_KNM = "\\,\\text{кН}{\\cdot}\\text{м}";
 const UNIT_M = "\\,\\text{м}";
 const UNIT_MM = "\\,\\text{мм}";
+const UNIT_CM4 = "\\,\\text{см}^4";
+const UNIT_CM3 = "\\,\\text{см}^3";
 
 export function ResultCards({ input, result, className }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
@@ -183,6 +185,24 @@ export function ResultCards({ input, result, className }: Props) {
           )}
         </div>
       </div>
+
+      {/* Подобранное сечение (если задано sigma) */}
+      {result.diameter && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (круглое)</h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`d_{\\min} = ${formatNum(result.diameter * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Экстремумы */}
       <div className="p-4 rounded-lg border border-border bg-card">

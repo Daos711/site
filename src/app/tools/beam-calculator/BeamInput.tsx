@@ -114,7 +114,7 @@ export function BeamInput({ onCalculate }: Props) {
   const [L, setL] = useState<number>(10);
   const [loads, setLoads] = useState<Load[]>([]);
   const [E, setE] = useState<number>(200e9); // Па
-  const [I, setI] = useState<number>(1e-4);  // м^4
+  const [sigma, setSigma] = useState<number>(160e6);  // Па (допускаемое напряжение)
 
   // Позиции опор для балок с консолями
   const [xA, setXA] = useState<number>(2);   // позиция опоры A
@@ -233,7 +233,7 @@ export function BeamInput({ onCalculate }: Props) {
       supports,
       loads,
       E,
-      I,
+      sigma,
     };
 
     onCalculate(input);
@@ -295,12 +295,12 @@ export function BeamInput({ onCalculate }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm text-muted mb-1">I, см⁴</label>
+            <label className="block text-sm text-muted mb-1">[σ], МПа</label>
             <NumInput
-              value={I * 1e8}
-              onChange={(n) => setI(n / 1e8)}
-              min={0.01}
-              step={0.01}
+              value={sigma / 1e6}
+              onChange={(n) => setSigma(n * 1e6)}
+              min={1}
+              step={10}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
             />
           </div>

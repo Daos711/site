@@ -13,7 +13,7 @@ import type {
  * Основной решатель балки
  */
 export function solveBeam(input: BeamInput): BeamResult {
-  const { L, beamType, loads } = input;
+  const { L } = input;
 
   // Вычисляем реакции
   const reactions = computeReactions(input);
@@ -29,12 +29,37 @@ export function solveBeam(input: BeamInput): BeamResult {
   const Mmax = findExtremum(M, events, L);
   const Qmax = findExtremum(Q, events, L, true);
 
+  // Подбор сечения по [σ] (если задано)
+  let diameter: number | undefined;
+  let W: number | undefined;
+  let I_computed: number | undefined;
+
+  if (input.sigma) {
+    // |M|max в кН·м, sigma в Па
+    // W = |M|max / sigma, но нужно согласовать единицы
+    // |M|max в кН·м = |M|max * 1000 Н·м
+    // W = |M|max * 1000 / sigma (в м³)
+    const MmaxNm = Math.abs(Mmax.value) * 1000; // Н·м
+    W = MmaxNm / input.sigma; // м³
+
+    // Для круглого сечения: W = π·d³/32
+    // d = ∛(32·W/π)
+    diameter = Math.pow((32 * W) / Math.PI, 1 / 3); // м
+
+    // Момент инерции: I = π·d⁴/64
+    I_computed = (Math.PI * Math.pow(diameter, 4)) / 64; // м⁴
+  }
+
+  // Момент инерции: либо из подбора, либо заданный вручную
+  const I_final = I_computed ?? input.I;
+
   // Прогибы (если заданы E и I)
   let theta: ((x: number) => number) | undefined;
   let y: ((x: number) => number) | undefined;
 
-  if (input.E && input.I) {
-    const deflectionResult = computeDeflections(input, reactions, M);
+  if (input.E && I_final) {
+    const inputWithI = { ...input, I: I_final };
+    const deflectionResult = computeDeflections(inputWithI, reactions, M);
     theta = deflectionResult.theta;
     y = deflectionResult.y;
   }
@@ -48,6 +73,9 @@ export function solveBeam(input: BeamInput): BeamResult {
     Mmax,
     Qmax,
     events,
+    diameter,
+    I: I_final,
+    W,
   };
 }
 

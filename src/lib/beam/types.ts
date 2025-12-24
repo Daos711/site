@@ -40,7 +40,8 @@ export interface BeamInput {
   supports: BeamSupport[];
   loads: Load[];
   E?: number;             // модуль упругости, Па (для прогибов)
-  I?: number;             // момент инерции, м^4 (для прогибов)
+  I?: number;             // момент инерции, м^4 (для прогибов) — если задан вручную
+  sigma?: number;         // допускаемое напряжение, Па (для подбора диаметра)
 }
 
 export interface Reactions {
@@ -62,6 +63,10 @@ export interface BeamResult {
   Mmax: { value: number; x: number };
   Qmax: { value: number; x: number };
   events: number[];  // точки разрыва/перегиба
+  // Подбор сечения (если задано sigma)
+  diameter?: number;  // подобранный диаметр, м
+  I?: number;         // момент инерции, м^4
+  W?: number;         // момент сопротивления, м^3
 }
 
 export interface DiagramData {
