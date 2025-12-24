@@ -418,27 +418,24 @@ interface LoadInputProps {
 }
 
 function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
-  const inputClass = "w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm";
-  const posInputClass = "w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm";
-
   if (load.type === "distributed") {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-        <span className="text-green-400 font-medium w-6">q</span>
+        <span className="text-green-400 font-medium w-8">q</span>
         <NumInput
           value={load.q}
           onChange={(n) => onChange({ q: n })}
-          className={inputClass}
+          className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
-        <span className="text-muted text-sm whitespace-nowrap">кН/м</span>
-        <span className="text-muted text-sm">от</span>
+        <span className="text-muted text-sm">кН/м</span>
+        <span className="text-muted text-sm ml-2">от</span>
         <NumInput
           value={load.a}
           onChange={(n) => onChange({ a: n })}
           min={0}
           max={maxX}
           step={0.1}
-          className={posInputClass}
+          className="w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
         <span className="text-muted text-sm">до</span>
         <NumInput
@@ -447,12 +444,12 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
           min={0}
           max={maxX}
           step={0.1}
-          className={posInputClass}
+          className="w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
         <span className="text-muted text-sm">м</span>
         <button
           onClick={onRemove}
-          className="p-1 text-muted hover:text-red-400 transition-colors"
+          className="ml-auto p-1 text-muted hover:text-red-400 transition-colors"
         >
           <Trash2 size={16} />
         </button>
@@ -463,11 +460,11 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
   if (load.type === "force") {
     return (
       <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-        <span className="text-blue-400 font-medium w-6">F</span>
+        <span className="text-blue-400 font-medium w-8">F</span>
         <NumInput
           value={load.F}
           onChange={(n) => onChange({ F: n })}
-          className={inputClass}
+          className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
         <span className="text-muted text-sm">кН</span>
         <span className="text-muted text-sm ml-2">в x =</span>
@@ -477,12 +474,12 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
           min={0}
           max={maxX}
           step={0.1}
-          className={posInputClass}
+          className="w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
         <span className="text-muted text-sm">м</span>
         <button
           onClick={onRemove}
-          className="p-1 text-muted hover:text-red-400 transition-colors"
+          className="ml-auto p-1 text-muted hover:text-red-400 transition-colors"
         >
           <Trash2 size={16} />
         </button>
@@ -492,11 +489,11 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
 
   return (
     <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
-      <span className="text-purple-400 font-medium w-6">M</span>
+      <span className="text-purple-400 font-medium w-8">M</span>
       <NumInput
         value={load.M}
         onChange={(n) => onChange({ M: n })}
-        className={inputClass}
+        className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
       />
       <span className="text-muted text-sm">кН·м</span>
       <span className="text-muted text-sm ml-2">в x =</span>
@@ -506,12 +503,12 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
         min={0}
         max={maxX}
         step={0.1}
-        className={posInputClass}
+        className="w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
       />
       <span className="text-muted text-sm">м</span>
       <button
         onClick={onRemove}
-        className="p-1 text-muted hover:text-red-400 transition-colors"
+        className="ml-auto p-1 text-muted hover:text-red-400 transition-colors"
       >
         <Trash2 size={16} />
       </button>
