@@ -1020,9 +1020,13 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
         // Добавление одной подписи
         // skipNearExtreme=false для крайних границ (0 и L), где экстремум должен быть подписан
-        const addLabel = (bx: number, value: number, placeRight: boolean, key: string, skipNearExtreme = true) => {
-          // Пропускаем только совсем нулевые значения (1e-9)
-          if (Math.abs(value) < 1e-9) return;
+        // showZero=true для границ где нужно явно показать "0" (например, y=0 на опорах)
+        const addLabel = (bx: number, value: number, placeRight: boolean, key: string, skipNearExtreme = true, showZero = false) => {
+          // Если значение близко к нулю - показываем "0" если showZero=true, иначе пропускаем
+          if (Math.abs(value) < 1e-6) {
+            if (!showZero) return;
+            value = 0; // Явно устанавливаем 0 чтобы отображалось красиво
+          }
           if (skipNearExtreme && isNearExtreme(bx, value)) return;
 
           const xOffset = placeRight ? 12 : -12;
@@ -1073,11 +1077,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
             const rightStr = formatNum(rightValue!, 1);
             if (leftStr === rightStr) {
               // Одинаковые после округления - показываем только левое
-              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
+              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false, true);
             } else {
               // Разные значения - показываем оба
-              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
-              addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false);
+              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false, true);
+              addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false, true);
             }
           } else {
             // Непрерывная функция - одна подпись
@@ -1094,7 +1098,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               placeRight = false;
             }
 
-            addLabel(bx, value, placeRight, `boundary-${bIdx}`, !isEndpoint);
+            addLabel(bx, value, placeRight, `boundary-${bIdx}`, !isEndpoint, true);
           }
         }
 
@@ -1138,11 +1142,13 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         }
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
+        // Показываем координату x для экстремума (с точностью до сотых)
+        const xCoord = extremes.maxP.x.toFixed(2);
         return (
           <g>
             <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
             <text x={xToPx(extremes.maxP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
-              {formatNum(extremes.maxP.value)}
+              {formatNum(extremes.maxP.value)} (x={xCoord})
             </text>
           </g>
         );
@@ -1181,11 +1187,13 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         }
         const offset = onBoundary ? 15 : 0;
         const textAnchor = onBoundary ? "start" : "middle";
+        // Показываем координату x для экстремума (с точностью до сотых)
+        const xCoord = extremes.minP.x.toFixed(2);
         return (
           <g>
             <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
             <text x={xToPx(extremes.minP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
-              {formatNum(extremes.minP.value)}
+              {formatNum(extremes.minP.value)} (x={xCoord})
             </text>
           </g>
         );
