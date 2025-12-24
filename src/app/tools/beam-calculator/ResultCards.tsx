@@ -21,6 +21,12 @@ function formatEquilibrium(value: number): string {
   return value.toFixed(4).replace(/\.?0+$/, "");
 }
 
+// Единицы измерения в LaTeX
+const UNIT_KN = "\\,\\text{кН}";
+const UNIT_KNM = "\\,\\text{кН}{\\cdot}\\text{м}";
+const UNIT_M = "\\,\\text{м}";
+const UNIT_MM = "\\,\\text{мм}";
+
 export function ResultCards({ input, result, className }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
 
@@ -44,23 +50,19 @@ export function ResultCards({ input, result, className }: Props) {
   // Проверка равновесия с формулами
   const equilibrium = (() => {
     let sumFy = 0;
-    const fyTerms: string[] = [];
     const fyValues: number[] = [];
 
     // Реакции (положительные - вверх)
     if (reactions.RA !== undefined) {
       sumFy += reactions.RA;
-      fyTerms.push("R_A");
       fyValues.push(reactions.RA);
     }
     if (reactions.RB !== undefined) {
       sumFy += reactions.RB;
-      fyTerms.push("R_B");
       fyValues.push(reactions.RB);
     }
     if (reactions.Rf !== undefined) {
       sumFy += reactions.Rf;
-      fyTerms.push("R");
       fyValues.push(reactions.Rf);
     }
 
@@ -68,18 +70,15 @@ export function ResultCards({ input, result, className }: Props) {
     for (const load of input.loads) {
       if (load.type === "force") {
         sumFy -= load.F;
-        fyTerms.push("F");
         fyValues.push(-load.F);
       } else if (load.type === "distributed") {
         const qTotal = load.q * (load.b - load.a);
         sumFy -= qTotal;
-        fyTerms.push("q·L");
         fyValues.push(-qTotal);
       }
     }
 
     let sumM = 0;
-    const mTerms: string[] = [];
     const mValues: number[] = [];
 
     if (reactions.RA !== undefined) {
@@ -87,7 +86,6 @@ export function ResultCards({ input, result, className }: Props) {
       const term = reactions.RA * xA;
       sumM += term;
       if (Math.abs(xA) > 0.001) {
-        mTerms.push("R_A·x_A");
         mValues.push(term);
       }
     }
@@ -95,7 +93,6 @@ export function ResultCards({ input, result, className }: Props) {
       const xB = reactions.xB ?? input.L;
       const term = reactions.RB * xB;
       sumM += term;
-      mTerms.push("R_B·x_B");
       mValues.push(term);
     }
     if (reactions.Rf !== undefined) {
@@ -103,13 +100,11 @@ export function ResultCards({ input, result, className }: Props) {
       const term = reactions.Rf * xf;
       sumM += term;
       if (Math.abs(xf) > 0.001) {
-        mTerms.push("R·x");
         mValues.push(term);
       }
     }
     if (reactions.Mf !== undefined) {
       sumM += reactions.Mf;
-      mTerms.push("M_f");
       mValues.push(reactions.Mf);
     }
 
@@ -117,18 +112,15 @@ export function ResultCards({ input, result, className }: Props) {
       if (load.type === "force") {
         const term = -load.F * load.x;
         sumM += term;
-        mTerms.push("F·x");
         mValues.push(term);
       } else if (load.type === "moment") {
         sumM += load.M;
-        mTerms.push("M");
         mValues.push(load.M);
       } else if (load.type === "distributed") {
         const length = load.b - load.a;
         const centerX = (load.a + load.b) / 2;
         const term = -load.q * length * centerX;
         sumM += term;
-        mTerms.push("q·L·x_c");
         mValues.push(term);
       }
     }
@@ -159,35 +151,23 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Реакции опор</h3>
         <div className="space-y-2">
           {reactions.RA !== undefined && (
-            <div className="flex justify-between items-center">
-              <Latex tex={`R_A = ${formatNum(reactions.RA)} \\text{ кН}`} />
-              <span className="text-muted-foreground text-lg">
-                {reactions.RA >= 0 ? "↑" : "↓"}
-              </span>
+            <div>
+              <Latex tex={`R_A = ${formatNum(reactions.RA)}${UNIT_KN}`} />
             </div>
           )}
           {reactions.RB !== undefined && (
-            <div className="flex justify-between items-center">
-              <Latex tex={`R_B = ${formatNum(reactions.RB)} \\text{ кН}`} />
-              <span className="text-muted-foreground text-lg">
-                {reactions.RB >= 0 ? "↑" : "↓"}
-              </span>
+            <div>
+              <Latex tex={`R_B = ${formatNum(reactions.RB)}${UNIT_KN}`} />
             </div>
           )}
           {reactions.Rf !== undefined && (
-            <div className="flex justify-between items-center">
-              <Latex tex={`R = ${formatNum(reactions.Rf)} \\text{ кН}`} />
-              <span className="text-muted-foreground text-lg">
-                {reactions.Rf >= 0 ? "↑" : "↓"}
-              </span>
+            <div>
+              <Latex tex={`R = ${formatNum(reactions.Rf)}${UNIT_KN}`} />
             </div>
           )}
           {reactions.Mf !== undefined && (
-            <div className="flex justify-between items-center">
-              <Latex tex={`M = ${formatNum(reactions.Mf)} \\text{ кН·м}`} />
-              <span className="text-muted-foreground text-lg">
-                {reactions.Mf >= 0 ? "↺" : "↻"}
-              </span>
+            <div>
+              <Latex tex={`M = ${formatNum(reactions.Mf)}${UNIT_KNM}`} />
             </div>
           )}
         </div>
@@ -198,14 +178,14 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
           <div>
-            <Latex tex={`|Q|_{\\max} = ${formatNum(Math.abs(Qmax.value))} \\text{ кН} \\quad (x = ${formatNum(Qmax.x)} \\text{ м})`} />
+            <Latex tex={`|Q|_{\\max} = ${formatNum(Math.abs(Qmax.value))}${UNIT_KN} \\quad (x = ${formatNum(Qmax.x)}${UNIT_M})`} />
           </div>
           <div>
-            <Latex tex={`|M|_{\\max} = ${formatNum(Math.abs(Mmax.value))} \\text{ кН·м} \\quad (x = ${formatNum(Mmax.x)} \\text{ м})`} />
+            <Latex tex={`|M|_{\\max} = ${formatNum(Math.abs(Mmax.value))}${UNIT_KNM} \\quad (x = ${formatNum(Mmax.x)}${UNIT_M})`} />
           </div>
           {wMax && (
             <div>
-              <Latex tex={`|y|_{\\max} = ${formatNum(Math.abs(wMax.value * 1000))} \\text{ мм} \\quad (x = ${formatNum(wMax.x)} \\text{ м})`} />
+              <Latex tex={`|y|_{\\max} = ${formatNum(Math.abs(wMax.value * 1000))}${UNIT_MM} \\quad (x = ${formatNum(wMax.x)}${UNIT_M})`} />
             </div>
           )}
         </div>
@@ -222,11 +202,11 @@ export function ResultCards({ input, result, className }: Props) {
           )}
         </h3>
         <div className="space-y-3">
-          <div>
-            <Latex tex={`\\Sigma F_y = ${equilibrium.fyFormula} = ${Math.abs(equilibrium.sumFy) < 0.01 ? '\\textcolor{green}{0}' : `\\textcolor{red}{${formatEquilibrium(equilibrium.sumFy)}}`} \\text{ кН}`} />
+          <div className="overflow-x-auto">
+            <Latex tex={`\\Sigma F_y = ${equilibrium.fyFormula} = ${Math.abs(equilibrium.sumFy) < 0.01 ? '\\color{green}{0}' : `\\color{red}{${formatEquilibrium(equilibrium.sumFy)}}`}${UNIT_KN}`} />
           </div>
-          <div>
-            <Latex tex={`\\Sigma M_0 = ${equilibrium.mFormula} = ${Math.abs(equilibrium.sumM) < 0.01 ? '\\textcolor{green}{0}' : `\\textcolor{red}{${formatEquilibrium(equilibrium.sumM)}}`} \\text{ кН·м}`} />
+          <div className="overflow-x-auto">
+            <Latex tex={`\\Sigma M_0 = ${equilibrium.mFormula} = ${Math.abs(equilibrium.sumM) < 0.01 ? '\\color{green}{0}' : `\\color{red}{${formatEquilibrium(equilibrium.sumM)}}`}${UNIT_KNM}`} />
           </div>
         </div>
       </div>
