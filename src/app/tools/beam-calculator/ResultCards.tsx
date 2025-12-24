@@ -1,21 +1,13 @@
 "use client";
 
 import type { BeamInput, BeamResult } from "@/lib/beam";
+import { Tex } from "@/components/Tex";
 
 interface Props {
   input: BeamInput;
   result: BeamResult;
   className?: string;
 }
-
-const BEAM_TYPE_NAMES: Record<string, string> = {
-  "simply-supported": "Двухопорная",
-  "simply-supported-overhang-left": "Двухконсольная (левая)",
-  "simply-supported-overhang-right": "Двухконсольная (правая)",
-  "simply-supported-overhang-both": "Двухконсольная",
-  "cantilever-left": "Консоль (заделка слева)",
-  "cantilever-right": "Консоль (заделка справа)",
-};
 
 export function ResultCards({ input, result, className }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
@@ -39,15 +31,12 @@ export function ResultCards({ input, result, className }: Props) {
 
   // Проверка равновесия
   const equilibrium = (() => {
-    // Сумма вертикальных сил
     let sumFy = 0;
 
-    // Реакции (положительные = вверх)
     if (reactions.RA !== undefined) sumFy += reactions.RA;
     if (reactions.RB !== undefined) sumFy += reactions.RB;
     if (reactions.Rf !== undefined) sumFy += reactions.Rf;
 
-    // Нагрузки (положительные = вниз, значит минус)
     for (const load of input.loads) {
       if (load.type === "force") {
         sumFy -= load.F;
@@ -56,10 +45,8 @@ export function ResultCards({ input, result, className }: Props) {
       }
     }
 
-    // Сумма моментов относительно начала (x=0)
     let sumM = 0;
 
-    // Реакции создают моменты
     if (reactions.RA !== undefined) {
       const xA = reactions.xA ?? 0;
       sumM += reactions.RA * xA;
@@ -76,14 +63,12 @@ export function ResultCards({ input, result, className }: Props) {
       sumM += reactions.Mf;
     }
 
-    // Нагрузки создают моменты (против часовой = положительный)
     for (const load of input.loads) {
       if (load.type === "force") {
         sumM -= load.F * load.x;
       } else if (load.type === "moment") {
-        sumM += load.M;  // Внешний момент напрямую добавляется к сумме
+        sumM += load.M;
       } else if (load.type === "distributed") {
-        // Распределённая нагрузка: момент = q * длина * плечо до центра
         const length = load.b - load.a;
         const centerX = (load.a + load.b) / 2;
         sumM -= load.q * length * centerX;
@@ -103,7 +88,7 @@ export function ResultCards({ input, result, className }: Props) {
         <div className="space-y-2">
           {reactions.RA !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-muted-foreground">R_A:</span>
+              <Tex className="text-muted-foreground">{"R_A"}</Tex>
               <span className="font-mono text-base tabular-nums">
                 {reactions.RA.toFixed(2)} кН
                 <span className="text-muted-foreground ml-2">
@@ -114,7 +99,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.RB !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-muted-foreground">R_B:</span>
+              <Tex className="text-muted-foreground">{"R_B"}</Tex>
               <span className="font-mono text-base tabular-nums">
                 {reactions.RB.toFixed(2)} кН
                 <span className="text-muted-foreground ml-2">
@@ -125,7 +110,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.Rf !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-muted-foreground">R:</span>
+              <Tex className="text-muted-foreground">{"R"}</Tex>
               <span className="font-mono text-base tabular-nums">
                 {reactions.Rf.toFixed(2)} кН
                 <span className="text-muted-foreground ml-2">
@@ -136,7 +121,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.Mf !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-muted-foreground">M:</span>
+              <Tex className="text-muted-foreground">{"M_{зад}"}</Tex>
               <span className="font-mono text-base tabular-nums">
                 {reactions.Mf.toFixed(2)} кН·м
                 <span className="text-muted-foreground ml-2">
@@ -153,30 +138,30 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <span className="text-muted-foreground">|Q|_max:</span>
+            <Tex className="text-muted-foreground">{"|Q|_{max}"}</Tex>
             <span className="font-mono text-base tabular-nums">
               {Math.abs(Qmax.value).toFixed(2)} кН
               <span className="text-muted-foreground ml-2">
-                (x = {Qmax.x.toFixed(2)} м)
+                (<Tex>{`x = ${Qmax.x.toFixed(2)}`}</Tex> м)
               </span>
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-muted-foreground">|M|_max:</span>
+            <Tex className="text-muted-foreground">{"|M|_{max}"}</Tex>
             <span className="font-mono text-base tabular-nums">
               {Math.abs(Mmax.value).toFixed(2)} кН·м
               <span className="text-muted-foreground ml-2">
-                (x = {Mmax.x.toFixed(2)} м)
+                (<Tex>{`x = ${Mmax.x.toFixed(2)}`}</Tex> м)
               </span>
             </span>
           </div>
           {wMax && (
             <div className="flex justify-between items-baseline">
-              <span className="text-muted-foreground">|y|_max:</span>
+              <Tex className="text-muted-foreground">{"|y|_{max}"}</Tex>
               <span className="font-mono text-base tabular-nums">
                 {Math.abs(wMax.value * 1000).toFixed(2)} мм
                 <span className="text-muted-foreground ml-2">
-                  (x = {wMax.x.toFixed(2)} м)
+                  (<Tex>{`x = ${wMax.x.toFixed(2)}`}</Tex> м)
                 </span>
               </span>
             </div>
@@ -196,19 +181,28 @@ export function ResultCards({ input, result, className }: Props) {
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <span className="text-muted-foreground">ΣF_y =</span>
+            <Tex className="text-muted-foreground">{"\\sum F_y"}</Tex>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {equilibrium.sumFy.toFixed(4)} кН
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-muted-foreground">ΣM₀ =</span>
+            <Tex className="text-muted-foreground">{"\\sum M_0"}</Tex>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {equilibrium.sumM.toFixed(4)} кН·м
             </span>
           </div>
         </div>
       </div>
+
+      {/* Кнопка отчёта */}
+      <button
+        className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-center"
+        onClick={() => window.print()}
+      >
+        <span className="text-muted-foreground">📄</span>
+        <span className="ml-2">Печать / Сохранить PDF</span>
+      </button>
     </div>
   );
 }
