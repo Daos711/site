@@ -462,6 +462,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.RA}
           label={`R_A = ${formatNum(Math.abs(reactions.RA))} кН`}
           labelSide="left"
+          labelYOffset={40}
         />
       )}
       {reactions.RB !== undefined && reactions.RB !== 0 && (
@@ -992,17 +993,9 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         );
       })}
 
-      {/* Подписи значений на всех границах участков */}
+      {/* Подписи значений ТОЛЬКО на концах балки (x=0 и x=L) */}
       {(() => {
         const labels: React.ReactNode[] = [];
-
-        // Проверяем, не слишком ли близко к экстремумам
-        // Увеличены пороги: 0.5м по x и 30% по значению
-        const isNearExtreme = (x: number, val: number) => {
-          const nearMax = Math.abs(x - extremes.maxP.x) < 0.5 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.3;
-          const nearMin = Math.abs(x - extremes.minP.x) < 0.5 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.3;
-          return nearMax || nearMin;
-        };
 
         // Функция для поиска значения в точке
         // fromLeft=true: ищем предел слева (конец сегмента, который ЗАКАНЧИВАЕТСЯ в x)
@@ -1039,27 +1032,17 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           return null;
         };
 
-        // Добавление одной подписи
-        // skipNearExtreme=false для крайних границ (0 и L), где экстремум должен быть подписан
-        // showZero=true для границ где нужно явно показать "0" (например, y=0 на опорах)
-        const addLabel = (bx: number, value: number, placeRight: boolean, key: string, skipNearExtreme = true, showZero = false) => {
-          // Если значение близко к нулю - показываем "0" если showZero=true, иначе пропускаем
+        // Добавление подписи на конце балки
+        const addEndpointLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
+          // Для нулевых значений показываем "0"
           if (Math.abs(value) < 1e-6) {
-            if (!showZero) return;
-            value = 0; // Явно устанавливаем 0 чтобы отображалось красиво
+            value = 0;
           }
-          if (skipNearExtreme && isNearExtreme(bx, value)) return;
 
           const xOffset = placeRight ? 12 : -12;
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);
-          // Подпись СНАРУЖИ от заливки:
-          // - положительные значения: заливка идёт вниз к нулю → подпись ВЫШЕ кривой
-          // - отрицательные значения: заливка идёт вверх к нулю → подпись НИЖЕ кривой
-          // Увеличенный отступ (20px) чтобы не накладываться на линию
-          const textY = value >= 0
-            ? curveY - 20
-            : curveY + 24;
+          const textY = value >= 0 ? curveY - 20 : curveY + 24;
 
           labels.push(
             <text
@@ -1076,51 +1059,19 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           );
         };
 
-        // Для каждой границы находим значения
-        for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
-          const bx = boundaries[bIdx];
-          const isFirst = bIdx === 0;
-          const isLast = bIdx === boundaries.length - 1;
+        // Показываем подписи ТОЛЬКО на концах балки (x=0 и x=L)
+        // Это исключает наложение с экстремумами на внутренних границах
 
-          const leftValue = findValueAt(bx, true);
-          const rightValue = findValueAt(bx, false);
+        // Левый конец (x=0)
+        const leftEndValue = findValueAt(boundaries[0], false);
+        if (leftEndValue !== null) {
+          addEndpointLabel(boundaries[0], leftEndValue, true, "endpoint-left");
+        }
 
-          // Проверяем, есть ли разрыв (скачок)
-          const hasDiscontinuity = leftValue !== null && rightValue !== null &&
-            Math.abs(leftValue - rightValue) > 0.5;
-
-          // На крайних границах (0 и L) показываем подпись даже если рядом экстремум
-          const isEndpoint = isFirst || isLast;
-
-          if (hasDiscontinuity) {
-            // При скачке показываем ОБА значения, но только если они отличаются после форматирования
-            const leftStr = formatNum(leftValue!, 1);
-            const rightStr = formatNum(rightValue!, 1);
-            if (leftStr === rightStr) {
-              // Одинаковые после округления - показываем только левое
-              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false, true);
-            } else {
-              // Разные значения - показываем оба
-              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false, true);
-              addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false, true);
-            }
-          } else {
-            // Непрерывная функция - одна подпись
-            const value = rightValue ?? leftValue;
-            if (value === null) continue;
-
-            let placeRight: boolean;
-            if (isFirst) {
-              placeRight = true;  // На левой границе - справа от пунктира
-            } else if (isLast) {
-              placeRight = false; // На правой границе - слева от пунктира
-            } else {
-              // Внутренние границы - всегда слева, чтобы не накладываться на экстремумы справа
-              placeRight = false;
-            }
-
-            addLabel(bx, value, placeRight, `boundary-${bIdx}`, !isEndpoint, true);
-          }
+        // Правый конец (x=L)
+        const rightEndValue = findValueAt(boundaries[boundaries.length - 1], true);
+        if (rightEndValue !== null) {
+          addEndpointLabel(boundaries[boundaries.length - 1], rightEndValue, false, "endpoint-right");
         }
 
         return <g>{labels}</g>;
