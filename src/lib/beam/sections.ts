@@ -132,11 +132,11 @@ export function buildSectionFormulas(
     const q = getActiveQ(input, a, b);
 
     // Значения в начале и конце (чуть внутри, чтобы не попасть в скачок)
-    const eps = (b - a) * 0.001;
-    const Qa = Q(a + eps);
-    const Ma = M(a + eps);
-    const Qb = Q(b - eps);
-    const Mb = M(b - eps);
+    const eps = (b - a) * 1e-6;
+    const Qa = roundValue(Q(a + eps));
+    const Ma = roundValue(M(a + eps));
+    const Qb = roundValue(Q(b - eps));
+    const Mb = roundValue(M(b - eps));
 
     formulas.push({
       interval,
@@ -151,6 +151,26 @@ export function buildSectionFormulas(
   }
 
   return formulas;
+}
+
+/**
+ * Округляет значение, убирая погрешности вычислений с плавающей точкой
+ * Если значение очень близко к целому или половинке, округляем до неё
+ */
+function roundValue(v: number, precision = 2): number {
+  // Проверяем близость к 0
+  if (Math.abs(v) < 0.005) return 0;
+
+  // Округляем до 2 знаков после запятой
+  const rounded = Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision);
+
+  // Проверяем близость к половинке (0.5)
+  const half = Math.round(rounded * 2) / 2;
+  if (Math.abs(rounded - half) < 0.01) {
+    return half;
+  }
+
+  return rounded;
 }
 
 /**

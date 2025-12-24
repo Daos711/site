@@ -41,14 +41,13 @@ export function generateReport(data: ReportData): void {
  */
 function generateBeamSVG(input: BeamInput, result: BeamResult): string {
   const { L, loads, supports, beamType } = input;
-  const { reactions } = result;
 
-  // Размеры SVG
-  const width = 600;
-  const height = 200;
-  const padding = { left: 60, right: 40, top: 60, bottom: 60 };
-  const beamY = height / 2;
-  const beamThickness = 12;
+  // Размеры SVG — увеличены для лучшего качества
+  const width = 700;
+  const height = 280;
+  const padding = { left: 50, right: 80, top: 90, bottom: 70 };
+  const beamY = padding.top + 50;
+  const beamThickness = 14;
 
   // Масштаб
   const scale = (width - padding.left - padding.right) / L;
@@ -59,23 +58,23 @@ function generateBeamSVG(input: BeamInput, result: BeamResult): string {
   // Маркеры для стрелок
   svg += `
     <defs>
-      <marker id="arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="${SVG_COLORS.distributedLoad}"/>
+      <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+        <path d="M0,0 L0,8 L8,4 z" fill="${SVG_COLORS.distributedLoad}"/>
       </marker>
-      <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="${SVG_COLORS.pointForce}"/>
+      <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+        <path d="M0,0 L0,8 L8,4 z" fill="${SVG_COLORS.pointForce}"/>
       </marker>
-      <marker id="arrowPurple" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="${SVG_COLORS.moment}"/>
+      <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+        <path d="M0,0 L0,8 L8,4 z" fill="${SVG_COLORS.moment}"/>
       </marker>
-      <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L6,3 z" fill="${SVG_COLORS.reaction}"/>
+      <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+        <path d="M0,0 L0,8 L8,4 z" fill="${SVG_COLORS.reaction}"/>
       </marker>
     </defs>
   `;
 
   // Балка
-  svg += `<rect x="${xToPx(0)}" y="${beamY - beamThickness / 2}" width="${xToPx(L) - xToPx(0)}" height="${beamThickness}" fill="${SVG_COLORS.beam}" rx="2"/>`;
+  svg += `<rect x="${xToPx(0)}" y="${beamY - beamThickness / 2}" width="${xToPx(L) - xToPx(0)}" height="${beamThickness}" fill="${SVG_COLORS.beam}" rx="3"/>`;
 
   // Опоры
   for (const support of supports) {
@@ -90,7 +89,7 @@ function generateBeamSVG(input: BeamInput, result: BeamResult): string {
     }
   }
 
-  // Распределённые нагрузки
+  // Распределённые нагрузки — рисуем первыми, чтобы подписи были на фоне
   const distributedLoads = loads.filter((l): l is Extract<Load, { type: "distributed" }> => l.type === "distributed");
   for (const load of distributedLoads) {
     svg += generateDistributedLoad(xToPx(load.a), xToPx(load.b), beamY - beamThickness / 2, load.q);
@@ -98,18 +97,21 @@ function generateBeamSVG(input: BeamInput, result: BeamResult): string {
 
   // Сосредоточенные силы
   const forces = loads.filter((l): l is Extract<Load, { type: "force" }> => l.type === "force");
-  for (const load of forces) {
-    svg += generatePointForce(xToPx(load.x), beamY - beamThickness / 2, load.F);
+  for (let i = 0; i < forces.length; i++) {
+    const load = forces[i];
+    // Смещаем подпись вправо, если сила в конце балки
+    const labelOffset = load.x > L * 0.8 ? -80 : 10;
+    svg += generatePointForce(xToPx(load.x), beamY - beamThickness / 2, load.F, labelOffset);
   }
 
-  // Моменты
+  // Моменты — позиционируем слева от нагрузок
   const moments = loads.filter((l): l is Extract<Load, { type: "moment" }> => l.type === "moment");
   for (const load of moments) {
-    svg += generateMoment(xToPx(load.x), beamY, load.M);
+    svg += generateMoment(xToPx(load.x), beamY - beamThickness / 2, load.M);
   }
 
-  // Размерная линия
-  svg += generateDimensionLine(xToPx(0), xToPx(L), beamY + 70, L);
+  // Размерная линия — ниже опор
+  svg += generateDimensionLine(xToPx(0), xToPx(L), height - 25, L);
 
   // Подписи опор
   const isSimplySupported = beamType.startsWith("simply-supported");
@@ -117,10 +119,10 @@ function generateBeamSVG(input: BeamInput, result: BeamResult): string {
     const pinSupport = supports.find(s => s.type === "pin");
     const rollerSupport = supports.find(s => s.type === "roller");
     if (pinSupport) {
-      svg += `<text x="${xToPx(pinSupport.x)}" y="${beamY + 85}" text-anchor="middle" fill="${SVG_COLORS.text}" font-size="14" font-weight="bold">A</text>`;
+      svg += `<text x="${xToPx(pinSupport.x)}" y="${beamY + 75}" text-anchor="middle" fill="${SVG_COLORS.text}" font-size="16" font-weight="bold">A</text>`;
     }
     if (rollerSupport) {
-      svg += `<text x="${xToPx(rollerSupport.x)}" y="${beamY + 85}" text-anchor="middle" fill="${SVG_COLORS.text}" font-size="14" font-weight="bold">B</text>`;
+      svg += `<text x="${xToPx(rollerSupport.x)}" y="${beamY + 75}" text-anchor="middle" fill="${SVG_COLORS.text}" font-size="16" font-weight="bold">B</text>`;
     }
   }
 
@@ -204,8 +206,8 @@ function generateFixedSupport(x: number, y: number, side: "left" | "right"): str
  * Генерирует SVG для распределённой нагрузки
  */
 function generateDistributedLoad(x1: number, x2: number, beamTopY: number, q: number): string {
-  const arrowLen = 25;
-  const numArrows = Math.max(3, Math.floor((x2 - x1) / 40));
+  const arrowLen = 30;
+  const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
   let svg = "";
 
   if (q >= 0) {
@@ -215,21 +217,21 @@ function generateDistributedLoad(x1: number, x2: number, beamTopY: number, q: nu
 
     for (let i = 0; i < numArrows; i++) {
       const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
-      svg += `<line x1="${px}" y1="${baseY - arrowLen}" x2="${px}" y2="${baseY - 6}" stroke="${SVG_COLORS.distributedLoad}" stroke-width="2" marker-end="url(#arrowBlue)"/>`;
+      svg += `<line x1="${px}" y1="${baseY - arrowLen}" x2="${px}" y2="${baseY - 8}" stroke="${SVG_COLORS.distributedLoad}" stroke-width="2" marker-end="url(#arrowBlue)"/>`;
     }
 
-    svg += `<text x="${(x1 + x2) / 2}" y="${baseY - arrowLen - 6}" text-anchor="middle" fill="${SVG_COLORS.distributedLoad}" font-size="11" font-weight="600">q = ${Math.abs(q)} кН/м</text>`;
+    svg += `<text x="${(x1 + x2) / 2}" y="${baseY - arrowLen - 8}" text-anchor="middle" fill="${SVG_COLORS.distributedLoad}" font-size="12" font-weight="600">q = ${Math.abs(q)} кН/м</text>`;
   } else {
     // Снизу вверх
-    const baseY = beamTopY + 12; // beamBottom
+    const baseY = beamTopY + 14; // beamBottom
     svg += `<line x1="${x1}" y1="${baseY + arrowLen}" x2="${x2}" y2="${baseY + arrowLen}" stroke="${SVG_COLORS.distributedLoad}" stroke-width="2"/>`;
 
     for (let i = 0; i < numArrows; i++) {
       const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
-      svg += `<line x1="${px}" y1="${baseY + arrowLen}" x2="${px}" y2="${baseY + 6}" stroke="${SVG_COLORS.distributedLoad}" stroke-width="2"/>`;
+      svg += `<line x1="${px}" y1="${baseY + arrowLen}" x2="${px}" y2="${baseY + 8}" stroke="${SVG_COLORS.distributedLoad}" stroke-width="2"/>`;
     }
 
-    svg += `<text x="${(x1 + x2) / 2}" y="${baseY + arrowLen + 14}" text-anchor="middle" fill="${SVG_COLORS.distributedLoad}" font-size="11" font-weight="600">q = ${Math.abs(q)} кН/м</text>`;
+    svg += `<text x="${(x1 + x2) / 2}" y="${baseY + arrowLen + 16}" text-anchor="middle" fill="${SVG_COLORS.distributedLoad}" font-size="12" font-weight="600">q = ${Math.abs(q)} кН/м</text>`;
   }
 
   return svg;
@@ -238,18 +240,21 @@ function generateDistributedLoad(x1: number, x2: number, beamTopY: number, q: nu
 /**
  * Генерирует SVG для сосредоточенной силы
  */
-function generatePointForce(x: number, y: number, F: number): string {
-  const arrowLen = 50;
+function generatePointForce(x: number, y: number, F: number, labelXOffset = 10): string {
+  const arrowLen = 55;
   let svg = "";
+
+  const labelX = x + labelXOffset;
+  const textAnchor = labelXOffset < 0 ? "end" : "start";
 
   if (F >= 0) {
     // Вниз
-    svg += `<line x1="${x}" y1="${y - arrowLen}" x2="${x}" y2="${y - 6}" stroke="${SVG_COLORS.pointForce}" stroke-width="2" marker-end="url(#arrowRed)"/>`;
-    svg += `<text x="${x + 8}" y="${y - arrowLen - 4}" fill="${SVG_COLORS.pointForce}" font-size="11" font-weight="600">F = ${Math.abs(F)} кН</text>`;
+    svg += `<line x1="${x}" y1="${y - arrowLen}" x2="${x}" y2="${y - 8}" stroke="${SVG_COLORS.pointForce}" stroke-width="2.5" marker-end="url(#arrowRed)"/>`;
+    svg += `<text x="${labelX}" y="${y - arrowLen - 6}" text-anchor="${textAnchor}" fill="${SVG_COLORS.pointForce}" font-size="12" font-weight="600">F = ${Math.abs(F)} кН</text>`;
   } else {
     // Вверх
-    svg += `<line x1="${x}" y1="${y + 50}" x2="${x}" y2="${y + 20}" stroke="${SVG_COLORS.pointForce}" stroke-width="2" marker-end="url(#arrowRed)"/>`;
-    svg += `<text x="${x + 8}" y="${y + 60}" fill="${SVG_COLORS.pointForce}" font-size="11" font-weight="600">F = ${Math.abs(F)} кН</text>`;
+    svg += `<line x1="${x}" y1="${y + 55}" x2="${x}" y2="${y + 22}" stroke="${SVG_COLORS.pointForce}" stroke-width="2.5" marker-end="url(#arrowRed)"/>`;
+    svg += `<text x="${labelX}" y="${y + 68}" text-anchor="${textAnchor}" fill="${SVG_COLORS.pointForce}" font-size="12" font-weight="600">F = ${Math.abs(F)} кН</text>`;
   }
 
   return svg;
@@ -259,9 +264,9 @@ function generatePointForce(x: number, y: number, F: number): string {
  * Генерирует SVG для момента
  */
 function generateMoment(x: number, y: number, M: number): string {
-  const R = 16;
-  const H = 30;
-  const gap = 5;
+  const R = 18;
+  const H = 35;
+  const gap = 8;
   const Cy = y - gap - H;
   let svg = "";
 
@@ -278,14 +283,16 @@ function generateMoment(x: number, y: number, M: number): string {
   const y2 = Cy + R * Math.sin(endRad);
 
   // Ножка
-  svg += `<line x1="${x}" y1="${y - gap}" x2="${x1}" y2="${y1}" stroke="${SVG_COLORS.moment}" stroke-width="2"/>`;
+  svg += `<line x1="${x}" y1="${y - gap}" x2="${x1}" y2="${y1}" stroke="${SVG_COLORS.moment}" stroke-width="2.5"/>`;
 
   // Дуга
   const sweepFlag = isCW ? 1 : 0;
-  svg += `<path d="M ${x1} ${y1} A ${R} ${R} 0 0 ${sweepFlag} ${x2} ${y2}" fill="none" stroke="${SVG_COLORS.moment}" stroke-width="2" marker-end="url(#arrowPurple)"/>`;
+  svg += `<path d="M ${x1} ${y1} A ${R} ${R} 0 0 ${sweepFlag} ${x2} ${y2}" fill="none" stroke="${SVG_COLORS.moment}" stroke-width="2.5" marker-end="url(#arrowPurple)"/>`;
 
-  // Подпись
-  svg += `<text x="${x + 25}" y="${Cy}" fill="${SVG_COLORS.moment}" font-size="11" font-weight="600">M = ${Math.abs(M)} кН·м</text>`;
+  // Подпись — слева от момента для против часовой, справа для по часовой
+  const labelX = isCW ? x + R + 10 : x - R - 10;
+  const textAnchor = isCW ? "start" : "end";
+  svg += `<text x="${labelX}" y="${Cy - 5}" text-anchor="${textAnchor}" fill="${SVG_COLORS.moment}" font-size="12" font-weight="600">M = ${Math.abs(M)} кН·м</text>`;
 
   return svg;
 }
