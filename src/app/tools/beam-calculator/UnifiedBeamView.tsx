@@ -729,14 +729,19 @@ function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffs
   } else {
     // Стрелка идёт сверху вниз, наконечник касается балки (не заходит внутрь)
     startY = baseY - arrowLen;
-    endY = baseY - markerSize; // Останавливаем линию раньше, чтобы маркер касался поверхности
+    endY = baseY - markerSize;
   }
 
   const baseXOffset = labelSide === "left" ? -8 : 8;
   const textX = x + baseXOffset + labelXOffset;
   const textAnchor = labelSide === "left" ? "end" : "start";
-  // Подпись всегда выше балки (рядом со стрелкой)
-  const textY = baseY - arrowLen / 2 - labelYOffset;
+
+  // Подпись выше балки, но не выше минимальной границы (25px от верха панели)
+  const minY = 25;
+  let textY = baseY - arrowLen / 2 - labelYOffset;
+  if (textY < minY) {
+    textY = minY;
+  }
 
   return (
     <g>
