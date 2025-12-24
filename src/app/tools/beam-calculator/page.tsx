@@ -39,8 +39,8 @@ export default function BeamCalculatorPage() {
           <BeamInput onCalculate={handleCalculate} />
         </div>
 
-        {/* Правая колонка: Результаты (или плейсхолдер) */}
-        <div>
+        {/* Правая колонка: Результаты (sticky при прокрутке) */}
+        <div className="lg:sticky lg:top-4 lg:self-start">
           {error && (
             <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 mb-4">
               {error}

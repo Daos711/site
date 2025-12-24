@@ -81,7 +81,7 @@ export function ResultCards({ input, result, className }: Props) {
       if (load.type === "force") {
         sumM -= load.F * load.x;
       } else if (load.type === "moment") {
-        sumM -= load.M;
+        sumM += load.M;  // Внешний момент напрямую добавляется к сумме
       } else if (load.type === "distributed") {
         // Распределённая нагрузка: момент = q * длина * плечо до центра
         const length = load.b - load.a;
