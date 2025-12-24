@@ -1040,6 +1040,28 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
             // При скачке показываем ОБА значения, но только если они отличаются после форматирования
             const leftStr = formatNum(leftValue!, 1);
             const rightStr = formatNum(rightValue!, 1);
+
+            // Добавляем визуальный маркер разрыва - вертикальную линию между значениями
+            const y1 = scaleY(leftValue!);
+            const y2 = scaleY(rightValue!);
+            labels.push(
+              <g key={`disc-marker-${bIdx}`}>
+                {/* Вертикальная линия разрыва */}
+                <line
+                  x1={xToPx(bx)}
+                  y1={y1}
+                  x2={xToPx(bx)}
+                  y2={y2}
+                  stroke={color}
+                  strokeWidth={2}
+                  strokeDasharray="4,2"
+                />
+                {/* Маленькие горизонтальные засечки на концах */}
+                <line x1={xToPx(bx) - 4} y1={y1} x2={xToPx(bx) + 4} y2={y1} stroke={color} strokeWidth={2} />
+                <line x1={xToPx(bx) - 4} y1={y2} x2={xToPx(bx) + 4} y2={y2} stroke={color} strokeWidth={2} />
+              </g>
+            );
+
             if (leftStr === rightStr) {
               // Одинаковые после округления - показываем только левое
               addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
