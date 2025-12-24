@@ -358,36 +358,36 @@ interface LoadInputProps {
 function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
   if (load.type === "distributed") {
     return (
-      <div className="flex items-center gap-1.5 p-2 rounded-lg bg-green-500/10 border border-green-500/30">
-        <span className="text-green-400 font-medium">q</span>
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+        <span className="text-green-400 font-medium w-6">q</span>
         <NumInput
           value={load.q}
           onChange={(n) => onChange({ q: n })}
-          className="w-14 px-1.5 py-1 rounded border border-border bg-background text-foreground text-sm"
+          className="flex-1 min-w-0 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
-        <span className="text-muted text-xs whitespace-nowrap">кН/м</span>
-        <span className="text-muted text-xs">от</span>
+        <span className="text-muted text-sm whitespace-nowrap">кН/м</span>
+        <span className="text-muted text-sm">от</span>
         <NumInput
           value={load.a}
           onChange={(n) => onChange({ a: n })}
           min={0}
           max={maxX}
           step={0.1}
-          className="w-12 px-1.5 py-1 rounded border border-border bg-background text-foreground text-sm"
+          className="w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
-        <span className="text-muted text-xs">до</span>
+        <span className="text-muted text-sm">до</span>
         <NumInput
           value={load.b}
           onChange={(n) => onChange({ b: n })}
           min={0}
           max={maxX}
           step={0.1}
-          className="w-12 px-1.5 py-1 rounded border border-border bg-background text-foreground text-sm"
+          className="w-16 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
-        <span className="text-muted text-xs">м</span>
+        <span className="text-muted text-sm">м</span>
         <button
           onClick={onRemove}
-          className="ml-auto p-1 text-muted hover:text-red-400 transition-colors"
+          className="p-1 text-muted hover:text-red-400 transition-colors"
         >
           <Trash2 size={16} />
         </button>

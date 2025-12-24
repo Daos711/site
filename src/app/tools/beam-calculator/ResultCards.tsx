@@ -50,53 +50,113 @@ export function ResultCards({ input, result, className }: Props) {
       })()
     : null;
 
-  // Проверка равновесия
+  // Проверка равновесия с формулами
   const equilibrium = (() => {
     let sumFy = 0;
+    const fyTerms: string[] = [];
+    const fyValues: number[] = [];
 
-    if (reactions.RA !== undefined) sumFy += reactions.RA;
-    if (reactions.RB !== undefined) sumFy += reactions.RB;
-    if (reactions.Rf !== undefined) sumFy += reactions.Rf;
+    // Реакции (положительные - вверх)
+    if (reactions.RA !== undefined) {
+      sumFy += reactions.RA;
+      fyTerms.push("R_A");
+      fyValues.push(reactions.RA);
+    }
+    if (reactions.RB !== undefined) {
+      sumFy += reactions.RB;
+      fyTerms.push("R_B");
+      fyValues.push(reactions.RB);
+    }
+    if (reactions.Rf !== undefined) {
+      sumFy += reactions.Rf;
+      fyTerms.push("R");
+      fyValues.push(reactions.Rf);
+    }
 
+    // Нагрузки (отрицательные - вниз)
     for (const load of input.loads) {
       if (load.type === "force") {
         sumFy -= load.F;
+        fyTerms.push("F");
+        fyValues.push(-load.F);
       } else if (load.type === "distributed") {
-        sumFy -= load.q * (load.b - load.a);
+        const qTotal = load.q * (load.b - load.a);
+        sumFy -= qTotal;
+        fyTerms.push("q·L");
+        fyValues.push(-qTotal);
       }
     }
 
     let sumM = 0;
+    const mTerms: string[] = [];
+    const mValues: number[] = [];
 
     if (reactions.RA !== undefined) {
       const xA = reactions.xA ?? 0;
-      sumM += reactions.RA * xA;
+      const term = reactions.RA * xA;
+      sumM += term;
+      if (Math.abs(xA) > 0.001) {
+        mTerms.push("R_A·x_A");
+        mValues.push(term);
+      }
     }
     if (reactions.RB !== undefined) {
       const xB = reactions.xB ?? input.L;
-      sumM += reactions.RB * xB;
+      const term = reactions.RB * xB;
+      sumM += term;
+      mTerms.push("R_B·x_B");
+      mValues.push(term);
     }
     if (reactions.Rf !== undefined) {
       const xf = reactions.xf ?? 0;
-      sumM += reactions.Rf * xf;
+      const term = reactions.Rf * xf;
+      sumM += term;
+      if (Math.abs(xf) > 0.001) {
+        mTerms.push("R·x");
+        mValues.push(term);
+      }
     }
     if (reactions.Mf !== undefined) {
       sumM += reactions.Mf;
+      mTerms.push("M_f");
+      mValues.push(reactions.Mf);
     }
 
     for (const load of input.loads) {
       if (load.type === "force") {
-        sumM -= load.F * load.x;
+        const term = -load.F * load.x;
+        sumM += term;
+        mTerms.push("F·x");
+        mValues.push(term);
       } else if (load.type === "moment") {
         sumM += load.M;
+        mTerms.push("M");
+        mValues.push(load.M);
       } else if (load.type === "distributed") {
         const length = load.b - load.a;
         const centerX = (load.a + load.b) / 2;
-        sumM -= load.q * length * centerX;
+        const term = -load.q * length * centerX;
+        sumM += term;
+        mTerms.push("q·L·x_c");
+        mValues.push(term);
       }
     }
 
-    return { sumFy, sumM };
+    // Формируем строку формулы
+    const buildFormula = (values: number[]): string => {
+      return values.map((v, i) => {
+        const absV = formatNum(Math.abs(v));
+        if (i === 0) return v >= 0 ? absV : `−${absV}`;
+        return v >= 0 ? ` + ${absV}` : ` − ${absV}`;
+      }).join("");
+    };
+
+    return {
+      sumFy,
+      sumM,
+      fyFormula: buildFormula(fyValues),
+      mFormula: buildFormula(mValues),
+    };
   })();
 
   const isBalanced = Math.abs(equilibrium.sumFy) < 0.01 && Math.abs(equilibrium.sumM) < 0.01;
@@ -200,18 +260,28 @@ export function ResultCards({ input, result, className }: Props) {
             <span className="text-red-500 text-sm">✗</span>
           )}
         </h3>
-        <div className="space-y-2">
-          <div className="flex justify-between items-baseline">
-            <Sub sub="y">ΣF</Sub>
-            <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
-              {formatEquilibrium(equilibrium.sumFy)} кН
-            </span>
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-baseline gap-2">
+              <Sub sub="y">ΣF</Sub>
+              <span className="text-muted-foreground">=</span>
+              <span className="font-mono text-sm">{equilibrium.fyFormula}</span>
+              <span className="text-muted-foreground">=</span>
+              <span className={`font-mono font-semibold ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
+                {formatEquilibrium(equilibrium.sumFy)} кН
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between items-baseline">
-            <Sub sub="0">ΣM</Sub>
-            <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
-              {formatEquilibrium(equilibrium.sumM)} кН·м
-            </span>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <Sub sub="0">ΣM</Sub>
+              <span className="text-muted-foreground">=</span>
+              <span className="font-mono text-sm">{equilibrium.mFormula}</span>
+              <span className="text-muted-foreground">=</span>
+              <span className={`font-mono font-semibold ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
+                {formatEquilibrium(equilibrium.sumM)} кН·м
+              </span>
+            </div>
           </div>
         </div>
       </div>
