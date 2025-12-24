@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "katex/dist/katex.min.css";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 
@@ -16,6 +15,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+          integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="antialiased min-h-screen flex flex-col">
         <Navigation />
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
