@@ -250,20 +250,30 @@ export function UnifiedBeamView({ input, result }: Props) {
           boundaries={boundaries}
         />
 
-        {/* Панель: θ(x) */}
-        {hasDeflection && (
-          <DiagramPanel
-            title="θ(x)"
-            unit="рад"
-            segments={thetaSegments}
-            xToPx={xToPx}
-            y={thetaY}
-            height={DIAGRAM_HEIGHT}
-            color={COLORS.theta}
-            chartWidth={chartWidth}
-            boundaries={boundaries}
-          />
-        )}
+        {/* Панель: θ(x) - автовыбор единиц (рад или мрад) */}
+        {hasDeflection && (() => {
+          // Находим максимальное абсолютное значение для выбора единиц
+          const maxTheta = Math.max(...thetaSegments.flat().map(p => Math.abs(p.value)));
+          // Если значения маленькие (< 0.01 рад), используем миллирадианы
+          const useMillirad = maxTheta < 0.01 && maxTheta > 0;
+          const thetaScale = useMillirad ? 1000 : 1;
+          const thetaUnit = useMillirad ? "мрад" : "рад";
+
+          return (
+            <DiagramPanel
+              title="θ(x)"
+              unit={thetaUnit}
+              segments={thetaSegments}
+              xToPx={xToPx}
+              y={thetaY}
+              height={DIAGRAM_HEIGHT}
+              color={COLORS.theta}
+              chartWidth={chartWidth}
+              scale={thetaScale}
+              boundaries={boundaries}
+            />
+          );
+        })()}
 
         {/* Панель: y(x) — прогиб вниз (отрицательный, но физичный) */}
         {hasDeflection && (
