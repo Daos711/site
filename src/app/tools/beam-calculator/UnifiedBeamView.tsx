@@ -1072,7 +1072,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         return <g>{labels}</g>;
       })()}
 
-      {/* Маркеры экстремумов - на границах показываем только кружок (текст уже есть от границы) */}
+      {/* Маркеры экстремумов - на границах с разрывом показываем только кружок, иначе с текстом */}
       {Math.abs(extremes.maxP.value) > 1e-9 && (() => {
         // Пропускаем полностью если экстремум на крайней границе (x=0 или x=L)
         const isEndpoint = Math.abs(extremes.maxP.x - boundaries[0]) < 0.05 ||
@@ -1081,11 +1081,32 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.maxP.x) < 0.05);
         const curveY = scaleY(extremes.maxP.value);
-        // На границе показываем только кружок, текст уже есть от подписи границы
+
+        // Проверяем, есть ли разрыв на этой границе (разные значения слева и справа)
+        let hasDiscontinuityAtBoundary = false;
         if (onBoundary) {
+          for (let i = 0; i < scaledSegments.length - 1; i++) {
+            const seg1 = scaledSegments[i];
+            const seg2 = scaledSegments[i + 1];
+            if (seg1.length > 0 && seg2.length > 0) {
+              const endVal = seg1[seg1.length - 1];
+              const startVal = seg2[0];
+              if (Math.abs(endVal.x - extremes.maxP.x) < 0.05 && Math.abs(startVal.x - extremes.maxP.x) < 0.05) {
+                if (Math.abs(endVal.value - startVal.value) > 0.5) {
+                  hasDiscontinuityAtBoundary = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // На границе с разрывом показываем только кружок (текст уже есть от подписи границы)
+        // На границе без разрыва показываем и кружок и текст
+        const textY = extremes.maxP.value >= 0 ? curveY - 20 : curveY + 24;
+        if (onBoundary && hasDiscontinuityAtBoundary) {
           return <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />;
         }
-        const textY = extremes.maxP.value >= 0 ? curveY - 20 : curveY + 24;
         return (
           <g>
             <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
@@ -1103,11 +1124,30 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.minP.x) < 0.05);
         const curveY = scaleY(extremes.minP.value);
-        // На границе показываем только кружок, текст уже есть от подписи границы
+
+        // Проверяем, есть ли разрыв на этой границе
+        let hasDiscontinuityAtBoundary = false;
         if (onBoundary) {
+          for (let i = 0; i < scaledSegments.length - 1; i++) {
+            const seg1 = scaledSegments[i];
+            const seg2 = scaledSegments[i + 1];
+            if (seg1.length > 0 && seg2.length > 0) {
+              const endVal = seg1[seg1.length - 1];
+              const startVal = seg2[0];
+              if (Math.abs(endVal.x - extremes.minP.x) < 0.05 && Math.abs(startVal.x - extremes.minP.x) < 0.05) {
+                if (Math.abs(endVal.value - startVal.value) > 0.5) {
+                  hasDiscontinuityAtBoundary = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        const textY = extremes.minP.value >= 0 ? curveY - 20 : curveY + 24;
+        if (onBoundary && hasDiscontinuityAtBoundary) {
           return <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />;
         }
-        const textY = extremes.minP.value >= 0 ? curveY - 20 : curveY + 24;
         return (
           <g>
             <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
