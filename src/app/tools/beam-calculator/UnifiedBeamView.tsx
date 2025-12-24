@@ -254,8 +254,8 @@ export function UnifiedBeamView({ input, result }: Props) {
         {hasDeflection && (() => {
           // Находим максимальное абсолютное значение для выбора единиц
           const maxTheta = Math.max(...thetaSegments.flat().map(p => Math.abs(p.value)));
-          // Если значения маленькие (< 0.01 рад), используем миллирадианы
-          const useMillirad = maxTheta < 0.01 && maxTheta > 0;
+          // Если значения маленькие (< 0.1 рад = ~6°), используем миллирадианы
+          const useMillirad = maxTheta < 0.1 && maxTheta > 0;
           const thetaScale = useMillirad ? 1000 : 1;
           const thetaUnit = useMillirad ? "мрад" : "рад";
 
@@ -1007,9 +1007,12 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       {(() => {
         const labels: React.ReactNode[] = [];
 
-        // Проверяем, совпадает ли позиция с экстремумом (простая проверка по x)
+        // Проверяем, близка ли позиция к экстремуму (чтобы избежать наложения подписей)
+        // Используем 15% от длины балки как порог
+        const proximityThreshold = Math.max(0.5, boundaries[boundaries.length - 1] * 0.15);
         const isAtExtremum = (x: number) => {
-          return Math.abs(x - extremes.maxP.x) < 0.1 || Math.abs(x - extremes.minP.x) < 0.1;
+          return Math.abs(x - extremes.maxP.x) < proximityThreshold ||
+                 Math.abs(x - extremes.minP.x) < proximityThreshold;
         };
 
         // Функция для поиска значения в точке
