@@ -20,19 +20,15 @@ function formatEquilibrium(value: number): string {
   return value.toFixed(4).replace(/\.?0+$/, "");
 }
 
-// Математические обозначения с Unicode
-const math = {
-  RA: "Rₐ",
-  RB: "Rᵦ",
-  R: "R",
-  Mzad: "M",
-  Qmax: "|Q|ₘₐₓ",
-  Mmax: "|M|ₘₐₓ",
-  ymax: "|y|ₘₐₓ",
-  sumFy: "ΣFᵧ",
-  sumM0: "ΣM₀",
-  x: "x",
-};
+// Компонент для отображения индексов через CSS
+function Sub({ children, sub }: { children: React.ReactNode; sub: string }) {
+  return (
+    <span className="inline-flex items-baseline">
+      <span>{children}</span>
+      <sub className="text-[0.65em] ml-px">{sub}</sub>
+    </span>
+  );
+}
 
 export function ResultCards({ input, result, className }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
@@ -113,7 +109,7 @@ export function ResultCards({ input, result, className }: Props) {
         <div className="space-y-2">
           {reactions.RA !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-base">{math.RA}</span>
+              <Sub sub="A">R</Sub>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.RA)} кН
                 <span className="text-muted-foreground ml-2">
@@ -124,7 +120,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.RB !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-base">{math.RB}</span>
+              <Sub sub="B">R</Sub>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.RB)} кН
                 <span className="text-muted-foreground ml-2">
@@ -135,7 +131,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.Rf !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-base">{math.R}</span>
+              <span>R</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.Rf)} кН
                 <span className="text-muted-foreground ml-2">
@@ -146,7 +142,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.Mf !== undefined && (
             <div className="flex justify-between items-baseline">
-              <span className="text-base">{math.Mzad}</span>
+              <span>M</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.Mf)} кН·м
                 <span className="text-muted-foreground ml-2">
@@ -163,30 +159,30 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <span className="text-base">{math.Qmax}</span>
+            <Sub sub="max">|Q|</Sub>
             <span className="font-mono text-base tabular-nums">
               {formatNum(Math.abs(Qmax.value))} кН
               <span className="text-muted-foreground ml-2">
-                ({math.x} = {formatNum(Qmax.x)} м)
+                (x = {formatNum(Qmax.x)} м)
               </span>
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-base">{math.Mmax}</span>
+            <Sub sub="max">|M|</Sub>
             <span className="font-mono text-base tabular-nums">
               {formatNum(Math.abs(Mmax.value))} кН·м
               <span className="text-muted-foreground ml-2">
-                ({math.x} = {formatNum(Mmax.x)} м)
+                (x = {formatNum(Mmax.x)} м)
               </span>
             </span>
           </div>
           {wMax && (
             <div className="flex justify-between items-baseline">
-              <span className="text-base">{math.ymax}</span>
+              <Sub sub="max">|y|</Sub>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(Math.abs(wMax.value * 1000))} мм
                 <span className="text-muted-foreground ml-2">
-                  ({math.x} = {formatNum(wMax.x)} м)
+                  (x = {formatNum(wMax.x)} м)
                 </span>
               </span>
             </div>
@@ -206,13 +202,13 @@ export function ResultCards({ input, result, className }: Props) {
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <span className="text-base">{math.sumFy}</span>
+            <Sub sub="y">ΣF</Sub>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {formatEquilibrium(equilibrium.sumFy)} кН
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-base">{math.sumM0}</span>
+            <Sub sub="0">ΣM</Sub>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {formatEquilibrium(equilibrium.sumM)} кН·м
             </span>

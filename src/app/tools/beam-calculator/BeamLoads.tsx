@@ -3,8 +3,8 @@ import { COLORS } from "./constants";
 
 // Стрелка реакции - направление зависит от знака
 // value >= 0: вверх (от балки), value < 0: вниз (к балке сверху)
-export function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffset = 0, labelXOffset = 0 }: {
-  x: number; baseY: number; value: number; label: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number
+export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0 }: {
+  x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number
 }) {
   const arrowLen = 40;
   const pointsUp = value >= 0;
@@ -40,7 +40,10 @@ export function ReactionArrow({ x, baseY, value, label, labelSide = "right", lab
     <g>
       <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#arrowGreen)" />
       <text x={textX} y={textY} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle" textAnchor={textAnchor}>
-        {label}
+        {name}
+        {subscript && <tspan dy="3" fontSize="8">{subscript}</tspan>}
+        {subscript && <tspan dy="-3"> </tspan>}
+        <tspan> = {valueText}</tspan>
       </text>
     </g>
   );
