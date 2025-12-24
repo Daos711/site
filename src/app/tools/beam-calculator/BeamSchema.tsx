@@ -154,7 +154,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               x={xToPx(xA)}
               baseY={beamY - beamThickness / 2}
               value={reactions.RA}
-              label={`R_A = ${formatNum(Math.abs(reactions.RA))} кН`}
+              label={`Rₐ = ${formatNum(Math.abs(reactions.RA))} кН`}
               labelSide="left"
               labelYOffset={hasLoadAtA ? 70 : 40}
             />
@@ -170,7 +170,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               x={xToPx(xB)}
               baseY={beamY - beamThickness / 2}
               value={reactions.RB}
-              label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
+              label={`Rᵦ = ${formatNum(Math.abs(reactions.RB))} кН`}
               labelSide="left"
               labelYOffset={hasLoadAtB ? 80 : (reactions.RB >= 0 ? 50 : 35)}
               labelXOffset={-30}
