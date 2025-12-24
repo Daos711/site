@@ -1,7 +1,6 @@
 "use client";
 
 import type { BeamInput, BeamResult } from "@/lib/beam";
-import { Tex } from "@/components/Tex";
 
 interface Props {
   input: BeamInput;
@@ -12,15 +11,28 @@ interface Props {
 // Форматирование числа: убираем лишние нули
 function formatNum(value: number, decimals: number = 2): string {
   const fixed = value.toFixed(decimals);
-  // Убираем trailing zeros после точки
   return parseFloat(fixed).toString();
 }
 
-// Форматирование для проверки равновесия (показываем 0 как "0")
+// Форматирование для проверки равновесия
 function formatEquilibrium(value: number): string {
   if (Math.abs(value) < 0.0001) return "0";
   return value.toFixed(4).replace(/\.?0+$/, "");
 }
+
+// Математические обозначения с Unicode
+const math = {
+  RA: "Rₐ",
+  RB: "Rᵦ",
+  R: "R",
+  Mzad: "M",
+  Qmax: "|Q|ₘₐₓ",
+  Mmax: "|M|ₘₐₓ",
+  ymax: "|y|ₘₐₓ",
+  sumFy: "ΣFᵧ",
+  sumM0: "ΣM₀",
+  x: "x",
+};
 
 export function ResultCards({ input, result, className }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
@@ -100,8 +112,8 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Реакции опор</h3>
         <div className="space-y-2">
           {reactions.RA !== undefined && (
-            <div className="flex justify-between items-baseline gap-4">
-              <Tex>{"R_A"}</Tex>
+            <div className="flex justify-between items-baseline">
+              <span className="text-base">{math.RA}</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.RA)} кН
                 <span className="text-muted-foreground ml-2">
@@ -111,8 +123,8 @@ export function ResultCards({ input, result, className }: Props) {
             </div>
           )}
           {reactions.RB !== undefined && (
-            <div className="flex justify-between items-baseline gap-4">
-              <Tex>{"R_B"}</Tex>
+            <div className="flex justify-between items-baseline">
+              <span className="text-base">{math.RB}</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.RB)} кН
                 <span className="text-muted-foreground ml-2">
@@ -122,8 +134,8 @@ export function ResultCards({ input, result, className }: Props) {
             </div>
           )}
           {reactions.Rf !== undefined && (
-            <div className="flex justify-between items-baseline gap-4">
-              <Tex>{"R"}</Tex>
+            <div className="flex justify-between items-baseline">
+              <span className="text-base">{math.R}</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.Rf)} кН
                 <span className="text-muted-foreground ml-2">
@@ -133,8 +145,8 @@ export function ResultCards({ input, result, className }: Props) {
             </div>
           )}
           {reactions.Mf !== undefined && (
-            <div className="flex justify-between items-baseline gap-4">
-              <Tex>{"M_{\\text{зад}}"}</Tex>
+            <div className="flex justify-between items-baseline">
+              <span className="text-base">{math.Mzad}</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(reactions.Mf)} кН·м
                 <span className="text-muted-foreground ml-2">
@@ -150,31 +162,31 @@ export function ResultCards({ input, result, className }: Props) {
       <div className="p-4 rounded-lg border border-border bg-card">
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
-          <div className="flex justify-between items-baseline gap-4">
-            <Tex>{"|Q|_{\\max}"}</Tex>
+          <div className="flex justify-between items-baseline">
+            <span className="text-base">{math.Qmax}</span>
             <span className="font-mono text-base tabular-nums">
               {formatNum(Math.abs(Qmax.value))} кН
               <span className="text-muted-foreground ml-2">
-                (<Tex>{"x"}</Tex> = {formatNum(Qmax.x)} м)
+                ({math.x} = {formatNum(Qmax.x)} м)
               </span>
             </span>
           </div>
-          <div className="flex justify-between items-baseline gap-4">
-            <Tex>{"|M|_{\\max}"}</Tex>
+          <div className="flex justify-between items-baseline">
+            <span className="text-base">{math.Mmax}</span>
             <span className="font-mono text-base tabular-nums">
               {formatNum(Math.abs(Mmax.value))} кН·м
               <span className="text-muted-foreground ml-2">
-                (<Tex>{"x"}</Tex> = {formatNum(Mmax.x)} м)
+                ({math.x} = {formatNum(Mmax.x)} м)
               </span>
             </span>
           </div>
           {wMax && (
-            <div className="flex justify-between items-baseline gap-4">
-              <Tex>{"|y|_{\\max}"}</Tex>
+            <div className="flex justify-between items-baseline">
+              <span className="text-base">{math.ymax}</span>
               <span className="font-mono text-base tabular-nums">
                 {formatNum(Math.abs(wMax.value * 1000))} мм
                 <span className="text-muted-foreground ml-2">
-                  (<Tex>{"x"}</Tex> = {formatNum(wMax.x)} м)
+                  ({math.x} = {formatNum(wMax.x)} м)
                 </span>
               </span>
             </div>
@@ -193,14 +205,14 @@ export function ResultCards({ input, result, className }: Props) {
           )}
         </h3>
         <div className="space-y-2">
-          <div className="flex justify-between items-baseline gap-4">
-            <Tex>{"\\sum F_y"}</Tex>
+          <div className="flex justify-between items-baseline">
+            <span className="text-base">{math.sumFy}</span>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {formatEquilibrium(equilibrium.sumFy)} кН
             </span>
           </div>
-          <div className="flex justify-between items-baseline gap-4">
-            <Tex>{"\\sum M_0"}</Tex>
+          <div className="flex justify-between items-baseline">
+            <span className="text-base">{math.sumM0}</span>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {formatEquilibrium(equilibrium.sumM)} кН·м
             </span>
