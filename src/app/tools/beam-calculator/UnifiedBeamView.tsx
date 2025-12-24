@@ -720,27 +720,34 @@ function ReactionArrow({ x, baseY, value, label, labelSide = "right", labelYOffs
 
   // Положительная: стрелка от балки вверх (наконечник вверху)
   // Отрицательная: стрелка сверху вниз К балке (наконечник у балки)
-  // Учитываем размер маркера (6px), чтобы наконечник только касался поверхности
   const markerSize = 6;
   let startY: number, endY: number;
   if (pointsUp) {
     startY = baseY;
     endY = baseY - arrowLen;
   } else {
-    // Стрелка идёт сверху вниз, наконечник касается балки (не заходит внутрь)
     startY = baseY - arrowLen;
     endY = baseY - markerSize;
   }
 
-  const baseXOffset = labelSide === "left" ? -8 : 8;
-  const textX = x + baseXOffset + labelXOffset;
-  const textAnchor = labelSide === "left" ? "end" : "start";
+  // Границы панели для проверки
+  const minY = 15;  // верхняя граница
+  const minX = 5;   // левая граница (с учётом что PADDING.left уже применён)
 
-  // Подпись выше балки, но не выше минимальной границы (25px от верха панели)
-  const minY = 25;
+  // Рассчитываем позицию подписи
+  let textX = x + (labelSide === "left" ? -8 : 8) + labelXOffset;
   let textY = baseY - arrowLen / 2 - labelYOffset;
+  let textAnchor: "start" | "end" = labelSide === "left" ? "end" : "start";
+
+  // Проверка верхней границы
   if (textY < minY) {
     textY = minY;
+  }
+
+  // Проверка левой границы - если подпись уходит влево, переносим вправо
+  if (labelSide === "left" && textX < minX + 80) { // +80 это примерная ширина текста
+    textX = x + 8; // переносим вправо от стрелки
+    textAnchor = "start";
   }
 
   return (
@@ -826,12 +833,26 @@ function ForceArrow({ x, y, F, label, maxX }: { x: number; y: number; F: number;
   const arrowLen = 60;
   const pointsDown = F >= 0;
 
-  // Проверяем, не выходит ли подпись за правую границу (примерно 100px на текст)
+  // Проверяем границы для подписи
   const labelWidth = 100;
-  const wouldOverflow = maxX !== undefined && (x + 10 + labelWidth > maxX);
-  // Если выходит - размещаем слева от стрелки
-  const labelX = wouldOverflow ? x - 10 : x + 10;
-  const textAnchor = wouldOverflow ? "end" : "start";
+  const minX = 5;   // левая граница
+
+  // Проверка правой границы
+  const wouldOverflowRight = maxX !== undefined && (x + 10 + labelWidth > maxX);
+
+  // Проверка левой границы - если перенос влево выведет за левый край
+  const wouldOverflowLeft = wouldOverflowRight && (x - 10 < minX + labelWidth);
+
+  // Если выходит за правую границу И не выйдет за левую - размещаем слева
+  // Иначе размещаем справа (лучше чуть выйти вправо, чем улететь влево)
+  let labelX = wouldOverflowRight && !wouldOverflowLeft ? x - 10 : x + 10;
+  let textAnchor: "end" | "start" = wouldOverflowRight && !wouldOverflowLeft ? "end" : "start";
+
+  // Дополнительная проверка: если подпись слева выходит за левую границу, переносим вправо
+  if (textAnchor === "end" && labelX < minX + labelWidth) {
+    labelX = x + 10;
+    textAnchor = "start";
+  }
 
   if (pointsDown) {
     // Сила вниз: стрелка сверху к балке
@@ -890,11 +911,26 @@ function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; labe
   const arcEnd = isCW ? pRight : pLeft;
   const sweepFlag = isCW ? 1 : 0;
 
-  // Подпись рядом со стрелкой
-  const labelPos = isCW
-    ? { x: pRight.x + 8, y: pRight.y - 4 }
-    : { x: pLeft.x - 8, y: pLeft.y - 4 };
-  const labelAnchor = isCW ? "start" : "end";
+  // Подпись рядом со стрелкой с проверкой границ
+  const minX = 5;   // левая граница
+  const minY = 15;  // верхняя граница
+
+  let labelX = isCW ? pRight.x + 8 : pLeft.x - 8;
+  let labelY = isCW ? pRight.y - 4 : pLeft.y - 4;
+  let labelAnchor: "start" | "end" = isCW ? "start" : "end";
+
+  // Проверка левой границы - если подпись уходит влево, переносим вправо
+  if (!isCW && labelX < minX + 60) { // +60 примерная ширина текста
+    labelX = pRight.x + 8;
+    labelAnchor = "start";
+  }
+
+  // Проверка верхней границы
+  if (labelY < minY) {
+    labelY = minY;
+  }
+
+  const labelPos = { x: labelX, y: labelY };
 
   return (
     <g>
