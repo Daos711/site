@@ -1037,12 +1037,17 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           const isEndpoint = isFirst || isLast;
 
           if (hasDiscontinuity) {
-            // При скачке показываем ОБА значения - НЕ пропускаем даже если близко к экстремуму
-            // Каждую подпись ставим на СВОЮ сторону (где её сегмент):
-            // - leftValue (конец левого сегмента) → ставим СЛЕВА
-            // - rightValue (начало правого сегмента) → ставим СПРАВА
-            addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
-            addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false);
+            // При скачке показываем ОБА значения, но только если они отличаются после форматирования
+            const leftStr = formatNum(leftValue!, 1);
+            const rightStr = formatNum(rightValue!, 1);
+            if (leftStr === rightStr) {
+              // Одинаковые после округления - показываем только левое
+              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
+            } else {
+              // Разные значения - показываем оба
+              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
+              addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false);
+            }
           } else {
             // Непрерывная функция - одна подпись
             const value = rightValue ?? leftValue;
