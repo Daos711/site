@@ -53,9 +53,9 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
 // q > 0: сверху балки, стрелки вниз
 // q < 0: снизу балки, стрелки вверх
 export function DistributedLoadArrows({
-  x1, x2, beamTopY, beamBottomY, q, label
+  x1, x2, beamTopY, beamBottomY, q, label, markerPrefix = ""
 }: {
-  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string
+  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string
 }) {
   const arrowLen = 28;
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
@@ -76,7 +76,7 @@ export function DistributedLoadArrows({
               y2={baseY - 8}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
-              markerEnd="url(#arrowBlue)"
+              markerEnd={`url(#${markerPrefix}arrowBlue)`}
             />
           );
         })}
@@ -101,7 +101,7 @@ export function DistributedLoadArrows({
               y2={baseY + 8}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
-              markerEnd="url(#arrowBlueUp)"
+              markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
             />
           );
         })}
@@ -115,7 +115,7 @@ export function DistributedLoadArrows({
 
 // Сосредоточенная сила (КРАСНАЯ)
 // F > 0: вниз, F < 0: вверх
-export function ForceArrow({ x, y, F, label, maxX }: { x: number; y: number; F: number; label: string; maxX?: number }) {
+export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string }) {
   const arrowLen = 60;
   const pointsDown = F >= 0;
 
@@ -136,7 +136,7 @@ export function ForceArrow({ x, y, F, label, maxX }: { x: number; y: number; F: 
   if (pointsDown) {
     return (
       <g>
-        <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
+        <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
@@ -145,7 +145,7 @@ export function ForceArrow({ x, y, F, label, maxX }: { x: number; y: number; F: 
   } else {
     return (
       <g>
-        <line x1={x} y1={y + arrowLen} x2={x} y2={y + 22} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#arrowRed)" />
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y + 22} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
@@ -157,7 +157,7 @@ export function ForceArrow({ x, y, F, label, maxX }: { x: number; y: number; F: 
 // Момент (ножка + дуга со стрелкой, ФИОЛЕТОВАЯ)
 // M > 0: против часовой (↺), стрелка слева
 // M < 0: по часовой (↻), стрелка справа
-export function MomentArrow({ x, y, M, label }: { x: number; y: number; M: number; label: string }) {
+export function MomentArrow({ x, y, M, label, markerPrefix = "" }: { x: number; y: number; M: number; label: string; markerPrefix?: string }) {
   const H = 35;
   const R = 20;
   const gap = 6;
@@ -213,7 +213,7 @@ export function MomentArrow({ x, y, M, label }: { x: number; y: number; M: numbe
         fill="none"
         stroke={COLORS.moment}
         strokeWidth={2}
-        markerEnd="url(#arrowPurple)"
+        markerEnd={`url(#${markerPrefix}arrowPurple)`}
       />
       <text
         x={labelPos.x}

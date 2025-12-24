@@ -20,6 +20,7 @@ const SVG_COLORS = {
 interface ReportData {
   input: BeamInput;
   result: BeamResult;
+  beamSchemaSVG?: string;  // SVG-строка схемы балки с сайта
 }
 
 /**
@@ -335,7 +336,7 @@ function formatBeamType(type: string): string {
  * Генерирует HTML-код отчёта
  */
 function buildReportHTML(data: ReportData): string {
-  const { input, result } = data;
+  const { input, result, beamSchemaSVG } = data;
   const { reactions, Q, M, Mmax, Qmax, y } = result;
 
   // Секции
@@ -409,7 +410,7 @@ function buildReportHTML(data: ReportData): string {
 
   <h2>1. Расчётная схема</h2>
   <div style="margin: 16px 0; text-align: center;">
-    ${generateBeamSVG(input, result)}
+    ${beamSchemaSVG || generateBeamSVG(input, result)}
   </div>
 
   <h2>2. Исходные данные</h2>

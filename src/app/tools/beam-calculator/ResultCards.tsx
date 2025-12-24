@@ -245,7 +245,24 @@ export function ResultCards({ input, result, className }: Props) {
       {/* Кнопка отчёта */}
       <button
         className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-center"
-        onClick={() => generateReport({ input, result })}
+        onClick={() => {
+          // Находим скрытый SVG для экспорта и сериализуем его
+          const svgElement = document.getElementById("beam-schema-export");
+          let beamSchemaSVG: string | undefined;
+          if (svgElement) {
+            // Очищаем style для отчёта и добавляем размеры
+            const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+            clonedSvg.removeAttribute("style");
+            clonedSvg.setAttribute("width", "100%");
+            clonedSvg.setAttribute("height", "auto");
+            clonedSvg.style.maxWidth = "600px";
+            clonedSvg.style.background = "#f8fafc";
+            clonedSvg.style.border = "1px solid #e5e7eb";
+            clonedSvg.style.borderRadius = "4px";
+            beamSchemaSVG = new XMLSerializer().serializeToString(clonedSvg);
+          }
+          generateReport({ input, result, beamSchemaSVG });
+        }}
       >
         <span className="text-muted-foreground">📄</span>
         <span className="ml-2">Открыть отчёт</span>

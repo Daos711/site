@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { BeamInput } from "./BeamInput";
 import { ResultCards } from "./ResultCards";
 import { UnifiedBeamView } from "./UnifiedBeamView";
+import { BeamSchemaExport } from "./BeamSchemaExport";
 import type { BeamInput as BeamInputType, BeamResult } from "@/lib/beam";
 import { solveBeam } from "@/lib/beam";
 
@@ -58,6 +59,9 @@ export default function BeamCalculatorPage() {
 
       {/* Эпюры на всю ширину */}
       {result && input && <UnifiedBeamView input={input} result={result} />}
+
+      {/* Скрытый SVG для экспорта в отчёт */}
+      {result && input && <BeamSchemaExport input={input} result={result} />}
     </div>
   );
 }
