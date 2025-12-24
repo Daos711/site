@@ -470,7 +470,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.RB}
           label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
           labelSide="left"
-          labelYOffset={reactions.RB >= 0 ? 55 : 30}
+          labelYOffset={reactions.RB >= 0 ? 70 : 45}
           labelXOffset={-25}
         />
       )}
@@ -1055,14 +1055,12 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
 
             let placeRight: boolean;
             if (isFirst) {
-              placeRight = true;
+              placeRight = true;  // На левой границе - справа от пунктира
             } else if (isLast) {
-              placeRight = false;
+              placeRight = false; // На правой границе - слева от пунктира
             } else {
-              // Выбираем сторону с меньшей заливкой
-              const leftFill = Math.abs(leftValue ?? 0);
-              const rightFill = Math.abs(rightValue ?? 0);
-              placeRight = rightFill <= leftFill;
+              // Внутренние границы - всегда слева, чтобы не накладываться на экстремумы справа
+              placeRight = false;
             }
 
             addLabel(bx, value, placeRight, `boundary-${bIdx}`, !isEndpoint);
