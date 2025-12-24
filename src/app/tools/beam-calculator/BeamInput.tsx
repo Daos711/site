@@ -427,7 +427,7 @@ function LoadInput({ load, maxX, onChange, onRemove }: LoadInputProps) {
           onChange={(n) => onChange({ q: n })}
           className="w-20 px-2 py-1 rounded border border-border bg-background text-foreground text-sm"
         />
-        <span className="text-muted text-sm">кН/м</span>
+        <span className="text-muted text-sm whitespace-nowrap">кН/м</span>
         <span className="text-muted text-sm ml-2">от</span>
         <NumInput
           value={load.a}
