@@ -49,96 +49,106 @@ export function ResultCards({ input, result, className }: Props) {
 
   // Проверка равновесия с формулами
   const equilibrium = (() => {
+    // Для ΣFy — собираем с координатами для сортировки
+    type FyTerm = { value: number; x: number };
+    const fyTerms: FyTerm[] = [];
     let sumFy = 0;
-    const fyValues: number[] = [];
 
     // Реакции (положительные - вверх)
     if (reactions.RA !== undefined) {
       sumFy += reactions.RA;
-      fyValues.push(reactions.RA);
+      fyTerms.push({ value: reactions.RA, x: reactions.xA ?? 0 });
     }
     if (reactions.RB !== undefined) {
       sumFy += reactions.RB;
-      fyValues.push(reactions.RB);
+      fyTerms.push({ value: reactions.RB, x: reactions.xB ?? input.L });
     }
     if (reactions.Rf !== undefined) {
       sumFy += reactions.Rf;
-      fyValues.push(reactions.Rf);
+      fyTerms.push({ value: reactions.Rf, x: reactions.xf ?? 0 });
     }
 
     // Нагрузки (отрицательные - вниз)
     for (const load of input.loads) {
       if (load.type === "force") {
         sumFy -= load.F;
-        fyValues.push(-load.F);
+        fyTerms.push({ value: -load.F, x: load.x });
       } else if (load.type === "distributed") {
         const qTotal = load.q * (load.b - load.a);
         sumFy -= qTotal;
-        fyValues.push(-qTotal);
+        fyTerms.push({ value: -qTotal, x: (load.a + load.b) / 2 });
       }
     }
 
+    // Для ΣM — собираем с координатами
+    type MTerm = { value: number; x: number };
+    const mTerms: MTerm[] = [];
     let sumM = 0;
-    const mValues: number[] = [];
 
     if (reactions.RA !== undefined) {
       const xA = reactions.xA ?? 0;
       const term = reactions.RA * xA;
       sumM += term;
       if (Math.abs(xA) > 0.001) {
-        mValues.push(term);
+        mTerms.push({ value: term, x: xA });
       }
     }
     if (reactions.RB !== undefined) {
       const xB = reactions.xB ?? input.L;
       const term = reactions.RB * xB;
       sumM += term;
-      mValues.push(term);
+      mTerms.push({ value: term, x: xB });
     }
     if (reactions.Rf !== undefined) {
       const xf = reactions.xf ?? 0;
       const term = reactions.Rf * xf;
       sumM += term;
       if (Math.abs(xf) > 0.001) {
-        mValues.push(term);
+        mTerms.push({ value: term, x: xf });
       }
     }
     if (reactions.Mf !== undefined) {
       sumM += reactions.Mf;
-      mValues.push(reactions.Mf);
+      // Момент заделки — в точке заделки
+      const xf = reactions.xf ?? 0;
+      mTerms.push({ value: reactions.Mf, x: xf });
     }
 
     for (const load of input.loads) {
       if (load.type === "force") {
         const term = -load.F * load.x;
         sumM += term;
-        mValues.push(term);
+        mTerms.push({ value: term, x: load.x });
       } else if (load.type === "moment") {
         sumM += load.M;
-        mValues.push(load.M);
+        mTerms.push({ value: load.M, x: load.x });
       } else if (load.type === "distributed") {
         const length = load.b - load.a;
         const centerX = (load.a + load.b) / 2;
         const term = -load.q * length * centerX;
         sumM += term;
-        mValues.push(term);
+        mTerms.push({ value: term, x: centerX });
       }
     }
 
+    // Сортируем по x (слева направо)
+    fyTerms.sort((a, b) => a.x - b.x);
+    mTerms.sort((a, b) => a.x - b.x);
+
     // Формируем строку формулы для LaTeX
-    const buildFormula = (values: number[]): string => {
-      return values.map((v, i) => {
-        const absV = formatNum(Math.abs(v));
-        if (i === 0) return v >= 0 ? absV : `-${absV}`;
-        return v >= 0 ? ` + ${absV}` : ` - ${absV}`;
+    const buildFormula = (terms: { value: number }[]): string => {
+      return terms.map((t, i) => {
+        const absV = formatNum(Math.abs(t.value));
+        if (i === 0) return t.value >= 0 ? absV : `-${absV}`;
+        return t.value >= 0 ? ` + ${absV}` : ` - ${absV}`;
       }).join("");
     };
 
     return {
       sumFy,
       sumM,
-      fyFormula: buildFormula(fyValues),
-      mFormula: buildFormula(mValues),
+      fyFormula: buildFormula(fyTerms),
+      mFormula: buildFormula(mTerms),
     };
   })();
 
