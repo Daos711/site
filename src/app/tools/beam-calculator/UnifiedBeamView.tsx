@@ -996,10 +996,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       {(() => {
         const labels: React.ReactNode[] = [];
 
-        // Проверяем, не слишком ли близко к экстремумам (0.3м - только если почти совпадают)
+        // Проверяем, не слишком ли близко к экстремумам
+        // Увеличены пороги: 0.5м по x и 30% по значению
         const isNearExtreme = (x: number, val: number) => {
-          const nearMax = Math.abs(x - extremes.maxP.x) < 0.3 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.15;
-          const nearMin = Math.abs(x - extremes.minP.x) < 0.3 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.15;
+          const nearMax = Math.abs(x - extremes.maxP.x) < 0.5 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.3;
+          const nearMin = Math.abs(x - extremes.minP.x) < 0.5 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.3;
           return nearMax || nearMin;
         };
 
