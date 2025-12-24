@@ -993,9 +993,14 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         );
       })}
 
-      {/* Подписи значений ТОЛЬКО на концах балки (x=0 и x=L) */}
+      {/* Подписи значений на границах участков */}
       {(() => {
         const labels: React.ReactNode[] = [];
+
+        // Проверяем, совпадает ли позиция с экстремумом (простая проверка по x)
+        const isAtExtremum = (x: number) => {
+          return Math.abs(x - extremes.maxP.x) < 0.1 || Math.abs(x - extremes.minP.x) < 0.1;
+        };
 
         // Функция для поиска значения в точке
         // fromLeft=true: ищем предел слева (конец сегмента, который ЗАКАНЧИВАЕТСЯ в x)
@@ -1032,11 +1037,16 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           return null;
         };
 
-        // Добавление подписи на конце балки
-        const addEndpointLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
+        // Добавление подписи на границе
+        const addBoundaryLabel = (bx: number, value: number, placeRight: boolean, key: string, isEndpoint: boolean) => {
           // Для нулевых значений показываем "0"
           if (Math.abs(value) < 1e-6) {
             value = 0;
+          }
+
+          // Пропускаем внутренние границы если они совпадают с экстремумом
+          if (!isEndpoint && isAtExtremum(bx)) {
+            return;
           }
 
           const xOffset = placeRight ? 12 : -12;
@@ -1059,19 +1069,44 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           );
         };
 
-        // Показываем подписи ТОЛЬКО на концах балки (x=0 и x=L)
-        // Это исключает наложение с экстремумами на внутренних границах
+        // Для каждой границы
+        for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
+          const bx = boundaries[bIdx];
+          const isFirst = bIdx === 0;
+          const isLast = bIdx === boundaries.length - 1;
+          const isEndpoint = isFirst || isLast;
 
-        // Левый конец (x=0)
-        const leftEndValue = findValueAt(boundaries[0], false);
-        if (leftEndValue !== null) {
-          addEndpointLabel(boundaries[0], leftEndValue, true, "endpoint-left");
-        }
+          const leftValue = findValueAt(bx, true);
+          const rightValue = findValueAt(bx, false);
 
-        // Правый конец (x=L)
-        const rightEndValue = findValueAt(boundaries[boundaries.length - 1], true);
-        if (rightEndValue !== null) {
-          addEndpointLabel(boundaries[boundaries.length - 1], rightEndValue, false, "endpoint-right");
+          // Проверяем, есть ли разрыв (скачок)
+          const hasDiscontinuity = leftValue !== null && rightValue !== null &&
+            Math.abs(leftValue - rightValue) > 0.5;
+
+          if (hasDiscontinuity) {
+            // При скачке показываем ОБА значения
+            if (leftValue !== null) {
+              addBoundaryLabel(bx, leftValue, false, `boundary-${bIdx}-left`, isEndpoint);
+            }
+            if (rightValue !== null) {
+              addBoundaryLabel(bx, rightValue, true, `boundary-${bIdx}-right`, isEndpoint);
+            }
+          } else {
+            // Непрерывная функция - одна подпись
+            const value = rightValue ?? leftValue;
+            if (value === null) continue;
+
+            let placeRight: boolean;
+            if (isFirst) {
+              placeRight = true;
+            } else if (isLast) {
+              placeRight = false;
+            } else {
+              placeRight = false; // внутренние - слева
+            }
+
+            addBoundaryLabel(bx, value, placeRight, `boundary-${bIdx}`, isEndpoint);
+          }
         }
 
         return <g>{labels}</g>;
