@@ -470,8 +470,8 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           value={reactions.RB}
           label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
           labelSide="left"
-          labelYOffset={reactions.RB >= 0 ? 70 : 45}
-          labelXOffset={-25}
+          labelYOffset={reactions.RB >= 0 ? 50 : 35}
+          labelXOffset={-30}
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -945,10 +945,10 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       {(() => {
         const labels: React.ReactNode[] = [];
 
-        // Проверяем, не слишком ли близко к экстремумам
+        // Проверяем, не слишком ли близко к экстремумам (увеличил порог с 0.2 до 1.0)
         const isNearExtreme = (x: number, val: number) => {
-          const nearMax = Math.abs(x - extremes.maxP.x) < 0.2 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.15;
-          const nearMin = Math.abs(x - extremes.minP.x) < 0.2 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.15;
+          const nearMax = Math.abs(x - extremes.maxP.x) < 1.0 && Math.abs(val - extremes.maxP.value) < Math.abs(extremes.maxP.value) * 0.2;
+          const nearMin = Math.abs(x - extremes.minP.x) < 1.0 && Math.abs(val - extremes.minP.value) < Math.abs(extremes.minP.value) * 0.2;
           return nearMax || nearMin;
         };
 
