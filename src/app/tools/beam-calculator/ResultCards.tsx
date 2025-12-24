@@ -202,10 +202,10 @@ export function ResultCards({ input, result, className }: Props) {
           )}
         </h3>
         <div className="space-y-3">
-          <div className="overflow-x-auto">
+          <div>
             <Latex tex={`\\Sigma F_y = ${equilibrium.fyFormula} = ${Math.abs(equilibrium.sumFy) < 0.01 ? '\\color{green}{0}' : `\\color{red}{${formatEquilibrium(equilibrium.sumFy)}}`}${UNIT_KN}`} />
           </div>
-          <div className="overflow-x-auto">
+          <div>
             <Latex tex={`\\Sigma M_0 = ${equilibrium.mFormula} = ${Math.abs(equilibrium.sumM) < 0.01 ? '\\color{green}{0}' : `\\color{red}{${formatEquilibrium(equilibrium.sumM)}}`}${UNIT_KNM}`} />
           </div>
         </div>

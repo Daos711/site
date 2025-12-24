@@ -9,17 +9,21 @@ import type {
   BeamSupport,
 } from "@/lib/beam";
 
-// Компонент числового ввода с возможностью стереть значение
+// Компонент числового ввода с валидацией min/max
 function NumInput({
   value,
   onChange,
   className,
+  min,
+  max,
   ...props
 }: {
   value: number;
   onChange: (n: number) => void;
   className?: string;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>) {
+  min?: number;
+  max?: number;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'min' | 'max'>) {
   const [local, setLocal] = useState(String(value));
 
   // Синхронизация при изменении извне
@@ -27,22 +31,39 @@ function NumInput({
     setLocal(String(value));
   }, [value]);
 
+  // Ограничение значения в пределах min/max
+  const clamp = (n: number): number => {
+    if (min !== undefined && n < min) return min;
+    if (max !== undefined && n > max) return max;
+    return n;
+  };
+
   return (
     <input
       type="number"
       value={local}
+      min={min}
+      max={max}
       onChange={(e) => {
         setLocal(e.target.value);
         const num = e.target.valueAsNumber;
         if (!isNaN(num)) {
-          onChange(num);
+          onChange(clamp(num));
         }
       }}
       onBlur={() => {
-        // При потере фокуса - если пусто, вернуть 0
+        // При потере фокуса - валидация
         if (local === '' || local === '-') {
-          setLocal('0');
-          onChange(0);
+          const defaultVal = min !== undefined && min > 0 ? min : 0;
+          setLocal(String(defaultVal));
+          onChange(defaultVal);
+        } else {
+          const num = parseFloat(local);
+          if (!isNaN(num)) {
+            const clamped = clamp(num);
+            setLocal(String(clamped));
+            onChange(clamped);
+          }
         }
       }}
       className={className}
@@ -98,6 +119,47 @@ export function BeamInput({ onCalculate }: Props) {
   // Позиции опор для балок с консолями
   const [xA, setXA] = useState<number>(2);   // позиция опоры A
   const [xB, setXB] = useState<number>(8);   // позиция опоры B
+
+  // При изменении L — ограничиваем позиции нагрузок и опор
+  useEffect(() => {
+    // Ограничиваем опоры
+    if (xA > L - 0.1) setXA(Math.max(0.1, L - 0.1));
+    if (xB > L - 0.1) setXB(Math.max(0.1, L - 0.1));
+
+    // Ограничиваем нагрузки
+    const clampedLoads = loads.map(load => {
+      if (load.type === "distributed") {
+        return {
+          ...load,
+          a: Math.min(load.a, L),
+          b: Math.min(load.b, L),
+        };
+      } else if (load.type === "force" || load.type === "moment") {
+        return {
+          ...load,
+          x: Math.min(load.x, L),
+        };
+      }
+      return load;
+    });
+
+    // Обновляем только если что-то изменилось
+    const hasChanges = clampedLoads.some((load, i) => {
+      const orig = loads[i];
+      if (load.type === "distributed" && orig.type === "distributed") {
+        return load.a !== orig.a || load.b !== orig.b;
+      }
+      if ((load.type === "force" || load.type === "moment") &&
+          (orig.type === "force" || orig.type === "moment")) {
+        return load.x !== orig.x;
+      }
+      return false;
+    });
+
+    if (hasChanges) {
+      setLoads(clampedLoads);
+    }
+  }, [L]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addDistributedLoad = () => {
     setLoads([
