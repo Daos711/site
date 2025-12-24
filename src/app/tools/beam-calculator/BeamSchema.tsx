@@ -210,9 +210,10 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (!isSimplySupported) return null;
 
         const labels = [];
+        // Единая высота для всех подписей опор (ниже катка с штриховкой)
+        const labelY = beamY + 85;
 
         if (pinSupport) {
-          const isAtLeft = pinSupport.x < 0.1;
           const isAtRight = pinSupport.x > L - 0.1;
           // Всегда смещаем влево от пунктира, кроме правого края
           const offset = isAtRight ? 25 : -25;
@@ -220,7 +221,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
             <text
               key="label-A"
               x={xToPx(pinSupport.x) + offset}
-              y={beamY + 75}
+              y={labelY}
               textAnchor="middle"
               fill={COLORS.text}
               fontSize={18}
@@ -234,12 +235,12 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (rollerSupport) {
           const isAtRight = rollerSupport.x > L - 0.1;
           const isAtLeft = rollerSupport.x < 0.1;
-          const offset = isAtRight ? 25 : (isAtLeft ? -25 : 20);
+          const offset = isAtRight ? 25 : (isAtLeft ? -25 : -25);
           labels.push(
             <text
               key="label-B"
               x={xToPx(rollerSupport.x) + offset}
-              y={beamY + 75}
+              y={labelY}
               textAnchor="middle"
               fill={COLORS.text}
               fontSize={18}
