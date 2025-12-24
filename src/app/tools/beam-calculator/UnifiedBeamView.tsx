@@ -1072,42 +1072,46 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         return <g>{labels}</g>;
       })()}
 
-      {/* Маркеры экстремумов - но НЕ на крайних границах (там уже есть подпись границы) */}
+      {/* Маркеры экстремумов - на границах показываем только кружок (текст уже есть от границы) */}
       {Math.abs(extremes.maxP.value) > 1e-9 && (() => {
-        // Пропускаем если экстремум на крайней границе (x=0 или x=L)
+        // Пропускаем полностью если экстремум на крайней границе (x=0 или x=L)
         const isEndpoint = Math.abs(extremes.maxP.x - boundaries[0]) < 0.05 ||
                           Math.abs(extremes.maxP.x - boundaries[boundaries.length - 1]) < 0.05;
         if (isEndpoint) return null;
 
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.maxP.x) < 0.05);
-        const offset = onBoundary ? 15 : 0;
-        const textAnchor = onBoundary ? "start" : "middle";
         const curveY = scaleY(extremes.maxP.value);
+        // На границе показываем только кружок, текст уже есть от подписи границы
+        if (onBoundary) {
+          return <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />;
+        }
         const textY = extremes.maxP.value >= 0 ? curveY - 20 : curveY + 24;
         return (
           <g>
             <circle cx={xToPx(extremes.maxP.x)} cy={curveY} r={4} fill={color} />
-            <text x={xToPx(extremes.maxP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
+            <text x={xToPx(extremes.maxP.x)} y={textY} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
               {formatNum(extremes.maxP.value)}
             </text>
           </g>
         );
       })()}
       {Math.abs(extremes.minP.value) > 1e-9 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (() => {
-        // Пропускаем если экстремум на крайней границе (x=0 или x=L)
+        // Пропускаем полностью если экстремум на крайней границе (x=0 или x=L)
         const isEndpoint = Math.abs(extremes.minP.x - boundaries[0]) < 0.05 ||
                           Math.abs(extremes.minP.x - boundaries[boundaries.length - 1]) < 0.05;
         if (isEndpoint) return null;
 
         const onBoundary = boundaries.some(b => Math.abs(b - extremes.minP.x) < 0.05);
-        const offset = onBoundary ? 15 : 0;
-        const textAnchor = onBoundary ? "start" : "middle";
         const curveY = scaleY(extremes.minP.value);
+        // На границе показываем только кружок, текст уже есть от подписи границы
+        if (onBoundary) {
+          return <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />;
+        }
         const textY = extremes.minP.value >= 0 ? curveY - 20 : curveY + 24;
         return (
           <g>
             <circle cx={xToPx(extremes.minP.x)} cy={curveY} r={4} fill={color} />
-            <text x={xToPx(extremes.minP.x) + offset} y={textY} textAnchor={textAnchor} fill={color} fontSize={12} fontWeight="600">
+            <text x={xToPx(extremes.minP.x)} y={textY} textAnchor="middle" fill={color} fontSize={12} fontWeight="600">
               {formatNum(extremes.minP.value)}
             </text>
           </g>
