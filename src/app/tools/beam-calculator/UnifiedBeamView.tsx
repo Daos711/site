@@ -1051,14 +1051,15 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         };
 
         // Добавление подписи на границе
-        const addBoundaryLabel = (bx: number, value: number, placeRight: boolean, key: string, isEndpoint: boolean) => {
+        // forceShow=true для разрывов - всегда показываем, даже если близко к экстремуму
+        const addBoundaryLabel = (bx: number, value: number, placeRight: boolean, key: string, isEndpoint: boolean, forceShow = false) => {
           // Для нулевых значений показываем "0"
           if (Math.abs(value) < 1e-6) {
             value = 0;
           }
 
-          // Пропускаем внутренние границы если они совпадают с экстремумом
-          if (!isEndpoint && isAtExtremum(bx)) {
+          // Пропускаем внутренние границы если они близки к экстремуму (но не для разрывов!)
+          if (!forceShow && !isEndpoint && isAtExtremum(bx)) {
             return;
           }
 
@@ -1097,12 +1098,12 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
             Math.abs(leftValue - rightValue) > 0.5;
 
           if (hasDiscontinuity) {
-            // При скачке показываем ОБА значения
+            // При скачке показываем ОБА значения (forceShow=true - всегда показывать)
             if (leftValue !== null) {
-              addBoundaryLabel(bx, leftValue, false, `boundary-${bIdx}-left`, isEndpoint);
+              addBoundaryLabel(bx, leftValue, false, `boundary-${bIdx}-left`, isEndpoint, true);
             }
             if (rightValue !== null) {
-              addBoundaryLabel(bx, rightValue, true, `boundary-${bIdx}-right`, isEndpoint);
+              addBoundaryLabel(bx, rightValue, true, `boundary-${bIdx}-right`, isEndpoint, true);
             }
           } else {
             // Непрерывная функция - одна подпись
