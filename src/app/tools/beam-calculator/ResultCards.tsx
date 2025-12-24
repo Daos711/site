@@ -1,12 +1,21 @@
 "use client";
 
 import type { BeamInput, BeamResult } from "@/lib/beam";
-import { Tex } from "@/components/Tex";
 
 interface Props {
   input: BeamInput;
   result: BeamResult;
   className?: string;
+}
+
+// Компонент для математических обозначений с индексами
+function MathVar({ base, sub, className = "" }: { base: string; sub?: string; className?: string }) {
+  return (
+    <span className={`inline-flex items-baseline ${className}`}>
+      <span className="italic">{base}</span>
+      {sub && <sub className="text-[0.7em] ml-px">{sub}</sub>}
+    </span>
+  );
 }
 
 export function ResultCards({ input, result, className }: Props) {
@@ -88,7 +97,7 @@ export function ResultCards({ input, result, className }: Props) {
         <div className="space-y-2">
           {reactions.RA !== undefined && (
             <div className="flex justify-between items-baseline">
-              <Tex className="text-muted-foreground">{"R_A"}</Tex>
+              <MathVar base="R" sub="A" className="text-muted-foreground" />
               <span className="font-mono text-base tabular-nums">
                 {reactions.RA.toFixed(2)} кН
                 <span className="text-muted-foreground ml-2">
@@ -99,7 +108,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.RB !== undefined && (
             <div className="flex justify-between items-baseline">
-              <Tex className="text-muted-foreground">{"R_B"}</Tex>
+              <MathVar base="R" sub="B" className="text-muted-foreground" />
               <span className="font-mono text-base tabular-nums">
                 {reactions.RB.toFixed(2)} кН
                 <span className="text-muted-foreground ml-2">
@@ -110,7 +119,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.Rf !== undefined && (
             <div className="flex justify-between items-baseline">
-              <Tex className="text-muted-foreground">{"R"}</Tex>
+              <MathVar base="R" className="text-muted-foreground" />
               <span className="font-mono text-base tabular-nums">
                 {reactions.Rf.toFixed(2)} кН
                 <span className="text-muted-foreground ml-2">
@@ -121,7 +130,7 @@ export function ResultCards({ input, result, className }: Props) {
           )}
           {reactions.Mf !== undefined && (
             <div className="flex justify-between items-baseline">
-              <Tex className="text-muted-foreground">{"M_{зад}"}</Tex>
+              <MathVar base="M" sub="зад" className="text-muted-foreground" />
               <span className="font-mono text-base tabular-nums">
                 {reactions.Mf.toFixed(2)} кН·м
                 <span className="text-muted-foreground ml-2">
@@ -138,30 +147,30 @@ export function ResultCards({ input, result, className }: Props) {
         <h3 className="font-semibold mb-3 text-base text-foreground">Экстремальные значения</h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <Tex className="text-muted-foreground">{"|Q|_{max}"}</Tex>
+            <span className="text-muted-foreground">|<MathVar base="Q" />|<sub className="text-[0.7em]">max</sub></span>
             <span className="font-mono text-base tabular-nums">
               {Math.abs(Qmax.value).toFixed(2)} кН
               <span className="text-muted-foreground ml-2">
-                (<Tex>{`x = ${Qmax.x.toFixed(2)}`}</Tex> м)
+                (<MathVar base="x" /> = {Qmax.x.toFixed(2)} м)
               </span>
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <Tex className="text-muted-foreground">{"|M|_{max}"}</Tex>
+            <span className="text-muted-foreground">|<MathVar base="M" />|<sub className="text-[0.7em]">max</sub></span>
             <span className="font-mono text-base tabular-nums">
               {Math.abs(Mmax.value).toFixed(2)} кН·м
               <span className="text-muted-foreground ml-2">
-                (<Tex>{`x = ${Mmax.x.toFixed(2)}`}</Tex> м)
+                (<MathVar base="x" /> = {Mmax.x.toFixed(2)} м)
               </span>
             </span>
           </div>
           {wMax && (
             <div className="flex justify-between items-baseline">
-              <Tex className="text-muted-foreground">{"|y|_{max}"}</Tex>
+              <span className="text-muted-foreground">|<MathVar base="y" />|<sub className="text-[0.7em]">max</sub></span>
               <span className="font-mono text-base tabular-nums">
                 {Math.abs(wMax.value * 1000).toFixed(2)} мм
                 <span className="text-muted-foreground ml-2">
-                  (<Tex>{`x = ${wMax.x.toFixed(2)}`}</Tex> м)
+                  (<MathVar base="x" /> = {wMax.x.toFixed(2)} м)
                 </span>
               </span>
             </div>
@@ -181,13 +190,13 @@ export function ResultCards({ input, result, className }: Props) {
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between items-baseline">
-            <Tex className="text-muted-foreground">{"\\sum F_y"}</Tex>
+            <span className="text-muted-foreground">Σ<MathVar base="F" sub="y" /></span>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumFy) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {equilibrium.sumFy.toFixed(4)} кН
             </span>
           </div>
           <div className="flex justify-between items-baseline">
-            <Tex className="text-muted-foreground">{"\\sum M_0"}</Tex>
+            <span className="text-muted-foreground">Σ<MathVar base="M" sub="0" /></span>
             <span className={`font-mono text-base tabular-nums ${Math.abs(equilibrium.sumM) < 0.01 ? 'text-green-500' : 'text-red-400'}`}>
               {equilibrium.sumM.toFixed(4)} кН·м
             </span>
