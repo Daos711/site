@@ -987,37 +987,78 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           return null;
         };
 
-        // Добавление одной подписи
-        // skipNearExtreme=false для крайних границ (0 и L), где экстремум должен быть подписан
-        const addLabel = (bx: number, value: number, placeRight: boolean, key: string, skipNearExtreme = true) => {
-          // Пропускаем только совсем нулевые значения (1e-9)
+        // Система collision detection для подписей
+        interface LabelInfo {
+          x: number;
+          y: number;
+          text: string;
+          anchor: "start" | "middle" | "end";
+          priority: number; // 0 = экстремум, 1 = endpoint, 2 = внутренняя граница
+          key: string;
+        }
+        const labelInfos: LabelInfo[] = [];
+
+        // Оценка ширины текста (примерно 7px на символ для fontSize=12)
+        const estimateTextWidth = (text: string) => text.length * 7;
+
+        // Получить bounding box подписи
+        const getLabelBounds = (label: LabelInfo) => {
+          const w = estimateTextWidth(label.text);
+          const h = 14; // высота текста
+          let left: number;
+          if (label.anchor === "start") left = label.x;
+          else if (label.anchor === "end") left = label.x - w;
+          else left = label.x - w / 2;
+          return { left, right: left + w, top: label.y - h, bottom: label.y };
+        };
+
+        // Проверка пересечения двух прямоугольников
+        const rectsOverlap = (a: ReturnType<typeof getLabelBounds>, b: ReturnType<typeof getLabelBounds>) => {
+          return !(a.right < b.left || b.right < a.left || a.bottom < b.top || b.bottom < a.top);
+        };
+
+        // Проверка что подпись в пределах графика
+        const isInBounds = (bounds: ReturnType<typeof getLabelBounds>) => {
+          return bounds.left >= PADDING.left - 5 &&
+                 bounds.right <= PADDING.left + chartWidth + 5 &&
+                 bounds.top >= chartY &&
+                 bounds.bottom <= chartY + chartHeight;
+        };
+
+        // Попытка разместить подпись, возвращает true если удалось
+        const tryPlaceLabel = (label: LabelInfo, placedLabels: LabelInfo[]): boolean => {
+          const bounds = getLabelBounds(label);
+
+          // Проверяем границы
+          if (!isInBounds(bounds)) return false;
+
+          // Проверяем пересечения с уже размещёнными
+          for (const placed of placedLabels) {
+            if (rectsOverlap(bounds, getLabelBounds(placed))) {
+              return false;
+            }
+          }
+          return true;
+        };
+
+        // Добавление подписи в очередь
+        const queueLabel = (bx: number, value: number, placeRight: boolean, key: string, priority: number, skipNearExtreme = true) => {
           if (Math.abs(value) < 1e-9) return;
           if (skipNearExtreme && isNearExtreme(bx, value)) return;
 
           const xOffset = placeRight ? 12 : -12;
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);
-          // Подпись СНАРУЖИ от заливки:
-          // - положительные значения: заливка идёт вниз к нулю → подпись ВЫШЕ кривой
-          // - отрицательные значения: заливка идёт вверх к нулю → подпись НИЖЕ кривой
-          // Увеличенный отступ (20px) чтобы не накладываться на линию
-          const textY = value >= 0
-            ? curveY - 20
-            : curveY + 24;
+          const textY = value >= 0 ? curveY - 20 : curveY + 24;
 
-          labels.push(
-            <text
-              key={key}
-              x={xToPx(bx) + xOffset}
-              y={textY}
-              textAnchor={anchor}
-              fill={color}
-              fontSize={12}
-              fontWeight="500"
-            >
-              {formatNum(value, 1)}
-            </text>
-          );
+          labelInfos.push({
+            x: xToPx(bx) + xOffset,
+            y: textY,
+            text: formatNum(value, 1),
+            anchor: anchor as "start" | "end",
+            priority,
+            key
+          });
         };
 
         // Для каждой границы находим значения
@@ -1042,11 +1083,11 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
             const rightStr = formatNum(rightValue!, 1);
             if (leftStr === rightStr) {
               // Одинаковые после округления - показываем только левое
-              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
+              queueLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, isEndpoint ? 1 : 2, false);
             } else {
               // Разные значения - показываем оба
-              addLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, false);
-              addLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, false);
+              queueLabel(bx, leftValue!, false, `boundary-${bIdx}-left`, isEndpoint ? 1 : 2, false);
+              queueLabel(bx, rightValue!, true, `boundary-${bIdx}-right`, isEndpoint ? 1 : 2, false);
             }
           } else {
             // Непрерывная функция - одна подпись
@@ -1063,11 +1104,50 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
               placeRight = false;
             }
 
-            addLabel(bx, value, placeRight, `boundary-${bIdx}`, !isEndpoint);
+            queueLabel(bx, value, placeRight, `boundary-${bIdx}`, isEndpoint ? 1 : 2, !isEndpoint);
           }
         }
 
-        return <g>{labels}</g>;
+        // Сортируем по приоритету (0 = экстремум, 1 = endpoint, 2 = внутренние)
+        labelInfos.sort((a, b) => a.priority - b.priority);
+
+        // Размещаем подписи с учётом коллизий
+        const placedLabels: LabelInfo[] = [];
+        for (const label of labelInfos) {
+          // Пробуем разместить в исходной позиции
+          if (tryPlaceLabel(label, placedLabels)) {
+            placedLabels.push(label);
+            continue;
+          }
+
+          // Пробуем сдвинуть вверх или вниз
+          for (const dy of [15, -15, 30, -30]) {
+            const shifted = { ...label, y: label.y + dy };
+            if (tryPlaceLabel(shifted, placedLabels)) {
+              placedLabels.push(shifted);
+              break;
+            }
+          }
+          // Если не удалось - пропускаем подпись
+        }
+
+        return (
+          <g>
+            {placedLabels.map(label => (
+              <text
+                key={label.key}
+                x={label.x}
+                y={label.y}
+                textAnchor={label.anchor}
+                fill={color}
+                fontSize={12}
+                fontWeight="500"
+              >
+                {label.text}
+              </text>
+            ))}
+          </g>
+        );
       })()}
 
       {/* Маркеры экстремумов - на границах с разрывом показываем только кружок, иначе с текстом */}
