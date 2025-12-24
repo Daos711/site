@@ -233,9 +233,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         }
 
         if (rollerSupport) {
-          const isAtRight = rollerSupport.x > L - 0.1;
           const isAtLeft = rollerSupport.x < 0.1;
-          const offset = isAtRight ? 25 : (isAtLeft ? -25 : -25);
+          // Всегда смещаем вправо от пунктира, кроме левого края
+          const offset = isAtLeft ? -25 : 25;
           labels.push(
             <text
               key="label-B"
