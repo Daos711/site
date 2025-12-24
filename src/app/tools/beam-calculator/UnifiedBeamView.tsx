@@ -453,13 +453,13 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
         return null; // distributed уже обработаны выше
       })}
 
-      {/* Реакции - ЗЕЛЁНЫЕ стрелки ОТ балки ВВЕРХ */}
+      {/* Реакции - ЗЕЛЁНЫЕ стрелки (вверх = положительная, вниз = отрицательная) */}
       {reactions.RA !== undefined && reactions.RA !== 0 && (
         <ReactionArrow
           x={xToPx(reactions.xA ?? 0)}
           baseY={beamY - beamThickness / 2}
           value={reactions.RA}
-          label={`R_A = ${formatNum(reactions.RA)} кН`}
+          label={`R_A = ${formatNum(Math.abs(reactions.RA))} кН`}
           labelSide="left"
         />
       )}
@@ -468,9 +468,9 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           x={xToPx(reactions.xB ?? L)}
           baseY={beamY - beamThickness / 2}
           value={reactions.RB}
-          label={`R_B = ${formatNum(reactions.RB)} кН`}
+          label={`R_B = ${formatNum(Math.abs(reactions.RB))} кН`}
           labelSide="left"
-          labelYOffset={45}
+          labelYOffset={reactions.RB >= 0 ? 45 : 20}
         />
       )}
       {reactions.Rf !== undefined && reactions.Rf !== 0 && (
@@ -478,7 +478,7 @@ function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps) {
           x={xToPx(reactions.xf ?? 0)}
           baseY={beamY - beamThickness / 2}
           value={reactions.Rf}
-          label={`R = ${formatNum(reactions.Rf)} кН`}
+          label={`R = ${formatNum(Math.abs(reactions.Rf))} кН`}
           labelSide="left"
           labelYOffset={35}
         />
@@ -988,7 +988,8 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
         // Добавление одной подписи
         // skipNearExtreme=false для крайних границ (0 и L), где экстремум должен быть подписан
         const addLabel = (bx: number, value: number, placeRight: boolean, key: string, skipNearExtreme = true) => {
-          if (Math.abs(value) < 0.01) return;
+          // Пропускаем только совсем нулевые значения (1e-9)
+          if (Math.abs(value) < 1e-9) return;
           if (skipNearExtreme && isNearExtreme(bx, value)) return;
 
           const xOffset = placeRight ? 12 : -12;
@@ -1065,7 +1066,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
       })()}
 
       {/* Маркеры экстремумов - но НЕ на крайних границах (там уже есть подпись границы) */}
-      {Math.abs(extremes.maxP.value) > 0.01 && (() => {
+      {Math.abs(extremes.maxP.value) > 1e-9 && (() => {
         // Пропускаем если экстремум на крайней границе (x=0 или x=L)
         const isEndpoint = Math.abs(extremes.maxP.x - boundaries[0]) < 0.05 ||
                           Math.abs(extremes.maxP.x - boundaries[boundaries.length - 1]) < 0.05;
@@ -1085,7 +1086,7 @@ function DiagramPanel({ title, unit, segments, xToPx, y, height, color, chartWid
           </g>
         );
       })()}
-      {Math.abs(extremes.minP.value) > 0.01 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (() => {
+      {Math.abs(extremes.minP.value) > 1e-9 && Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 && (() => {
         // Пропускаем если экстремум на крайней границе (x=0 или x=L)
         const isEndpoint = Math.abs(extremes.minP.x - boundaries[0]) < 0.05 ||
                           Math.abs(extremes.minP.x - boundaries[boundaries.length - 1]) < 0.05;
