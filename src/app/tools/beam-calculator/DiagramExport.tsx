@@ -209,7 +209,7 @@ export function DiagramExport({
         );
       })}
 
-      {/* Подписи значений на границах */}
+      {/* Подписи значений на границах — сбоку от пунктиров */}
       {(() => {
         const labels: React.ReactNode[] = [];
 
@@ -237,6 +237,29 @@ export function DiagramExport({
           return null;
         };
 
+        // Добавляет подпись со смещением влево или вправо от пунктира
+        const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
+          if (Math.abs(value) < 1e-6) value = 0;
+          const xOffset = placeRight ? 12 : -12;
+          const anchor = placeRight ? "start" : "end";
+          const curveY = scaleY(value);
+          const textY = value >= 0 ? curveY - 8 : curveY + 14;
+
+          labels.push(
+            <text
+              key={key}
+              x={xToPx(bx) + xOffset}
+              y={textY}
+              textAnchor={anchor}
+              fill={lineColor}
+              fontSize={11}
+              fontWeight="500"
+            >
+              {formatNum(value)}
+            </text>
+          );
+        };
+
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
           const isFirst = bIdx === 0;
@@ -250,61 +273,21 @@ export function DiagramExport({
             Math.abs(leftValue - rightValue) > 0.1;
 
           if (hasDiscontinuity) {
-            // Подписываем оба значения при разрыве
-            const curveYLeft = scaleY(leftValue);
-            const curveYRight = scaleY(rightValue);
-            const textYLeft = leftValue >= 0 ? curveYLeft - 8 : curveYLeft + 14;
-            const textYRight = rightValue >= 0 ? curveYRight - 8 : curveYRight + 14;
-
-            labels.push(
-              <text
-                key={`label-${bIdx}-left`}
-                x={xToPx(bx) - 6}
-                y={textYLeft}
-                textAnchor="end"
-                fill={lineColor}
-                fontSize={11}
-                fontWeight="500"
-              >
-                {formatNum(leftValue)}
-              </text>
-            );
-            labels.push(
-              <text
-                key={`label-${bIdx}-right`}
-                x={xToPx(bx) + 6}
-                y={textYRight}
-                textAnchor="start"
-                fill={lineColor}
-                fontSize={11}
-                fontWeight="500"
-              >
-                {formatNum(rightValue)}
-              </text>
-            );
+            // При разрыве: левое значение слева, правое справа
+            if (leftValue !== null) {
+              addLabel(bx, leftValue, false, `label-${bIdx}-left`);
+            }
+            if (rightValue !== null) {
+              addLabel(bx, rightValue, true, `label-${bIdx}-right`);
+            }
           } else {
-            // Одно значение (или оба равны)
+            // Одно значение — выбираем сторону
             const value = rightValue ?? leftValue;
             if (value === null) continue;
 
-            const curveY = scaleY(value);
-            const textY = value >= 0 ? curveY - 8 : curveY + 14;
-            const xOffset = isFirst ? 6 : isLast ? -6 : 0;
-            const anchor = isFirst ? "start" : isLast ? "end" : "middle";
-
-            labels.push(
-              <text
-                key={`label-${bIdx}`}
-                x={xToPx(bx) + xOffset}
-                y={textY}
-                textAnchor={anchor}
-                fill={lineColor}
-                fontSize={11}
-                fontWeight="500"
-              >
-                {formatNum(value)}
-              </text>
-            );
+            // Первая граница → справа, последняя → слева, остальные → слева
+            const placeRight = isFirst;
+            addLabel(bx, value, placeRight, `label-${bIdx}`);
           }
         }
 
