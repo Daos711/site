@@ -387,7 +387,7 @@ function buildReportHTML(data: ReportData): string {
     table { border-collapse: collapse; width: 100%; margin: 12px 0; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
-    .formula { margin: 8px 0; padding: 10px 12px; background: #f9f9f9; border-left: 3px solid #0066cc; }
+    .formula { margin: 8px 0; padding: 8px 0; }
     .result { color: #0066cc; font-weight: bold; }
     .extremes-block { break-inside: avoid; }
     .diagram-block { break-inside: avoid; margin: 20px 0; text-align: center; }
@@ -605,7 +605,7 @@ function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
     if (load.type === "force") {
       loadInfos.push({
         type: "force",
-        label: `P_{${forceIdx}}`,
+        label: `F_{${forceIdx}}`,
         value: load.F,
         x: load.x
       });
