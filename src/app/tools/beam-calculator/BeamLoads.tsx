@@ -8,22 +8,22 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
   const arrowLen = 40;
-  const markerLen = 6; // длина наконечника маркера
+  const markerHalf = 3; // половина маркера 6x6, т.к. refX=3 (центр)
   const pointsUp = value >= 0;
 
-  // Линия должна заканчиваться раньше на длину маркера, чтобы наконечник касался baseY
+  // С refX=3 маркер центрирован на конце линии, выступает на 3px в каждую сторону
+  // Чтобы кончик касался baseY, линия должна заканчиваться на 3px дальше от балки
   let startY: number, endY: number, textY: number;
 
   if (pointsUp) {
-    // Стрелка вверх: линия идёт снизу вверх, маркер на верхнем конце
-    // Линия заканчивается на markerLen выше baseY, чтобы наконечник касался baseY
+    // Стрелка вверх от нижней поверхности балки
     startY = baseY + arrowLen;
-    endY = baseY + markerLen;
+    endY = baseY + markerHalf; // кончик стрелки будет на baseY
     textY = startY - arrowLen / 2;
   } else {
-    // Стрелка вниз: линия идёт сверху вниз, маркер на нижнем конце
+    // Стрелка вниз к верхней поверхности балки
     startY = baseY - arrowLen;
-    endY = baseY - markerLen;
+    endY = baseY - markerHalf; // кончик стрелки будет на baseY
     textY = startY + arrowLen / 2;
   }
 
@@ -52,7 +52,7 @@ export function DistributedLoadArrows({
   x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string
 }) {
   const arrowLen = 25;
-  const markerLen = 6;
+  const markerHalf = 3; // половина маркера
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
@@ -68,7 +68,7 @@ export function DistributedLoadArrows({
               x1={px}
               y1={beamTopY - arrowLen}
               x2={px}
-              y2={beamTopY - markerLen}
+              y2={beamTopY - markerHalf}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlue)`}
@@ -93,7 +93,7 @@ export function DistributedLoadArrows({
               x1={px}
               y1={beamBottomY + arrowLen}
               x2={px}
-              y2={beamBottomY + markerLen}
+              y2={beamBottomY + markerHalf}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
@@ -113,7 +113,7 @@ export function DistributedLoadArrows({
 // F > 0: вниз, F < 0: вверх
 export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string }) {
   const arrowLen = 50;
-  const markerLen = 6;
+  const markerHalf = 3; // половина маркера
   const pointsDown = F >= 0;
 
   const labelWidth = 100;
@@ -131,20 +131,20 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
   }
 
   if (pointsDown) {
-    // Стрелка вниз: линия заканчивается выше на markerLen, наконечник касается y
+    // Стрелка вниз: кончик касается y
     return (
       <g>
-        <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerLen} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerHalf} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
     );
   } else {
-    // Стрелка вверх: линия заканчивается ниже на markerLen, наконечник касается y
+    // Стрелка вверх: кончик касается y
     return (
       <g>
-        <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerLen} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerHalf} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>

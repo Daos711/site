@@ -240,7 +240,7 @@ export function DiagramExport({
         // Добавляет подпись со смещением влево или вправо от пунктира
         const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
           if (Math.abs(value) < 1e-6) value = 0;
-          const xOffset = placeRight ? 12 : -12;
+          const xOffset = placeRight ? 18 : -18;  // Увеличено с 12 до 18
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);
           const textY = value >= 0 ? curveY - 8 : curveY + 14;
@@ -263,8 +263,8 @@ export function DiagramExport({
         // Функция проверки: насколько сильно мешает кривая слева/справа от точки
         // Возвращает "степень" коллизии (0 = нет, больше = хуже)
         const getCurveCollisionScore = (bx: number, value: number, checkLeft: boolean): number => {
-          // Ищем значение кривой немного левее/правее границы
-          const offset = checkLeft ? -0.15 : 0.15;
+          // Ищем значение кривой в области 0.3*L от границы (где будет подпись)
+          const offset = checkLeft ? -0.3 : 0.3;
           const checkX = bx + offset;
           if (checkX < 0 || checkX > L) return 0;
 

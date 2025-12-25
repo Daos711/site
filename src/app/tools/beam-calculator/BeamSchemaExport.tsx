@@ -24,12 +24,12 @@ interface Props {
 export function BeamSchemaExport({ input, result }: Props) {
   const { L, loads, beamType } = input;
 
-  // Размеры SVG (увеличенные для лучшей читаемости)
-  const width = 800;
-  const height = 280;
-  const padding = { left: 70, right: 70, top: 100, bottom: 70 };
-  const beamY = padding.top + 40;
-  const beamThickness = 18;
+  // Размеры SVG (крупнее для лучшей читаемости)
+  const width = 900;
+  const height = 320;
+  const padding = { left: 80, right: 80, top: 110, bottom: 80 };
+  const beamY = padding.top + 45;
+  const beamThickness = 20;
 
   const chartWidth = width - padding.left - padding.right;
   const xToPx = (x: number) => padding.left + (x / L) * chartWidth;
@@ -43,26 +43,26 @@ export function BeamSchemaExport({ input, result }: Props) {
         position: "absolute",
         left: "-9999px",
         top: "-9999px",
-        width: "800px",
-        height: "280px",
+        width: "900px",
+        height: "320px",
         background: "#ffffff",
       }}
     >
-      {/* Маркеры для стрелок */}
+      {/* Маркеры для стрелок - refX=3 как на сайте */}
       <defs>
-        <marker id="exp-arrowBlue" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+        <marker id="exp-arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
         </marker>
-        <marker id="exp-arrowBlueUp" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto-start-reverse">
+        <marker id="exp-arrowBlueUp" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
           <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
         </marker>
-        <marker id="exp-arrowRed" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+        <marker id="exp-arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.pointForce} />
         </marker>
-        <marker id="exp-arrowGreen" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+        <marker id="exp-arrowGreen" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.reaction} />
         </marker>
-        <marker id="exp-arrowPurple" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+        <marker id="exp-arrowPurple" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.moment} />
         </marker>
       </defs>
@@ -296,8 +296,8 @@ export function BeamSchemaExport({ input, result }: Props) {
 
       {/* Размерные линии участков */}
       {(() => {
-        const dimY = height - 25;
-        const tickH = 5;
+        const dimY = height - 30;
+        const tickH = 6;
         const elements: React.ReactNode[] = [];
 
         // Собираем все ключевые точки
@@ -342,7 +342,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             if (segLen > 0.001) {
               const midX = (xToPx(x) + xToPx(nextX)) / 2;
               elements.push(
-                <text key={`seg-${i}`} x={midX} y={dimY + 16} textAnchor="middle" fill="#374151" fontSize={12}>
+                <text key={`seg-${i}`} x={midX} y={dimY + 18} textAnchor="middle" fill="#374151" fontSize={14} fontWeight="500">
                   {segLen % 1 === 0 ? segLen : segLen.toFixed(1)}
                 </text>
               );
@@ -352,7 +352,7 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         // Подпись общей длины L
         elements.push(
-          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 3} textAnchor="middle" fill="#374151" fontSize={12}>
+          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 5} textAnchor="middle" fill="#374151" fontSize={14} fontWeight="500">
             L = {L} м
           </text>
         );

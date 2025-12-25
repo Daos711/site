@@ -494,14 +494,15 @@ function findExtremum(
   let maxX = 0;
   let actualValue = 0;
 
-  const eps = 1e-9; // малое смещение для проверки до/после разрыва
+  const eps = 0.001; // смещение для проверки до/после разрыва
 
-  const checkPoint = (x: number) => {
+  const checkPoint = (x: number, reportX?: number) => {
+    if (x < 0 || x > L) return;
     const v = fn(x);
     const absV = Math.abs(v);
     if (absV > maxAbsValue) {
       maxAbsValue = absV;
-      maxX = x;
+      maxX = reportX ?? x;
       actualValue = v;
     }
   };
@@ -509,20 +510,31 @@ function findExtremum(
   // Проверяем точки событий и их окрестности
   for (const e of events) {
     checkPoint(e);
-    // Значение чуть ДО точки (для поимки значений перед скачком)
-    if (e > eps) {
-      checkPoint(e - eps);
-    }
+    // Значения ДО и ПОСЛЕ точки (для поимки значений перед/после скачка)
+    checkPoint(e - eps, e);
+    checkPoint(e + eps, e);
+  }
+
+  // Дополнительно проверяем точки между событиями (для параболических участков)
+  const sortedEvents = [...events].sort((a, b) => a - b);
+  for (let i = 0; i < sortedEvents.length - 1; i++) {
+    const a = sortedEvents[i];
+    const b = sortedEvents[i + 1];
+    const mid = (a + b) / 2;
+    checkPoint(mid);
+    checkPoint((a + mid) / 2);
+    checkPoint((mid + b) / 2);
   }
 
   // Проверяем границы
   checkPoint(0);
   checkPoint(L);
 
-  // Округляем координату до разумной точности (до сотых)
-  const roundedX = Math.round(maxX * 100) / 100;
+  // Округляем к ближайшему 0.5 для отображения (17.43 → 17.5)
+  const roundedX = Math.round(maxX * 10) / 10;
+  const roundedValue = Math.round(actualValue * 2) / 2;
 
-  return { value: actualValue, x: roundedX };
+  return { value: roundedValue, x: roundedX };
 }
 
 /**
