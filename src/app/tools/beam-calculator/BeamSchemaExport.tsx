@@ -224,15 +224,71 @@ export function BeamSchemaExport({ input, result }: Props) {
         return labels;
       })()}
 
-      {/* Размерная линия */}
-      <g>
-        <line x1={xToPx(0)} y1={height - 25} x2={xToPx(L)} y2={height - 25} stroke="#374151" strokeWidth={1} />
-        <line x1={xToPx(0)} y1={height - 30} x2={xToPx(0)} y2={height - 20} stroke="#374151" strokeWidth={1} />
-        <line x1={xToPx(L)} y1={height - 30} x2={xToPx(L)} y2={height - 20} stroke="#374151" strokeWidth={1} />
-        <text x={(xToPx(0) + xToPx(L)) / 2} y={height - 8} textAnchor="middle" fill="#374151" fontSize={14}>
-          L = {L} м
-        </text>
-      </g>
+      {/* Размерные линии участков */}
+      {(() => {
+        const dimY = height - 25;
+        const tickH = 5;
+        const elements: React.ReactNode[] = [];
+
+        // Собираем все ключевые точки
+        const keyPoints = new Set<number>([0, L]);
+
+        // Точки опор
+        for (const support of input.supports) {
+          keyPoints.add(support.x);
+        }
+
+        // Точки нагрузок
+        for (const load of loads) {
+          if (load.type === "distributed") {
+            keyPoints.add(load.a);
+            keyPoints.add(load.b);
+          } else if (load.type === "force") {
+            keyPoints.add(load.x);
+          } else if (load.type === "moment") {
+            keyPoints.add(load.x);
+          }
+        }
+
+        const sortedPoints = Array.from(keyPoints).filter(p => p >= 0 && p <= L).sort((a, b) => a - b);
+
+        // Основная размерная линия
+        elements.push(
+          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1} />
+        );
+
+        // Засечки и подписи для каждого сегмента
+        for (let i = 0; i < sortedPoints.length; i++) {
+          const x = sortedPoints[i];
+          // Засечка
+          elements.push(
+            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1} />
+          );
+
+          // Подпись длины сегмента (между соседними точками)
+          if (i < sortedPoints.length - 1) {
+            const nextX = sortedPoints[i + 1];
+            const segLen = nextX - x;
+            if (segLen > 0.001) {
+              const midX = (xToPx(x) + xToPx(nextX)) / 2;
+              elements.push(
+                <text key={`seg-${i}`} x={midX} y={dimY + 16} textAnchor="middle" fill="#374151" fontSize={12}>
+                  {segLen % 1 === 0 ? segLen : segLen.toFixed(1)}
+                </text>
+              );
+            }
+          }
+        }
+
+        // Подпись общей длины L
+        elements.push(
+          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 3} textAnchor="middle" fill="#374151" fontSize={12}>
+            L = {L} м
+          </text>
+        );
+
+        return <g>{elements}</g>;
+      })()}
     </svg>
   );
 }

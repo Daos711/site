@@ -97,6 +97,20 @@ export function DiagramsExport({ input, result }: Props) {
 
   const hasDeflection = !!y;
 
+  // Границы для Q — все точки разрывов
+  const qBoundaries = useMemo(() => {
+    return Array.from(qDiscontinuities).sort((a, b) => a - b);
+  }, [qDiscontinuities]);
+
+  // Границы для M — все события + точки моментов
+  const mBoundaries = useMemo(() => {
+    const points = new Set(boundaries);
+    for (const x of mDiscontinuities) {
+      points.add(x);
+    }
+    return Array.from(points).sort((a, b) => a - b);
+  }, [boundaries, mDiscontinuities]);
+
   return (
     <>
       {/* Эпюра Q */}
@@ -107,7 +121,7 @@ export function DiagramsExport({ input, result }: Props) {
         segments={qSegments}
         L={L}
         color="Q"
-        boundaries={boundaries}
+        boundaries={qBoundaries}
       />
 
       {/* Эпюра M */}
@@ -118,7 +132,7 @@ export function DiagramsExport({ input, result }: Props) {
         segments={mSegments}
         L={L}
         color="M"
-        boundaries={boundaries}
+        boundaries={mBoundaries}
       />
 
       {/* Эпюра y (прогиб) */}
