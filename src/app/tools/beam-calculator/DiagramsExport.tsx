@@ -87,12 +87,24 @@ export function DiagramsExport({ input, result }: Props) {
     return segments;
   };
 
-  // Данные для графиков
-  const qSegments = useMemo(() => generateSegments(Q, qDiscontinuities), [Q, qDiscontinuities]);
-  const mSegments = useMemo(() => generateSegments(M, mDiscontinuities), [M, mDiscontinuities]);
+  // Данные для графиков — сегменты разбиваются по ВСЕМ границам для корректных подписей
+  const allQPoints = useMemo(() => {
+    const points = new Set(boundaries);
+    for (const x of qDiscontinuities) points.add(x);
+    return points;
+  }, [boundaries, qDiscontinuities]);
+
+  const allMPoints = useMemo(() => {
+    const points = new Set(boundaries);
+    for (const x of mDiscontinuities) points.add(x);
+    return points;
+  }, [boundaries, mDiscontinuities]);
+
+  const qSegments = useMemo(() => generateSegments(Q, allQPoints), [Q, allQPoints]);
+  const mSegments = useMemo(() => generateSegments(M, allMPoints), [M, allMPoints]);
   const ySegments = useMemo(
-    () => (y ? generateSegments(y, new Set()) : []),
-    [y]
+    () => (y ? generateSegments(y, new Set(boundaries)) : []),
+    [y, boundaries]
   );
 
   const hasDeflection = !!y;
