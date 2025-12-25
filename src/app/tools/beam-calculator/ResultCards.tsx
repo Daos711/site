@@ -244,7 +244,7 @@ export function ResultCards({ input, result, className }: Props) {
 
       {/* Кнопка отчёта */}
       <button
-        className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-center"
+        className="w-full py-3 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center"
         onClick={() => {
           // Функция для сериализации SVG в dataURL
           const serializeSvg = (id: string): string | undefined => {
