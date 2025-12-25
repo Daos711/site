@@ -3,28 +3,28 @@ import { COLORS } from "./constants";
 
 // Стрелка реакции - направление зависит от знака
 // baseY - поверхность балки, к которой должен касаться наконечник
-// value >= 0: стрелка вверх (от нижней поверхности), value < 0: вниз (к верхней)
+// value >= 0: стрелка ВНИЗ (к верхней поверхности), value < 0: ВВЕРХ (к нижней)
 export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "" }: {
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
   const arrowLen = 40;
   const markerHalf = 3; // половина маркера 6x6, т.к. refX=3 (центр)
-  const pointsUp = value >= 0;
+  const pointsDown = value >= 0; // Положительная сила направлена ВНИЗ
 
   // С refX=3 маркер центрирован на конце линии, выступает на 3px в каждую сторону
   // Чтобы кончик касался baseY, линия должна заканчиваться на 3px дальше от балки
   let startY: number, endY: number, textY: number;
 
-  if (pointsUp) {
-    // Стрелка вверх от нижней поверхности балки
-    startY = baseY + arrowLen;
-    endY = baseY + markerHalf; // кончик стрелки будет на baseY
-    textY = startY - arrowLen / 2;
+  if (pointsDown) {
+    // Стрелка ВНИЗ к верхней поверхности балки (положительная реакция)
+    startY = baseY - arrowLen; // выше baseY
+    endY = baseY - markerHalf; // чуть выше baseY, кончик достигнет baseY
+    textY = startY - 5;
   } else {
-    // Стрелка вниз к верхней поверхности балки
-    startY = baseY - arrowLen;
-    endY = baseY - markerHalf; // кончик стрелки будет на baseY
-    textY = startY + arrowLen / 2;
+    // Стрелка ВВЕРХ к нижней поверхности балки (отрицательная реакция)
+    startY = baseY + arrowLen; // ниже baseY
+    endY = baseY + markerHalf; // чуть ниже baseY, кончик достигнет baseY
+    textY = startY + 15;
   }
 
   const textX = x + (labelSide === "left" ? -10 : 10) + labelXOffset;
