@@ -837,7 +837,7 @@ function buildSimplySupportedReactions(
   html += `
   <p>Откуда:</p>
   <div class="formula">
-    \\(R_A + R_B = ${formatNumber(totalLoad)}\\) кН \\quad \\text{(1)}
+    \\(R_A + R_B = ${formatNumber(totalLoad)}\\text{ кН}\\) \\quad (1)
   </div>`;
 
   // --- Уравнение моментов относительно A ---
@@ -864,24 +864,36 @@ function buildSimplySupportedReactions(
   html += `\n  <p>Подставляем значения:</p>`;
 
   const momentNumTerms: string[] = [`R_B \\cdot ${formatNumber(span)}`];
-  let momentSum = 0;
+  // Собираем вклады в правую часть (что переносим направо от R_B)
+  // Уравнение: R_B·L - ΣP·arm - ΣFq·arm + ΣM = 0
+  // => R_B·L = ΣP·arm + ΣFq·arm - ΣM
+  let rightSideSum = 0;
+  const rightSideTerms: string[] = [];
 
   for (const load of loadInfos) {
     if (load.type === "force") {
       const arm = load.x! - xA;
-      const contrib = load.value * arm;
-      momentSum += contrib;
       if (Math.abs(arm) > 1e-9) {
-        momentNumTerms.push(`- ${formatNumber(load.value)} \\cdot ${formatNumber(arm)}`);
+        // В уравнении: - P · arm, поэтому в правой части: + P · arm
+        const contrib = load.value * arm;
+        rightSideSum += contrib;
+        // Форматируем красиво: избегаем "- -10"
+        if (load.value >= 0) {
+          momentNumTerms.push(`- ${formatNumber(load.value)} \\cdot ${formatNumber(arm)}`);
+        } else {
+          momentNumTerms.push(`+ ${formatNumber(-load.value)} \\cdot ${formatNumber(arm)}`);
+        }
       }
     } else if (load.type === "moment") {
-      momentSum += load.value;
+      // В уравнении: + M, поэтому в правой части: - M
+      rightSideSum -= load.value;
       momentNumTerms.push(`${load.value >= 0 ? "+" : "-"} ${formatNumber(Math.abs(load.value))}`);
     } else if (load.type === "distributed") {
       const arm = load.xq! - xA;
-      const contrib = load.Fq! * arm;
-      momentSum += contrib;
       if (Math.abs(arm) > 1e-9) {
+        // В уравнении: - Fq · arm, поэтому в правой части: + Fq · arm
+        const contrib = load.Fq! * arm;
+        rightSideSum += contrib;
         momentNumTerms.push(`- ${formatNumber(load.Fq!)} \\cdot ${formatNumber(arm)}`);
       }
     }
@@ -892,32 +904,32 @@ function buildSimplySupportedReactions(
     \\(${momentNumTerms.join(" ")} = 0\\)
   </div>`;
 
-  // Вычисляем
+  // Вычисляем R_B
   html += `
   <div class="formula">
-    \\(R_B \\cdot ${formatNumber(span)} = ${formatNumber(momentSum)} \\quad \\Rightarrow \\quad R_B = \\frac{${formatNumber(momentSum)}}{${formatNumber(span)}} = ${formatNumber(RB)}\\) кН
+    \\(R_B \\cdot ${formatNumber(span)} = ${formatNumber(rightSideSum)} \\quad \\Rightarrow \\quad R_B = \\frac{${formatNumber(rightSideSum)}}{${formatNumber(span)}} = ${formatNumber(RB)}\\text{ кН}\\)
   </div>`;
 
   // Из уравнения (1) находим RA
   html += `
   <p>Из уравнения (1):</p>
   <div class="formula">
-    \\(R_A = ${formatNumber(totalLoad)} - R_B = ${formatNumber(totalLoad)} - (${formatNumber(RB)}) = ${formatNumber(RA)}\\) кН
+    \\(R_A = ${formatNumber(totalLoad)} - R_B = ${formatNumber(totalLoad)} - (${formatNumber(RB)}) = ${formatNumber(RA)}\\text{ кН}\\)
   </div>`;
 
   // Итог с boxed
   html += `
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\(\\boxed{R_A = ${formatNumber(RA)} \\text{ кН}}\\) ${RA >= 0 ? "(вверх)" : "(вниз)"}, \\quad
-    \\(\\boxed{R_B = ${formatNumber(RB)} \\text{ кН}}\\) ${RB >= 0 ? "(вверх)" : "(вниз)"}
+    \\(\\boxed{R_A = ${formatNumber(RA)}\\text{ кН}}\\) (${RA >= 0 ? "вверх" : "вниз"}), \\quad
+    \\(\\boxed{R_B = ${formatNumber(RB)}\\text{ кН}}\\) (${RB >= 0 ? "вверх" : "вниз"})
   </div>`;
 
   // Проверка
   html += `
   <p><strong>Проверка:</strong></p>
   <div class="formula">
-    \\(R_A + R_B = ${formatNumber(RA)} + (${formatNumber(RB)}) = ${formatNumber(RA + RB)}\\) кН
+    \\(R_A + R_B = ${formatNumber(RA)} + (${formatNumber(RB)}) = ${formatNumber(RA + RB)}\\text{ кН}\\)
   </div>`;
 
   const checkResult = Math.abs(RA + RB - totalLoad) < 0.01;
