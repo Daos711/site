@@ -97,10 +97,14 @@ export function DiagramsExport({ input, result }: Props) {
 
   const hasDeflection = !!y;
 
-  // Границы для Q — все точки разрывов
+  // Границы для Q — все события + точки разрывов
   const qBoundaries = useMemo(() => {
-    return Array.from(qDiscontinuities).sort((a, b) => a - b);
-  }, [qDiscontinuities]);
+    const points = new Set(boundaries);
+    for (const x of qDiscontinuities) {
+      points.add(x);
+    }
+    return Array.from(points).sort((a, b) => a - b);
+  }, [boundaries, qDiscontinuities]);
 
   // Границы для M — все события + точки моментов
   const mBoundaries = useMemo(() => {

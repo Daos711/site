@@ -837,7 +837,7 @@ function buildSimplySupportedReactions(
   html += `
   <p>Откуда:</p>
   <div class="formula">
-    \\(R_A + R_B = ${formatNumber(totalLoad)}\\text{ кН}\\) \\quad (1)
+    \\(R_A + R_B = ${formatNumber(totalLoad)}\\text{ кН} \\quad (1)\\)
   </div>`;
 
   // --- Уравнение моментов относительно A ---

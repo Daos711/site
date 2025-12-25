@@ -7,8 +7,8 @@ const PRINT_COLORS = {
   Q: "#2563eb",      // синий
   M: "#dc2626",      // красный
   y: "#0891b2",      // голубой/циан
-  grid: "#9ca3af",   // серая сетка (более тёмная)
-  zeroLine: "#6b7280", // нулевая линия (ещё темнее)
+  grid: "#9ca3af",   // серая сетка
+  zeroLine: "#374151", // нулевая линия (тёмно-серый, почти чёрный)
   text: "#1f2937",   // тёмный текст
   textMuted: "#6b7280",
   fill: "#ffffff",   // белый фон
@@ -126,8 +126,8 @@ export function DiagramExport({
         x2={padding.left + chartWidth}
         y2={zeroY}
         stroke={PRINT_COLORS.zeroLine}
-        strokeWidth={1.5}
-        strokeDasharray="6,4"
+        strokeWidth={2}
+        strokeDasharray="8,5"
       />
 
       {/* Заголовок */}
