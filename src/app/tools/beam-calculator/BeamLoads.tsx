@@ -2,31 +2,37 @@ import React from "react";
 import { COLORS } from "./constants";
 
 // Стрелка реакции - направление зависит от знака
-// value >= 0: вверх (от балки), value < 0: вниз (к балке сверху)
+// baseY - поверхность балки, к которой должен касаться наконечник
+// value >= 0: стрелка вверх (от нижней поверхности), value < 0: вниз (к верхней)
 export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "" }: {
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
-  const arrowLen = 50;
+  const arrowLen = 40;
   const pointsUp = value >= 0;
 
-  const markerSize = 8;
-  let startY: number, endY: number;
+  // Линия должна заканчиваться так, чтобы наконечник касался baseY
+  // С refX=0 наконечник начинается от конца линии и идёт в направлении стрелки
+  let startY: number, endY: number, textY: number;
+
   if (pointsUp) {
-    startY = baseY;
-    endY = baseY - arrowLen;
+    // Стрелка вверх: начало снизу (больше y), конец сверху (меньше y)
+    // Наконечник указывает вверх и касается baseY
+    startY = baseY + arrowLen;
+    endY = baseY;
+    textY = startY - arrowLen / 2;
   } else {
+    // Стрелка вниз: начало сверху (меньше y), конец снизу (больше y)
     startY = baseY - arrowLen;
-    endY = baseY - markerSize;
+    endY = baseY;
+    textY = startY + arrowLen / 2;
   }
 
-  // Подпись рядом со стрелкой
   const textX = x + (labelSide === "left" ? -10 : 10) + labelXOffset;
-  const textY = pointsUp ? endY + 15 : startY + 15;
   const textAnchor: "start" | "end" = labelSide === "left" ? "end" : "start";
 
   return (
     <g>
-      <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2.5} markerEnd={`url(#${markerPrefix}arrowGreen)`} />
+      <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowGreen)`} />
       <text x={textX} y={textY} fill={COLORS.reaction} fontSize={12} fontWeight="600" dominantBaseline="middle" textAnchor={textAnchor}>
         {name}
         {subscript && <tspan dy="3" fontSize="9">{subscript}</tspan>}
@@ -45,55 +51,55 @@ export function DistributedLoadArrows({
 }: {
   x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string
 }) {
-  const arrowLen = 28;
+  const arrowLen = 25;
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
-    const baseY = beamTopY;
+    // Стрелки вниз к верхней поверхности балки
     return (
       <g>
-        <line x1={x1} y1={baseY - arrowLen} x2={x2} y2={baseY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
+        <line x1={x1} y1={beamTopY - arrowLen} x2={x2} y2={beamTopY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
         {Array.from({ length: numArrows }).map((_, i) => {
           const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
           return (
             <line
               key={i}
               x1={px}
-              y1={baseY - arrowLen}
+              y1={beamTopY - arrowLen}
               x2={px}
-              y2={baseY - 8}
+              y2={beamTopY}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlue)`}
             />
           );
         })}
-        <text x={(x1 + x2) / 2} y={baseY - arrowLen - 8} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
+        <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 8} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
           {label}
         </text>
       </g>
     );
   } else {
-    const baseY = beamBottomY;
+    // Стрелки вверх к нижней поверхности балки
     return (
       <g>
-        <line x1={x1} y1={baseY + arrowLen} x2={x2} y2={baseY + arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
+        <line x1={x1} y1={beamBottomY + arrowLen} x2={x2} y2={beamBottomY + arrowLen} stroke={COLORS.distributedLoad} strokeWidth={2} />
         {Array.from({ length: numArrows }).map((_, i) => {
           const px = x1 + (i / (numArrows - 1)) * (x2 - x1);
           return (
             <line
               key={i}
               x1={px}
-              y1={baseY + arrowLen}
+              y1={beamBottomY + arrowLen}
               x2={px}
-              y2={baseY + 8}
+              y2={beamBottomY}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
             />
           );
         })}
-        <text x={(x1 + x2) / 2} y={baseY + arrowLen + 18} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
+        <text x={(x1 + x2) / 2} y={beamBottomY + arrowLen + 18} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
           {label}
         </text>
       </g>
@@ -102,9 +108,10 @@ export function DistributedLoadArrows({
 }
 
 // Сосредоточенная сила (КРАСНАЯ)
+// y - поверхность балки (верхняя)
 // F > 0: вниз, F < 0: вверх
 export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string }) {
-  const arrowLen = 60;
+  const arrowLen = 50;
   const pointsDown = F >= 0;
 
   const labelWidth = 100;
@@ -122,18 +129,20 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
   }
 
   if (pointsDown) {
+    // Стрелка вниз: наконечник касается поверхности балки (y)
     return (
       <g>
-        <line x1={x} y1={y - arrowLen} x2={x} y2={y - 8} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y - arrowLen} x2={x} y2={y} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
     );
   } else {
+    // Стрелка вверх: наконечник касается поверхности балки (y)
     return (
       <g>
-        <line x1={x} y1={y + arrowLen} x2={x} y2={y + 22} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>

@@ -481,7 +481,8 @@ function collectEvents(input: BeamInput, reactions: Reactions): number[] {
 }
 
 /**
- * Поиск экстремума функции с локальным уточнением
+ * Поиск экстремума функции
+ * Проверяем значения в точках событий и слева/справа от разрывов
  */
 function findExtremum(
   fn: (x: number) => number,
@@ -489,64 +490,39 @@ function findExtremum(
   L: number,
   checkJumps = false
 ): { value: number; x: number } {
-  let maxValue = 0;
+  let maxAbsValue = 0;
   let maxX = 0;
+  let actualValue = 0;
 
-  // Грубый поиск с 2000 точками
-  const numPoints = 2000;
-  const dx = L / numPoints;
+  const eps = 1e-9; // малое смещение для проверки до/после разрыва
 
-  for (let i = 0; i <= numPoints; i++) {
-    const x = i * dx;
-    const value = Math.abs(fn(x));
-    if (value > maxValue) {
-      maxValue = value;
+  const checkPoint = (x: number) => {
+    const v = fn(x);
+    const absV = Math.abs(v);
+    if (absV > maxAbsValue) {
+      maxAbsValue = absV;
       maxX = x;
+      actualValue = v;
     }
-  }
+  };
 
-  // Проверяем точки событий
+  // Проверяем точки событий и их окрестности
   for (const e of events) {
-    const value = Math.abs(fn(e));
-    if (value > maxValue) {
-      maxValue = value;
-      maxX = e;
+    checkPoint(e);
+    // Значение чуть ДО точки (для поимки значений перед скачком)
+    if (e > eps) {
+      checkPoint(e - eps);
     }
   }
 
-  // Локальное уточнение методом золотого сечения
-  const golden = 0.618033988749895;
-  let a = Math.max(0, maxX - dx * 2);
-  let b = Math.min(L, maxX + dx * 2);
+  // Проверяем границы
+  checkPoint(0);
+  checkPoint(L);
 
-  for (let iter = 0; iter < 20; iter++) {
-    const d = (b - a) * golden;
-    const x1 = b - d;
-    const x2 = a + d;
-    const f1 = Math.abs(fn(x1));
-    const f2 = Math.abs(fn(x2));
+  // Округляем координату до разумной точности (до сотых)
+  const roundedX = Math.round(maxX * 100) / 100;
 
-    if (f1 > f2) {
-      b = x2;
-      if (f1 > maxValue) {
-        maxValue = f1;
-        maxX = x1;
-      }
-    } else {
-      a = x1;
-      if (f2 > maxValue) {
-        maxValue = f2;
-        maxX = x2;
-      }
-    }
-
-    if (b - a < 1e-9) break;
-  }
-
-  // Округляем координату до разумной точности
-  maxX = Math.round(maxX * 1000) / 1000;
-
-  return { value: fn(maxX), x: maxX };
+  return { value: actualValue, x: roundedX };
 }
 
 /**

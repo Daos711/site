@@ -48,19 +48,22 @@ export function BeamSchemaExport({ input, result }: Props) {
         background: "#ffffff",
       }}
     >
-      {/* Маркеры для стрелок (увеличенные) */}
+      {/* Маркеры для стрелок */}
       <defs>
-        <marker id="exp-arrowBlue" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 L2.5,5 Z" fill={COLORS.distributedLoad} />
+        <marker id="exp-arrowBlue" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
         </marker>
-        <marker id="exp-arrowRed" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 L2.5,5 Z" fill={COLORS.pointForce} />
+        <marker id="exp-arrowBlueUp" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto-start-reverse">
+          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
         </marker>
-        <marker id="exp-arrowGreen" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
-          <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.reaction} />
+        <marker id="exp-arrowRed" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.pointForce} />
         </marker>
-        <marker id="exp-arrowPurple" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
-          <path d="M0,0 L10,5 L0,10 L2.5,5 Z" fill={COLORS.moment} />
+        <marker id="exp-arrowGreen" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.reaction} />
+        </marker>
+        <marker id="exp-arrowPurple" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.moment} />
         </marker>
       </defs>
 
@@ -184,14 +187,17 @@ export function BeamSchemaExport({ input, result }: Props) {
       {(() => {
         const { reactions } = result;
         const elements: React.ReactNode[] = [];
+        const beamTop = beamY - beamThickness / 2;
+        const beamBottom = beamY + beamThickness / 2;
 
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
+          // Реакция вверх - стрелка снизу балки
           elements.push(
             <ReactionArrow
               key="RA"
               x={xToPx(xA)}
-              baseY={beamY - beamThickness / 2}
+              baseY={reactions.RA >= 0 ? beamBottom : beamTop}
               value={reactions.RA}
               name="R"
               subscript="A"
@@ -208,7 +214,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <ReactionArrow
               key="RB"
               x={xToPx(xB)}
-              baseY={beamY - beamThickness / 2}
+              baseY={reactions.RB >= 0 ? beamBottom : beamTop}
               value={reactions.RB}
               name="R"
               subscript="B"
@@ -225,7 +231,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <ReactionArrow
               key="Rf"
               x={xToPx(xf)}
-              baseY={beamY - beamThickness / 2}
+              baseY={reactions.Rf >= 0 ? beamBottom : beamTop}
               value={reactions.Rf}
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
