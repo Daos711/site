@@ -285,6 +285,9 @@ export function DiagramExport({
           return 0;
         };
 
+        // Собираем уникальные подписи, избегая дублирования на горизонтальных участках
+        const addedLabels = new Set<string>(); // "value:side" чтобы избежать дублей
+
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
           const isFirst = bIdx === 0;
@@ -306,9 +309,29 @@ export function DiagramExport({
               addLabel(bx, rightValue, true, `label-${bIdx}-right`);
             }
           } else {
-            // Одно значение — выбираем сторону умно
+            // Одно значение - проверяем нужна ли подпись
             const value = rightValue ?? leftValue;
             if (value === null) continue;
+
+            // Проверяем соседние границы - если значение такое же, не дублируем
+            const prevBx = bIdx > 0 ? boundaries[bIdx - 1] : null;
+            const nextBx = bIdx < boundaries.length - 1 ? boundaries[bIdx + 1] : null;
+
+            const prevLeftVal = prevBx !== null ? findLeftValue(prevBx) : null;
+            const prevRightVal = prevBx !== null ? findRightValue(prevBx) : null;
+            const nextLeftVal = nextBx !== null ? findLeftValue(nextBx) : null;
+            const nextRightVal = nextBx !== null ? findRightValue(nextBx) : null;
+
+            // Горизонтальный участок слева? (значение не менялось с предыдущей границы)
+            const sameAsPrev = prevRightVal !== null && Math.abs(prevRightVal - value) < 0.1;
+            // Горизонтальный участок справа? (значение не изменится до следующей границы)
+            const sameAsNext = nextLeftVal !== null && Math.abs(nextLeftVal - value) < 0.1;
+
+            // Если участок горизонтальный с обеих сторон - пропускаем (подпись уже есть)
+            if (sameAsPrev && sameAsNext) continue;
+
+            // Если горизонтальный участок слева - подпись уже была, пропускаем
+            if (sameAsPrev && !isLast) continue;
 
             let placeRight: boolean;
             if (isFirst) {
@@ -316,12 +339,8 @@ export function DiagramExport({
             } else if (isLast) {
               placeRight = false;
             } else {
-              // Проверяем где меньше коллизий с кривой
-              const collisionScoreLeft = getCurveCollisionScore(bx, value, true);
-              const collisionScoreRight = getCurveCollisionScore(bx, value, false);
-              // Ставим на ту сторону, где меньше коллизий
-              // Если слева хуже — ставим справа
-              placeRight = collisionScoreLeft > collisionScoreRight;
+              // Ставим справа если участок справа НЕ горизонтальный
+              placeRight = !sameAsNext;
             }
             addLabel(bx, value, placeRight, `label-${bIdx}`);
           }
