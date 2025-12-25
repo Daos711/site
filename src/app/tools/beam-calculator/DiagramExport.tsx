@@ -239,7 +239,8 @@ export function DiagramExport({
 
         // Добавляет подпись со смещением влево или вправо от пунктира
         const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
-          if (Math.abs(value) < 1e-6) value = 0;
+          // Пропускаем нулевые значения
+          if (Math.abs(value) < 1e-6) return;
           const xOffset = placeRight ? 18 : -18;  // Увеличено с 12 до 18
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);

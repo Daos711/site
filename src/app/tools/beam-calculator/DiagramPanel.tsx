@@ -147,8 +147,9 @@ export function DiagramPanel({ title, unit, segments, xToPx, y, height, color, c
         };
 
         const addBoundaryLabel = (bx: number, value: number, placeRight: boolean, key: string, isEndpoint: boolean, forceShow = false) => {
+          // Пропускаем нулевые значения
           if (Math.abs(value) < 1e-6) {
-            value = 0;
+            return;
           }
 
           if (!forceShow && !isEndpoint && isAtExtremum(bx)) {
