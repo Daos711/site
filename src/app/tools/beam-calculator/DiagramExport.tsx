@@ -288,9 +288,17 @@ export function DiagramExport({
         // Логика: для горизонтального участка подписываем только в его НАЧАЛЕ
         // Начало = первая граница ИЛИ значение слева отличается от значения справа
 
+        // Вспомогательная функция: проверить, горизонтальный ли сегмент слева от границы
+        const isLeftSegmentHorizontal = (bIdx: number, endValue: number): boolean => {
+          if (bIdx === 0) return false; // нет сегмента слева
+          const prevBx = boundaries[bIdx - 1];
+          const startValue = findRightValue(prevBx); // начало сегмента
+          if (startValue === null) return false;
+          return Math.abs(startValue - endValue) < 0.1;
+        };
+
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
-          const isFirst = bIdx === 0;
           const isLast = bIdx === boundaries.length - 1;
 
           const leftValue = findLeftValue(bx);  // конец предыдущего сегмента
@@ -301,9 +309,13 @@ export function DiagramExport({
             Math.abs(leftValue - rightValue) > 0.1;
 
           if (hasDiscontinuity) {
-            // При разрыве: оба значения
+            // При разрыве: подписываем оба значения
+            // НО: если левый сегмент горизонтальный — он уже подписан в начале, пропускаем leftValue
             if (leftValue !== null) {
-              addLabel(bx, leftValue, false, `label-${bIdx}-left`);
+              const skipLeft = isLeftSegmentHorizontal(bIdx, leftValue);
+              if (!skipLeft) {
+                addLabel(bx, leftValue, false, `label-${bIdx}-left`);
+              }
             }
             if (rightValue !== null) {
               addLabel(bx, rightValue, true, `label-${bIdx}-right`);
@@ -313,15 +325,9 @@ export function DiagramExport({
             const value = rightValue ?? leftValue;
             if (value === null) continue;
 
-            // Проверяем сегмент СЛЕВА: горизонтальный ли он?
-            // Если горизонтальный - значит подпись уже была на предыдущей границе
-            const prevBx = bIdx > 0 ? boundaries[bIdx - 1] : null;
-            const prevRightVal = prevBx !== null ? findRightValue(prevBx) : null;
-            const isHorizontalLeft = prevRightVal !== null && Math.abs(prevRightVal - value) < 0.1;
-
-            // Если слева горизонтальный участок с тем же значением - пропускаем
-            // (подпись уже есть в начале этого горизонтального участка)
-            if (isHorizontalLeft && !isLast) {
+            // Если слева горизонтальный сегмент — подпись уже есть в его начале, пропускаем
+            const skipHorizontal = isLeftSegmentHorizontal(bIdx, value);
+            if (skipHorizontal) {
               continue;
             }
 

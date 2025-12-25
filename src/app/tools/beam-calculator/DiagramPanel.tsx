@@ -175,6 +175,15 @@ export function DiagramPanel({ title, unit, segments, xToPx, y, height, color, c
           );
         };
 
+        // Проверяет, горизонтальный ли сегмент слева от границы
+        const isLeftSegmentHorizontal = (bIdx: number, endValue: number): boolean => {
+          if (bIdx === 0) return false;
+          const prevBx = boundaries[bIdx - 1];
+          const startValue = findValueAt(prevBx, false); // начало сегмента = rightValue предыдущей границы
+          if (startValue === null) return false;
+          return Math.abs(startValue - endValue) < 0.1;
+        };
+
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
           const isFirst = bIdx === 0;
@@ -188,8 +197,13 @@ export function DiagramPanel({ title, unit, segments, xToPx, y, height, color, c
             Math.abs(leftValue - rightValue) > 0.5;
 
           if (hasDiscontinuity) {
+            // При разрыве: подписываем оба значения
+            // НО: если левый сегмент горизонтальный — он уже подписан в начале, пропускаем
             if (leftValue !== null) {
-              addBoundaryLabel(bx, leftValue, false, `boundary-${bIdx}-left`, isEndpoint, true);
+              const skipLeft = isLeftSegmentHorizontal(bIdx, leftValue);
+              if (!skipLeft) {
+                addBoundaryLabel(bx, leftValue, false, `boundary-${bIdx}-left`, isEndpoint, true);
+              }
             }
             if (rightValue !== null) {
               addBoundaryLabel(bx, rightValue, true, `boundary-${bIdx}-right`, isEndpoint, true);
@@ -197,6 +211,12 @@ export function DiagramPanel({ title, unit, segments, xToPx, y, height, color, c
           } else {
             const value = rightValue ?? leftValue;
             if (value === null) continue;
+
+            // Если слева горизонтальный сегмент — подпись уже есть в его начале, пропускаем
+            const skipHorizontal = isLeftSegmentHorizontal(bIdx, value);
+            if (skipHorizontal) {
+              continue;
+            }
 
             let placeRight: boolean;
             if (isFirst) {
