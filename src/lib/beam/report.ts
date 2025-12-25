@@ -17,10 +17,17 @@ const SVG_COLORS = {
   background: "#f8fafc",
 };
 
+interface DiagramImages {
+  Q?: string;   // dataURL эпюры Q
+  M?: string;   // dataURL эпюры M
+  y?: string;   // dataURL эпюры y
+}
+
 interface ReportData {
   input: BeamInput;
   result: BeamResult;
-  beamSchemaSVG?: string;  // SVG-строка схемы балки с сайта
+  beamSchemaSVG?: string;     // SVG-строка схемы балки с сайта
+  diagrams?: DiagramImages;   // dataURL эпюр
 }
 
 /**
@@ -336,7 +343,7 @@ function formatBeamType(type: string): string {
  * Генерирует HTML-код отчёта
  */
 function buildReportHTML(data: ReportData): string {
-  const { input, result, beamSchemaSVG } = data;
+  const { input, result, beamSchemaSVG, diagrams } = data;
   const { reactions, Q, M, Mmax, Qmax, y } = result;
 
   // Секции
@@ -382,8 +389,12 @@ function buildReportHTML(data: ReportData): string {
     th { background: #f5f5f5; }
     .formula { margin: 8px 0; padding: 8px; background: #f9f9f9; border-radius: 4px; }
     .result { color: #0066cc; font-weight: bold; }
-    .section-block { margin: 16px 0; padding: 12px; border: 1px solid #ddd; border-radius: 4px; }
+    .section-block { margin: 16px 0; padding: 12px; border: 1px solid #ddd; border-radius: 4px; break-inside: avoid; }
     .section-title { font-weight: bold; margin-bottom: 8px; }
+    .extremes-block { break-inside: avoid; }
+    .diagram-block { break-inside: avoid; margin: 20px 0; text-align: center; }
+    .diagram-block img { max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 4px; }
+    .diagram-title { font-weight: bold; margin-bottom: 8px; }
     @media print {
       body { padding: 10mm; }
       .no-print { display: none; }
@@ -440,15 +451,42 @@ function buildReportHTML(data: ReportData): string {
   ${buildReactionsSection(reactions)}
 
   <h2>4. Экстремальные значения</h2>
+  <div class="extremes-block">
   <table>
     <tr><th>Величина</th><th>Значение</th><th>Координата</th></tr>
     <tr><td>\\(|Q|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(Qmax.value))} кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
     <tr><td>\\(|M|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(Mmax.value))} кН·м</td><td>\\(x = ${formatNumber(Mmax.x)}\\) м</td></tr>
     ${y ? `<tr><td>\\(|y|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(yMax.value) * 1000)} мм</td><td>\\(x = ${formatNumber(yMax.x)}\\) м</td></tr>` : ""}
   </table>
+  </div>
 
-  ${result.diameter && result.W && result.I ? `
-  <h2>5. Подбор сечения (круглое)</h2>
+  ${diagrams?.Q || diagrams?.M || diagrams?.y ? `
+  <h2>5. Эпюры</h2>
+  ${diagrams.Q ? `
+  <div class="diagram-block">
+    <div class="diagram-title">Эпюра поперечных сил \\(Q(x)\\)</div>
+    <img src="${diagrams.Q}" alt="Эпюра Q(x)" />
+  </div>
+  ` : ""}
+  ${diagrams.M ? `
+  <div class="diagram-block">
+    <div class="diagram-title">Эпюра изгибающих моментов \\(M(x)\\)</div>
+    <img src="${diagrams.M}" alt="Эпюра M(x)" />
+  </div>
+  ` : ""}
+  ${diagrams.y ? `
+  <div class="diagram-block">
+    <div class="diagram-title">Эпюра прогибов \\(y(x)\\)</div>
+    <img src="${diagrams.y}" alt="Эпюра y(x)" />
+  </div>
+  ` : ""}
+  ` : ""}
+
+  ${(() => {
+    const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
+    const sectionNum = hasDiagrams ? 6 : 5;
+    return result.diameter && result.W && result.I ? `
+  <h2>${sectionNum}. Подбор сечения (круглое)</h2>
   <p>По условию прочности: \\([\\sigma] = ${formatNumber((input.sigma ?? 0) / 1e6)}\\) МПа</p>
   <div class="formula">
     \\(W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${formatNumber((input.sigma ?? 0) / 1e6)}} = ${formatNumber(result.W * 1e6, 4)}\\) см³
@@ -461,9 +499,16 @@ function buildReportHTML(data: ReportData): string {
   <div class="formula">
     \\(I = \\frac{\\pi d^4}{64} = ${formatNumber(result.I * 1e8, 4)}\\) см⁴
   </div>
-  ` : ""}
+  ` : "";
+  })()}
 
-  <h2>${result.diameter ? "6" : "5"}. Метод сечений — формулы по участкам</h2>
+  <h2>${(() => {
+    const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
+    let num = 5;
+    if (hasDiagrams) num++;
+    if (result.diameter) num++;
+    return num;
+  })()}. Метод сечений — формулы по участкам</h2>
   ${sections.map(section => `
     <div class="section-block">
       <div class="section-title">Участок ${section.interval.idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</div>

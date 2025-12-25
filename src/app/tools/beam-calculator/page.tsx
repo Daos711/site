@@ -6,6 +6,7 @@ import { BeamInput } from "./BeamInput";
 import { ResultCards } from "./ResultCards";
 import { UnifiedBeamView } from "./UnifiedBeamView";
 import { BeamSchemaExport } from "./BeamSchemaExport";
+import { DiagramsExport } from "./DiagramsExport";
 import type { BeamInput as BeamInputType, BeamResult } from "@/lib/beam";
 import { solveBeam } from "@/lib/beam";
 
@@ -60,8 +61,9 @@ export default function BeamCalculatorPage() {
       {/* Эпюры на всю ширину */}
       {result && input && <UnifiedBeamView input={input} result={result} />}
 
-      {/* Скрытый SVG для экспорта в отчёт */}
+      {/* Скрытые SVG для экспорта в отчёт */}
       {result && input && <BeamSchemaExport input={input} result={result} />}
+      {result && input && <DiagramsExport input={input} result={result} />}
     </div>
   );
 }

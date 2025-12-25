@@ -246,12 +246,29 @@ export function ResultCards({ input, result, className }: Props) {
       <button
         className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-center"
         onClick={() => {
-          // Находим скрытый SVG для экспорта и сериализуем его
-          const svgElement = document.getElementById("beam-schema-export");
-          let beamSchemaSVG: string | undefined;
-          if (svgElement) {
-            // Очищаем style для отчёта и добавляем размеры
+          // Функция для сериализации SVG в dataURL
+          const serializeSvg = (id: string, maxWidth = "600px"): string | undefined => {
+            const svgElement = document.getElementById(id);
+            if (!svgElement) return undefined;
+
             const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+            clonedSvg.removeAttribute("style");
+            clonedSvg.setAttribute("width", "100%");
+            clonedSvg.setAttribute("height", "auto");
+            clonedSvg.style.maxWidth = maxWidth;
+            clonedSvg.style.background = "#f8fafc";
+            clonedSvg.style.border = "1px solid #e5e7eb";
+            clonedSvg.style.borderRadius = "4px";
+
+            const svgString = new XMLSerializer().serializeToString(clonedSvg);
+            return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+          };
+
+          // Сериализуем схему балки как SVG-строку (для прямой вставки)
+          const beamSchemaElement = document.getElementById("beam-schema-export");
+          let beamSchemaSVG: string | undefined;
+          if (beamSchemaElement) {
+            const clonedSvg = beamSchemaElement.cloneNode(true) as SVGElement;
             clonedSvg.removeAttribute("style");
             clonedSvg.setAttribute("width", "100%");
             clonedSvg.setAttribute("height", "auto");
@@ -261,7 +278,22 @@ export function ResultCards({ input, result, className }: Props) {
             clonedSvg.style.borderRadius = "4px";
             beamSchemaSVG = new XMLSerializer().serializeToString(clonedSvg);
           }
-          generateReport({ input, result, beamSchemaSVG });
+
+          // Сериализуем эпюры в dataURL
+          const diagramQ = serializeSvg("diagram-q-export");
+          const diagramM = serializeSvg("diagram-m-export");
+          const diagramY = serializeSvg("diagram-y-export");
+
+          generateReport({
+            input,
+            result,
+            beamSchemaSVG,
+            diagrams: {
+              Q: diagramQ,
+              M: diagramM,
+              y: diagramY,
+            },
+          });
         }}
       >
         <span className="text-muted-foreground">📄</span>
