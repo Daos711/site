@@ -387,17 +387,19 @@ function buildReportHTML(data: ReportData): string {
     table { border-collapse: collapse; width: 100%; margin: 12px 0; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
-    .formula { margin: 8px 0; padding: 8px; background: #f9f9f9; border-radius: 4px; }
+    .formula { margin: 8px 0; padding: 10px 12px; background: #f9f9f9; border-left: 3px solid #0066cc; }
     .result { color: #0066cc; font-weight: bold; }
-    .section-block { margin: 16px 0; padding: 12px; border: 1px solid #ddd; border-radius: 4px; break-inside: avoid; }
-    .section-title { font-weight: bold; margin-bottom: 8px; }
     .extremes-block { break-inside: avoid; }
     .diagram-block { break-inside: avoid; margin: 20px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
     .diagram-title { font-weight: bold; margin-bottom: 8px; }
+    ul { margin: 8px 0; padding-left: 24px; }
+    li { margin: 4px 0; }
     @media print {
       body { padding: 10mm; }
       .no-print { display: none; }
+      h2 { page-break-after: avoid; }
+      h3 { page-break-after: avoid; }
     }
     .print-btn {
       position: fixed;
@@ -412,10 +414,11 @@ function buildReportHTML(data: ReportData): string {
       font-size: 14px;
     }
     .print-btn:hover { background: #0055aa; }
+    .print-btn:disabled { background: #999; cursor: wait; }
   </style>
 </head>
 <body>
-  <button class="print-btn no-print" onclick="window.print()">Сохранить PDF</button>
+  <button class="print-btn no-print" onclick="prepareAndPrint()" id="printBtn">Сохранить PDF</button>
 
   <h1>Расчёт балки</h1>
 
@@ -447,8 +450,8 @@ function buildReportHTML(data: ReportData): string {
     }).join("\n    ")}
   </table>
 
-  <h2>3. Реакции опор</h2>
-  ${buildReactionsSection(reactions)}
+  <h2>3. Определение реакций опор</h2>
+  ${buildReactionsSection(input, reactions)}
 
   <h2>4. Экстремальные значения</h2>
   <div class="extremes-block">
@@ -508,27 +511,37 @@ function buildReportHTML(data: ReportData): string {
     if (hasDiagrams) num++;
     if (result.diameter) num++;
     return num;
-  })()}. Метод сечений — формулы по участкам</h2>
+  })()}. Метод сечений — внутренние усилия по участкам</h2>
+
+  <p>Разобьём балку на участки по характерным точкам (опоры, точки приложения нагрузок). Для каждого участка составим выражения для поперечной силы \\(Q\\) и изгибающего момента \\(M\\).</p>
+
   ${sections.map(section => `
-    <div class="section-block">
-      <div class="section-title">Участок ${section.interval.idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</div>
-      <p>Локальная координата: \\(s = x - ${formatNumber(section.interval.a)}\\), \\(s \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\)</p>
-      ${Math.abs(section.q) > 1e-9 ? `<p>Активная распределённая нагрузка: \\(q = ${formatNumber(section.q)}\\) кН/м</p>` : ""}
-      <div class="formula">
-        \\(Q(s) = ${formatQFormula(section.polyQ)}\\) кН
-      </div>
-      <div class="formula">
-        \\(M(s) = ${formatMFormula(section.polyM)}\\) кН·м
-      </div>
-      <p>Значения на границах:</p>
-      <ul>
-        <li>\\(Q(${formatNumber(section.interval.a)}^+) = ${formatNumber(section.Qa)}\\) кН, \\(M(${formatNumber(section.interval.a)}^+) = ${formatNumber(section.Ma)}\\) кН·м</li>
-        <li>\\(Q(${formatNumber(section.interval.b)}^-) = ${formatNumber(section.Qb)}\\) кН, \\(M(${formatNumber(section.interval.b)}^-) = ${formatNumber(section.Mb)}\\) кН·м</li>
-      </ul>
-    </div>
+  <h3>Участок ${section.interval.idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</h3>
+
+  <p>Введём локальную координату: \\(s = x - ${formatNumber(section.interval.a)}\\), где \\(s \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
+
+  ${Math.abs(section.q) > 1e-9 ? `<p>На этом участке действует распределённая нагрузка \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : "<p>Распределённая нагрузка на участке отсутствует.</p>"}
+
+  <p><strong>Поперечная сила:</strong></p>
+  <div class="formula">
+    \\(Q(s) = ${formatQFormula(section.polyQ)}\\) кН
+  </div>
+
+  <p><strong>Изгибающий момент:</strong></p>
+  <div class="formula">
+    \\(M(s) = ${formatMFormula(section.polyM)}\\) кН·м
+  </div>
+
+  <p><strong>Значения на границах участка:</strong></p>
+  <ul>
+    <li>При \\(x = ${formatNumber(section.interval.a)}^+\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
+    <li>При \\(x = ${formatNumber(section.interval.b)}^-\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
+  </ul>
   `).join("\n")}
 
   <script>
+    let mathRendered = false;
+
     document.addEventListener("DOMContentLoaded", function() {
       renderMathInElement(document.body, {
         delimiters: [
@@ -537,34 +550,107 @@ function buildReportHTML(data: ReportData): string {
         ],
         throwOnError: false
       });
+      mathRendered = true;
     });
+
+    async function prepareAndPrint() {
+      const btn = document.getElementById("printBtn");
+      btn.disabled = true;
+      btn.textContent = "Подготовка...";
+
+      // Ждём рендер формул если ещё не готово
+      if (!mathRendered) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Даём браузеру перерисовать
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+
+      btn.disabled = false;
+      btn.textContent = "Сохранить PDF";
+      window.print();
+    }
   </script>
 </body>
 </html>`;
 }
 
 /**
- * Генерирует секцию с реакциями
+ * Генерирует секцию с реакциями — текстовый вывод с формулами
  */
-function buildReactionsSection(reactions: Reactions): string {
-  const rows: string[] = [];
+function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
+  const { loads, L } = input;
+  const isCantilever = input.beamType.startsWith("cantilever");
 
-  if (reactions.RA !== undefined) {
-    rows.push(`<tr><td>\\(R_A\\)</td><td class="result">${formatNumber(reactions.RA)} кН</td><td>\\(x = ${formatNumber(reactions.xA ?? 0)}\\) м</td></tr>`);
+  // Собираем вертикальные нагрузки
+  let totalVerticalLoad = 0;
+  const loadTerms: string[] = [];
+
+  for (const load of loads) {
+    if (load.type === "force") {
+      totalVerticalLoad += load.F;
+      loadTerms.push(load.F >= 0 ? `${formatNumber(load.F)}` : `(${formatNumber(load.F)})`);
+    } else if (load.type === "distributed") {
+      const qTotal = load.q * (load.b - load.a);
+      totalVerticalLoad += qTotal;
+      loadTerms.push(`${formatNumber(load.q)} \\cdot ${formatNumber(load.b - load.a)}`);
+    }
   }
-  if (reactions.RB !== undefined) {
-    rows.push(`<tr><td>\\(R_B\\)</td><td class="result">${formatNumber(reactions.RB)} кН</td><td>\\(x = ${formatNumber(reactions.xB ?? 0)}\\) м</td></tr>`);
+
+  if (isCantilever) {
+    // Консольная балка
+    const Rf = reactions.Rf ?? 0;
+    const Mf = reactions.Mf ?? 0;
+    const xf = reactions.xf ?? 0;
+
+    return `
+    <p>Для консольной балки реакции определяются из условий равновесия:</p>
+
+    <p><strong>Сумма проекций на вертикальную ось:</strong></p>
+    <div class="formula">
+      \\(\\sum F_y = 0: \\quad R ${loadTerms.length > 0 ? `- (${loadTerms.join(" + ")})` : ""} = 0\\)
+    </div>
+    <p>Откуда: \\(R = ${formatNumber(Rf)}\\) кН</p>
+
+    <p><strong>Сумма моментов относительно заделки:</strong></p>
+    <div class="formula">
+      \\(\\sum M = 0: \\quad M_f + \\text{(моменты от нагрузок)} = 0\\)
+    </div>
+    <p>Откуда: \\(M_f = ${formatNumber(Mf)}\\) кН·м</p>
+
+    <p><strong>Результат:</strong></p>
+    <div class="formula">
+      \\(R = ${formatNumber(Rf)}\\) кН, \\quad \\(M_f = ${formatNumber(Mf)}\\) кН·м \\quad \\text{(в точке } x = ${formatNumber(xf)} \\text{ м)}
+    </div>`;
   }
-  if (reactions.Rf !== undefined) {
-    rows.push(`<tr><td>\\(R\\)</td><td class="result">${formatNumber(reactions.Rf)} кН</td><td>\\(x = ${formatNumber(reactions.xf ?? 0)}\\) м</td></tr>`);
-  }
-  if (reactions.Mf !== undefined) {
-    rows.push(`<tr><td>\\(M_f\\)</td><td class="result">${formatNumber(reactions.Mf)} кН·м</td><td>\\(x = ${formatNumber(reactions.xf ?? 0)}\\) м</td></tr>`);
-  }
+
+  // Двухопорная балка
+  const RA = reactions.RA ?? 0;
+  const RB = reactions.RB ?? 0;
+  const xA = reactions.xA ?? 0;
+  const xB = reactions.xB ?? L;
+  const span = xB - xA;
 
   return `
-  <table>
-    <tr><th>Реакция</th><th>Значение</th><th>Координата</th></tr>
-    ${rows.join("\n    ")}
-  </table>`;
+  <p>Рассмотрим равновесие балки. Опора A в точке \\(x = ${formatNumber(xA)}\\) м, опора B в точке \\(x = ${formatNumber(xB)}\\) м.</p>
+
+  <p><strong>Сумма проекций на вертикальную ось:</strong></p>
+  <div class="formula">
+    \\(\\sum F_y = 0: \\quad R_A + R_B ${loadTerms.length > 0 ? `- (${loadTerms.join(" + ")})` : ""} = 0\\)
+  </div>
+
+  <p><strong>Сумма моментов относительно точки A:</strong></p>
+  <div class="formula">
+    \\(\\sum M_A = 0: \\quad R_B \\cdot ${formatNumber(span)} + \\text{(моменты от нагрузок)} = 0\\)
+  </div>
+
+  <p>Решая систему уравнений, получаем:</p>
+  <div class="formula">
+    \\(R_A = ${formatNumber(RA)}\\) кН, \\quad \\(R_B = ${formatNumber(RB)}\\) кН
+  </div>
+
+  <p><strong>Проверка:</strong> \\(R_A + R_B = ${formatNumber(RA)} + ${formatNumber(RB)} = ${formatNumber(RA + RB)}\\) кН
+  ${Math.abs(RA + RB - totalVerticalLoad) < 0.01 ? "✓" : ""}</p>`;
 }
