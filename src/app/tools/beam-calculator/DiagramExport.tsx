@@ -285,23 +285,23 @@ export function DiagramExport({
           return 0;
         };
 
-        // Собираем уникальные подписи, избегая дублирования на горизонтальных участках
-        const addedLabels = new Set<string>(); // "value:side" чтобы избежать дублей
+        // Логика: для горизонтального участка подписываем только в его НАЧАЛЕ
+        // Начало = первая граница ИЛИ значение слева отличается от значения справа
 
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
           const isFirst = bIdx === 0;
           const isLast = bIdx === boundaries.length - 1;
 
-          const leftValue = findLeftValue(bx);
-          const rightValue = findRightValue(bx);
+          const leftValue = findLeftValue(bx);  // конец предыдущего сегмента
+          const rightValue = findRightValue(bx); // начало следующего сегмента
 
-          // Проверяем есть ли разрыв (значения отличаются более чем на 0.1)
+          // Проверяем есть ли разрыв (скачок значения)
           const hasDiscontinuity = leftValue !== null && rightValue !== null &&
             Math.abs(leftValue - rightValue) > 0.1;
 
           if (hasDiscontinuity) {
-            // При разрыве: левое значение слева, правое справа
+            // При разрыве: оба значения
             if (leftValue !== null) {
               addLabel(bx, leftValue, false, `label-${bIdx}-left`);
             }
@@ -309,39 +309,24 @@ export function DiagramExport({
               addLabel(bx, rightValue, true, `label-${bIdx}-right`);
             }
           } else {
-            // Одно значение - проверяем нужна ли подпись
+            // Нет разрыва - одно значение
             const value = rightValue ?? leftValue;
             if (value === null) continue;
 
-            // Проверяем соседние границы - если значение такое же, не дублируем
+            // Проверяем сегмент СЛЕВА: горизонтальный ли он?
+            // Если горизонтальный - значит подпись уже была на предыдущей границе
             const prevBx = bIdx > 0 ? boundaries[bIdx - 1] : null;
-            const nextBx = bIdx < boundaries.length - 1 ? boundaries[bIdx + 1] : null;
-
-            const prevLeftVal = prevBx !== null ? findLeftValue(prevBx) : null;
             const prevRightVal = prevBx !== null ? findRightValue(prevBx) : null;
-            const nextLeftVal = nextBx !== null ? findLeftValue(nextBx) : null;
-            const nextRightVal = nextBx !== null ? findRightValue(nextBx) : null;
+            const isHorizontalLeft = prevRightVal !== null && Math.abs(prevRightVal - value) < 0.1;
 
-            // Горизонтальный участок слева? (значение не менялось с предыдущей границы)
-            const sameAsPrev = prevRightVal !== null && Math.abs(prevRightVal - value) < 0.1;
-            // Горизонтальный участок справа? (значение не изменится до следующей границы)
-            const sameAsNext = nextLeftVal !== null && Math.abs(nextLeftVal - value) < 0.1;
-
-            // Если участок горизонтальный с обеих сторон - пропускаем (подпись уже есть)
-            if (sameAsPrev && sameAsNext) continue;
-
-            // Если горизонтальный участок слева - подпись уже была, пропускаем
-            if (sameAsPrev && !isLast) continue;
-
-            let placeRight: boolean;
-            if (isFirst) {
-              placeRight = true;
-            } else if (isLast) {
-              placeRight = false;
-            } else {
-              // Ставим справа если участок справа НЕ горизонтальный
-              placeRight = !sameAsNext;
+            // Если слева горизонтальный участок с тем же значением - пропускаем
+            // (подпись уже есть в начале этого горизонтального участка)
+            if (isHorizontalLeft && !isLast) {
+              continue;
             }
+
+            // Добавляем подпись
+            const placeRight = !isLast;
             addLabel(bx, value, placeRight, `label-${bIdx}`);
           }
         }
