@@ -578,79 +578,351 @@ function buildReportHTML(data: ReportData): string {
 }
 
 /**
- * Генерирует секцию с реакциями — текстовый вывод с формулами
+ * Генерирует секцию с реакциями — пошаговый вывод как в методичке
  */
 function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
   const { loads, L } = input;
   const isCantilever = input.beamType.startsWith("cantilever");
 
-  // Собираем вертикальные нагрузки
-  let totalVerticalLoad = 0;
-  const loadTerms: string[] = [];
+  // Структура для описания каждой нагрузки
+  interface LoadInfo {
+    type: "force" | "moment" | "distributed";
+    label: string;           // P₁, M₁, q₁ и т.д.
+    value: number;           // значение (F, M или q)
+    x?: number;              // точка приложения (для силы/момента)
+    a?: number;              // начало участка (для распределённой)
+    b?: number;              // конец участка (для распределённой)
+    Fq?: number;             // равнодействующая (для распределённой)
+    xq?: number;             // точка приложения равнодействующей
+  }
+
+  const loadInfos: LoadInfo[] = [];
+  let forceIdx = 1;
+  let momentIdx = 1;
+  let distIdx = 1;
 
   for (const load of loads) {
     if (load.type === "force") {
-      totalVerticalLoad += load.F;
-      loadTerms.push(load.F >= 0 ? `${formatNumber(load.F)}` : `(${formatNumber(load.F)})`);
+      loadInfos.push({
+        type: "force",
+        label: `P_{${forceIdx}}`,
+        value: load.F,
+        x: load.x
+      });
+      forceIdx++;
+    } else if (load.type === "moment") {
+      loadInfos.push({
+        type: "moment",
+        label: `M_{${momentIdx}}`,
+        value: load.M,
+        x: load.x
+      });
+      momentIdx++;
     } else if (load.type === "distributed") {
-      const qTotal = load.q * (load.b - load.a);
-      totalVerticalLoad += qTotal;
-      loadTerms.push(`${formatNumber(load.q)} \\cdot ${formatNumber(load.b - load.a)}`);
+      const Fq = load.q * (load.b - load.a);
+      const xq = (load.a + load.b) / 2;
+      loadInfos.push({
+        type: "distributed",
+        label: `q_{${distIdx}}`,
+        value: load.q,
+        a: load.a,
+        b: load.b,
+        Fq,
+        xq
+      });
+      distIdx++;
     }
   }
 
+  // Для консольной балки
   if (isCantilever) {
-    // Консольная балка
-    const Rf = reactions.Rf ?? 0;
-    const Mf = reactions.Mf ?? 0;
-    const xf = reactions.xf ?? 0;
-
-    return `
-    <p>Для консольной балки реакции определяются из условий равновесия:</p>
-
-    <p><strong>Сумма проекций на вертикальную ось:</strong></p>
-    <div class="formula">
-      \\(\\sum F_y = 0: \\quad R ${loadTerms.length > 0 ? `- (${loadTerms.join(" + ")})` : ""} = 0\\)
-    </div>
-    <p>Откуда: \\(R = ${formatNumber(Rf)}\\) кН</p>
-
-    <p><strong>Сумма моментов относительно заделки:</strong></p>
-    <div class="formula">
-      \\(\\sum M = 0: \\quad M_f + \\text{(моменты от нагрузок)} = 0\\)
-    </div>
-    <p>Откуда: \\(M_f = ${formatNumber(Mf)}\\) кН·м</p>
-
-    <p><strong>Результат:</strong></p>
-    <div class="formula">
-      \\(R = ${formatNumber(Rf)}\\) кН, \\quad \\(M_f = ${formatNumber(Mf)}\\) кН·м \\quad \\text{(в точке } x = ${formatNumber(xf)} \\text{ м)}
-    </div>`;
+    return buildCantileverReactions(input, reactions, loadInfos);
   }
 
-  // Двухопорная балка
+  // Для двухопорной балки
+  return buildSimplySupportedReactions(input, reactions, loadInfos);
+}
+
+/**
+ * Раздел реакций для консольной балки
+ */
+function buildCantileverReactions(
+  input: BeamInput,
+  reactions: Reactions,
+  loadInfos: Array<{
+    type: "force" | "moment" | "distributed";
+    label: string;
+    value: number;
+    x?: number;
+    a?: number;
+    b?: number;
+    Fq?: number;
+    xq?: number;
+  }>
+): string {
+  const Rf = reactions.Rf ?? 0;
+  const Mf = reactions.Mf ?? 0;
+  const xf = reactions.xf ?? 0;
+  const L = input.L;
+
+  let html = `
+  <p><strong>Соглашения знаков:</strong> силы вверх «+», моменты против часовой стрелки «+».</p>
+  <p>Заделка расположена в точке \\(x = ${formatNumber(xf)}\\) м.</p>`;
+
+  // Показываем равнодействующие распределённых нагрузок
+  const distributed = loadInfos.filter(l => l.type === "distributed");
+  if (distributed.length > 0) {
+    html += `\n  <p><strong>Равнодействующие распределённых нагрузок:</strong></p>`;
+    for (const d of distributed) {
+      html += `
+  <div class="formula">
+    \\(F_{${d.label}} = ${d.label} \\cdot (${formatNumber(d.b!)} - ${formatNumber(d.a!)}) = ${formatNumber(d.value)} \\cdot ${formatNumber(d.b! - d.a!)} = ${formatNumber(d.Fq!)}\\) кН, точка приложения \\(x_{${d.label}} = \\frac{${formatNumber(d.a!)} + ${formatNumber(d.b!)}}{2} = ${formatNumber(d.xq!)}\\) м
+  </div>`;
+    }
+  }
+
+  // Уравнение сил
+  html += `\n  <p><strong>Сумма проекций на вертикальную ось:</strong></p>`;
+
+  const forceTermsSymbolic: string[] = ["R"];
+  const forceTermsNumeric: string[] = [`R`];
+  let totalForceValue = 0;
+
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      forceTermsSymbolic.push(load.value >= 0 ? `- ${load.label}` : `+ ${load.label}`);
+      forceTermsNumeric.push(load.value >= 0 ? `- ${formatNumber(load.value)}` : `+ ${formatNumber(-load.value)}`);
+      totalForceValue += load.value;
+    } else if (load.type === "distributed") {
+      forceTermsSymbolic.push(`- F_{${load.label}}`);
+      forceTermsNumeric.push(`- ${formatNumber(load.Fq!)}`);
+      totalForceValue += load.Fq!;
+    }
+  }
+
+  html += `
+  <div class="formula">
+    \\(\\sum F_y = 0: \\quad ${forceTermsSymbolic.join(" ")} = 0\\)
+  </div>`;
+
+  html += `
+  <p>Подставляем значения:</p>
+  <div class="formula">
+    \\(R ${forceTermsNumeric.slice(1).join(" ")} = 0 \\quad \\Rightarrow \\quad \\boxed{R = ${formatNumber(Rf)} \\text{ кН}}\\)
+  </div>`;
+
+  // Уравнение моментов
+  html += `\n  <p><strong>Сумма моментов относительно заделки:</strong></p>`;
+
+  const momentTermsSymbolic: string[] = ["M_f"];
+  const momentTermsNumeric: string[] = [];
+  let totalMomentValue = 0;
+
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      const arm = load.x! - xf;
+      if (Math.abs(arm) > 1e-9) {
+        momentTermsSymbolic.push(`+ ${load.label} \\cdot (x_{${load.label}} - x_f)`);
+        const momentContrib = load.value * arm;
+        momentTermsNumeric.push(`${momentContrib >= 0 ? "+" : "-"} ${formatNumber(Math.abs(momentContrib))}`);
+        totalMomentValue += momentContrib;
+      }
+    } else if (load.type === "moment") {
+      momentTermsSymbolic.push(`+ ${load.label}`);
+      momentTermsNumeric.push(`${load.value >= 0 ? "+" : "-"} ${formatNumber(Math.abs(load.value))}`);
+      totalMomentValue += load.value;
+    } else if (load.type === "distributed") {
+      const arm = load.xq! - xf;
+      if (Math.abs(arm) > 1e-9) {
+        momentTermsSymbolic.push(`+ F_{${load.label}} \\cdot (x_{${load.label}} - x_f)`);
+        const momentContrib = load.Fq! * arm;
+        momentTermsNumeric.push(`${momentContrib >= 0 ? "+" : "-"} ${formatNumber(Math.abs(momentContrib))}`);
+        totalMomentValue += momentContrib;
+      }
+    }
+  }
+
+  html += `
+  <div class="formula">
+    \\(\\sum M = 0: \\quad ${momentTermsSymbolic.join(" ")} = 0\\)
+  </div>`;
+
+  html += `
+  <p>Подставляем значения:</p>
+  <div class="formula">
+    \\(M_f ${momentTermsNumeric.join(" ")} = 0 \\quad \\Rightarrow \\quad \\boxed{M_f = ${formatNumber(Mf)} \\text{ кН·м}}\\)
+  </div>`;
+
+  // Итог
+  html += `
+  <p><strong>Итог:</strong></p>
+  <div class="formula">
+    \\(R = ${formatNumber(Rf)}\\) кН ${Rf >= 0 ? "(вверх)" : "(вниз)"}, \\quad \\(M_f = ${formatNumber(Mf)}\\) кН·м
+  </div>`;
+
+  return html;
+}
+
+/**
+ * Раздел реакций для двухопорной балки
+ */
+function buildSimplySupportedReactions(
+  input: BeamInput,
+  reactions: Reactions,
+  loadInfos: Array<{
+    type: "force" | "moment" | "distributed";
+    label: string;
+    value: number;
+    x?: number;
+    a?: number;
+    b?: number;
+    Fq?: number;
+    xq?: number;
+  }>
+): string {
   const RA = reactions.RA ?? 0;
   const RB = reactions.RB ?? 0;
   const xA = reactions.xA ?? 0;
-  const xB = reactions.xB ?? L;
+  const xB = reactions.xB ?? input.L;
   const span = xB - xA;
 
-  return `
-  <p>Рассмотрим равновесие балки. Опора A в точке \\(x = ${formatNumber(xA)}\\) м, опора B в точке \\(x = ${formatNumber(xB)}\\) м.</p>
+  let html = `
+  <p><strong>Соглашения знаков:</strong> силы вверх «+», моменты против часовой стрелки «+».</p>
+  <p>Опора A в точке \\(x_A = ${formatNumber(xA)}\\) м, опора B в точке \\(x_B = ${formatNumber(xB)}\\) м.</p>`;
 
-  <p><strong>Сумма проекций на вертикальную ось:</strong></p>
+  // Показываем равнодействующие распределённых нагрузок
+  const distributed = loadInfos.filter(l => l.type === "distributed");
+  if (distributed.length > 0) {
+    html += `\n  <p><strong>Равнодействующие распределённых нагрузок:</strong></p>`;
+    for (const d of distributed) {
+      html += `
   <div class="formula">
-    \\(\\sum F_y = 0: \\quad R_A + R_B ${loadTerms.length > 0 ? `- (${loadTerms.join(" + ")})` : ""} = 0\\)
+    \\(F_{${d.label}} = ${d.label} \\cdot (${formatNumber(d.b!)} - ${formatNumber(d.a!)}) = ${formatNumber(d.value)} \\cdot ${formatNumber(d.b! - d.a!)} = ${formatNumber(d.Fq!)}\\) кН
   </div>
+  <p>Точка приложения: \\(x_{${d.label}} = \\frac{${formatNumber(d.a!)} + ${formatNumber(d.b!)}}{2} = ${formatNumber(d.xq!)}\\) м</p>`;
+    }
+  }
 
-  <p><strong>Сумма моментов относительно точки A:</strong></p>
+  // --- Уравнение сил ---
+  html += `\n  <p><strong>Сумма проекций на вертикальную ось:</strong></p>`;
+
+  // Символьное уравнение
+  const forceSymbolic: string[] = ["R_A", "R_B"];
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      forceSymbolic.push(load.value >= 0 ? `- ${load.label}` : `+ |${load.label}|`);
+    } else if (load.type === "distributed") {
+      forceSymbolic.push(`- F_{${load.label}}`);
+    }
+  }
+
+  html += `
   <div class="formula">
-    \\(\\sum M_A = 0: \\quad R_B \\cdot ${formatNumber(span)} + \\text{(моменты от нагрузок)} = 0\\)
-  </div>
+    \\(\\sum F_y = 0: \\quad ${forceSymbolic.join(" + ").replace(/\+ -/g, "- ").replace(/\+ \+/g, "+ ")} = 0\\)
+  </div>`;
 
-  <p>Решая систему уравнений, получаем:</p>
+  // Подстановка в уравнение сил
+  let totalLoad = 0;
+  const forceNumTerms: string[] = [];
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      totalLoad += load.value;
+      forceNumTerms.push(`${load.value >= 0 ? "" : "+"}${formatNumber(-load.value)}`);
+    } else if (load.type === "distributed") {
+      totalLoad += load.Fq!;
+      forceNumTerms.push(`- ${formatNumber(load.Fq!)}`);
+    }
+  }
+
+  html += `
+  <p>Откуда:</p>
   <div class="formula">
-    \\(R_A = ${formatNumber(RA)}\\) кН, \\quad \\(R_B = ${formatNumber(RB)}\\) кН
-  </div>
+    \\(R_A + R_B = ${formatNumber(totalLoad)}\\) кН \\quad \\text{(1)}
+  </div>`;
 
-  <p><strong>Проверка:</strong> \\(R_A + R_B = ${formatNumber(RA)} + ${formatNumber(RB)} = ${formatNumber(RA + RB)}\\) кН
-  ${Math.abs(RA + RB - totalVerticalLoad) < 0.01 ? "✓" : ""}</p>`;
+  // --- Уравнение моментов относительно A ---
+  html += `\n  <p><strong>Сумма моментов относительно точки A:</strong></p>`;
+
+  // Символьное уравнение моментов
+  const momentSymbolic: string[] = [`R_B \\cdot (x_B - x_A)`];
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      momentSymbolic.push(`- ${load.label} \\cdot (x_{${load.label}} - x_A)`);
+    } else if (load.type === "moment") {
+      momentSymbolic.push(`+ ${load.label}`);
+    } else if (load.type === "distributed") {
+      momentSymbolic.push(`- F_{${load.label}} \\cdot (x_{${load.label}} - x_A)`);
+    }
+  }
+
+  html += `
+  <div class="formula">
+    \\(\\sum M_A = 0: \\quad ${momentSymbolic.join(" ")} = 0\\)
+  </div>`;
+
+  // Подстановка чисел
+  html += `\n  <p>Подставляем значения:</p>`;
+
+  const momentNumTerms: string[] = [`R_B \\cdot ${formatNumber(span)}`];
+  let momentSum = 0;
+
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      const arm = load.x! - xA;
+      const contrib = load.value * arm;
+      momentSum += contrib;
+      if (Math.abs(arm) > 1e-9) {
+        momentNumTerms.push(`- ${formatNumber(load.value)} \\cdot ${formatNumber(arm)}`);
+      }
+    } else if (load.type === "moment") {
+      momentSum += load.value;
+      momentNumTerms.push(`${load.value >= 0 ? "+" : "-"} ${formatNumber(Math.abs(load.value))}`);
+    } else if (load.type === "distributed") {
+      const arm = load.xq! - xA;
+      const contrib = load.Fq! * arm;
+      momentSum += contrib;
+      if (Math.abs(arm) > 1e-9) {
+        momentNumTerms.push(`- ${formatNumber(load.Fq!)} \\cdot ${formatNumber(arm)}`);
+      }
+    }
+  }
+
+  html += `
+  <div class="formula">
+    \\(${momentNumTerms.join(" ")} = 0\\)
+  </div>`;
+
+  // Вычисляем
+  html += `
+  <div class="formula">
+    \\(R_B \\cdot ${formatNumber(span)} = ${formatNumber(momentSum)} \\quad \\Rightarrow \\quad R_B = \\frac{${formatNumber(momentSum)}}{${formatNumber(span)}} = ${formatNumber(RB)}\\) кН
+  </div>`;
+
+  // Из уравнения (1) находим RA
+  html += `
+  <p>Из уравнения (1):</p>
+  <div class="formula">
+    \\(R_A = ${formatNumber(totalLoad)} - R_B = ${formatNumber(totalLoad)} - (${formatNumber(RB)}) = ${formatNumber(RA)}\\) кН
+  </div>`;
+
+  // Итог с boxed
+  html += `
+  <p><strong>Итог:</strong></p>
+  <div class="formula">
+    \\(\\boxed{R_A = ${formatNumber(RA)} \\text{ кН}}\\) ${RA >= 0 ? "(вверх)" : "(вниз)"}, \\quad
+    \\(\\boxed{R_B = ${formatNumber(RB)} \\text{ кН}}\\) ${RB >= 0 ? "(вверх)" : "(вниз)"}
+  </div>`;
+
+  // Проверка
+  html += `
+  <p><strong>Проверка:</strong></p>
+  <div class="formula">
+    \\(R_A + R_B = ${formatNumber(RA)} + (${formatNumber(RB)}) = ${formatNumber(RA + RB)}\\) кН
+  </div>`;
+
+  const checkResult = Math.abs(RA + RB - totalLoad) < 0.01;
+  html += `
+  <p>Сумма внешних сил: \\(${formatNumber(totalLoad)}\\) кН. ${checkResult ? "Проверка выполнена ✓" : "Расхождение!"}</p>`;
+
+  return html;
 }
