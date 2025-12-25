@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
 import { generateReport } from "@/lib/beam";
 import { Latex } from "@/components/Latex";
@@ -8,6 +9,8 @@ interface Props {
   input: BeamInput;
   result: BeamResult;
   className?: string;
+  showButton?: boolean;
+  onReportRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 // Форматирование числа: убираем лишние нули
@@ -30,7 +33,7 @@ const UNIT_MM = "\\,\\text{мм}";
 const UNIT_CM4 = "\\,\\text{см}^4";
 const UNIT_CM3 = "\\,\\text{см}^3";
 
-export function ResultCards({ input, result, className }: Props) {
+export function ResultCards({ input, result, className, showButton = true, onReportRef }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
 
   // Находим максимальный прогиб
@@ -157,9 +160,58 @@ export function ResultCards({ input, result, className }: Props) {
 
   const isBalanced = Math.abs(equilibrium.sumFy) < 0.01 && Math.abs(equilibrium.sumM) < 0.01;
 
+  const handleOpenReport = () => {
+    // Функция для сериализации SVG в dataURL
+    const serializeSvg = (id: string): string | undefined => {
+      const svgElement = document.getElementById(id);
+      if (!svgElement) return undefined;
+
+      const clonedSvg = svgElement.cloneNode(true) as SVGElement;
+      clonedSvg.removeAttribute("style");
+      clonedSvg.setAttribute("width", "100%");
+      clonedSvg.setAttribute("height", "auto");
+
+      const svgString = new XMLSerializer().serializeToString(clonedSvg);
+      return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+    };
+
+    // Сериализуем схему балки как SVG-строку (для прямой вставки)
+    const beamSchemaElement = document.getElementById("beam-schema-export");
+    let beamSchemaSVG: string | undefined;
+    if (beamSchemaElement) {
+      const clonedSvg = beamSchemaElement.cloneNode(true) as SVGElement;
+      clonedSvg.removeAttribute("style");
+      clonedSvg.setAttribute("width", "100%");
+      clonedSvg.setAttribute("height", "auto");
+      beamSchemaSVG = new XMLSerializer().serializeToString(clonedSvg);
+    }
+
+    // Сериализуем эпюры в dataURL
+    const diagramQ = serializeSvg("diagram-q-export");
+    const diagramM = serializeSvg("diagram-m-export");
+    const diagramY = serializeSvg("diagram-y-export");
+
+    generateReport({
+      input,
+      result,
+      beamSchemaSVG,
+      diagrams: {
+        Q: diagramQ,
+        M: diagramM,
+        y: diagramY,
+      },
+    });
+  };
+
+  // Expose handleOpenReport to parent via ref
+  useEffect(() => {
+    if (onReportRef) {
+      onReportRef.current = handleOpenReport;
+    }
+  });
+
   return (
-    <div className={`flex flex-col h-full ${className || ""}`}>
-      <div className="flex flex-col gap-4 flex-1">
+    <div className={`space-y-6 ${className || ""}`}>
       {/* Реакции */}
       <div className="p-4 rounded-lg border border-border bg-card">
         <h3 className="font-semibold mb-3 text-base text-foreground">Реакции опор</h3>
@@ -242,57 +294,17 @@ export function ResultCards({ input, result, className }: Props) {
           </div>
         </div>
       </div>
-      </div>
 
       {/* Кнопка отчёта */}
-      <button
-        className="w-full py-3 mt-4 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center"
-        onClick={() => {
-          // Функция для сериализации SVG в dataURL
-          const serializeSvg = (id: string): string | undefined => {
-            const svgElement = document.getElementById(id);
-            if (!svgElement) return undefined;
-
-            const clonedSvg = svgElement.cloneNode(true) as SVGElement;
-            clonedSvg.removeAttribute("style");
-            clonedSvg.setAttribute("width", "100%");
-            clonedSvg.setAttribute("height", "auto");
-
-            const svgString = new XMLSerializer().serializeToString(clonedSvg);
-            return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
-          };
-
-          // Сериализуем схему балки как SVG-строку (для прямой вставки)
-          const beamSchemaElement = document.getElementById("beam-schema-export");
-          let beamSchemaSVG: string | undefined;
-          if (beamSchemaElement) {
-            const clonedSvg = beamSchemaElement.cloneNode(true) as SVGElement;
-            clonedSvg.removeAttribute("style");
-            clonedSvg.setAttribute("width", "100%");
-            clonedSvg.setAttribute("height", "auto");
-            beamSchemaSVG = new XMLSerializer().serializeToString(clonedSvg);
-          }
-
-          // Сериализуем эпюры в dataURL
-          const diagramQ = serializeSvg("diagram-q-export");
-          const diagramM = serializeSvg("diagram-m-export");
-          const diagramY = serializeSvg("diagram-y-export");
-
-          generateReport({
-            input,
-            result,
-            beamSchemaSVG,
-            diagrams: {
-              Q: diagramQ,
-              M: diagramM,
-              y: diagramY,
-            },
-          });
-        }}
-      >
-        <span className="text-muted-foreground">📄</span>
-        <span className="ml-2">Открыть отчёт</span>
-      </button>
+      {showButton && (
+        <button
+          className="w-full py-3 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center"
+          onClick={handleOpenReport}
+        >
+          <span className="text-muted-foreground">📄</span>
+          <span className="ml-2">Открыть отчёт</span>
+        </button>
+      )}
     </div>
   );
 }

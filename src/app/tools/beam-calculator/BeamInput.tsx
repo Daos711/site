@@ -74,6 +74,8 @@ function NumInput({
 
 interface Props {
   onCalculate: (input: BeamInputType) => void;
+  showButton?: boolean;
+  submitRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 const beamTypes: { value: BeamType; label: string; description: string }[] = [
@@ -109,7 +111,7 @@ const beamTypes: { value: BeamType; label: string; description: string }[] = [
   },
 ];
 
-export function BeamInput({ onCalculate }: Props) {
+export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) {
   const [beamType, setBeamType] = useState<BeamType>("simply-supported");
   const [L, setL] = useState<number>(10);
   const [loads, setLoads] = useState<Load[]>([]);
@@ -239,9 +241,15 @@ export function BeamInput({ onCalculate }: Props) {
     onCalculate(input);
   };
 
+  // Expose handleSubmit to parent via ref
+  useEffect(() => {
+    if (submitRef) {
+      submitRef.current = handleSubmit;
+    }
+  }, [submitRef, handleSubmit]);
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="space-y-6 flex-1">
+    <div className="space-y-6">
       {/* Тип балки */}
       <div className="p-4 rounded-lg border border-border bg-card">
         <h3 className="font-semibold mb-3">Тип балки</h3>
@@ -399,15 +407,16 @@ export function BeamInput({ onCalculate }: Props) {
           </div>
         )}
       </div>
-      </div>
 
       {/* Кнопка расчёта */}
-      <button
-        onClick={handleSubmit}
-        className="w-full py-3 mt-6 rounded-lg bg-accent text-white font-semibold hover:bg-accent/90 transition-colors"
-      >
-        Рассчитать
-      </button>
+      {showButton && (
+        <button
+          onClick={handleSubmit}
+          className="w-full py-3 rounded-lg border border-accent bg-accent text-white font-semibold hover:bg-accent/90 transition-colors"
+        >
+          Рассчитать
+        </button>
+      )}
     </div>
   );
 }
