@@ -8,22 +8,22 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
   const arrowLen = 40;
-  const markerHalf = 3; // половина маркера 6x6, т.к. refX=3 (центр)
+  // Маркер 6x6 с refX=3 при strokeWidth=2 масштабируется до 12x12
+  // Острие выступает на 6px от конца линии, поэтому offset=8 для касания
+  const markerOffset = 8;
   const pointsDown = value >= 0; // Положительная сила направлена ВНИЗ
 
-  // С refX=3 маркер центрирован на конце линии, выступает на 3px в каждую сторону
-  // Чтобы кончик касался baseY, линия должна заканчиваться на 3px дальше от балки
   let startY: number, endY: number, textY: number;
 
   if (pointsDown) {
     // Стрелка ВНИЗ к верхней поверхности балки (положительная реакция)
-    startY = baseY - arrowLen; // выше baseY
-    endY = baseY - markerHalf; // чуть выше baseY, кончик достигнет baseY
+    startY = baseY - arrowLen;
+    endY = baseY - markerOffset; // линия заканчивается на 8px выше, острие касается baseY
     textY = startY - 5;
   } else {
     // Стрелка ВВЕРХ к нижней поверхности балки (отрицательная реакция)
-    startY = baseY + arrowLen; // ниже baseY
-    endY = baseY + markerHalf; // чуть ниже baseY, кончик достигнет baseY
+    startY = baseY + arrowLen;
+    endY = baseY + markerOffset; // линия заканчивается на 8px ниже, острие касается baseY
     textY = startY + 15;
   }
 
@@ -51,8 +51,8 @@ export function DistributedLoadArrows({
 }: {
   x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string
 }) {
-  const arrowLen = 25;
-  const markerHalf = 3; // половина маркера
+  const arrowLen = 28;
+  const markerOffset = 8; // маркер масштабируется, острие выступает на ~6px
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
@@ -68,7 +68,7 @@ export function DistributedLoadArrows({
               x1={px}
               y1={beamTopY - arrowLen}
               x2={px}
-              y2={beamTopY - markerHalf}
+              y2={beamTopY - markerOffset}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlue)`}
@@ -93,7 +93,7 @@ export function DistributedLoadArrows({
               x1={px}
               y1={beamBottomY + arrowLen}
               x2={px}
-              y2={beamBottomY + markerHalf}
+              y2={beamBottomY + markerOffset}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
@@ -109,11 +109,11 @@ export function DistributedLoadArrows({
 }
 
 // Сосредоточенная сила (КРАСНАЯ)
-// y - поверхность балки (верхняя)
-// F > 0: вниз, F < 0: вверх
+// y - поверхность балки (верхняя для F>0, нижняя для F<0)
+// F > 0: вниз к верхней, F < 0: вверх к нижней
 export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string }) {
   const arrowLen = 50;
-  const markerHalf = 3; // половина маркера
+  const markerOffset = 8; // маркер масштабируется, острие выступает на ~6px
   const pointsDown = F >= 0;
 
   const labelWidth = 100;
@@ -131,20 +131,20 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
   }
 
   if (pointsDown) {
-    // Стрелка вниз: кончик касается y
+    // Стрелка вниз: кончик касается y (верхняя поверхность)
     return (
       <g>
-        <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerHalf} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
     );
   } else {
-    // Стрелка вверх: кончик касается y
+    // Стрелка вверх: кончик касается y (нижняя поверхность)
     return (
       <g>
-        <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerHalf} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>

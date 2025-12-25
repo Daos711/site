@@ -151,11 +151,13 @@ export function BeamSchemaExport({ input, result }: Props) {
       {/* Сосредоточенные силы */}
       {loads.map((load, i) => {
         if (load.type === "force") {
+          // Положительная сила вниз → верхняя поверхность, отрицательная вверх → нижняя
+          const forceY = load.F >= 0 ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
           return (
             <ForceArrow
               key={`force-${i}`}
               x={xToPx(load.x)}
-              y={beamY - beamThickness / 2}
+              y={forceY}
               F={load.F}
               label={`F = ${Math.abs(load.F)} кН`}
               maxX={xToPx(L) + padding.right - 10}
