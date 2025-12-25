@@ -8,22 +8,22 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
   const arrowLen = 40;
+  const markerLen = 6; // длина наконечника маркера
   const pointsUp = value >= 0;
 
-  // Линия должна заканчиваться так, чтобы наконечник касался baseY
-  // С refX=0 наконечник начинается от конца линии и идёт в направлении стрелки
+  // Линия должна заканчиваться раньше на длину маркера, чтобы наконечник касался baseY
   let startY: number, endY: number, textY: number;
 
   if (pointsUp) {
-    // Стрелка вверх: начало снизу (больше y), конец сверху (меньше y)
-    // Наконечник указывает вверх и касается baseY
+    // Стрелка вверх: линия идёт снизу вверх, маркер на верхнем конце
+    // Линия заканчивается на markerLen выше baseY, чтобы наконечник касался baseY
     startY = baseY + arrowLen;
-    endY = baseY;
+    endY = baseY + markerLen;
     textY = startY - arrowLen / 2;
   } else {
-    // Стрелка вниз: начало сверху (меньше y), конец снизу (больше y)
+    // Стрелка вниз: линия идёт сверху вниз, маркер на нижнем конце
     startY = baseY - arrowLen;
-    endY = baseY;
+    endY = baseY - markerLen;
     textY = startY + arrowLen / 2;
   }
 
@@ -52,6 +52,7 @@ export function DistributedLoadArrows({
   x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string
 }) {
   const arrowLen = 25;
+  const markerLen = 6;
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
   if (q >= 0) {
@@ -67,7 +68,7 @@ export function DistributedLoadArrows({
               x1={px}
               y1={beamTopY - arrowLen}
               x2={px}
-              y2={beamTopY}
+              y2={beamTopY - markerLen}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlue)`}
@@ -92,7 +93,7 @@ export function DistributedLoadArrows({
               x1={px}
               y1={beamBottomY + arrowLen}
               x2={px}
-              y2={beamBottomY}
+              y2={beamBottomY + markerLen}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
               markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
@@ -112,6 +113,7 @@ export function DistributedLoadArrows({
 // F > 0: вниз, F < 0: вверх
 export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string }) {
   const arrowLen = 50;
+  const markerLen = 6;
   const pointsDown = F >= 0;
 
   const labelWidth = 100;
@@ -129,20 +131,20 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
   }
 
   if (pointsDown) {
-    // Стрелка вниз: наконечник касается поверхности балки (y)
+    // Стрелка вниз: линия заканчивается выше на markerLen, наконечник касается y
     return (
       <g>
-        <line x1={x} y1={y - arrowLen} x2={x} y2={y} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerLen} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
     );
   } else {
-    // Стрелка вверх: наконечник касается поверхности балки (y)
+    // Стрелка вверх: линия заканчивается ниже на markerLen, наконечник касается y
     return (
       <g>
-        <line x1={x} y1={y + arrowLen} x2={x} y2={y} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
+        <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerLen} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
         <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>

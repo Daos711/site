@@ -260,26 +260,29 @@ export function DiagramExport({
           );
         };
 
-        // Функция проверки: мешает ли кривая слева/справа от точки
-        const checkCurveCollision = (bx: number, value: number, checkLeft: boolean): boolean => {
+        // Функция проверки: насколько сильно мешает кривая слева/справа от точки
+        // Возвращает "степень" коллизии (0 = нет, больше = хуже)
+        const getCurveCollisionScore = (bx: number, value: number, checkLeft: boolean): number => {
           // Ищем значение кривой немного левее/правее границы
-          const offset = checkLeft ? -0.1 : 0.1;
+          const offset = checkLeft ? -0.15 : 0.15;
           const checkX = bx + offset;
-          if (checkX < 0 || checkX > L) return false;
+          if (checkX < 0 || checkX > L) return 0;
 
           for (const seg of scaledSegments) {
             for (let i = 0; i < seg.length - 1; i++) {
               if (seg[i].x <= checkX && seg[i + 1].x >= checkX) {
                 const t = (checkX - seg[i].x) / (seg[i + 1].x - seg[i].x);
                 const curveVal = seg[i].value + t * (seg[i + 1].value - seg[i].value);
-                // Если подпись над кривой (value >= 0) и кривая рядом выше — коллизия
-                // Если подпись под кривой (value < 0) и кривая рядом ниже — коллизия
-                if (value >= 0 && curveVal > value * 0.8) return true;
-                if (value < 0 && curveVal < value * 0.8) return true;
+                // Чем ближе кривая к значению подписи — тем хуже
+                const diff = Math.abs(curveVal - value);
+                const threshold = Math.abs(value) * 0.5 + 1;
+                if (diff < threshold) {
+                  return threshold - diff; // больше = хуже (ближе к коллизии)
+                }
               }
             }
           }
-          return false;
+          return 0;
         };
 
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
@@ -313,11 +316,12 @@ export function DiagramExport({
             } else if (isLast) {
               placeRight = false;
             } else {
-              // Проверяем коллизии с кривой
-              const collisionLeft = checkCurveCollision(bx, value, true);
-              const collisionRight = checkCurveCollision(bx, value, false);
-              // Если слева мешает — ставим справа, иначе слева
-              placeRight = collisionLeft && !collisionRight;
+              // Проверяем где меньше коллизий с кривой
+              const collisionScoreLeft = getCurveCollisionScore(bx, value, true);
+              const collisionScoreRight = getCurveCollisionScore(bx, value, false);
+              // Ставим на ту сторону, где меньше коллизий
+              // Если слева хуже — ставим справа
+              placeRight = collisionScoreLeft > collisionScoreRight;
             }
             addLabel(bx, value, placeRight, `label-${bIdx}`);
           }

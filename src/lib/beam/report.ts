@@ -373,28 +373,28 @@ function buildReportHTML(data: ReportData): string {
     * { box-sizing: border-box; }
     body {
       font-family: 'Times New Roman', Times, serif;
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 16px;
+      line-height: 1.7;
       max-width: 210mm;
       margin: 0 auto;
       padding: 20mm 15mm;
       background: white;
       color: black;
     }
-    h1 { font-size: 22px; text-align: center; margin-bottom: 24px; }
-    h2 { font-size: 18px; margin-top: 28px; margin-bottom: 14px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-    h3 { font-size: 16px; margin-top: 20px; margin-bottom: 10px; }
-    table { border-collapse: collapse; width: 100%; margin: 12px 0; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    h1 { font-size: 26px; text-align: center; margin-bottom: 28px; }
+    h2 { font-size: 20px; margin-top: 32px; margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    h3 { font-size: 18px; margin-top: 24px; margin-bottom: 12px; }
+    table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 15px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
     th { background: #f5f5f5; }
-    .formula { margin: 8px 0; padding: 8px 0; }
+    .formula { margin: 10px 0; padding: 10px 0; font-size: 16px; }
     .result { color: #0066cc; font-weight: bold; }
     .extremes-block { break-inside: avoid; }
-    .diagram-block { break-inside: avoid; margin: 20px 0; text-align: center; }
+    .diagram-block { break-inside: avoid; margin: 24px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
-    .diagram-title { font-weight: bold; margin-bottom: 8px; }
-    ul { margin: 8px 0; padding-left: 24px; }
-    li { margin: 4px 0; }
+    .diagram-title { font-weight: bold; margin-bottom: 10px; font-size: 16px; }
+    ul { margin: 10px 0; padding-left: 28px; }
+    li { margin: 6px 0; }
     @media print {
       body { padding: 10mm; }
       .no-print { display: none; }
@@ -405,13 +405,13 @@ function buildReportHTML(data: ReportData): string {
       position: fixed;
       top: 10px;
       right: 10px;
-      padding: 10px 20px;
+      padding: 12px 24px;
       background: #0066cc;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 16px;
     }
     .print-btn:hover { background: #0055aa; }
     .print-btn:disabled { background: #999; cursor: wait; }
