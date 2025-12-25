@@ -3,13 +3,13 @@ import { COLORS } from "./constants";
 
 // Стрелка реакции - направление зависит от знака
 // value >= 0: вверх (от балки), value < 0: вниз (к балке сверху)
-export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0 }: {
-  x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number
+export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "" }: {
+  x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
-  const arrowLen = 40;
+  const arrowLen = 50;
   const pointsUp = value >= 0;
 
-  const markerSize = 6;
+  const markerSize = 8;
   let startY: number, endY: number;
   if (pointsUp) {
     startY = baseY;
@@ -19,29 +19,17 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
     endY = baseY - markerSize;
   }
 
-  // Границы панели для проверки
-  const minY = 15;
-  const minX = 5;
-
-  let textX = x + (labelSide === "left" ? -8 : 8) + labelXOffset;
-  let textY = baseY - arrowLen / 2 - labelYOffset;
-  let textAnchor: "start" | "end" = labelSide === "left" ? "end" : "start";
-
-  if (textY < minY) {
-    textY = minY;
-  }
-
-  if (labelSide === "left" && textX < minX + 80) {
-    textX = x + 8;
-    textAnchor = "start";
-  }
+  // Подпись рядом со стрелкой
+  const textX = x + (labelSide === "left" ? -10 : 10) + labelXOffset;
+  const textY = pointsUp ? endY + 15 : startY + 15;
+  const textAnchor: "start" | "end" = labelSide === "left" ? "end" : "start";
 
   return (
     <g>
-      <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#arrowGreen)" />
-      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={11} fontWeight="500" dominantBaseline="middle" textAnchor={textAnchor}>
+      <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2.5} markerEnd={`url(#${markerPrefix}arrowGreen)`} />
+      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={12} fontWeight="600" dominantBaseline="middle" textAnchor={textAnchor}>
         {name}
-        {subscript && <tspan dy="3" fontSize="8">{subscript}</tspan>}
+        {subscript && <tspan dy="3" fontSize="9">{subscript}</tspan>}
         {subscript && <tspan dy="-3"> </tspan>}
         <tspan> = {valueText}</tspan>
       </text>

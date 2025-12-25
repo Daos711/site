@@ -24,12 +24,12 @@ interface Props {
 export function BeamSchemaExport({ input, result }: Props) {
   const { L, loads, beamType } = input;
 
-  // Размеры SVG
-  const width = 700;
-  const height = 220;
-  const padding = { left: 60, right: 60, top: 80, bottom: 60 };
-  const beamY = padding.top + 30;
-  const beamThickness = 14;
+  // Размеры SVG (увеличенные для лучшей читаемости)
+  const width = 800;
+  const height = 280;
+  const padding = { left: 70, right: 70, top: 100, bottom: 70 };
+  const beamY = padding.top + 40;
+  const beamThickness = 18;
 
   const chartWidth = width - padding.left - padding.right;
   const xToPx = (x: number) => padding.left + (x / L) * chartWidth;
@@ -43,24 +43,24 @@ export function BeamSchemaExport({ input, result }: Props) {
         position: "absolute",
         left: "-9999px",
         top: "-9999px",
-        width: "700px",
-        height: "220px",
+        width: "800px",
+        height: "280px",
         background: "#ffffff",
       }}
     >
-      {/* Маркеры для стрелок */}
+      {/* Маркеры для стрелок (увеличенные) */}
       <defs>
-        <marker id="exp-arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
+        <marker id="exp-arrowBlue" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 L2.5,5 Z" fill={COLORS.distributedLoad} />
         </marker>
-        <marker id="exp-arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.pointForce} />
+        <marker id="exp-arrowRed" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 L2.5,5 Z" fill={COLORS.pointForce} />
         </marker>
-        <marker id="exp-arrowGreen" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.reaction} />
+        <marker id="exp-arrowGreen" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 L3,6 Z" fill={COLORS.reaction} />
         </marker>
-        <marker id="exp-arrowPurple" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.moment} />
+        <marker id="exp-arrowPurple" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 L2.5,5 Z" fill={COLORS.moment} />
         </marker>
       </defs>
 
@@ -196,8 +196,8 @@ export function BeamSchemaExport({ input, result }: Props) {
               name="R"
               subscript="A"
               valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
-              labelSide="left"
-              labelYOffset={50}
+              labelSide="right"
+              markerPrefix="exp-"
             />
           );
         }
@@ -214,8 +214,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               subscript="B"
               valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
               labelSide="left"
-              labelYOffset={reactions.RB >= 0 ? 50 : 35}
-              labelXOffset={-30}
+              markerPrefix="exp-"
             />
           );
         }
@@ -230,8 +229,8 @@ export function BeamSchemaExport({ input, result }: Props) {
               value={reactions.Rf}
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide="left"
-              labelYOffset={35}
+              labelSide="right"
+              markerPrefix="exp-"
             />
           );
         }

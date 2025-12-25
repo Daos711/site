@@ -481,7 +481,7 @@ function collectEvents(input: BeamInput, reactions: Reactions): number[] {
 }
 
 /**
- * Поиск экстремума функции
+ * Поиск экстремума функции с локальным уточнением
  */
 function findExtremum(
   fn: (x: number) => number,
@@ -492,7 +492,8 @@ function findExtremum(
   let maxValue = 0;
   let maxX = 0;
 
-  const numPoints = 1000;
+  // Грубый поиск с 2000 точками
+  const numPoints = 2000;
   const dx = L / numPoints;
 
   for (let i = 0; i <= numPoints; i++) {
@@ -512,6 +513,38 @@ function findExtremum(
       maxX = e;
     }
   }
+
+  // Локальное уточнение методом золотого сечения
+  const golden = 0.618033988749895;
+  let a = Math.max(0, maxX - dx * 2);
+  let b = Math.min(L, maxX + dx * 2);
+
+  for (let iter = 0; iter < 20; iter++) {
+    const d = (b - a) * golden;
+    const x1 = b - d;
+    const x2 = a + d;
+    const f1 = Math.abs(fn(x1));
+    const f2 = Math.abs(fn(x2));
+
+    if (f1 > f2) {
+      b = x2;
+      if (f1 > maxValue) {
+        maxValue = f1;
+        maxX = x1;
+      }
+    } else {
+      a = x1;
+      if (f2 > maxValue) {
+        maxValue = f2;
+        maxX = x2;
+      }
+    }
+
+    if (b - a < 1e-9) break;
+  }
+
+  // Округляем координату до разумной точности
+  maxX = Math.round(maxX * 1000) / 1000;
 
   return { value: fn(maxX), x: maxX };
 }
