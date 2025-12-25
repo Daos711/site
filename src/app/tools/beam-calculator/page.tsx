@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { BeamInput } from "./BeamInput";
 import { ResultCards } from "./ResultCards";
@@ -14,9 +14,6 @@ export default function BeamCalculatorPage() {
   const [input, setInput] = useState<BeamInputType | null>(null);
   const [result, setResult] = useState<BeamResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const submitRef = useRef<(() => void) | null>(null);
-  const reportRef = useRef<(() => void) | null>(null);
 
   const handleCalculate = (beamInput: BeamInputType) => {
     try {
@@ -38,9 +35,9 @@ export default function BeamCalculatorPage() {
       />
 
       {/* Верхний блок: 2 колонки на десктопе */}
-      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-6">
+      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8">
         {/* Левая колонка: Форма ввода */}
-        <BeamInput onCalculate={handleCalculate} showButton={false} submitRef={submitRef} />
+        <BeamInput onCalculate={handleCalculate} />
 
         {/* Правая колонка: Результаты */}
         <div className="lg:sticky lg:top-20 lg:self-start">
@@ -50,31 +47,13 @@ export default function BeamCalculatorPage() {
             </div>
           )}
           {result && input ? (
-            <ResultCards input={input} result={result} showButton={false} onReportRef={reportRef} />
+            <ResultCards input={input} result={result} />
           ) : (
             <div className="p-6 rounded-lg border border-border bg-card/50 text-muted text-center">
               <p>Введите параметры и нажмите «Рассчитать»</p>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Кнопки в отдельном ряду для выравнивания */}
-      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8">
-        <button
-          onClick={() => submitRef.current?.()}
-          className="w-full py-3 rounded-lg border border-accent bg-accent text-white font-semibold hover:bg-accent/90 transition-colors"
-        >
-          Рассчитать
-        </button>
-        <button
-          onClick={() => reportRef.current?.()}
-          disabled={!result}
-          className="w-full py-3 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span className="text-muted-foreground">📄</span>
-          <span className="ml-2">Открыть отчёт</span>
-        </button>
       </div>
 
       {/* Эпюры на всю ширину */}
