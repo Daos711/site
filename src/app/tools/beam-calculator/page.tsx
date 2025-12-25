@@ -40,7 +40,7 @@ export default function BeamCalculatorPage() {
         <BeamInput onCalculate={handleCalculate} />
 
         {/* Правая колонка: Результаты */}
-        <div className="flex flex-col">
+        <div className="flex flex-col lg:sticky lg:top-20 lg:self-start">
           {error && (
             <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 mb-4">
               {error}
