@@ -4,7 +4,13 @@ import React from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
 import { COLORS } from "./constants";
 import { PinSupport, RollerSupport, FixedSupport } from "./BeamSupports";
-import { DistributedLoadArrows, ForceArrow, MomentArrow } from "./BeamLoads";
+import { ReactionArrow, DistributedLoadArrows, ForceArrow, MomentArrow } from "./BeamLoads";
+
+const formatNum = (value: number, decimals = 2): string => {
+  if (Math.abs(value) < 1e-10) return "0";
+  const fixed = value.toFixed(decimals);
+  return fixed.replace(/\.?0+$/, "");
+};
 
 interface Props {
   input: BeamInput;
@@ -173,6 +179,65 @@ export function BeamSchemaExport({ input, result }: Props) {
         }
         return null;
       })}
+
+      {/* Реакции опор */}
+      {(() => {
+        const { reactions } = result;
+        const elements: React.ReactNode[] = [];
+
+        if (reactions.RA !== undefined && reactions.RA !== 0) {
+          const xA = reactions.xA ?? 0;
+          elements.push(
+            <ReactionArrow
+              key="RA"
+              x={xToPx(xA)}
+              baseY={beamY - beamThickness / 2}
+              value={reactions.RA}
+              name="R"
+              subscript="A"
+              valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
+              labelSide="left"
+              labelYOffset={50}
+            />
+          );
+        }
+
+        if (reactions.RB !== undefined && reactions.RB !== 0) {
+          const xB = reactions.xB ?? L;
+          elements.push(
+            <ReactionArrow
+              key="RB"
+              x={xToPx(xB)}
+              baseY={beamY - beamThickness / 2}
+              value={reactions.RB}
+              name="R"
+              subscript="B"
+              valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
+              labelSide="left"
+              labelYOffset={reactions.RB >= 0 ? 50 : 35}
+              labelXOffset={-30}
+            />
+          );
+        }
+
+        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
+          const xf = reactions.xf ?? 0;
+          elements.push(
+            <ReactionArrow
+              key="Rf"
+              x={xToPx(xf)}
+              baseY={beamY - beamThickness / 2}
+              value={reactions.Rf}
+              name="R"
+              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
+              labelSide="left"
+              labelYOffset={35}
+            />
+          );
+        }
+
+        return <>{elements}</>;
+      })()}
 
       {/* Подписи опор A и B */}
       {(() => {

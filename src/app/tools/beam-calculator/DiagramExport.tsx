@@ -260,6 +260,28 @@ export function DiagramExport({
           );
         };
 
+        // Функция проверки: мешает ли кривая слева/справа от точки
+        const checkCurveCollision = (bx: number, value: number, checkLeft: boolean): boolean => {
+          // Ищем значение кривой немного левее/правее границы
+          const offset = checkLeft ? -0.1 : 0.1;
+          const checkX = bx + offset;
+          if (checkX < 0 || checkX > L) return false;
+
+          for (const seg of scaledSegments) {
+            for (let i = 0; i < seg.length - 1; i++) {
+              if (seg[i].x <= checkX && seg[i + 1].x >= checkX) {
+                const t = (checkX - seg[i].x) / (seg[i + 1].x - seg[i].x);
+                const curveVal = seg[i].value + t * (seg[i + 1].value - seg[i].value);
+                // Если подпись над кривой (value >= 0) и кривая рядом выше — коллизия
+                // Если подпись под кривой (value < 0) и кривая рядом ниже — коллизия
+                if (value >= 0 && curveVal > value * 0.8) return true;
+                if (value < 0 && curveVal < value * 0.8) return true;
+              }
+            }
+          }
+          return false;
+        };
+
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
           const isFirst = bIdx === 0;
@@ -281,12 +303,22 @@ export function DiagramExport({
               addLabel(bx, rightValue, true, `label-${bIdx}-right`);
             }
           } else {
-            // Одно значение — выбираем сторону
+            // Одно значение — выбираем сторону умно
             const value = rightValue ?? leftValue;
             if (value === null) continue;
 
-            // Первая граница → справа, последняя → слева, остальные → слева
-            const placeRight = isFirst;
+            let placeRight: boolean;
+            if (isFirst) {
+              placeRight = true;
+            } else if (isLast) {
+              placeRight = false;
+            } else {
+              // Проверяем коллизии с кривой
+              const collisionLeft = checkCurveCollision(bx, value, true);
+              const collisionRight = checkCurveCollision(bx, value, false);
+              // Если слева мешает — ставим справа, иначе слева
+              placeRight = collisionLeft && !collisionRight;
+            }
             addLabel(bx, value, placeRight, `label-${bIdx}`);
           }
         }

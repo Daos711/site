@@ -381,9 +381,9 @@ function buildReportHTML(data: ReportData): string {
       background: white;
       color: black;
     }
-    h1 { font-size: 18px; text-align: center; margin-bottom: 20px; }
-    h2 { font-size: 16px; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-    h3 { font-size: 14px; margin-top: 16px; margin-bottom: 8px; }
+    h1 { font-size: 22px; text-align: center; margin-bottom: 24px; }
+    h2 { font-size: 18px; margin-top: 28px; margin-bottom: 14px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    h3 { font-size: 16px; margin-top: 20px; margin-bottom: 10px; }
     table { border-collapse: collapse; width: 100%; margin: 12px 0; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
