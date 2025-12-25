@@ -921,7 +921,7 @@ function buildSimplySupportedReactions(
   html += `
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\(\\boxed{R_A = ${formatNumber(RA)}\\text{ кН}}\\) (${RA >= 0 ? "вверх" : "вниз"}), \\quad
+    \\(\\boxed{R_A = ${formatNumber(RA)}\\text{ кН}}\\) (${RA >= 0 ? "вверх" : "вниз"}), &emsp;
     \\(\\boxed{R_B = ${formatNumber(RB)}\\text{ кН}}\\) (${RB >= 0 ? "вверх" : "вниз"})
   </div>`;
 

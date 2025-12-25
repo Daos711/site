@@ -7,7 +7,8 @@ const PRINT_COLORS = {
   Q: "#2563eb",      // синий
   M: "#dc2626",      // красный
   y: "#0891b2",      // голубой/циан
-  grid: "#d1d5db",   // серая сетка
+  grid: "#9ca3af",   // серая сетка (более тёмная)
+  zeroLine: "#6b7280", // нулевая линия (ещё темнее)
   text: "#1f2937",   // тёмный текст
   textMuted: "#6b7280",
   fill: "#ffffff",   // белый фон
@@ -124,9 +125,9 @@ export function DiagramExport({
         y1={zeroY}
         x2={padding.left + chartWidth}
         y2={zeroY}
-        stroke={PRINT_COLORS.grid}
-        strokeWidth={1}
-        strokeDasharray="4,4"
+        stroke={PRINT_COLORS.zeroLine}
+        strokeWidth={1.5}
+        strokeDasharray="6,4"
       />
 
       {/* Заголовок */}
@@ -217,7 +218,7 @@ export function DiagramExport({
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
             const last = seg[seg.length - 1];
-            if (Math.abs(last.x - x) < 0.01) {
+            if (Math.abs(last.x - x) < 0.02) {
               return last.value;
             }
           }
@@ -229,7 +230,7 @@ export function DiagramExport({
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
             const first = seg[0];
-            if (Math.abs(first.x - x) < 0.01) {
+            if (Math.abs(first.x - x) < 0.02) {
               return first.value;
             }
           }
@@ -244,48 +245,45 @@ export function DiagramExport({
           const leftValue = findLeftValue(bx);
           const rightValue = findRightValue(bx);
 
-          // Проверяем есть ли разрыв
+          // Проверяем есть ли разрыв (значения отличаются более чем на 0.1)
           const hasDiscontinuity = leftValue !== null && rightValue !== null &&
-            Math.abs(leftValue - rightValue) > 0.5;
+            Math.abs(leftValue - rightValue) > 0.1;
 
           if (hasDiscontinuity) {
-            // Подписываем оба значения
-            if (leftValue !== null) {
-              const curveY = scaleY(leftValue);
-              const textY = leftValue >= 0 ? curveY - 8 : curveY + 14;
-              labels.push(
-                <text
-                  key={`label-${bIdx}-left`}
-                  x={xToPx(bx) - 6}
-                  y={textY}
-                  textAnchor="end"
-                  fill={lineColor}
-                  fontSize={11}
-                  fontWeight="500"
-                >
-                  {formatNum(leftValue)}
-                </text>
-              );
-            }
-            if (rightValue !== null) {
-              const curveY = scaleY(rightValue);
-              const textY = rightValue >= 0 ? curveY - 8 : curveY + 14;
-              labels.push(
-                <text
-                  key={`label-${bIdx}-right`}
-                  x={xToPx(bx) + 6}
-                  y={textY}
-                  textAnchor="start"
-                  fill={lineColor}
-                  fontSize={11}
-                  fontWeight="500"
-                >
-                  {formatNum(rightValue)}
-                </text>
-              );
-            }
+            // Подписываем оба значения при разрыве
+            const curveYLeft = scaleY(leftValue);
+            const curveYRight = scaleY(rightValue);
+            const textYLeft = leftValue >= 0 ? curveYLeft - 8 : curveYLeft + 14;
+            const textYRight = rightValue >= 0 ? curveYRight - 8 : curveYRight + 14;
+
+            labels.push(
+              <text
+                key={`label-${bIdx}-left`}
+                x={xToPx(bx) - 6}
+                y={textYLeft}
+                textAnchor="end"
+                fill={lineColor}
+                fontSize={11}
+                fontWeight="500"
+              >
+                {formatNum(leftValue)}
+              </text>
+            );
+            labels.push(
+              <text
+                key={`label-${bIdx}-right`}
+                x={xToPx(bx) + 6}
+                y={textYRight}
+                textAnchor="start"
+                fill={lineColor}
+                fontSize={11}
+                fontWeight="500"
+              >
+                {formatNum(rightValue)}
+              </text>
+            );
           } else {
-            // Одно значение
+            // Одно значение (или оба равны)
             const value = rightValue ?? leftValue;
             if (value === null) continue;
 
