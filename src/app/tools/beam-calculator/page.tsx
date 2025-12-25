@@ -35,11 +35,9 @@ export default function BeamCalculatorPage() {
       />
 
       {/* Верхний блок: 2 колонки на десктопе */}
-      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8 items-end">
+      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8 items-stretch">
         {/* Левая колонка: Форма ввода */}
-        <div className="flex flex-col">
-          <BeamInput onCalculate={handleCalculate} />
-        </div>
+        <BeamInput onCalculate={handleCalculate} />
 
         {/* Правая колонка: Результаты */}
         <div className="flex flex-col">
@@ -51,7 +49,7 @@ export default function BeamCalculatorPage() {
           {result && input ? (
             <ResultCards input={input} result={result} />
           ) : (
-            <div className="p-6 rounded-lg border border-border bg-card/50 text-muted text-center">
+            <div className="flex-1 p-6 rounded-lg border border-border bg-card/50 text-muted text-center flex items-center justify-center">
               <p>Введите параметры и нажмите «Рассчитать»</p>
             </div>
           )}

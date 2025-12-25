@@ -158,7 +158,8 @@ export function ResultCards({ input, result, className }: Props) {
   const isBalanced = Math.abs(equilibrium.sumFy) < 0.01 && Math.abs(equilibrium.sumM) < 0.01;
 
   return (
-    <div className={`flex flex-col gap-4 ${className || ""}`}>
+    <div className={`flex flex-col h-full ${className || ""}`}>
+      <div className="flex flex-col gap-4 flex-1">
       {/* Реакции */}
       <div className="p-4 rounded-lg border border-border bg-card">
         <h3 className="font-semibold mb-3 text-base text-foreground">Реакции опор</h3>
@@ -241,10 +242,11 @@ export function ResultCards({ input, result, className }: Props) {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Кнопка отчёта */}
       <button
-        className="w-full py-3 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center"
+        className="w-full py-3 mt-4 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center"
         onClick={() => {
           // Функция для сериализации SVG в dataURL
           const serializeSvg = (id: string): string | undefined => {
