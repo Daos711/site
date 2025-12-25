@@ -247,7 +247,7 @@ export function ResultCards({ input, result, className }: Props) {
         className="p-4 rounded-lg border border-border bg-card hover:bg-accent transition-colors text-center"
         onClick={() => {
           // Функция для сериализации SVG в dataURL
-          const serializeSvg = (id: string, maxWidth = "600px"): string | undefined => {
+          const serializeSvg = (id: string): string | undefined => {
             const svgElement = document.getElementById(id);
             if (!svgElement) return undefined;
 
@@ -255,10 +255,6 @@ export function ResultCards({ input, result, className }: Props) {
             clonedSvg.removeAttribute("style");
             clonedSvg.setAttribute("width", "100%");
             clonedSvg.setAttribute("height", "auto");
-            clonedSvg.style.maxWidth = maxWidth;
-            clonedSvg.style.background = "#f8fafc";
-            clonedSvg.style.border = "1px solid #e5e7eb";
-            clonedSvg.style.borderRadius = "4px";
 
             const svgString = new XMLSerializer().serializeToString(clonedSvg);
             return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
@@ -272,10 +268,6 @@ export function ResultCards({ input, result, className }: Props) {
             clonedSvg.removeAttribute("style");
             clonedSvg.setAttribute("width", "100%");
             clonedSvg.setAttribute("height", "auto");
-            clonedSvg.style.maxWidth = "600px";
-            clonedSvg.style.background = "#f8fafc";
-            clonedSvg.style.border = "1px solid #e5e7eb";
-            clonedSvg.style.borderRadius = "4px";
             beamSchemaSVG = new XMLSerializer().serializeToString(clonedSvg);
           }
 

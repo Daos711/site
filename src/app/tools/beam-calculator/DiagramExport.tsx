@@ -10,7 +10,7 @@ const PRINT_COLORS = {
   grid: "#d1d5db",   // серая сетка
   text: "#1f2937",   // тёмный текст
   textMuted: "#6b7280",
-  fill: "#f8fafc",   // светлый фон
+  fill: "#ffffff",   // белый фон
 };
 
 interface DiagramExportProps {
@@ -102,7 +102,7 @@ export function DiagramExport({
         top: "-9999px",
         width: `${width}px`,
         height: `${height}px`,
-        background: PRINT_COLORS.fill,
+        background: "#ffffff",
       }}
     >
       {/* Фон */}
@@ -115,8 +115,7 @@ export function DiagramExport({
         width={chartWidth}
         height={chartHeight}
         fill="#ffffff"
-        stroke={PRINT_COLORS.grid}
-        strokeWidth={1}
+        stroke="none"
       />
 
       {/* Нулевая линия */}
@@ -210,46 +209,109 @@ export function DiagramExport({
       })}
 
       {/* Подписи значений на границах */}
-      {boundaries.map((bx, bIdx) => {
-        const isFirst = bIdx === 0;
-        const isLast = bIdx === boundaries.length - 1;
+      {(() => {
+        const labels: React.ReactNode[] = [];
 
-        // Находим значение в этой точке
-        let value: number | null = null;
-        for (const seg of scaledSegments) {
-          if (seg.length < 2) continue;
-          const first = seg[0];
-          const last = seg[seg.length - 1];
-          if (Math.abs(first.x - bx) < 0.01) {
-            value = first.value;
-            break;
+        // Функция поиска значения слева от точки (конец предыдущего сегмента)
+        const findLeftValue = (x: number): number | null => {
+          for (const seg of scaledSegments) {
+            if (seg.length < 2) continue;
+            const last = seg[seg.length - 1];
+            if (Math.abs(last.x - x) < 0.01) {
+              return last.value;
+            }
           }
-          if (Math.abs(last.x - bx) < 0.01) {
-            value = last.value;
+          return null;
+        };
+
+        // Функция поиска значения справа от точки (начало следующего сегмента)
+        const findRightValue = (x: number): number | null => {
+          for (const seg of scaledSegments) {
+            if (seg.length < 2) continue;
+            const first = seg[0];
+            if (Math.abs(first.x - x) < 0.01) {
+              return first.value;
+            }
+          }
+          return null;
+        };
+
+        for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
+          const bx = boundaries[bIdx];
+          const isFirst = bIdx === 0;
+          const isLast = bIdx === boundaries.length - 1;
+
+          const leftValue = findLeftValue(bx);
+          const rightValue = findRightValue(bx);
+
+          // Проверяем есть ли разрыв
+          const hasDiscontinuity = leftValue !== null && rightValue !== null &&
+            Math.abs(leftValue - rightValue) > 0.5;
+
+          if (hasDiscontinuity) {
+            // Подписываем оба значения
+            if (leftValue !== null) {
+              const curveY = scaleY(leftValue);
+              const textY = leftValue >= 0 ? curveY - 8 : curveY + 14;
+              labels.push(
+                <text
+                  key={`label-${bIdx}-left`}
+                  x={xToPx(bx) - 6}
+                  y={textY}
+                  textAnchor="end"
+                  fill={lineColor}
+                  fontSize={11}
+                  fontWeight="500"
+                >
+                  {formatNum(leftValue)}
+                </text>
+              );
+            }
+            if (rightValue !== null) {
+              const curveY = scaleY(rightValue);
+              const textY = rightValue >= 0 ? curveY - 8 : curveY + 14;
+              labels.push(
+                <text
+                  key={`label-${bIdx}-right`}
+                  x={xToPx(bx) + 6}
+                  y={textY}
+                  textAnchor="start"
+                  fill={lineColor}
+                  fontSize={11}
+                  fontWeight="500"
+                >
+                  {formatNum(rightValue)}
+                </text>
+              );
+            }
+          } else {
+            // Одно значение
+            const value = rightValue ?? leftValue;
+            if (value === null) continue;
+
+            const curveY = scaleY(value);
+            const textY = value >= 0 ? curveY - 8 : curveY + 14;
+            const xOffset = isFirst ? 6 : isLast ? -6 : 0;
+            const anchor = isFirst ? "start" : isLast ? "end" : "middle";
+
+            labels.push(
+              <text
+                key={`label-${bIdx}`}
+                x={xToPx(bx) + xOffset}
+                y={textY}
+                textAnchor={anchor}
+                fill={lineColor}
+                fontSize={11}
+                fontWeight="500"
+              >
+                {formatNum(value)}
+              </text>
+            );
           }
         }
 
-        if (value === null) return null;
-
-        const curveY = scaleY(value);
-        const textY = value >= 0 ? curveY - 8 : curveY + 14;
-        const xOffset = isFirst ? 6 : isLast ? -6 : 0;
-        const anchor = isFirst ? "start" : isLast ? "end" : "middle";
-
-        return (
-          <text
-            key={`label-${bIdx}`}
-            x={xToPx(bx) + xOffset}
-            y={textY}
-            textAnchor={anchor}
-            fill={lineColor}
-            fontSize={11}
-            fontWeight="500"
-          >
-            {formatNum(value)}
-          </text>
-        );
-      })}
+        return <>{labels}</>;
+      })()}
 
       {/* Маркеры экстремумов (если не на границе) */}
       {Math.abs(extremes.maxP.value) > 1e-9 &&

@@ -393,7 +393,7 @@ function buildReportHTML(data: ReportData): string {
     .section-title { font-weight: bold; margin-bottom: 8px; }
     .extremes-block { break-inside: avoid; }
     .diagram-block { break-inside: avoid; margin: 20px 0; text-align: center; }
-    .diagram-block img { max-width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 4px; }
+    .diagram-block img { max-width: 100%; height: auto; }
     .diagram-title { font-weight: bold; margin-bottom: 8px; }
     @media print {
       body { padding: 10mm; }

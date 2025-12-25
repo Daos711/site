@@ -39,7 +39,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         top: "-9999px",
         width: "700px",
         height: "220px",
-        background: "#f8fafc",
+        background: "#ffffff",
       }}
     >
       {/* Маркеры для стрелок */}
@@ -59,7 +59,7 @@ export function BeamSchemaExport({ input, result }: Props) {
       </defs>
 
       {/* Белый фон */}
-      <rect x="0" y="0" width={width} height={height} fill="#f8fafc" />
+      <rect x="0" y="0" width={width} height={height} fill="#ffffff" />
 
       {/* Балка */}
       <rect
