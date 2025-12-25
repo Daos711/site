@@ -488,19 +488,21 @@ function buildReportHTML(data: ReportData): string {
   ${(() => {
     const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
     const sectionNum = hasDiagrams ? 6 : 5;
+    const W_cm3 = result.W ? formatNumber(result.W * 1e6, 4) : "";
+    const d_mm = result.diameter ? formatNumber(result.diameter * 1000, 2) : "";
     return result.diameter && result.W && result.I ? `
   <h2>${sectionNum}. Подбор сечения (круглое)</h2>
   <p>По условию прочности: \\([\\sigma] = ${formatNumber((input.sigma ?? 0) / 1e6)}\\) МПа</p>
   <div class="formula">
-    \\(W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${formatNumber((input.sigma ?? 0) / 1e6)}} = ${formatNumber(result.W * 1e6, 4)}\\) см³
+    \\(W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${formatNumber((input.sigma ?? 0) / 1e6)}} = ${W_cm3}\\) см³
   </div>
   <p>Для круглого сечения: \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
-    \\(d_{\\min} = \\sqrt[3]{\\frac{32 W}{\\pi}} = ${formatNumber(result.diameter * 1000)}\\) мм
+    \\(d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = \\sqrt[3]{\\frac{32 \\cdot ${W_cm3}}{\\pi}} = ${d_mm}\\) мм
   </div>
   <p>Момент инерции:</p>
   <div class="formula">
-    \\(I = \\frac{\\pi d^4}{64} = ${formatNumber(result.I * 1e8, 4)}\\) см⁴
+    \\(I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${formatNumber(result.I * 1e8, 4)}\\) см⁴
   </div>
   ` : "";
   })()}
