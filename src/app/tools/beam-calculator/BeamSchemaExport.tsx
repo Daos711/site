@@ -4,7 +4,7 @@ import React from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
 import { COLORS } from "./constants";
 import { PinSupport, RollerSupport, FixedSupport } from "./BeamSupports";
-import { ReactionArrow, DistributedLoadArrows, ForceArrow, MomentArrow } from "./BeamLoads";
+import { DistributedLoadArrows, ForceArrow, MomentArrow } from "./BeamLoads";
 
 const formatNum = (value: number, decimals = 2): string => {
   if (Math.abs(value) < 1e-10) return "0";
@@ -25,11 +25,11 @@ export function BeamSchemaExport({ input, result }: Props) {
   const { L, loads, beamType } = input;
 
   // Размеры SVG (крупнее для лучшей читаемости)
-  const width = 1100;
-  const height = 340;
-  const padding = { left: 80, right: 80, top: 100, bottom: 70 };
-  const beamY = padding.top + 45;
-  const beamThickness = 24;
+  const width = 800;
+  const height = 300;
+  const padding = { left: 60, right: 60, top: 80, bottom: 80 };
+  const beamY = padding.top + 40;
+  const beamThickness = 20;
 
   const chartWidth = width - padding.left - padding.right;
   const xToPx = (x: number) => padding.left + (x / L) * chartWidth;
@@ -43,8 +43,8 @@ export function BeamSchemaExport({ input, result }: Props) {
         position: "absolute",
         left: "-9999px",
         top: "-9999px",
-        width: "1100px",
-        height: "340px",
+        width: "800px",
+        height: "300px",
         background: "#ffffff",
       }}
     >
@@ -193,74 +193,48 @@ export function BeamSchemaExport({ input, result }: Props) {
         return null;
       })}
 
-      {/* Реакции опор */}
+      {/* Реакции опор — рисуем СНИЗУ балки чтобы не перекрывать нагрузки */}
       {(() => {
         const { reactions } = result;
         const elements: React.ReactNode[] = [];
-        const beamTop = beamY - beamThickness / 2;
         const beamBottom = beamY + beamThickness / 2;
+        const arrowLen = 35;
+        const supportHeight = 45; // высота опоры
 
-        // Проверка наличия нагрузки в точке
-        const hasLoadAt = (x: number): boolean => {
-          return input.loads.some(load => {
-            if (load.type === "force" || load.type === "moment") {
-              return Math.abs(load.x - x) < 0.01;
-            }
-            return false;
-          });
+        // Рисуем реакцию как стрелку снизу вверх к нижней поверхности балки
+        const drawReaction = (key: string, px: number, value: number, name: string, subscript: string, labelSide: "left" | "right") => {
+          const startY = beamBottom + supportHeight + arrowLen;
+          const endY = beamBottom + supportHeight + 8; // 8px отступ для наконечника
+          const textX = labelSide === "left" ? px - 8 : px + 8;
+          const textAnchor = labelSide === "left" ? "end" : "start";
+
+          elements.push(
+            <g key={key}>
+              <line
+                x1={px} y1={startY} x2={px} y2={endY}
+                stroke={COLORS.reaction} strokeWidth={2}
+                markerEnd="url(#exp-arrowGreen)"
+              />
+              <text x={textX} y={startY + 18} fill={COLORS.reaction} fontSize={14} fontWeight="600" textAnchor={textAnchor}>
+                {name}<tspan dy="3" fontSize="10">{subscript}</tspan><tspan dy="-3"> = {formatNum(Math.abs(value))} кН</tspan>
+              </text>
+            </g>
+          );
         };
 
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
-          // Реакции всегда относительно верхней плоскости балки
-          elements.push(
-            <ReactionArrow
-              key="RA"
-              x={xToPx(xA)}
-              baseY={beamTop}
-              value={reactions.RA}
-              name="R"
-              subscript="A"
-              valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
-              labelSide="right"
-              markerPrefix="exp-"
-            />
-          );
+          drawReaction("RA", xToPx(xA), reactions.RA, "R", "A", "right");
         }
 
         if (reactions.RB !== undefined && reactions.RB !== 0) {
           const xB = reactions.xB ?? L;
-          const hasLoadAtB = hasLoadAt(xB);
-          // Если есть нагрузка — подпись справа, чтобы не перекрывалась
-          elements.push(
-            <ReactionArrow
-              key="RB"
-              x={xToPx(xB)}
-              baseY={beamTop}
-              value={reactions.RB}
-              name="R"
-              subscript="B"
-              valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
-              labelSide={hasLoadAtB ? "right" : "left"}
-              markerPrefix="exp-"
-            />
-          );
+          drawReaction("RB", xToPx(xB), reactions.RB, "R", "B", "left");
         }
 
         if (reactions.Rf !== undefined && reactions.Rf !== 0) {
           const xf = reactions.xf ?? 0;
-          elements.push(
-            <ReactionArrow
-              key="Rf"
-              x={xToPx(xf)}
-              baseY={beamTop}
-              value={reactions.Rf}
-              name="R"
-              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide="right"
-              markerPrefix="exp-"
-            />
-          );
+          drawReaction("Rf", xToPx(xf), reactions.Rf, "R", "", "right");
         }
 
         return <>{elements}</>;
@@ -279,7 +253,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         if (!isSimplySupported) return null;
 
         const labels = [];
-        const labelY = beamY + 85;
+        const labelY = beamY + 70;
 
         if (pinSupport) {
           labels.push(
@@ -289,7 +263,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               y={labelY}
               textAnchor="middle"
               fill="#1f2937"
-              fontSize={20}
+              fontSize={16}
               fontWeight="bold"
             >
               A
@@ -305,7 +279,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               y={labelY}
               textAnchor="middle"
               fill="#1f2937"
-              fontSize={20}
+              fontSize={16}
               fontWeight="bold"
             >
               B
@@ -318,8 +292,8 @@ export function BeamSchemaExport({ input, result }: Props) {
 
       {/* Размерные линии участков */}
       {(() => {
-        const dimY = height - 40;
-        const tickH = 8;
+        const dimY = height - 35;
+        const tickH = 6;
         const elements: React.ReactNode[] = [];
 
         // Собираем все ключевые точки
@@ -346,7 +320,7 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         // Основная размерная линия
         elements.push(
-          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1.5} />
+          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1} />
         );
 
         // Засечки и подписи для каждого сегмента
@@ -354,7 +328,7 @@ export function BeamSchemaExport({ input, result }: Props) {
           const x = sortedPoints[i];
           // Засечка
           elements.push(
-            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1.5} />
+            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1} />
           );
 
           // Подпись длины сегмента (между соседними точками)
@@ -364,7 +338,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             if (segLen > 0.001) {
               const midX = (xToPx(x) + xToPx(nextX)) / 2;
               elements.push(
-                <text key={`seg-${i}`} x={midX} y={dimY + 22} textAnchor="middle" fill="#374151" fontSize={18} fontWeight="500">
+                <text key={`seg-${i}`} x={midX} y={dimY + 16} textAnchor="middle" fill="#374151" fontSize={14} fontWeight="500">
                   {segLen % 1 === 0 ? segLen : segLen.toFixed(1)}
                 </text>
               );
@@ -374,7 +348,7 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         // Подпись общей длины L
         elements.push(
-          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 8} textAnchor="middle" fill="#374151" fontSize={18} fontWeight="500">
+          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 6} textAnchor="middle" fill="#374151" fontSize={14} fontWeight="500">
             L = {L} м
           </text>
         );
