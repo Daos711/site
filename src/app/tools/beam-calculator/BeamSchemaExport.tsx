@@ -25,11 +25,11 @@ export function BeamSchemaExport({ input, result }: Props) {
   const { L, loads, beamType } = input;
 
   // Размеры SVG (крупнее для лучшей читаемости)
-  const width = 900;
-  const height = 320;
-  const padding = { left: 80, right: 80, top: 110, bottom: 80 };
-  const beamY = padding.top + 45;
-  const beamThickness = 20;
+  const width = 1100;
+  const height = 400;
+  const padding = { left: 100, right: 100, top: 130, bottom: 100 };
+  const beamY = padding.top + 55;
+  const beamThickness = 24;
 
   const chartWidth = width - padding.left - padding.right;
   const xToPx = (x: number) => padding.left + (x / L) * chartWidth;
@@ -43,8 +43,8 @@ export function BeamSchemaExport({ input, result }: Props) {
         position: "absolute",
         left: "-9999px",
         top: "-9999px",
-        width: "900px",
-        height: "320px",
+        width: "1100px",
+        height: "400px",
         background: "#ffffff",
       }}
     >
@@ -134,18 +134,26 @@ export function BeamSchemaExport({ input, result }: Props) {
           }
         }
 
-        return mergedSegments.map((seg, i) => (
-          <DistributedLoadArrows
-            key={`dist-${i}`}
-            x1={xToPx(seg.a)}
-            x2={xToPx(seg.b)}
-            beamTopY={beamY - beamThickness / 2}
-            beamBottomY={beamY + beamThickness / 2}
-            q={seg.q}
-            label={`q = ${Math.abs(seg.q)} кН/м`}
-            markerPrefix="exp-"
-          />
-        ));
+        // Отступ между участками с разной интенсивностью
+        const gap = 4;
+        return mergedSegments.map((seg, i) => {
+          const isFirst = i === 0;
+          const isLast = i === mergedSegments.length - 1;
+          const x1 = xToPx(seg.a) + (isFirst ? 0 : gap);
+          const x2 = xToPx(seg.b) - (isLast ? 0 : gap);
+          return (
+            <DistributedLoadArrows
+              key={`dist-${i}`}
+              x1={x1}
+              x2={x2}
+              beamTopY={beamY - beamThickness / 2}
+              beamBottomY={beamY + beamThickness / 2}
+              q={seg.q}
+              label={`q = ${Math.abs(seg.q)} кН/м`}
+              markerPrefix="exp-"
+            />
+          );
+        });
       })()}
 
       {/* Сосредоточенные силы */}
@@ -271,7 +279,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         if (!isSimplySupported) return null;
 
         const labels = [];
-        const labelY = beamY + 70;
+        const labelY = beamY + 85;
 
         if (pinSupport) {
           labels.push(
@@ -281,7 +289,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               y={labelY}
               textAnchor="middle"
               fill="#1f2937"
-              fontSize={16}
+              fontSize={20}
               fontWeight="bold"
             >
               A
@@ -297,7 +305,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               y={labelY}
               textAnchor="middle"
               fill="#1f2937"
-              fontSize={16}
+              fontSize={20}
               fontWeight="bold"
             >
               B
@@ -310,8 +318,8 @@ export function BeamSchemaExport({ input, result }: Props) {
 
       {/* Размерные линии участков */}
       {(() => {
-        const dimY = height - 30;
-        const tickH = 6;
+        const dimY = height - 40;
+        const tickH = 8;
         const elements: React.ReactNode[] = [];
 
         // Собираем все ключевые точки
@@ -338,7 +346,7 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         // Основная размерная линия
         elements.push(
-          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1} />
+          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1.5} />
         );
 
         // Засечки и подписи для каждого сегмента
@@ -346,7 +354,7 @@ export function BeamSchemaExport({ input, result }: Props) {
           const x = sortedPoints[i];
           // Засечка
           elements.push(
-            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1} />
+            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1.5} />
           );
 
           // Подпись длины сегмента (между соседними точками)
@@ -356,7 +364,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             if (segLen > 0.001) {
               const midX = (xToPx(x) + xToPx(nextX)) / 2;
               elements.push(
-                <text key={`seg-${i}`} x={midX} y={dimY + 18} textAnchor="middle" fill="#374151" fontSize={14} fontWeight="500">
+                <text key={`seg-${i}`} x={midX} y={dimY + 22} textAnchor="middle" fill="#374151" fontSize={18} fontWeight="500">
                   {segLen % 1 === 0 ? segLen : segLen.toFixed(1)}
                 </text>
               );
@@ -366,7 +374,7 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         // Подпись общей длины L
         elements.push(
-          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 5} textAnchor="middle" fill="#374151" fontSize={14} fontWeight="500">
+          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 8} textAnchor="middle" fill="#374151" fontSize={18} fontWeight="500">
             L = {L} м
           </text>
         );
