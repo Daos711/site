@@ -445,8 +445,9 @@ function buildReportHTML(data: ReportData): string {
     table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; page-break-inside: avoid; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
-    .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; }
+    .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; overflow-x: auto; }
     .formula-block { page-break-inside: avoid; }
+    .formula-multiline { font-size: 12pt; }
     .result { color: #0066cc; font-weight: bold; }
     .diagram-block { page-break-inside: avoid; margin: 20px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
@@ -1014,13 +1015,38 @@ function buildConcreteDeflectionEquation(
     }
   }
 
-  // Формируем уравнение
-  const equation = terms.join(" ");
+  // Формируем уравнение с переносами для длинных формул
+  // Разбиваем на строки по 3 слагаемых (после y_0 и theta_0*x)
+  const TERMS_PER_LINE = 3;
+
+  let equation: string;
+  if (terms.length <= 4) {
+    // Короткая формула - в одну строку
+    equation = `EI \\cdot y(x) = EI \\cdot ${terms.join(" ")}`;
+  } else {
+    // Длинная формула - разбиваем на строки
+    const lines: string[] = [];
+    // Первая строка: EI·y(x) = EI·y_0 + theta_0·x + первые слагаемые
+    const firstLineTerms = terms.slice(0, 2 + TERMS_PER_LINE); // y_0, theta_0*x + 3 слагаемых
+    lines.push(`EI \\cdot y(x) &= EI \\cdot ${firstLineTerms.join(" ")}`);
+
+    // Остальные строки
+    let idx = 2 + TERMS_PER_LINE;
+    while (idx < terms.length) {
+      const lineTerms = terms.slice(idx, idx + TERMS_PER_LINE);
+      lines.push(`&\\phantom{= EI \\cdot y_0} ${lineTerms.join(" ")}`);
+      idx += TERMS_PER_LINE;
+    }
+
+    equation = `\\begin{aligned}\n${lines.join(" \\\\\n")}\n\\end{aligned}`;
+  }
+
+  const formulaClass = terms.length > 4 ? "formula formula-multiline" : "formula";
 
   return `
   <p>Подставляя нагрузки с учётом знаков, получаем уравнение прогибов:</p>
-  <div class="formula">
-    \\[EI \\cdot y(x) = EI \\cdot ${equation}\\]
+  <div class="${formulaClass}">
+    \\[${equation}\\]
   </div>
   <p>где скобки \\((x - a)^n\\) включаются только при \\(x \\geq a\\) (скобки Маколея).</p>`;
 }
