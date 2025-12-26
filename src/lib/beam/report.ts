@@ -1032,23 +1032,27 @@ function buildSimplySupportedReactions(
   <p><strong>Проверка</strong> (сумма моментов относительно точки B):</p>`;
 
   // Вычисляем сумму моментов относительно B
-  let checkMomentSum = -RA * span; // R_A создаёт момент против часовой относительно B
+  // R_A вверх (положительная) слева от B создаёт момент по часовой (отрицательный)
+  let checkMomentSum = -RA * span;
   const checkTerms: string[] = [`-R_A \\cdot (x_B - x_A)`];
-  const checkNumTerms: string[] = [`-${formatNumber(RA)} \\cdot ${formatNumber(span)}`];
+  // Учитываем знак R_A для правильного отображения
+  const raSign = RA >= 0 ? "-" : "+";
+  const checkNumTerms: string[] = [`${raSign} ${formatNumber(Math.abs(RA))} \\cdot ${formatNumber(span)}`];
 
   for (const load of loadInfos) {
     if (load.type === "force") {
       const armB = load.x! - xB;
       if (Math.abs(armB) > 1e-9) {
         const contrib = load.value * armB;
-        checkMomentSum -= contrib; // -F·(x_F - x_B)
+        checkMomentSum -= contrib;
         const sign = load.value >= 0 ? "-" : "+";
         checkTerms.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_B)`);
         checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot (${formatNumber(armB)})`);
       }
     } else if (load.type === "moment") {
-      checkMomentSum -= load.value;
-      const sign = load.value >= 0 ? "-" : "+";
+      // Момент входит в уравнение напрямую (не меняем знак)
+      checkMomentSum += load.value;
+      const sign = load.value >= 0 ? "+" : "-";
       checkTerms.push(`${sign} ${load.label}`);
       checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))}`);
     } else if (load.type === "distributed") {
@@ -1065,7 +1069,7 @@ function buildSimplySupportedReactions(
 
   html += `
   <div class="formula">
-    \\(\\sum M_B = ${checkTerms.join(" ")} = ${checkNumTerms.join(" ")} = ${formatNumber(checkMomentSum)}\\text{ кН·м}\\)
+    \\(\\sum M_B = ${checkTerms.join(" ")} = ${checkNumTerms.join(" ")} = ${formatNumber(checkMomentSum)}\\text{ кН}\\cdot\\text{м}\\)
   </div>`;
 
   const checkResult = Math.abs(checkMomentSum) < 0.01;
