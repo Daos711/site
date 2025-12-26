@@ -1000,7 +1000,7 @@ function buildConcreteDeflectionEquation(
 
   // Начальные параметры
   terms.push("y_0");
-  terms.push("\\theta_0 \\cdot x");
+  terms.push("+ \\theta_0 \\cdot x");
 
   // Реакции
   if (RA !== undefined && Math.abs(RA) > 1e-9) {
