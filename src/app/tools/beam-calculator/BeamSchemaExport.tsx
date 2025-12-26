@@ -194,12 +194,12 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
-          // Положительная → ВВЕРХ (касается нижней), отрицательная → ВНИЗ (касается верхней)
+          // Реакции всегда относительно верхней плоскости балки
           elements.push(
             <ReactionArrow
               key="RA"
               x={xToPx(xA)}
-              baseY={reactions.RA >= 0 ? beamBottom : beamTop}
+              baseY={beamTop}
               value={reactions.RA}
               name="R"
               subscript="A"
@@ -216,7 +216,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <ReactionArrow
               key="RB"
               x={xToPx(xB)}
-              baseY={reactions.RB >= 0 ? beamBottom : beamTop}
+              baseY={beamTop}
               value={reactions.RB}
               name="R"
               subscript="B"
@@ -233,7 +233,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <ReactionArrow
               key="Rf"
               x={xToPx(xf)}
-              baseY={reactions.Rf >= 0 ? beamBottom : beamTop}
+              baseY={beamTop}
               value={reactions.Rf}
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}

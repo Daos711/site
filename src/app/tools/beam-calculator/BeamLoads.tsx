@@ -2,29 +2,29 @@ import React from "react";
 import { COLORS } from "./constants";
 
 // Стрелка реакции - направление зависит от знака
-// baseY - нижняя поверхность балки (реакции идут снизу)
-// value >= 0: стрелка ВВЕРХ (реакция поддерживает балку)
-// value < 0: стрелка ВНИЗ (реакция тянет балку вниз - редкий случай)
+// baseY - верхняя поверхность балки (реакции всегда относительно верхней плоскости)
+// value >= 0: стрелка ВВЕРХ - начинается ОТ верхней плоскости, уходит вверх
+// value < 0: стрелка ВНИЗ - приходит сверху, наконечник касается верхней плоскости
 export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "" }: {
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
   const arrowLen = 40;
   // Маркер 6x6 с refX=3 при strokeWidth=2 масштабируется до 12x12
-  // Острие выступает на 6px от конца линии, поэтому offset=8 для касания
+  // Острие выступает на 6px от конца линии
   const markerOffset = 8;
   const pointsUp = value >= 0; // Положительная реакция направлена ВВЕРХ
 
   let startY: number, endY: number, textY: number;
 
   if (pointsUp) {
-    // Стрелка ВВЕРХ к нижней поверхности балки (положительная реакция)
-    startY = baseY + arrowLen;
-    endY = baseY + markerOffset; // линия заканчивается на 8px ниже, острие касается baseY
-    textY = startY + 15;
+    // Стрелка ВВЕРХ: начинается ОТ верхней плоскости балки, уходит вверх
+    startY = baseY; // начало на поверхности балки
+    endY = baseY - arrowLen; // конец выше (наконечник вверху)
+    textY = endY - 10;
   } else {
-    // Стрелка ВНИЗ к верхней поверхности балки (отрицательная реакция)
-    startY = baseY - arrowLen;
-    endY = baseY - markerOffset; // линия заканчивается на 8px выше, острие касается baseY
+    // Стрелка ВНИЗ: приходит сверху, наконечник касается верхней плоскости
+    startY = baseY - arrowLen; // начало выше
+    endY = baseY - markerOffset; // конец у поверхности, острие касается baseY
     textY = startY - 5;
   }
 
