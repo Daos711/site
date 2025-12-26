@@ -495,12 +495,11 @@ function buildReportHTML(data: ReportData): string {
   </div>
   <p class="figure-caption" style="text-align: center;">Рисунок 1 — Расчётная схема балки</p>
 
-  ${buildSignConventions()}
-
   <h2>3. Определение реакций опор</h2>
   ${buildReactionsSection(input, reactions)}
 
   <h2>4. Внутренние усилия по участкам</h2>
+  ${buildSignConventions()}
   <p>Разобьём балку на участки по характерным точкам. Для каждого участка составим выражения для поперечной силы \\(Q\\) и изгибающего момента \\(M\\).</p>
   ${sections.map(section => buildSectionBlock(section)).join("\n")}
 
@@ -667,21 +666,21 @@ function buildInputDataSection(input: BeamInput): string {
 }
 
 /**
- * Раздел "Соглашения знаков"
+ * Раздел "Соглашения знаков для внутренних усилий"
  */
 function buildSignConventions(): string {
   return `
   <div class="sign-convention">
-    <h4>Правило знаков</h4>
-    <p><strong>Для поперечной силы \\(Q\\):</strong></p>
+    <h4>Правило знаков для внутренних усилий (метод сечений)</h4>
+    <p><strong>Поперечная сила \\(Q\\):</strong></p>
     <ul>
-      <li>Положительная — если внешняя сила стремится повернуть отсечённую часть <em>по часовой стрелке</em></li>
-      <li>Отрицательная — если <em>против часовой стрелки</em></li>
+      <li>\\(Q > 0\\) — внешние силы слева от сечения стремятся повернуть отсечённую часть <em>по часовой стрелке</em></li>
+      <li>\\(Q < 0\\) — <em>против часовой стрелки</em></li>
     </ul>
-    <p><strong>Для изгибающего момента \\(M\\):</strong></p>
+    <p><strong>Изгибающий момент \\(M\\):</strong></p>
     <ul>
-      <li>Положительный — если момент <em>растягивает нижние волокна</em> балки</li>
-      <li>Отрицательный — если <em>сжимает нижние волокна</em></li>
+      <li>\\(M > 0\\) — момент <em>растягивает нижние волокна</em> (изгиб выпуклостью вниз)</li>
+      <li>\\(M < 0\\) — <em>сжимает нижние волокна</em> (изгиб выпуклостью вверх)</li>
     </ul>
   </div>`;
 }
@@ -690,17 +689,21 @@ function buildSignConventions(): string {
  * Блок для одного участка
  */
 function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]): string {
+  const idx = section.interval.idx;
+  const varName = `z_{${idx}}`;
+  const varDisplay = `z_${idx}`;
+
   return `
-  <h3>Участок ${section.interval.idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</h3>
+  <h3>Участок ${idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</h3>
   <div class="formula-block">
-  <p>Локальная координата: \\(s = x - ${formatNumber(section.interval.a)}\\), где \\(s \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
+  <p>Локальная координата: \\(${varName} = x - ${formatNumber(section.interval.a)}\\), где \\(${varName} \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
   ${Math.abs(section.q) > 1e-9 ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
-  <p><strong>Поперечная сила:</strong> \\(Q(s) = ${formatQFormula(section.polyQ)}\\) кН</p>
-  <p><strong>Изгибающий момент:</strong> \\(M(s) = ${formatMFormula(section.polyM)}\\) кН·м</p>
+  <p><strong>Поперечная сила:</strong> \\(Q(${varName}) = ${formatQFormula(section.polyQ, varDisplay)}\\) кН</p>
+  <p><strong>Изгибающий момент:</strong> \\(M(${varName}) = ${formatMFormula(section.polyM, varDisplay)}\\) кН·м</p>
   <p><strong>Значения на границах:</strong></p>
   <ul>
-    <li>При \\(x = ${formatNumber(section.interval.a)}^+\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
-    <li>При \\(x = ${formatNumber(section.interval.b)}^-\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
+    <li>При \\(${varName} = 0\\) (\\(x = ${formatNumber(section.interval.a)}^+\\)): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
+    <li>При \\(${varName} = ${formatNumber(section.interval.b - section.interval.a)}\\) (\\(x = ${formatNumber(section.interval.b)}^-\\)): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
   </ul>
   </div>`;
 }
@@ -738,10 +741,10 @@ function buildMNPSection(
   result: BeamResult,
   sectionNum: number
 ): string {
-  if (!result.y || !result.theta) return "";
+  if (!result.y || !result.theta || !input.E || !input.I) return "";
 
   const { beamType, L, E, I } = input;
-  const EI_kNm2 = (E! * I!) / 1000; // кН·м²
+  const EI_kNm2 = (E * I) / 1000; // кН·м²
   const isCantilever = beamType.startsWith("cantilever");
   const isLeft = beamType === "cantilever-left";
 
@@ -822,7 +825,7 @@ function buildMNPSection(
 
   <p><strong>Жёсткость сечения:</strong></p>
   <div class="formula">
-    \\(EI = ${formatNumber(E! / 1e9)} \\cdot 10^9 \\cdot ${formatNumber(I! * 1e8)} \\cdot 10^{-8} = ${formatNumber(EI_kNm2)}\\) кН·м²
+    \\(EI = ${formatNumber(E / 1e9)} \\cdot 10^9 \\cdot ${formatNumber(I * 1e8)} \\cdot 10^{-8} = ${formatNumber(EI_kNm2)}\\) кН·м²
   </div>
 
   <p><strong>Граничные условия:</strong></p>
