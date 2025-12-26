@@ -491,7 +491,6 @@ function buildReportHTML(data: ReportData): string {
     th { background: #f5f5f5; }
     .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; }
     .formula-block { page-break-inside: avoid; }
-    .formula-multiline { font-size: 12pt; }
     .result { color: #0066cc; font-weight: bold; }
     .diagram-block { page-break-inside: avoid; margin: 20px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
