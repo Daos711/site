@@ -2,8 +2,9 @@ import React from "react";
 import { COLORS } from "./constants";
 
 // Стрелка реакции - направление зависит от знака
-// baseY - поверхность балки, к которой должен касаться наконечник
-// value >= 0: стрелка ВНИЗ (к верхней поверхности), value < 0: ВВЕРХ (к нижней)
+// baseY - нижняя поверхность балки (реакции идут снизу)
+// value >= 0: стрелка ВВЕРХ (реакция поддерживает балку)
+// value < 0: стрелка ВНИЗ (реакция тянет балку вниз - редкий случай)
 export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "" }: {
   x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
@@ -11,20 +12,20 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
   // Маркер 6x6 с refX=3 при strokeWidth=2 масштабируется до 12x12
   // Острие выступает на 6px от конца линии, поэтому offset=8 для касания
   const markerOffset = 8;
-  const pointsDown = value >= 0; // Положительная сила направлена ВНИЗ
+  const pointsUp = value >= 0; // Положительная реакция направлена ВВЕРХ
 
   let startY: number, endY: number, textY: number;
 
-  if (pointsDown) {
-    // Стрелка ВНИЗ к верхней поверхности балки (положительная реакция)
-    startY = baseY - arrowLen;
-    endY = baseY - markerOffset; // линия заканчивается на 8px выше, острие касается baseY
-    textY = startY - 5;
-  } else {
-    // Стрелка ВВЕРХ к нижней поверхности балки (отрицательная реакция)
+  if (pointsUp) {
+    // Стрелка ВВЕРХ к нижней поверхности балки (положительная реакция)
     startY = baseY + arrowLen;
     endY = baseY + markerOffset; // линия заканчивается на 8px ниже, острие касается baseY
     textY = startY + 15;
+  } else {
+    // Стрелка ВНИЗ к верхней поверхности балки (отрицательная реакция)
+    startY = baseY - arrowLen;
+    endY = baseY - markerOffset; // линия заканчивается на 8px выше, острие касается baseY
+    textY = startY - 5;
   }
 
   const textX = x + (labelSide === "left" ? -10 : 10) + labelXOffset;

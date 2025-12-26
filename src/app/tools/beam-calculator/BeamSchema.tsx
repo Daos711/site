@@ -153,12 +153,12 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
           const hasLoadAtA = hasLoadAt(xA);
-          // Положительная → касается верхней, отрицательная → нижней
+          // Положительная → ВВЕРХ (касается нижней), отрицательная → ВНИЗ (касается верхней)
           elements.push(
             <ReactionArrow
               key="RA"
               x={xToPx(xA)}
-              baseY={reactions.RA >= 0 ? beamTop : beamBottom}
+              baseY={reactions.RA >= 0 ? beamBottom : beamTop}
               value={reactions.RA}
               name="R"
               subscript="A"
@@ -176,13 +176,13 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
             <ReactionArrow
               key="RB"
               x={xToPx(xB)}
-              baseY={reactions.RB >= 0 ? beamTop : beamBottom}
+              baseY={reactions.RB >= 0 ? beamBottom : beamTop}
               value={reactions.RB}
               name="R"
               subscript="B"
               valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
               labelSide="left"
-              labelYOffset={hasLoadAtB ? 80 : (reactions.RB >= 0 ? 50 : 35)}
+              labelYOffset={hasLoadAtB ? 80 : 50}
               labelXOffset={-30}
             />
           );
@@ -195,7 +195,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
             <ReactionArrow
               key="Rf"
               x={xToPx(xf)}
-              baseY={reactions.Rf >= 0 ? beamTop : beamBottom}
+              baseY={reactions.Rf >= 0 ? beamBottom : beamTop}
               value={reactions.Rf}
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
