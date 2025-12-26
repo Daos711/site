@@ -691,8 +691,8 @@ function buildSignConventions(): string {
  */
 function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]): string {
   const idx = section.interval.idx;
-  const varName = `z_{${idx}}`;
-  const varDisplay = `z_${idx}`;
+  const varName = "s";
+  const varDisplay = "s";
   const len = section.interval.b - section.interval.a;
   const sectionStart = section.interval.a;
 
@@ -715,25 +715,25 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
   return `
   <h3>Участок ${idx}: \\(x \\in [${formatNumber(sectionStart)}; ${formatNumber(section.interval.b)}]\\)</h3>
   <div class="formula-block">
-  <p>Локальная координата: \\(${varName} = x - ${formatNumber(sectionStart)}\\), где \\(${varName} \\in [0; ${formatNumber(len)}]\\) м.</p>
+  <p>Локальная координата: \\(s = x - ${formatNumber(sectionStart)}\\), где \\(s \\in [0; ${formatNumber(len)}]\\) м.</p>
   ${hasQ ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
 
   <p><strong>Поперечная сила:</strong></p>
   ${qDerivation}
   <div class="formula">
-    \\[\\boxed{Q_{${idx}}(${varName}) = ${formatQFormula(section.polyQ, varDisplay)} \\text{ кН}}\\]
+    \\[\\boxed{Q_{${idx}}(s) = ${formatQFormula(section.polyQ, varDisplay)} \\text{ кН}}\\]
   </div>
 
   <p><strong>Изгибающий момент:</strong></p>
   ${mDerivation}
   <div class="formula">
-    \\[\\boxed{M_{${idx}}(${varName}) = ${formatMFormula(section.polyM, varDisplay)} \\text{ кН}\\!\\cdot\\!\\text{м}}\\]
+    \\[\\boxed{M_{${idx}}(s) = ${formatMFormula(section.polyM, varDisplay)} \\text{ кН}\\!\\cdot\\!\\text{м}}\\]
   </div>
 
   <p><strong>Проверка на границах:</strong></p>
   <ul>
-    <li>При \\(${varName} = 0\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
-    <li>При \\(${varName} = ${formatNumber(len)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
+    <li>При \\(s = 0\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
+    <li>При \\(s = ${formatNumber(len)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
   </ul>
   </div>`;
 }
