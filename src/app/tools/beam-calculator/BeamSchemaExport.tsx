@@ -5,12 +5,6 @@ import type { BeamInput, BeamResult } from "@/lib/beam";
 import { COLORS } from "./constants";
 import { PinSupport, RollerSupport, FixedSupport } from "./BeamSupports";
 
-const formatNum = (value: number, decimals = 2): string => {
-  if (Math.abs(value) < 1e-10) return "0";
-  const fixed = value.toFixed(decimals);
-  return fixed.replace(/\.?0+$/, "");
-};
-
 interface Props {
   input: BeamInput;
   result: BeamResult;
@@ -173,7 +167,7 @@ export function BeamSchemaExport({ input, result }: Props) {
                 );
               })}
               <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 6} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize.label} fontWeight="600">
-                q = {Math.abs(seg.q)} кН/м
+                q
               </text>
             </g>
           );
@@ -199,7 +193,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <g key={`force-${i}`}>
               <line x1={px} y1={y - arrowLen} x2={px} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
               <text x={labelX} y={y - arrowLen - 4} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
-                F = {Math.abs(load.F)} кН
+                F
               </text>
             </g>
           );
@@ -208,7 +202,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <g key={`force-${i}`}>
               <line x1={px} y1={y + arrowLen} x2={px} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
               <text x={labelX} y={y + arrowLen + 12} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
-                F = {Math.abs(load.F)} кН
+                F
               </text>
             </g>
           );
@@ -249,7 +243,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               markerEnd="url(#exp-arrowPurple)"
             />
             <text x={labelX} y={Cy - 4} textAnchor={labelAnchor} fill={COLORS.moment} fontSize={fontSize.label} fontWeight="600">
-              M = {Math.abs(load.M)} кН·м
+              M
             </text>
           </g>
         );
@@ -284,7 +278,7 @@ export function BeamSchemaExport({ input, result }: Props) {
             <g key={key}>
               <line x1={px} y1={startY} x2={px} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#exp-arrowGreen)" />
               <text x={textX} y={textY} fill={COLORS.reaction} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor} dominantBaseline="middle">
-                {name}<tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan><tspan dy="-3"> = {formatNum(Math.abs(value))} кН</tspan>
+                {name}<tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>
               </text>
             </g>
           );
