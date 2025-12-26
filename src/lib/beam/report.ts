@@ -762,19 +762,18 @@ function buildQDerivation(
   const numericTerms: string[] = [];
 
   for (const f of forces) {
-    if (f.type === "reaction" || f.type === "force") {
-      // Сила вверх (value < 0 для external load, value > 0 для reaction up)
-      // Реакция вверх: +R
-      // Сила вниз: -F
-      if (f.type === "reaction") {
-        symbolicTerms.push(`${f.label}`);
-        numericTerms.push(`${formatNumber(f.value)}`);
-      } else {
-        // force: если F > 0 (вниз), то -F; если F < 0 (вверх), то +|F|
-        const sign = f.value >= 0 ? "-" : "+";
-        symbolicTerms.push(`${sign} ${f.label}`);
-        numericTerms.push(`${sign} ${formatNumber(Math.abs(f.value))}`);
-      }
+    if (f.type === "reaction") {
+      // Реакция: знак определяется направлением (вверх = +, вниз = -)
+      // В формуле пишем знак отдельно, значение по модулю
+      const isUpward = f.value >= 0;
+      const sign = isUpward ? "+" : "-";
+      symbolicTerms.push(`${sign} ${f.label}`);
+      numericTerms.push(`${sign} ${formatNumber(Math.abs(f.value))}`);
+    } else if (f.type === "force") {
+      // force: если F > 0 (вниз), то -F; если F < 0 (вверх), то +|F|
+      const sign = f.value >= 0 ? "-" : "+";
+      symbolicTerms.push(`${sign} ${f.label}`);
+      numericTerms.push(`${sign} ${formatNumber(Math.abs(f.value))}`);
     } else if (f.type === "distributed_resultant") {
       // Равнодействующая распределённой: -q·L (если q > 0 вниз)
       const length = (f.qEnd ?? sectionStart) - (f.qStart ?? 0);
@@ -830,16 +829,19 @@ function buildMDerivation(
 
   for (const c of contributions) {
     if (c.type === "reaction") {
-      // Реакция вверх создаёт положительный момент: +R·(a + z)
-      // где a = sectionStart - x_reaction
+      // Реакция: знак определяется направлением (вверх = +, вниз = -)
+      // В формуле пишем знак отдельно, значение по модулю
       const arm = sectionStart - c.x;
+      const isUpward = c.value >= 0;
+      const sign = isUpward ? "+" : "-";
+
       if (Math.abs(arm) < 1e-9) {
-        // Реакция прямо под сечением - плечо = z
-        symbolicTerms.push(`${c.label} \\cdot ${varName}`);
-        numericTerms.push(`${formatNumber(c.value)} \\cdot ${varName}`);
+        // Реакция прямо в начале участка - плечо = s
+        symbolicTerms.push(`${sign} ${c.label} \\cdot ${varName}`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot ${varName}`);
       } else {
-        symbolicTerms.push(`${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
-        numericTerms.push(`${formatNumber(c.value)} \\cdot (${formatNumber(arm)} + ${varName})`);
+        symbolicTerms.push(`${sign} ${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot (${formatNumber(arm)} + ${varName})`);
       }
     } else if (c.type === "force") {
       // Сила вниз (F > 0) создаёт отрицательный момент: -F·(a + z)
