@@ -489,7 +489,7 @@ function buildReportHTML(data: ReportData): string {
     table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; page-break-inside: avoid; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
-    .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; overflow-x: auto; }
+    .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; }
     .formula-block { page-break-inside: avoid; }
     .formula-multiline { font-size: 12pt; }
     .result { color: #0066cc; font-weight: bold; }
