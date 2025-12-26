@@ -457,6 +457,7 @@ function buildReportHTML(data: ReportData): string {
     .sign-convention { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; margin: 12px 0; page-break-inside: avoid; }
     .sign-convention h4 { margin: 0 0 8px 0; font-size: 12pt; }
     .conclusions { background: #f0f7ff; border: 1px solid #cce5ff; border-radius: 4px; padding: 12px; margin: 12px 0; }
+    .unit { margin-left: 8px; font-style: normal; }
     @media print {
       body { padding: 0; }
       .no-print { display: none; }
@@ -692,24 +693,25 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
   const idx = section.interval.idx;
   const varName = `z_{${idx}}`;
   const varDisplay = `z_${idx}`;
+  const len = section.interval.b - section.interval.a;
 
   return `
-  <h3>Участок ${idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</h3>
+  <h3>Участок ${idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\)</h3>
   <div class="formula-block">
-  <p>Локальная координата: \\(${varName} = x - ${formatNumber(section.interval.a)}\\), где \\(${varName} \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
+  <p>Локальная координата: \\(${varName} = x - ${formatNumber(section.interval.a)}\\), где \\(${varName} \\in [0; ${formatNumber(len)}]\\) м.</p>
   ${Math.abs(section.q) > 1e-9 ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
   <p><strong>Поперечная сила:</strong></p>
   <div class="formula">
-    \\[\\boxed{Q_{${idx}}(${varName}) = ${formatQFormula(section.polyQ, varDisplay)} \\text{ кН}}\\]
+    \\[\\boxed{Q_{${idx}}(${varName}) = ${formatQFormula(section.polyQ, varDisplay)}}\\] <span class="unit">кН</span>
   </div>
   <p><strong>Изгибающий момент:</strong></p>
   <div class="formula">
-    \\[\\boxed{M_{${idx}}(${varName}) = ${formatMFormula(section.polyM, varDisplay)} \\text{ кН·м}}\\]
+    \\[\\boxed{M_{${idx}}(${varName}) = ${formatMFormula(section.polyM, varDisplay)}}\\] <span class="unit">кН·м</span>
   </div>
   <p><strong>Проверка на границах:</strong></p>
   <ul>
     <li>При \\(${varName} = 0\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
-    <li>При \\(${varName} = ${formatNumber(section.interval.b - section.interval.a)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
+    <li>При \\(${varName} = ${formatNumber(len)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
   </ul>
   </div>`;
 }
@@ -727,16 +729,16 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
-    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3} \\text{ см}^3\\]
+    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3}\\] <span class="unit">см³</span>
   </div>
   <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value) * 1000)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>
   <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
-    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm} \\text{ мм}}\\]
+    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm}}\\] <span class="unit">мм</span>
   </div>
   <p>Момент инерции:</p>
   <div class="formula">
-    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4} \\text{ см}^4\\]
+    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4}\\] <span class="unit">см⁴</span>
   </div>`;
 }
 
@@ -1115,7 +1117,7 @@ function buildCantileverReactions(
   html += `
   <p>Подставляем значения:</p>
   <div class="formula">
-    \\(M_f ${momentTermsNumeric.join(" ")} = 0 \\quad \\Rightarrow \\quad \\boxed{M_f = ${formatNumber(Mf)} \\text{ кН·м}}\\)
+    \\(M_f ${momentTermsNumeric.join(" ")} = 0 \\quad \\Rightarrow \\quad \\boxed{M_f = ${formatNumber(Mf)}}\\) кН·м
   </div>`;
 
   // Итог
