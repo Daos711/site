@@ -147,6 +147,7 @@ export function BeamSchemaExport({ input, result }: Props) {
           const x1 = xToPx(seg.a) + (isFirst ? 0 : gap);
           const x2 = xToPx(seg.b) - (isLast ? 0 : gap);
           const numArrows = Math.max(3, Math.floor((x2 - x1) / 30));
+          const subscript = mergedSegments.length > 1 ? String(i + 1) : "";
 
           return (
             <g key={`dist-${i}`}>
@@ -167,7 +168,7 @@ export function BeamSchemaExport({ input, result }: Props) {
                 );
               })}
               <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 6} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize.label} fontWeight="600">
-                q
+                q{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
               </text>
             </g>
           );
@@ -242,7 +243,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               strokeWidth={2}
               markerEnd="url(#exp-arrowPurple)"
             />
-            <text x={labelX} y={Cy - 4} textAnchor={labelAnchor} fill={COLORS.moment} fontSize={fontSize.label} fontWeight="600">
+            <text x={labelX} y={Cy - 12} textAnchor={labelAnchor} fill={COLORS.moment} fontSize={fontSize.label} fontWeight="600">
               M
             </text>
           </g>
@@ -310,7 +311,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         if (!isSimplySupported) return null;
 
         const labels = [];
-        const labelY = beamY + 60;
+        const labelY = beamY + 72;
 
         if (pinSupport) {
           labels.push(
