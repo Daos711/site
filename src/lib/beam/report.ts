@@ -1330,18 +1330,82 @@ function buildTheta0Derivation(
 
   if (hasLeftOverhang) {
     // Балка с консолью слева - система из двух уравнений
+    // Собираем слагаемые для y(xA) и y(xB)
+
+    // Функция для сбора слагаемых в точке x
+    const collectTermsAt = (x: number): Array<{ symbolic: string; value: number }> => {
+      const terms: Array<{ symbolic: string; value: number }> = [];
+
+      for (const load of loads) {
+        if (load.type === "distributed" && load.a < x) {
+          const dx = x - load.a;
+          const q_term = -load.q * 1000 * Math.pow(dx, 4) / 24;
+          terms.push({
+            symbolic: `-\\frac{q \\cdot ${formatNumber(dx)}^4}{24}`,
+            value: q_term
+          });
+          // Компенсация если нагрузка закончилась до x
+          if (load.b < x) {
+            const dx2 = x - load.b;
+            const q_comp = load.q * 1000 * Math.pow(dx2, 4) / 24;
+            terms.push({
+              symbolic: `+\\frac{q \\cdot ${formatNumber(dx2)}^4}{24}`,
+              value: q_comp
+            });
+          }
+        } else if (load.type === "force" && load.x < x) {
+          const dx = x - load.x;
+          const sign = load.F >= 0 ? -1 : 1;
+          const F_term = sign * Math.abs(load.F) * 1000 * Math.pow(dx, 3) / 6;
+          terms.push({
+            symbolic: `${sign >= 0 ? "+" : "-"}\\frac{F \\cdot ${formatNumber(dx)}^3}{6}`,
+            value: F_term
+          });
+        } else if (load.type === "moment" && load.x < x) {
+          const dx = x - load.x;
+          const M_term = -load.M * 1000 * Math.pow(dx, 2) / 2;
+          terms.push({
+            symbolic: `-\\frac{M \\cdot ${formatNumber(dx)}^2}{2}`,
+            value: M_term
+          });
+        }
+      }
+      return terms;
+    };
+
+    const termsAtA = collectTermsAt(xA);
+    const termsAtB = collectTermsAt(xB);
+    const sumAtA = termsAtA.reduce((acc, t) => acc + t.value, 0);
+    const sumAtB = termsAtB.reduce((acc, t) => acc + t.value, 0);
+
+    // После вычитания: θ₀·(xB - xA) + (sumAtB - sumAtA)/EI = 0
+    const deltaSum = sumAtB - sumAtA;
+    const deltaX = xB - xA;
+
     html = `
   <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\) (прогиб на опоре A)</p>
-  <p>Подставляя \\(x = ${formatNumber(xA)}\\) в уравнение прогибов:</p>
   <div class="formula">
-    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xA)} + \\frac{1}{EI}\\sum\\limits_{x_i < ${formatNumber(xA)}} = 0 \\quad (1)\\]
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xA)} ${termsAtA.length > 0 ? `+ \\frac{1}{EI}\\left(${termsAtA.map(t => t.symbolic).join(" ")}\\right)` : ""} = 0 \\quad (1)\\]
   </div>
   <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\) (прогиб на опоре B)</p>
-  <p>Подставляя \\(x = ${formatNumber(xB)}\\) в уравнение прогибов:</p>
   <div class="formula">
-    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xB)} + \\frac{1}{EI}\\sum\\limits_{x_i < ${formatNumber(xB)}} = 0 \\quad (2)\\]
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xB)} + \\frac{1}{EI}\\left(${termsAtB.map(t => t.symbolic).join(" ")}\\right) = 0 \\quad (2)\\]
   </div>
-  <p>Вычитая (1) из (2), исключаем \\(y_0\\) и находим \\(\\theta_0\\), затем из (1) находим \\(y_0\\):</p>
+  <p><strong>Вычитаем (1) из (2):</strong></p>
+  <div class="formula">
+    \\[\\theta_0 \\cdot (${formatNumber(xB)} - ${formatNumber(xA)}) + \\frac{1}{EI}\\left(${formatNumber(sumAtB)} - ${formatNumber(sumAtA)}\\right) = 0\\]
+  </div>
+  <div class="formula">
+    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} = -\\frac{${formatNumber(deltaSum)}}{EI} = -\\frac{${formatNumber(deltaSum)}}{${formatNumber(EI, 0)}}\\]
+  </div>
+  <div class="formula">
+    \\[\\theta_0 = ${formatNumber((result.C1 ?? 0), 6)} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
+  </div>
+  <p><strong>Из уравнения (1) находим \\(y_0\\):</strong></p>
+  <div class="formula">
+    \\[y_0 = -\\theta_0 \\cdot ${formatNumber(xA)} - \\frac{${formatNumber(sumAtA)}}{EI} = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
+  </div>
+  <p><strong>Итог:</strong></p>
   <div class="formula">
     \\[\\boxed{\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}}\\]
   </div>`;
