@@ -982,7 +982,8 @@ function buildSimplySupportedReactions(
         rightSideSum += contrib;
         // Знак соответствует символьному уравнению
         const sign = load.value >= 0 ? "-" : "+";
-        momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${formatNumber(arm)}`);
+        const armStr = arm < 0 ? `(${formatNumber(arm)})` : formatNumber(arm);
+        momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${armStr}`);
       }
     } else if (load.type === "moment") {
       rightSideSum -= load.value;
@@ -996,7 +997,8 @@ function buildSimplySupportedReactions(
         rightSideSum += contrib;
         // Знак соответствует символьному уравнению: вниз (-), вверх (+)
         const sign = load.Fq! >= 0 ? "-" : "+";
-        momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${formatNumber(arm)}`);
+        const armStr = arm < 0 ? `(${formatNumber(arm)})` : formatNumber(arm);
+        momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${armStr}`);
       }
     }
   }
@@ -1067,14 +1069,16 @@ function buildSimplySupportedReactions(
     }
   }
 
+  const checkResultValue = formatNumber(checkMomentSum);
+  const checkUnit = Math.abs(checkMomentSum) < 0.01 ? "" : "\\text{ кН}\\cdot\\text{м}";
   html += `
   <div class="formula">
-    \\(\\sum M_B = ${checkTerms.join(" ")} = ${checkNumTerms.join(" ")} = ${formatNumber(checkMomentSum)}\\text{ кН}\\cdot\\text{м}\\)
+    \\(\\sum M_B = ${checkTerms.join(" ")} = ${checkNumTerms.join(" ")} = ${checkResultValue}${checkUnit}\\)
   </div>`;
 
   const checkResult = Math.abs(checkMomentSum) < 0.01;
   html += `
-  <p>${checkResult ? "Проверка выполнена ✓" : "Расхождение: " + formatNumber(checkMomentSum) + " кН·м"}</p>`;
+  <p>${checkResult ? "Проверка выполнена ✓" : "Расхождение: " + checkResultValue + " кН·м"}</p>`;
 
   return html;
 }
