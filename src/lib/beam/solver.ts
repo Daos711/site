@@ -1,13 +1,18 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
-import type {
-  BeamInput,
-  BeamResult,
-  Reactions,
-  Load,
-  DistributedLoad,
-  PointForce,
-  PointMoment,
-} from "./types";
+import type { BeamInput, BeamResult, Reactions } from "./types";
+
+/** Точность для сравнения с нулём */
+const EPS = 1e-6;
+
+/** Проверка типа балки: двухопорная (с консолями или без) */
+function isSimplySupported(beamType: BeamInput["beamType"]): boolean {
+  return (
+    beamType === "simply-supported" ||
+    beamType === "simply-supported-overhang-left" ||
+    beamType === "simply-supported-overhang-right" ||
+    beamType === "simply-supported-overhang-both"
+  );
+}
 
 /**
  * Основной решатель балки
@@ -25,9 +30,9 @@ export function solveBeam(input: BeamInput): BeamResult {
   const Q = createQFunction(input, reactions);
   const M = createMFunction(input, reactions);
 
-  // Находим экстремумы аналитически через формулы участков
-  const Qmax = findQExtremum(input, reactions, Q, M);
-  const Mmax = findMExtremum(input, reactions, Q, M);
+  // Находим экстремумы аналитически
+  const Qmax = findQExtremum(L, events, Q);
+  const Mmax = findMExtremum(input.loads, events, Q, M);
 
   // Подбор сечения по [σ] (если задано)
   let diameter: number | undefined;
@@ -112,13 +117,7 @@ function computeReactions(input: BeamInput): Reactions {
     }
   }
 
-  // Все варианты двухопорных балок (с консолями и без)
-  const isSimplySupported = beamType === "simply-supported" ||
-    beamType === "simply-supported-overhang-left" ||
-    beamType === "simply-supported-overhang-right" ||
-    beamType === "simply-supported-overhang-both";
-
-  if (isSimplySupported) {
+  if (isSimplySupported(beamType)) {
     // Двухопорная балка (с консолями или без)
     const xA = supports.find((s) => s.type === "pin")?.x ?? 0;
     const xB = supports.find((s) => s.type === "roller")?.x ?? L;
@@ -186,18 +185,13 @@ function createQFunction(
   reactions: Reactions
 ): (x: number) => number {
   const { loads, beamType } = input;
-
-  // Все варианты двухопорных балок
-  const isSimplySupported = beamType === "simply-supported" ||
-    beamType === "simply-supported-overhang-left" ||
-    beamType === "simply-supported-overhang-right" ||
-    beamType === "simply-supported-overhang-both";
+  const simplySup = isSimplySupported(beamType);
 
   return (x: number): number => {
     let Q = 0;
 
     // Реакции (уже с правильным знаком: + = вверх)
-    if (isSimplySupported) {
+    if (simplySup) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         Q += reactions.RA * macaulay(x, reactions.xA, 0);
       }
@@ -240,18 +234,13 @@ function createMFunction(
   reactions: Reactions
 ): (x: number) => number {
   const { loads, beamType } = input;
-
-  // Все варианты двухопорных балок
-  const isSimplySupported = beamType === "simply-supported" ||
-    beamType === "simply-supported-overhang-left" ||
-    beamType === "simply-supported-overhang-right" ||
-    beamType === "simply-supported-overhang-both";
+  const simplySup = isSimplySupported(beamType);
 
   return (x: number): number => {
     let M = 0;
 
     // Вклад реакций (уже с правильным знаком: + = вверх)
-    if (isSimplySupported) {
+    if (simplySup) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         M += reactions.RA * macaulay(x, reactions.xA, 1);
       }
@@ -311,18 +300,14 @@ function computeDeflections(
   // theta = (1/EI) * ∫M dx + C1
   // y = (1/EI) * ∫∫M dx + C1*x + C2
 
-  // Все варианты двухопорных балок
-  const isSimplySupported = beamType === "simply-supported" ||
-    beamType === "simply-supported-overhang-left" ||
-    beamType === "simply-supported-overhang-right" ||
-    beamType === "simply-supported-overhang-both";
+  const simplySup = isSimplySupported(beamType);
 
   // Функция однократного интеграла M
   const integralM = (x: number): number => {
     let result = 0;
 
     // От реакций
-    if (isSimplySupported) {
+    if (simplySup) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         result += reactions.RA * macaulayIntegral(x, reactions.xA, 1);
       }
@@ -366,7 +351,7 @@ function computeDeflections(
     let result = 0;
 
     // От реакций
-    if (isSimplySupported) {
+    if (simplySup) {
       if (reactions.xA !== undefined && reactions.RA !== undefined) {
         result += reactions.RA * macaulayDoubleIntegral(x, reactions.xA, 1);
       }
@@ -409,7 +394,7 @@ function computeDeflections(
   let C1 = 0;
   let C2 = 0;
 
-  if (isSimplySupported) {
+  if (simplySup) {
     const xA = reactions.xA ?? 0;
     const xB = reactions.xB ?? L;
 
@@ -481,32 +466,22 @@ function collectEvents(input: BeamInput, reactions: Reactions): number[] {
 }
 
 /**
- * Аналитический поиск экстремума Q(x)
- * Q линейная на каждом участке → максимум |Q| на концах участков
+ * Поиск экстремума Q(x) по модулю
+ * Q линейная на каждом участке → экстремум на концах участков
  */
 function findQExtremum(
-  input: BeamInput,
-  reactions: Reactions,
-  Q: (x: number) => number,
-  M: (x: number) => number
+  L: number,
+  events: number[],
+  Q: (x: number) => number
 ): { value: number; x: number } {
-  const { L } = input;
-  const events = collectEvents(input, reactions);
-
   let maxAbsValue = 0;
   let maxX = 0;
   let actualValue = 0;
 
-  // Q линейная на каждом участке → проверяем концы
-  // Используем eps для обхода разрывов (скачков) в точках событий
-  const eps = 1e-6;
-
-  for (let i = 0; i < events.length; i++) {
-    const x = events[i];
-
-    // Проверяем значение СЛЕВА от точки (для всех кроме первой)
-    if (x > eps) {
-      const v = Q(x - eps);
+  for (const x of events) {
+    // Проверяем значение слева от точки (для скачков)
+    if (x > EPS) {
+      const v = Q(x - EPS);
       if (Math.abs(v) > maxAbsValue) {
         maxAbsValue = Math.abs(v);
         maxX = x;
@@ -514,9 +489,9 @@ function findQExtremum(
       }
     }
 
-    // Проверяем значение СПРАВА от точки (для всех кроме последней)
-    if (x < L - eps) {
-      const v = Q(x + eps);
+    // Проверяем значение справа от точки
+    if (x < L - EPS) {
+      const v = Q(x + EPS);
       if (Math.abs(v) > maxAbsValue) {
         maxAbsValue = Math.abs(v);
         maxX = x;
@@ -529,24 +504,19 @@ function findQExtremum(
 }
 
 /**
- * Аналитический поиск экстремума M(x)
+ * Поиск экстремума M(x) по модулю
  * M квадратичная/линейная на каждом участке
- * Кандидаты: концы участков + вершина параболы (где Q=0)
+ * Кандидаты: концы участков + вершина параболы (где dM/dx = Q = 0)
  */
 function findMExtremum(
-  input: BeamInput,
-  reactions: Reactions,
+  loads: BeamInput["loads"],
+  events: number[],
   Q: (x: number) => number,
   M: (x: number) => number
 ): { value: number; x: number } {
-  const { L, loads } = input;
-  const events = collectEvents(input, reactions);
-
   let maxAbsValue = 0;
   let maxX = 0;
   let actualValue = 0;
-
-  const eps = 1e-6;
 
   const checkValue = (x: number, v: number) => {
     if (Math.abs(v) > maxAbsValue) {
@@ -556,7 +526,7 @@ function findMExtremum(
     }
   };
 
-  // Проверяем концы участков (точки событий)
+  // Проверяем точки событий (концы участков)
   for (const x of events) {
     checkValue(x, M(x));
   }
@@ -566,29 +536,27 @@ function findMExtremum(
     const a = events[i];
     const b = events[i + 1];
     const segLen = b - a;
-    if (segLen < eps) continue;
+    if (segLen < EPS) continue;
 
-    // Определяем q на участке
+    // Определяем суммарную q на участке
     const midpoint = (a + b) / 2;
     let q = 0;
     for (const load of loads) {
       if (load.type === "distributed") {
-        if (midpoint > load.a + eps && midpoint < load.b - eps) {
+        if (midpoint > load.a + EPS && midpoint < load.b - EPS) {
           q += load.q;
         }
       }
     }
 
-    // Если q ≠ 0, ищем вершину параболы M (где dM/ds = Q = 0)
-    // Q(s) = Qa - q*s = 0  →  s₀ = Qa / q
-    if (Math.abs(q) > eps) {
-      const Qa = Q(a + eps);
+    // Если q ≠ 0, ищем вершину параболы (где Q = 0)
+    if (Math.abs(q) > EPS) {
+      const Qa = Q(a + EPS);
       const s0 = Qa / q;
 
-      // Если вершина внутри участка
-      if (s0 > eps && s0 < segLen - eps) {
-        const xVertex = a + s0;
-        checkValue(xVertex, M(xVertex));
+      // Вершина внутри участка?
+      if (s0 > EPS && s0 < segLen - EPS) {
+        checkValue(a + s0, M(a + s0));
       }
     }
   }
