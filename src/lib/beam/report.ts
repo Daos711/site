@@ -493,11 +493,14 @@ function buildReportHTML(data: ReportData): string {
     <tr><th>Тип</th><th>Значение</th><th>Положение</th></tr>
     ${input.loads.map(load => {
       if (load.type === "distributed") {
-        return `<tr><td>Распределённая \\(q\\)</td><td>\\(${formatNumber(load.q)}\\) кН/м</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
+        const dir = load.q >= 0 ? "↓" : "↑";
+        return `<tr><td>Распределённая \\(q\\)</td><td>\\(${formatNumber(Math.abs(load.q))}\\) кН/м ${dir}</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
       } else if (load.type === "force") {
-        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>\\(${formatNumber(load.F)}\\) кН</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        const dir = load.F >= 0 ? "↓" : "↑";
+        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>\\(${formatNumber(Math.abs(load.F))}\\) кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
       } else {
-        return `<tr><td>Момент \\(M\\)</td><td>\\(${formatNumber(load.M)}\\) кН·м</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        const dir = load.M >= 0 ? "↺" : "↻";
+        return `<tr><td>Момент \\(M\\)</td><td>\\(${formatNumber(Math.abs(load.M))}\\) кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
       }
     }).join("\n    ")}
   </table>
@@ -670,23 +673,32 @@ function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
   }
 
   const loadInfos: LoadInfo[] = [];
+
+  // Подсчитываем количество нагрузок каждого типа для индексов
+  const forceCount = loads.filter(l => l.type === "force").length;
+  const momentCount = loads.filter(l => l.type === "moment").length;
+
   let forceIdx = 1;
   let momentIdx = 1;
 
-  // Добавляем силы и моменты (без изменений)
+  // Добавляем силы и моменты
   for (const load of loads) {
     if (load.type === "force") {
+      // Если сила одна - без индекса (F), если несколько - с индексом (F₁, F₂)
+      const label = forceCount === 1 ? "F" : `F_{${forceIdx}}`;
       loadInfos.push({
         type: "force",
-        label: `F_{${forceIdx}}`,
+        label,
         value: load.F,
         x: load.x
       });
       forceIdx++;
     } else if (load.type === "moment") {
+      // Если момент один - без индекса (M), если несколько - с индексом (M₁, M₂)
+      const label = momentCount === 1 ? "M" : `M_{${momentIdx}}`;
       loadInfos.push({
         type: "moment",
-        label: `M_{${momentIdx}}`,
+        label,
         value: load.M,
         x: load.x
       });
@@ -766,12 +778,16 @@ function buildCantileverReactions(
 
   for (const load of loadInfos) {
     if (load.type === "force") {
-      forceTermsSymbolic.push(load.value >= 0 ? `- ${load.label}` : `+ ${load.label}`);
-      forceTermsNumeric.push(load.value >= 0 ? `- ${formatNumber(load.value)}` : `+ ${formatNumber(-load.value)}`);
+      // Сила вниз (>=0) вычитается из реакции
+      const sign = load.value >= 0 ? "-" : "+";
+      forceTermsSymbolic.push(`${sign} ${load.label}`);
+      forceTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))}`);
       totalForceValue += load.value;
     } else if (load.type === "distributed") {
-      forceTermsSymbolic.push(`- F_{${load.label}}`);
-      forceTermsNumeric.push(`- ${formatNumber(load.Fq!)}`);
+      // Нагрузка вниз (>=0) вычитается из реакции
+      const sign = load.Fq! >= 0 ? "-" : "+";
+      forceTermsSymbolic.push(`${sign} F_{${load.label}}`);
+      forceTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.Fq!))}`);
       totalForceValue += load.Fq!;
     }
   }
@@ -798,21 +814,27 @@ function buildCantileverReactions(
     if (load.type === "force") {
       const arm = load.x! - xf;
       if (Math.abs(arm) > 1e-9) {
-        momentTermsSymbolic.push(`+ ${load.label} \\cdot (x_{${load.label}} - x_f)`);
+        // Сила вниз (>=0) создаёт положительный момент относительно заделки (при arm > 0)
+        const sign = load.value >= 0 ? "+" : "-";
+        momentTermsSymbolic.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_f)`);
         const momentContrib = load.value * arm;
-        momentTermsNumeric.push(`${momentContrib >= 0 ? "+" : "-"} ${formatNumber(Math.abs(momentContrib))}`);
+        momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
       }
     } else if (load.type === "moment") {
-      momentTermsSymbolic.push(`+ ${load.label}`);
-      momentTermsNumeric.push(`${load.value >= 0 ? "+" : "-"} ${formatNumber(Math.abs(load.value))}`);
+      // Момент против часовой (>=0) → +M, по часовой (<0) → -M
+      const sign = load.value >= 0 ? "+" : "-";
+      momentTermsSymbolic.push(`${sign} ${load.label}`);
+      momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))}`);
       totalMomentValue += load.value;
     } else if (load.type === "distributed") {
       const arm = load.xq! - xf;
       if (Math.abs(arm) > 1e-9) {
-        momentTermsSymbolic.push(`+ F_{${load.label}} \\cdot (x_{${load.label}} - x_f)`);
+        // Нагрузка вниз (>=0) создаёт положительный момент относительно заделки
+        const sign = load.Fq! >= 0 ? "+" : "-";
+        momentTermsSymbolic.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_f)`);
         const momentContrib = load.Fq! * arm;
-        momentTermsNumeric.push(`${momentContrib >= 0 ? "+" : "-"} ${formatNumber(Math.abs(momentContrib))}`);
+        momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
       }
     }
@@ -923,11 +945,17 @@ function buildSimplySupportedReactions(
   const momentSymbolic: string[] = [`R_B \\cdot (x_B - x_A)`];
   for (const load of loadInfos) {
     if (load.type === "force") {
-      momentSymbolic.push(`- ${load.label} \\cdot (x_{${load.label}} - x_A)`);
+      // Сила вниз (>=0) создаёт отрицательный момент относительно A
+      const sign = load.value >= 0 ? "-" : "+";
+      momentSymbolic.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_A)`);
     } else if (load.type === "moment") {
-      momentSymbolic.push(`+ ${load.label}`);
+      // Момент против часовой (>=0) → +M, по часовой (<0) → -M
+      const sign = load.value >= 0 ? "+" : "-";
+      momentSymbolic.push(`${sign} ${load.label}`);
     } else if (load.type === "distributed") {
-      momentSymbolic.push(`- F_{${load.label}} \\cdot (x_{${load.label}} - x_A)`);
+      // Нагрузка вниз (>=0) создаёт отрицательный момент
+      const sign = load.Fq! >= 0 ? "-" : "+";
+      momentSymbolic.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_A)`);
     }
   }
 
@@ -950,27 +978,25 @@ function buildSimplySupportedReactions(
     if (load.type === "force") {
       const arm = load.x! - xA;
       if (Math.abs(arm) > 1e-9) {
-        // В уравнении: - P · arm, поэтому в правой части: + P · arm
         const contrib = load.value * arm;
         rightSideSum += contrib;
-        // Форматируем красиво: избегаем "- -10"
-        if (load.value >= 0) {
-          momentNumTerms.push(`- ${formatNumber(load.value)} \\cdot ${formatNumber(arm)}`);
-        } else {
-          momentNumTerms.push(`+ ${formatNumber(-load.value)} \\cdot ${formatNumber(arm)}`);
-        }
+        // Знак соответствует символьному уравнению
+        const sign = load.value >= 0 ? "-" : "+";
+        momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${formatNumber(arm)}`);
       }
     } else if (load.type === "moment") {
-      // В уравнении: + M, поэтому в правой части: - M
       rightSideSum -= load.value;
-      momentNumTerms.push(`${load.value >= 0 ? "+" : "-"} ${formatNumber(Math.abs(load.value))}`);
+      // Знак соответствует символьному уравнению: против часовой (+), по часовой (-)
+      const sign = load.value >= 0 ? "+" : "-";
+      momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))}`);
     } else if (load.type === "distributed") {
       const arm = load.xq! - xA;
       if (Math.abs(arm) > 1e-9) {
-        // В уравнении: - Fq · arm, поэтому в правой части: + Fq · arm
         const contrib = load.Fq! * arm;
         rightSideSum += contrib;
-        momentNumTerms.push(`- ${formatNumber(load.Fq!)} \\cdot ${formatNumber(arm)}`);
+        // Знак соответствует символьному уравнению: вниз (-), вверх (+)
+        const sign = load.Fq! >= 0 ? "-" : "+";
+        momentNumTerms.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${formatNumber(arm)}`);
       }
     }
   }
