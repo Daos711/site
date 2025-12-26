@@ -426,11 +426,11 @@ function generateDimensionLine(x1: number, x2: number, y: number, L: number): st
 function formatBeamType(type: string): string {
   const types: Record<string, string> = {
     "simply-supported": "Двухопорная балка",
-    "simply-supported-overhang-left": "Двухопорная с консолью слева",
-    "simply-supported-overhang-right": "Двухопорная с консолью справа",
+    "simply-supported-overhang-left": "Двухопорная балка с консолью слева",
+    "simply-supported-overhang-right": "Двухопорная балка с консолью справа",
     "simply-supported-overhang-both": "Двухконсольная балка",
-    "cantilever-left": "Консольная (заделка слева)",
-    "cantilever-right": "Консольная (заделка справа)",
+    "cantilever-left": "Консольная балка (заделка слева)",
+    "cantilever-right": "Консольная балка (заделка справа)",
   };
   return types[type] || type;
 }
@@ -1403,7 +1403,7 @@ function buildTheta0Derivation(
   </div>
   <p>Числовые значения слагаемых:</p>
   <ul>
-    ${terms.map(t => `<li>\\(${t.symbolic.replace(/^[+-]/, "")} = ${formatNumber(t.value)}\\) Н·м³</li>`).join("\n    ")}
+    ${terms.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\) Н·м³</li>`).join("\n    ")}
   </ul>
   <p>Сумма: \\(${formatNumber(sumTerms)}\\) Н·м³</p>
   <div class="formula">
