@@ -996,14 +996,15 @@ function buildConcreteDeflectionEquation(
   const Mf = result.reactions.Mf;
 
   // Собираем слагаемые уравнения
+  // Формула МНП: EI·y(x) = EI·y₀ + EI·θ₀·x + ΣF·(x-a)³/6 + ...
   const terms: string[] = [];
 
-  // Начальные параметры
-  terms.push("y_0");
-  terms.push("+ \\theta_0 \\cdot x");
+  // Начальные параметры (умножаются на EI)
+  terms.push("EI \\cdot y_0");
+  terms.push("+ EI \\cdot \\theta_0 \\cdot x");
 
-  // Реакции
-  if (RA !== undefined && Math.abs(RA) > 1e-9) {
+  // Реакции (только внутри балки, не на конце)
+  if (RA !== undefined && Math.abs(RA) > 1e-9 && xA < L - 1e-9) {
     const sign = RA >= 0 ? "+" : "-";
     if (Math.abs(xA) < 1e-9) {
       terms.push(`${sign} \\frac{R_A \\cdot x^3}{6}`);
@@ -1012,49 +1013,53 @@ function buildConcreteDeflectionEquation(
     }
   }
 
-  if (RB !== undefined && Math.abs(RB) > 1e-9) {
-    const sign = RB >= 0 ? "+" : "-";
-    terms.push(`${sign} \\frac{R_B \\cdot (x - ${formatNumber(xB)})^3}{6}`);
-  }
+  // RB не включаем - он на конце балки (x = L), скобка (x-L) ≤ 0
+  // if (RB !== undefined && Math.abs(RB) > 1e-9 && xB < L - 1e-9) { ... }
 
   // Реакции консоли
   if (Rf !== undefined && Math.abs(Rf) > 1e-9) {
     const xf = result.reactions.xf ?? 0;
-    const sign = Rf >= 0 ? "+" : "-";
-    if (Math.abs(xf) < 1e-9) {
-      terms.push(`${sign} \\frac{R_f \\cdot x^3}{6}`);
-    } else {
-      terms.push(`${sign} \\frac{R_f \\cdot (x - ${formatNumber(xf)})^3}{6}`);
+    if (xf < L - 1e-9) {
+      const sign = Rf >= 0 ? "+" : "-";
+      if (Math.abs(xf) < 1e-9) {
+        terms.push(`${sign} \\frac{R_f \\cdot x^3}{6}`);
+      } else {
+        terms.push(`${sign} \\frac{R_f \\cdot (x - ${formatNumber(xf)})^3}{6}`);
+      }
     }
   }
 
   if (Mf !== undefined && Math.abs(Mf) > 1e-9) {
     const xf = result.reactions.xf ?? 0;
-    // Момент заделки: положительный (против часовой) сжимает нижние волокна → минус
-    const sign = Mf >= 0 ? "-" : "+";
-    if (Math.abs(xf) < 1e-9) {
-      terms.push(`${sign} \\frac{M_f \\cdot x^2}{2}`);
-    } else {
-      terms.push(`${sign} \\frac{M_f \\cdot (x - ${formatNumber(xf)})^2}{2}`);
+    if (xf < L - 1e-9) {
+      // Момент заделки: положительный (против часовой) сжимает нижние волокна → минус
+      const sign = Mf >= 0 ? "-" : "+";
+      if (Math.abs(xf) < 1e-9) {
+        terms.push(`${sign} \\frac{M_f \\cdot x^2}{2}`);
+      } else {
+        terms.push(`${sign} \\frac{M_f \\cdot (x - ${formatNumber(xf)})^2}{2}`);
+      }
     }
   }
 
-  // Внешние нагрузки
+  // Внешние нагрузки (только если внутри балки, не на конце)
   for (const load of loads) {
-    if (load.type === "force") {
+    if (load.type === "force" && load.x < L - 1e-9) {
       // Сила вниз (F > 0) сжимает нижние волокна → минус
       const sign = load.F >= 0 ? "-" : "+";
       terms.push(`${sign} \\frac{F \\cdot (x - ${formatNumber(load.x)})^3}{6}`);
-    } else if (load.type === "moment") {
+    } else if (load.type === "moment" && load.x < L - 1e-9) {
       // Момент против часовой (M > 0) сжимает нижние волокна → минус
       const sign = load.M >= 0 ? "-" : "+";
       terms.push(`${sign} \\frac{M \\cdot (x - ${formatNumber(load.x)})^2}{2}`);
     } else if (load.type === "distributed") {
       // Распределённая нагрузка вниз (q > 0) сжимает → минус
-      const sign = load.q >= 0 ? "-" : "+";
-      terms.push(`${sign} \\frac{q \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
+      if (load.a < L - 1e-9) {
+        const sign = load.q >= 0 ? "-" : "+";
+        terms.push(`${sign} \\frac{q \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
+      }
       // Компенсация после конца нагрузки
-      if (load.b < L) {
+      if (load.b < L - 1e-9) {
         const compSign = load.q >= 0 ? "+" : "-";
         terms.push(`${compSign} \\frac{q \\cdot (x - ${formatNumber(load.b)})^4}{24}`);
       }
@@ -1062,25 +1067,25 @@ function buildConcreteDeflectionEquation(
   }
 
   // Формируем уравнение с переносами для длинных формул
-  // Разбиваем на строки по 3 слагаемых (после y_0 и theta_0*x)
+  // Разбиваем на строки по 3 слагаемых (после EI·y_0 и EI·theta_0·x)
   const TERMS_PER_LINE = 3;
 
   let equation: string;
   if (terms.length <= 4) {
     // Короткая формула - в одну строку
-    equation = `EI \\cdot y(x) = EI \\cdot ${terms.join(" ")}`;
+    equation = `EI \\cdot y(x) = ${terms.join(" ")}`;
   } else {
     // Длинная формула - разбиваем на строки
     const lines: string[] = [];
-    // Первая строка: EI·y(x) = EI·y_0 + theta_0·x + первые слагаемые
-    const firstLineTerms = terms.slice(0, 2 + TERMS_PER_LINE); // y_0, theta_0*x + 3 слагаемых
-    lines.push(`EI \\cdot y(x) &= EI \\cdot ${firstLineTerms.join(" ")}`);
+    // Первая строка: EI·y(x) = EI·y_0 + EI·theta_0·x + первые слагаемые
+    const firstLineTerms = terms.slice(0, 2 + TERMS_PER_LINE); // EI·y_0, EI·theta_0*x + 3 слагаемых
+    lines.push(`EI \\cdot y(x) &= ${firstLineTerms.join(" ")}`);
 
     // Остальные строки
     let idx = 2 + TERMS_PER_LINE;
     while (idx < terms.length) {
       const lineTerms = terms.slice(idx, idx + TERMS_PER_LINE);
-      lines.push(`&\\phantom{= EI \\cdot y_0} ${lineTerms.join(" ")}`);
+      lines.push(`&\\phantom{=} ${lineTerms.join(" ")}`);
       idx += TERMS_PER_LINE;
     }
 
