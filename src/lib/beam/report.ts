@@ -672,8 +672,8 @@ function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
   const loadInfos: LoadInfo[] = [];
   let forceIdx = 1;
   let momentIdx = 1;
-  let distIdx = 1;
 
+  // Добавляем силы и моменты (без изменений)
   for (const load of loads) {
     if (load.type === "force") {
       loadInfos.push({
@@ -691,21 +691,24 @@ function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
         x: load.x
       });
       momentIdx++;
-    } else if (load.type === "distributed") {
-      const Fq = load.q * (load.b - load.a);
-      const xq = (load.a + load.b) / 2;
-      loadInfos.push({
-        type: "distributed",
-        label: `q_{${distIdx}}`,
-        value: load.q,
-        a: load.a,
-        b: load.b,
-        Fq,
-        xq
-      });
-      distIdx++;
     }
   }
+
+  // Добавляем РЕЗУЛЬТИРУЮЩИЕ распределённые нагрузки (как на схеме)
+  const resultingLoads = computeResultingLoads(input);
+  resultingLoads.forEach((seg, i) => {
+    const Fq = seg.q * (seg.b - seg.a);
+    const xq = (seg.a + seg.b) / 2;
+    loadInfos.push({
+      type: "distributed",
+      label: `q_{${i + 1}}`,
+      value: seg.q,
+      a: seg.a,
+      b: seg.b,
+      Fq,
+      xq
+    });
+  });
 
   // Для консольной балки
   if (isCantilever) {
