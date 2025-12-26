@@ -493,11 +493,11 @@ function buildReportHTML(data: ReportData): string {
     <tr><th>Тип</th><th>Значение</th><th>Положение</th></tr>
     ${input.loads.map(load => {
       if (load.type === "distributed") {
-        return `<tr><td>Распределённая \\(q\\)</td><td>${formatNumber(load.q)} кН/м</td><td>от ${formatNumber(load.a)} до ${formatNumber(load.b)} м</td></tr>`;
+        return `<tr><td>Распределённая \\(q\\)</td><td>\\(${formatNumber(load.q)}\\) кН/м</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
       } else if (load.type === "force") {
-        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>${formatNumber(load.F)} кН</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>\\(${formatNumber(load.F)}\\) кН</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
       } else {
-        return `<tr><td>Момент \\(M\\)</td><td>${formatNumber(load.M)} кН·м</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        return `<tr><td>Момент \\(M\\)</td><td>\\(${formatNumber(load.M)}\\) кН·м</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
       }
     }).join("\n    ")}
   </table>
@@ -516,7 +516,7 @@ function buildReportHTML(data: ReportData): string {
   <table>
     <tr><th>Участок</th><th>Обозначение</th><th>Интенсивность</th><th>Направление</th><th>Границы участка</th></tr>
     ${resultingLoads.map((seg, i) =>
-      `<tr><td>${i + 1}</td><td>\\(q_{${i + 1}}\\)</td><td>${formatNumber(Math.abs(seg.q))} кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`
+      `<tr><td>${i + 1}</td><td>\\(q_{${i + 1}}\\)</td><td>\\(${formatNumber(Math.abs(seg.q))}\\) кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от \\(${formatNumber(seg.a)}\\) до \\(${formatNumber(seg.b)}\\) м</td></tr>`
     ).join("\n    ")}
   </table>`;
   })()}
