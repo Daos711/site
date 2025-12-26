@@ -1037,9 +1037,11 @@ function buildSimplySupportedReactions(
   // R_A вверх (положительная) слева от B создаёт момент по часовой (отрицательный)
   let checkMomentSum = -RA * span;
   const checkTerms: string[] = [`-R_A \\cdot (x_B - x_A)`];
-  // Учитываем знак R_A для правильного отображения
-  const raSign = RA >= 0 ? "-" : "+";
-  const checkNumTerms: string[] = [`${raSign} ${formatNumber(Math.abs(RA))} \\cdot ${formatNumber(span)}`];
+  // Учитываем знак R_A для правильного отображения (первый член без + в начале)
+  const raFirstTerm = RA >= 0
+    ? `-${formatNumber(Math.abs(RA))} \\cdot ${formatNumber(span)}`
+    : `${formatNumber(Math.abs(RA))} \\cdot ${formatNumber(span)}`;
+  const checkNumTerms: string[] = [raFirstTerm];
 
   for (const load of loadInfos) {
     if (load.type === "force") {
@@ -1049,7 +1051,9 @@ function buildSimplySupportedReactions(
         checkMomentSum -= contrib;
         const sign = load.value >= 0 ? "-" : "+";
         checkTerms.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_B)`);
-        checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot (${formatNumber(armB)})`);
+        // Скобки только для отрицательных чисел
+        const armStr = armB < 0 ? `(${formatNumber(armB)})` : formatNumber(armB);
+        checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${armStr}`);
       }
     } else if (load.type === "moment") {
       // Момент входит в уравнение напрямую (не меняем знак)
@@ -1064,7 +1068,9 @@ function buildSimplySupportedReactions(
         checkMomentSum -= contrib;
         const sign = load.Fq! >= 0 ? "-" : "+";
         checkTerms.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_B)`);
-        checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot (${formatNumber(armB)})`);
+        // Скобки только для отрицательных чисел
+        const armStr = armB < 0 ? `(${formatNumber(armB)})` : formatNumber(armB);
+        checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${armStr}`);
       }
     }
   }
