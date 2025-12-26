@@ -298,7 +298,7 @@ export function ResultCards({ input, result, className, showButton = true, onRep
       {/* Кнопка отчёта */}
       {showButton && (
         <button
-          className="w-full py-3 rounded-lg border border-border bg-card hover:bg-card/80 transition-colors font-semibold flex items-center justify-center"
+          className="w-full py-3 rounded-lg border border-border bg-card hover:bg-accent/20 hover:border-accent/50 transition-colors font-semibold flex items-center justify-center"
           onClick={handleOpenReport}
         >
           <span className="text-muted-foreground">📄</span>
