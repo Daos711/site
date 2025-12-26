@@ -140,6 +140,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         const arrowLen = 22;
         const markerOffset = 6;
         const beamTopY = beamY - beamThickness / 2;
+        const beamBottomY = beamY + beamThickness / 2;
 
         return mergedSegments.map((seg, i) => {
           const isFirst = i === 0;
@@ -148,30 +149,59 @@ export function BeamSchemaExport({ input, result }: Props) {
           const x2 = xToPx(seg.b) - (isLast ? 0 : gap);
           const numArrows = Math.max(3, Math.floor((x2 - x1) / 30));
           const subscript = mergedSegments.length > 1 ? String(i + 1) : "";
+          const pointsDown = seg.q >= 0;
 
-          return (
-            <g key={`dist-${i}`}>
-              <line x1={x1} y1={beamTopY - arrowLen} x2={x2} y2={beamTopY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={1.5} />
-              {Array.from({ length: numArrows }).map((_, j) => {
-                const px = x1 + (j / (numArrows - 1)) * (x2 - x1);
-                return (
-                  <line
-                    key={j}
-                    x1={px}
-                    y1={beamTopY - arrowLen}
-                    x2={px}
-                    y2={beamTopY - markerOffset}
-                    stroke={COLORS.distributedLoad}
-                    strokeWidth={1.5}
-                    markerEnd="url(#exp-arrowBlue)"
-                  />
-                );
-              })}
-              <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 6} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize.label} fontWeight="600">
-                q{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
-              </text>
-            </g>
-          );
+          if (pointsDown) {
+            // Нагрузка вниз (q >= 0)
+            return (
+              <g key={`dist-${i}`}>
+                <line x1={x1} y1={beamTopY - arrowLen} x2={x2} y2={beamTopY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={1.5} />
+                {Array.from({ length: numArrows }).map((_, j) => {
+                  const px = x1 + (j / (numArrows - 1)) * (x2 - x1);
+                  return (
+                    <line
+                      key={j}
+                      x1={px}
+                      y1={beamTopY - arrowLen}
+                      x2={px}
+                      y2={beamTopY - markerOffset}
+                      stroke={COLORS.distributedLoad}
+                      strokeWidth={1.5}
+                      markerEnd="url(#exp-arrowBlue)"
+                    />
+                  );
+                })}
+                <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 6} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize.label} fontWeight="600">
+                  q{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
+                </text>
+              </g>
+            );
+          } else {
+            // Нагрузка вверх (q < 0)
+            return (
+              <g key={`dist-${i}`}>
+                <line x1={x1} y1={beamBottomY + arrowLen} x2={x2} y2={beamBottomY + arrowLen} stroke={COLORS.distributedLoad} strokeWidth={1.5} />
+                {Array.from({ length: numArrows }).map((_, j) => {
+                  const px = x1 + (j / (numArrows - 1)) * (x2 - x1);
+                  return (
+                    <line
+                      key={j}
+                      x1={px}
+                      y1={beamBottomY + arrowLen}
+                      x2={px}
+                      y2={beamBottomY + markerOffset}
+                      stroke={COLORS.distributedLoad}
+                      strokeWidth={1.5}
+                      markerEnd="url(#exp-arrowBlue)"
+                    />
+                  );
+                })}
+                <text x={(x1 + x2) / 2} y={beamBottomY + arrowLen + 14} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize.label} fontWeight="600">
+                  q{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
+                </text>
+              </g>
+            );
+          }
         });
       })()}
 
@@ -353,6 +383,24 @@ export function BeamSchemaExport({ input, result }: Props) {
         }
 
         const sortedPoints = Array.from(keyPoints).filter(p => p >= 0 && p <= L).sort((a, b) => a - b);
+        const beamBottomY = beamY + beamThickness / 2;
+
+        // Пунктирные линии от балки к размерной линии
+        for (let i = 0; i < sortedPoints.length; i++) {
+          const x = sortedPoints[i];
+          elements.push(
+            <line
+              key={`dashed-${i}`}
+              x1={xToPx(x)}
+              y1={beamBottomY + 2}
+              x2={xToPx(x)}
+              y2={dimY - tickH}
+              stroke="#9ca3af"
+              strokeWidth={0.75}
+              strokeDasharray="3,3"
+            />
+          );
+        }
 
         elements.push(
           <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1} />
