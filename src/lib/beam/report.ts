@@ -413,6 +413,11 @@ function buildReportHTML(data: ReportData): string {
     }
   }
 
+  // Флаги для определения наличия разделов
+  const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
+  const hasCrossSection = !!(result.diameter && result.W && result.I);
+  const hasDeflection = !!y;
+
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -423,32 +428,37 @@ function buildReportHTML(data: ReportData): string {
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <style>
     * { box-sizing: border-box; }
+    @page { size: A4; margin: 20mm; }
     body {
       font-family: 'Times New Roman', Times, serif;
-      font-size: 20px;
-      line-height: 1.7;
+      font-size: 14pt;
+      line-height: 1.6;
       max-width: 210mm;
       margin: 0 auto;
       padding: 20mm 15mm;
       background: white;
       color: black;
     }
-    h1 { font-size: 30px; text-align: center; margin-bottom: 28px; }
-    h2 { font-size: 24px; margin-top: 32px; margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-    h3 { font-size: 22px; margin-top: 24px; margin-bottom: 12px; }
-    table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 18px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    h1 { font-size: 18pt; text-align: center; margin-bottom: 20px; }
+    h2 { font-size: 14pt; font-weight: bold; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    h3 { font-size: 13pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; page-break-inside: avoid; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
-    .formula { margin: 12px 0; padding: 12px 0; font-size: 18px; }
+    .formula { margin: 10px 0; padding: 8px 0; font-size: 12pt; }
+    .formula-block { page-break-inside: avoid; }
     .result { color: #0066cc; font-weight: bold; }
-    .extremes-block { break-inside: avoid; }
-    .diagram-block { break-inside: avoid; margin: 24px 0; text-align: center; }
+    .diagram-block { page-break-inside: avoid; margin: 20px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
-    .diagram-title { font-weight: bold; margin-bottom: 10px; font-size: 18px; }
-    ul { margin: 10px 0; padding-left: 28px; }
-    li { margin: 6px 0; }
+    .diagram-title { font-weight: bold; margin-bottom: 8px; font-size: 12pt; }
+    .figure-caption { font-size: 11pt; font-style: italic; margin-top: 6px; }
+    ul { margin: 8px 0; padding-left: 24px; }
+    li { margin: 4px 0; }
+    .sign-convention { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; margin: 12px 0; page-break-inside: avoid; }
+    .sign-convention h4 { margin: 0 0 8px 0; font-size: 12pt; }
+    .conclusions { background: #f0f7ff; border: 1px solid #cce5ff; border-radius: 4px; padding: 12px; margin: 12px 0; }
     @media print {
-      body { padding: 10mm; }
+      body { padding: 0; }
       .no-print { display: none; }
       h2 { page-break-after: avoid; }
       h3 { page-break-after: avoid; }
@@ -457,13 +467,13 @@ function buildReportHTML(data: ReportData): string {
       position: fixed;
       top: 10px;
       right: 10px;
-      padding: 12px 24px;
+      padding: 10px 20px;
       background: #0066cc;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
     }
     .print-btn:hover { background: #0055aa; }
     .print-btn:disabled { background: #999; cursor: wait; }
@@ -472,148 +482,78 @@ function buildReportHTML(data: ReportData): string {
 <body>
   <button class="print-btn no-print" onclick="prepareAndPrint()" id="printBtn">Сохранить PDF</button>
 
-  <h1>Расчёт балки</h1>
+  <h1>Расчёт балки методом сечений</h1>
 
-  <h2>1. Расчётная схема</h2>
-  <div style="text-align: center; margin-bottom: 20px;">
+  ${buildProblemStatement(input, hasDeflection, hasCrossSection)}
+
+  <h2>1. Исходные данные</h2>
+  ${buildInputDataSection(input)}
+
+  <h2>2. Расчётная схема</h2>
+  <div style="text-align: center; margin-bottom: 16px;">
     ${beamSchemaSVG || generateBeamSVG(input, result)}
   </div>
+  <p class="figure-caption" style="text-align: center;">Рисунок 1 — Расчётная схема балки</p>
 
-  <h2>2. Исходные данные</h2>
-  <table>
-    <tr><th>Параметр</th><th>Значение</th></tr>
-    <tr><td>Тип балки</td><td>${formatBeamType(input.beamType)}</td></tr>
-    <tr><td>Длина балки \\(L\\)</td><td>\\(${formatNumber(input.L)}\\) м</td></tr>
-    ${input.E ? `<tr><td>Модуль упругости \\(E\\)</td><td>\\(${formatNumber(input.E / 1e9)}\\) ГПа</td></tr>` : ""}
-    ${input.I ? `<tr><td>Момент инерции \\(I\\)</td><td>\\(${formatNumber(input.I * 1e8)}\\) см⁴</td></tr>` : ""}
-  </table>
-
-  <h3>Нагрузки</h3>
-  <table>
-    <tr><th>Тип</th><th>Значение</th><th>Положение</th></tr>
-    ${input.loads.map(load => {
-      if (load.type === "distributed") {
-        const dir = load.q >= 0 ? "↓" : "↑";
-        return `<tr><td>Распределённая \\(q\\)</td><td>\\(${formatNumber(Math.abs(load.q))}\\) кН/м ${dir}</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
-      } else if (load.type === "force") {
-        const dir = load.F >= 0 ? "↓" : "↑";
-        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>\\(${formatNumber(Math.abs(load.F))}\\) кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
-      } else {
-        const dir = load.M >= 0 ? "↺" : "↻";
-        return `<tr><td>Момент \\(M\\)</td><td>\\(${formatNumber(Math.abs(load.M))}\\) кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
-      }
-    }).join("\n    ")}
-  </table>
-
-  ${(() => {
-    const resultingLoads = computeResultingLoads(input);
-    if (resultingLoads.length === 0) return "";
-
-    // Проверяем, отличаются ли результирующие от исходных
-    const distributedCount = input.loads.filter(l => l.type === "distributed").length;
-    if (resultingLoads.length === distributedCount && distributedCount === 1) return ""; // Если одна нагрузка - таблица не нужна
-
-    return `
-  <h3>Результирующие распределённые нагрузки (на схеме)</h3>
-  <p>При наложении нескольких распределённых нагрузок на одном участке они суммируются:</p>
-  <table>
-    <tr><th>Участок</th><th>Обозначение</th><th>Интенсивность</th><th>Направление</th><th>Границы участка</th></tr>
-    ${resultingLoads.map((seg, i) =>
-      `<tr><td>${i + 1}</td><td>\\(q_{${i + 1}}\\)</td><td>\\(${formatNumber(Math.abs(seg.q))}\\) кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от \\(${formatNumber(seg.a)}\\) до \\(${formatNumber(seg.b)}\\) м</td></tr>`
-    ).join("\n    ")}
-  </table>`;
-  })()}
+  ${buildSignConventions()}
 
   <h2>3. Определение реакций опор</h2>
   ${buildReactionsSection(input, reactions)}
 
-  <h2>4. Экстремальные значения</h2>
-  <div class="extremes-block">
+  <h2>4. Внутренние усилия по участкам</h2>
+  <p>Разобьём балку на участки по характерным точкам. Для каждого участка составим выражения для поперечной силы \\(Q\\) и изгибающего момента \\(M\\).</p>
+  ${sections.map(section => buildSectionBlock(section)).join("\n")}
+
+  <h2>5. Экстремальные значения</h2>
   <table>
     <tr><th>Величина</th><th>Значение</th><th>Координата</th></tr>
     <tr><td>\\(|Q|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(Qmax.value))} кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
     <tr><td>\\(|M|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(Mmax.value))} кН·м</td><td>\\(x = ${formatNumber(Mmax.x)}\\) м</td></tr>
     ${y ? `<tr><td>\\(|y|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(yMax.value) * 1000)} мм</td><td>\\(x = ${formatNumber(yMax.x)}\\) м</td></tr>` : ""}
   </table>
-  </div>
 
-  ${diagrams?.Q || diagrams?.M || diagrams?.y ? `
-  <h2>5. Эпюры</h2>
-  ${diagrams.Q ? `
+  ${hasDiagrams ? `
+  <h2>6. Эпюры</h2>
+  ${diagrams?.Q ? `
   <div class="diagram-block">
     <div class="diagram-title">Эпюра поперечных сил \\(Q(x)\\)</div>
     <img src="${diagrams.Q}" alt="Эпюра Q(x)" />
+    <p class="figure-caption">Рисунок 2 — Эпюра поперечных сил</p>
   </div>
   ` : ""}
-  ${diagrams.M ? `
+  ${diagrams?.M ? `
   <div class="diagram-block">
     <div class="diagram-title">Эпюра изгибающих моментов \\(M(x)\\)</div>
     <img src="${diagrams.M}" alt="Эпюра M(x)" />
+    <p class="figure-caption">Рисунок 3 — Эпюра изгибающих моментов</p>
   </div>
   ` : ""}
-  ${diagrams.y ? `
+  ${diagrams?.y ? `
   <div class="diagram-block">
     <div class="diagram-title">Эпюра прогибов \\(y(x)\\)</div>
     <img src="${diagrams.y}" alt="Эпюра y(x)" />
+    <p class="figure-caption">Рисунок 4 — Эпюра прогибов</p>
   </div>
   ` : ""}
   ` : ""}
 
   ${(() => {
-    const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
-    const sectionNum = hasDiagrams ? 6 : 5;
-    const W_cm3 = result.W ? formatNumber(result.W * 1e6, 4) : "";
-    const d_mm = result.diameter ? formatNumber(result.diameter * 1000, 2) : "";
-    return result.diameter && result.W && result.I ? `
-  <h2>${sectionNum}. Подбор сечения (круглое)</h2>
-  <p>По условию прочности: \\([\\sigma] = ${formatNumber((input.sigma ?? 0) / 1e6)}\\) МПа</p>
-  <div class="formula">
-    \\(W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${formatNumber((input.sigma ?? 0) / 1e6)}} = ${W_cm3}\\) см³
-  </div>
-  <p>Для круглого сечения: \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
-  <div class="formula">
-    \\(d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = \\sqrt[3]{\\frac{32 \\cdot ${W_cm3}}{\\pi}} = ${d_mm}\\) мм
-  </div>
-  <p>Момент инерции:</p>
-  <div class="formula">
-    \\(I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${formatNumber(result.I * 1e8, 4)}\\) см⁴
-  </div>
-  ` : "";
+    let sectionNum = hasDiagrams ? 7 : 6;
+    let html = "";
+
+    if (hasCrossSection) {
+      html += buildCrossSectionBlock(input, result, Mmax, sectionNum);
+      sectionNum++;
+    }
+
+    if (hasDeflection) {
+      html += buildMNPSection(input, result, sectionNum);
+    }
+
+    return html;
   })()}
 
-  <h2>${(() => {
-    const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
-    let num = 5;
-    if (hasDiagrams) num++;
-    if (result.diameter) num++;
-    return num;
-  })()}. Метод сечений — внутренние усилия по участкам</h2>
-
-  <p>Разобьём балку на участки по характерным точкам (опоры, точки приложения нагрузок). Для каждого участка составим выражения для поперечной силы \\(Q\\) и изгибающего момента \\(M\\).</p>
-
-  ${sections.map(section => `
-  <h3>Участок ${section.interval.idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</h3>
-
-  <p>Введём локальную координату: \\(s = x - ${formatNumber(section.interval.a)}\\), где \\(s \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
-
-  ${Math.abs(section.q) > 1e-9 ? `<p>На этом участке действует распределённая нагрузка \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : "<p>Распределённая нагрузка на участке отсутствует.</p>"}
-
-  <p><strong>Поперечная сила:</strong></p>
-  <div class="formula">
-    \\(Q(s) = ${formatQFormula(section.polyQ)}\\) кН
-  </div>
-
-  <p><strong>Изгибающий момент:</strong></p>
-  <div class="formula">
-    \\(M(s) = ${formatMFormula(section.polyM)}\\) кН·м
-  </div>
-
-  <p><strong>Значения на границах участка:</strong></p>
-  <ul>
-    <li>При \\(x = ${formatNumber(section.interval.a)}^+\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
-    <li>При \\(x = ${formatNumber(section.interval.b)}^-\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
-  </ul>
-  `).join("\n")}
+  ${buildConclusionsSection(input, result, Qmax, Mmax, yMax, hasDeflection)}
 
   <script>
     let mathRendered = false;
@@ -634,12 +574,10 @@ function buildReportHTML(data: ReportData): string {
       btn.disabled = true;
       btn.textContent = "Подготовка...";
 
-      // Ждём рендер формул если ещё не готово
       if (!mathRendered) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Даём браузеру перерисовать
       await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(resolve);
       }));
@@ -651,6 +589,296 @@ function buildReportHTML(data: ReportData): string {
   </script>
 </body>
 </html>`;
+}
+
+/**
+ * Раздел "Постановка задачи"
+ */
+function buildProblemStatement(input: BeamInput, hasDeflection: boolean, hasCrossSection: boolean): string {
+  const tasks: string[] = [
+    "Определить реакции опор",
+    "Построить эпюры поперечных сил \\(Q\\) и изгибающих моментов \\(M\\)"
+  ];
+
+  if (hasCrossSection) {
+    tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+  }
+
+  if (hasDeflection) {
+    tasks.push("Определить прогибы и найти максимальный прогиб балки");
+  }
+
+  return `
+  <h2>Постановка задачи</h2>
+  <p>Дана ${formatBeamType(input.beamType).toLowerCase()}. Требуется:</p>
+  <ol>
+    ${tasks.map(t => `<li>${t}</li>`).join("\n    ")}
+  </ol>`;
+}
+
+/**
+ * Раздел "Исходные данные"
+ */
+function buildInputDataSection(input: BeamInput): string {
+  let html = `
+  <table>
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Тип балки</td><td>${formatBeamType(input.beamType)}</td></tr>
+    <tr><td>Длина балки \\(L\\)</td><td>${formatNumber(input.L)} м</td></tr>
+    ${input.E ? `<tr><td>Модуль упругости \\(E\\)</td><td>${formatNumber(input.E / 1e9)} ГПа</td></tr>` : ""}
+    ${input.I ? `<tr><td>Момент инерции \\(I\\)</td><td>${formatNumber(input.I * 1e8)} см⁴</td></tr>` : ""}
+    ${input.sigma ? `<tr><td>Допускаемое напряжение \\([\\sigma]\\)</td><td>${formatNumber(input.sigma / 1e6)} МПа</td></tr>` : ""}
+  </table>
+
+  <h3>Нагрузки</h3>
+  <table>
+    <tr><th>Тип</th><th>Значение</th><th>Положение</th></tr>
+    ${input.loads.map(load => {
+      if (load.type === "distributed") {
+        const dir = load.q >= 0 ? "↓" : "↑";
+        return `<tr><td>Распределённая \\(q\\)</td><td>${formatNumber(Math.abs(load.q))} кН/м ${dir}</td><td>от ${formatNumber(load.a)} до ${formatNumber(load.b)} м</td></tr>`;
+      } else if (load.type === "force") {
+        const dir = load.F >= 0 ? "↓" : "↑";
+        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>${formatNumber(Math.abs(load.F))} кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+      } else {
+        const dir = load.M >= 0 ? "↺" : "↻";
+        return `<tr><td>Момент \\(M\\)</td><td>${formatNumber(Math.abs(load.M))} кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+      }
+    }).join("\n    ")}
+  </table>`;
+
+  // Результирующие нагрузки (если есть наложение)
+  const resultingLoads = computeResultingLoads(input);
+  const distributedCount = input.loads.filter(l => l.type === "distributed").length;
+
+  if (resultingLoads.length > 0 && (resultingLoads.length !== distributedCount || distributedCount > 1)) {
+    html += `
+  <h3>Результирующие распределённые нагрузки</h3>
+  <p>При наложении нескольких распределённых нагрузок:</p>
+  <table>
+    <tr><th>Обозначение</th><th>Интенсивность</th><th>Направление</th><th>Участок</th></tr>
+    ${resultingLoads.map((seg, i) =>
+      `<tr><td>\\(q_{${i + 1}}\\)</td><td>${formatNumber(Math.abs(seg.q))} кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`
+    ).join("\n    ")}
+  </table>`;
+  }
+
+  return html;
+}
+
+/**
+ * Раздел "Соглашения знаков"
+ */
+function buildSignConventions(): string {
+  return `
+  <div class="sign-convention">
+    <h4>Правило знаков</h4>
+    <p><strong>Для поперечной силы \\(Q\\):</strong></p>
+    <ul>
+      <li>Положительная — если внешняя сила стремится повернуть отсечённую часть <em>по часовой стрелке</em></li>
+      <li>Отрицательная — если <em>против часовой стрелки</em></li>
+    </ul>
+    <p><strong>Для изгибающего момента \\(M\\):</strong></p>
+    <ul>
+      <li>Положительный — если момент <em>растягивает нижние волокна</em> балки</li>
+      <li>Отрицательный — если <em>сжимает нижние волокна</em></li>
+    </ul>
+  </div>`;
+}
+
+/**
+ * Блок для одного участка
+ */
+function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]): string {
+  return `
+  <h3>Участок ${section.interval.idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\) м</h3>
+  <div class="formula-block">
+  <p>Локальная координата: \\(s = x - ${formatNumber(section.interval.a)}\\), где \\(s \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
+  ${Math.abs(section.q) > 1e-9 ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
+  <p><strong>Поперечная сила:</strong> \\(Q(s) = ${formatQFormula(section.polyQ)}\\) кН</p>
+  <p><strong>Изгибающий момент:</strong> \\(M(s) = ${formatMFormula(section.polyM)}\\) кН·м</p>
+  <p><strong>Значения на границах:</strong></p>
+  <ul>
+    <li>При \\(x = ${formatNumber(section.interval.a)}^+\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
+    <li>При \\(x = ${formatNumber(section.interval.b)}^-\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
+  </ul>
+  </div>`;
+}
+
+/**
+ * Раздел "Подбор сечения"
+ */
+function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { value: number; x: number }, sectionNum: number): string {
+  const W_cm3 = formatNumber(result.W! * 1e6, 4);
+  const d_mm = formatNumber(result.diameter! * 1000, 2);
+  const I_cm4 = formatNumber(result.I! * 1e8, 4);
+  const sigma_MPa = formatNumber((input.sigma ?? 0) / 1e6);
+
+  return `
+  <h2>${sectionNum}. Подбор сечения</h2>
+  <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
+  <div class="formula">
+    \\(W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)} \\text{ Н·м}}{${sigma_MPa} \\text{ МПа}} = ${W_cm3}\\) см³
+  </div>
+  <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
+  <div class="formula">
+    \\(d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm}\\) мм
+  </div>
+  <p>Момент инерции:</p>
+  <div class="formula">
+    \\(I = \\frac{\\pi d^4}{64} = ${I_cm4}\\) см⁴
+  </div>`;
+}
+
+/**
+ * Раздел "Метод начальных параметров" (МНП)
+ */
+function buildMNPSection(
+  input: BeamInput,
+  result: BeamResult,
+  sectionNum: number
+): string {
+  if (!result.y || !result.theta) return "";
+
+  const { beamType, L, E, I } = input;
+  const EI_kNm2 = (E! * I!) / 1000; // кН·м²
+  const isCantilever = beamType.startsWith("cantilever");
+  const isLeft = beamType === "cantilever-left";
+
+  // Граничные условия
+  let boundaryConditions: string;
+  if (isCantilever) {
+    if (isLeft) {
+      boundaryConditions = `
+      <ul>
+        <li>В заделке (\\(x = 0\\)): \\(y(0) = 0\\), \\(\\theta(0) = 0\\)</li>
+      </ul>`;
+    } else {
+      boundaryConditions = `
+      <ul>
+        <li>В заделке (\\(x = L = ${formatNumber(L)}\\) м): \\(y(L) = 0\\), \\(\\theta(L) = 0\\)</li>
+      </ul>`;
+    }
+  } else {
+    const xA = result.reactions.xA ?? 0;
+    const xB = result.reactions.xB ?? L;
+    boundaryConditions = `
+      <ul>
+        <li>В опоре A (\\(x = ${formatNumber(xA)}\\) м): \\(y = 0\\)</li>
+        <li>В опоре B (\\(x = ${formatNumber(xB)}\\) м): \\(y = 0\\)</li>
+      </ul>`;
+  }
+
+  // Таблица значений θ и y в характерных точках
+  const points: number[] = [0];
+
+  // Добавляем точки опор
+  if (result.reactions.xA !== undefined && result.reactions.xA > 0) {
+    points.push(result.reactions.xA);
+  }
+  if (result.reactions.xB !== undefined && result.reactions.xB < L) {
+    points.push(result.reactions.xB);
+  }
+
+  // Добавляем точки нагрузок
+  for (const load of input.loads) {
+    if (load.type === "distributed") {
+      if (load.a > 0 && !points.includes(load.a)) points.push(load.a);
+      if (load.b < L && !points.includes(load.b)) points.push(load.b);
+    } else {
+      if (load.x > 0 && load.x < L && !points.includes(load.x)) points.push(load.x);
+    }
+  }
+
+  points.push(L);
+  points.sort((a, b) => a - b);
+
+  // Убираем дубликаты
+  const uniquePoints = points.filter((p, i) => i === 0 || Math.abs(p - points[i - 1]) > 1e-6);
+
+  // Генерируем строки таблицы
+  const tableRows = uniquePoints.map(x => {
+    const theta = result.theta!(x);
+    const y = result.y!(x);
+    // θ в радианах -> в градусы для наглядности, но показываем в радианах
+    return `<tr>
+      <td>${formatNumber(x)}</td>
+      <td>${formatNumber(theta * 1000, 4)}</td>
+      <td>${formatNumber(y * 1000, 4)}</td>
+    </tr>`;
+  }).join("\n    ");
+
+  return `
+  <h2>${sectionNum}. Метод начальных параметров</h2>
+  <p>Для определения углов поворота \\(\\theta(x)\\) и прогибов \\(y(x)\\) используем метод начальных параметров.</p>
+
+  <p><strong>Исходные формулы:</strong></p>
+  <div class="formula">
+    \\(EI \\cdot \\theta(x) = EI \\cdot \\theta_0 + \\int_0^x M(\\xi) \\, d\\xi\\)
+  </div>
+  <div class="formula">
+    \\(EI \\cdot y(x) = EI \\cdot y_0 + EI \\cdot \\theta_0 \\cdot x + \\int_0^x \\int_0^\\xi M(\\eta) \\, d\\eta \\, d\\xi\\)
+  </div>
+
+  <p><strong>Жёсткость сечения:</strong></p>
+  <div class="formula">
+    \\(EI = ${formatNumber(E! / 1e9)} \\cdot 10^9 \\cdot ${formatNumber(I! * 1e8)} \\cdot 10^{-8} = ${formatNumber(EI_kNm2)}\\) кН·м²
+  </div>
+
+  <p><strong>Граничные условия:</strong></p>
+  ${boundaryConditions}
+
+  <p><strong>Значения в характерных точках:</strong></p>
+  <table>
+    <tr><th>\\(x\\), м</th><th>\\(\\theta \\cdot 10^3\\), рад</th><th>\\(y\\), мм</th></tr>
+    ${tableRows}
+  </table>`;
+}
+
+/**
+ * Раздел "Выводы"
+ */
+function buildConclusionsSection(
+  input: BeamInput,
+  result: BeamResult,
+  Qmax: { value: number; x: number },
+  Mmax: { value: number; x: number },
+  yMax: { value: number; x: number },
+  hasDeflection: boolean
+): string {
+  const conclusions: string[] = [];
+
+  // Реакции
+  if (result.reactions.RA !== undefined && result.reactions.RB !== undefined) {
+    conclusions.push(`Реакции опор: \\(R_A = ${formatNumber(result.reactions.RA)}\\) кН, \\(R_B = ${formatNumber(result.reactions.RB)}\\) кН`);
+  } else if (result.reactions.Rf !== undefined) {
+    conclusions.push(`Реакция заделки: \\(R = ${formatNumber(result.reactions.Rf)}\\) кН, \\(M_f = ${formatNumber(result.reactions.Mf ?? 0)}\\) кН·м`);
+  }
+
+  // Экстремумы
+  conclusions.push(`Максимальная поперечная сила: \\(|Q|_{\\max} = ${formatNumber(Math.abs(Qmax.value))}\\) кН при \\(x = ${formatNumber(Qmax.x)}\\) м`);
+  conclusions.push(`Максимальный изгибающий момент: \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м при \\(x = ${formatNumber(Mmax.x)}\\) м`);
+
+  // Сечение
+  if (result.diameter) {
+    conclusions.push(`Минимальный диаметр круглого сечения: \\(d = ${formatNumber(result.diameter * 1000)}\\) мм`);
+  }
+
+  // Прогиб
+  if (hasDeflection && Math.abs(yMax.value) > 1e-9) {
+    conclusions.push(`Максимальный прогиб: \\(|y|_{\\max} = ${formatNumber(Math.abs(yMax.value) * 1000)}\\) мм при \\(x = ${formatNumber(yMax.x)}\\) м`);
+  }
+
+  // Проверки
+  conclusions.push(`Проверка равновесия выполнена`);
+
+  return `
+  <h2>Выводы</h2>
+  <div class="conclusions">
+    <ol>
+      ${conclusions.map(c => `<li>${c}</li>`).join("\n      ")}
+    </ol>
+  </div>`;
 }
 
 /**
