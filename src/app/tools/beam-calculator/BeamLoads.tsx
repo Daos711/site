@@ -34,10 +34,10 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
   return (
     <g>
       <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowGreen)`} />
-      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={16} fontWeight="600" dominantBaseline="middle" textAnchor={textAnchor}>
+      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={12} fontWeight="600" dominantBaseline="middle" textAnchor={textAnchor}>
         {name}
-        {subscript && <tspan dy="4" fontSize="12">{subscript}</tspan>}
-        {subscript && <tspan dy="-4"> </tspan>}
+        {subscript && <tspan dy="3" fontSize="9">{subscript}</tspan>}
+        {subscript && <tspan dy="-3"> </tspan>}
         <tspan> = {valueText}</tspan>
       </text>
     </g>
@@ -76,7 +76,7 @@ export function DistributedLoadArrows({
             />
           );
         })}
-        <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 10} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={16} fontWeight="600">
+        <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 8} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
           {label}
         </text>
       </g>
@@ -97,11 +97,11 @@ export function DistributedLoadArrows({
               y2={beamBottomY + markerOffset}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
-              markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
+              markerEnd={`url(#${markerPrefix}arrowBlueUp}`}
             />
           );
         })}
-        <text x={(x1 + x2) / 2} y={beamBottomY + arrowLen + 20} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={16} fontWeight="600">
+        <text x={(x1 + x2) / 2} y={beamBottomY + arrowLen + 18} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
           {label}
         </text>
       </g>
@@ -136,7 +136,7 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
     return (
       <g>
         <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
-        <text x={labelX} y={y - arrowLen - 6} fill={COLORS.pointForce} fontSize={16} fontWeight="600" textAnchor={textAnchor}>
+        <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
@@ -146,7 +146,7 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
     return (
       <g>
         <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
-        <text x={labelX} y={y + arrowLen + 16} fill={COLORS.pointForce} fontSize={16} fontWeight="600" textAnchor={textAnchor}>
+        <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
@@ -220,7 +220,7 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "" }: { x: number; 
         y={labelPos.y}
         textAnchor={labelAnchor}
         fill={COLORS.moment}
-        fontSize={16}
+        fontSize={12}
         fontWeight="600"
       >
         {label}
