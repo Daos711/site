@@ -192,6 +192,16 @@ export function BeamSchemaExport({ input, result }: Props) {
         const beamTop = beamY - beamThickness / 2;
         const beamBottom = beamY + beamThickness / 2;
 
+        // Проверка наличия нагрузки в точке
+        const hasLoadAt = (x: number): boolean => {
+          return input.loads.some(load => {
+            if (load.type === "force" || load.type === "moment") {
+              return Math.abs(load.x - x) < 0.01;
+            }
+            return false;
+          });
+        };
+
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
           // Реакции всегда относительно верхней плоскости балки
@@ -212,6 +222,8 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         if (reactions.RB !== undefined && reactions.RB !== 0) {
           const xB = reactions.xB ?? L;
+          const hasLoadAtB = hasLoadAt(xB);
+          // Если есть нагрузка — подпись справа, чтобы не перекрывалась
           elements.push(
             <ReactionArrow
               key="RB"
@@ -221,7 +233,7 @@ export function BeamSchemaExport({ input, result }: Props) {
               name="R"
               subscript="B"
               valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
-              labelSide="left"
+              labelSide={hasLoadAtB ? "right" : "left"}
               markerPrefix="exp-"
             />
           );
