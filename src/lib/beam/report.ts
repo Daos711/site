@@ -6,6 +6,50 @@ import type { BeamInput, BeamResult, Reactions, Load } from "./types";
 import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula, type ForceContribution } from "./sections";
 
 /**
+ * Форматирует длинную формулу с переносами строк
+ * @param lhs - левая часть (например "M(s)")
+ * @param terms - массив слагаемых (например ["+R_A", "-F", ...])
+ * @param termsPerLine - максимум слагаемых на строку
+ * @returns LaTeX строка с переносами через aligned если нужно
+ */
+function formatLongFormula(lhs: string, terms: string[], termsPerLine: number = 4): { latex: string; isMultiline: boolean } {
+  if (terms.length === 0) {
+    return { latex: `${lhs} = 0`, isMultiline: false };
+  }
+
+  // Убираем начальный + если он есть
+  let firstTerm = terms[0];
+  if (firstTerm.startsWith("+ ")) {
+    firstTerm = firstTerm.slice(2);
+  } else if (firstTerm.startsWith("+")) {
+    firstTerm = firstTerm.slice(1);
+  }
+  const cleanTerms = [firstTerm, ...terms.slice(1)];
+
+  if (cleanTerms.length <= termsPerLine) {
+    // Короткая формула - в одну строку
+    return { latex: `${lhs} = ${cleanTerms.join(" ")}`, isMultiline: false };
+  }
+
+  // Длинная формула - разбиваем на строки
+  const lines: string[] = [];
+  const firstLineTerms = cleanTerms.slice(0, termsPerLine);
+  lines.push(`${lhs} &= ${firstLineTerms.join(" ")}`);
+
+  let idx = termsPerLine;
+  while (idx < cleanTerms.length) {
+    const lineTerms = cleanTerms.slice(idx, idx + termsPerLine);
+    lines.push(`&\\phantom{=} ${lineTerms.join(" ")}`);
+    idx += termsPerLine;
+  }
+
+  return {
+    latex: `\\begin{aligned}\n${lines.join(" \\\\\n")}\n\\end{aligned}`,
+    isMultiline: true
+  };
+}
+
+/**
  * Вычисляет результирующие распределённые нагрузки по участкам
  * (с учётом наложения нескольких q на одном участке)
  */
@@ -792,20 +836,21 @@ function buildQDerivation(
     numericTerms.push(`${sign} ${formatNumber(Math.abs(activeQ))} \\cdot ${varName}`);
   }
 
-  // Убираем начальный + если он есть
-  let symbolicStr = symbolicTerms.join(" ");
-  let numericStr = numericTerms.join(" ");
-  if (symbolicStr.startsWith("+ ")) symbolicStr = symbolicStr.slice(2);
-  if (numericStr.startsWith("+ ")) numericStr = numericStr.slice(2);
+  // Форматируем с переносами если формула длинная
+  const symbolic = formatLongFormula(`Q(${varName})`, symbolicTerms, 4);
+  const numeric = formatLongFormula(`Q(${varName})`, numericTerms, 3);
+
+  const symbolicClass = symbolic.isMultiline ? "formula formula-multiline" : "formula";
+  const numericClass = numeric.isMultiline ? "formula formula-multiline" : "formula";
 
   return `
   <p>Сумма проекций сил слева от сечения на вертикальную ось:</p>
-  <div class="formula">
-    \\[Q(${varName}) = ${symbolicStr}\\]
+  <div class="${symbolicClass}">
+    \\[${symbolic.latex}\\]
   </div>
   <p>Подставляем числовые значения:</p>
-  <div class="formula">
-    \\[Q(${varName}) = ${numericStr}\\]
+  <div class="${numericClass}">
+    \\[${numeric.latex}\\]
   </div>`;
 }
 
@@ -888,20 +933,21 @@ function buildMDerivation(
     numericTerms.push(`${sign} \\frac{${formatNumber(Math.abs(activeQ))} \\cdot ${varName}^2}{2}`);
   }
 
-  // Убираем начальный + если он есть
-  let symbolicStr = symbolicTerms.join(" ");
-  let numericStr = numericTerms.join(" ");
-  if (symbolicStr.startsWith("+ ")) symbolicStr = symbolicStr.slice(2);
-  if (numericStr.startsWith("+ ")) numericStr = numericStr.slice(2);
+  // Форматируем с переносами если формула длинная
+  const symbolic = formatLongFormula(`M(${varName})`, symbolicTerms, 4);
+  const numeric = formatLongFormula(`M(${varName})`, numericTerms, 3);
+
+  const symbolicClass = symbolic.isMultiline ? "formula formula-multiline" : "formula";
+  const numericClass = numeric.isMultiline ? "formula formula-multiline" : "formula";
 
   return `
   <p>Сумма моментов сил слева от сечения относительно точки сечения:</p>
-  <div class="formula">
-    \\[M(${varName}) = ${symbolicStr}\\]
+  <div class="${symbolicClass}">
+    \\[${symbolic.latex}\\]
   </div>
   <p>Подставляем числовые значения:</p>
-  <div class="formula">
-    \\[M(${varName}) = ${numericStr}\\]
+  <div class="${numericClass}">
+    \\[${numeric.latex}\\]
   </div>`;
 }
 
