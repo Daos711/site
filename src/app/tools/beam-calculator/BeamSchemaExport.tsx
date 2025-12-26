@@ -26,9 +26,9 @@ export function BeamSchemaExport({ input, result }: Props) {
 
   // Размеры SVG (крупнее для лучшей читаемости)
   const width = 1100;
-  const height = 400;
-  const padding = { left: 100, right: 100, top: 130, bottom: 100 };
-  const beamY = padding.top + 55;
+  const height = 340;
+  const padding = { left: 80, right: 80, top: 100, bottom: 70 };
+  const beamY = padding.top + 45;
   const beamThickness = 24;
 
   const chartWidth = width - padding.left - padding.right;
@@ -44,7 +44,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         left: "-9999px",
         top: "-9999px",
         width: "1100px",
-        height: "400px",
+        height: "340px",
         background: "#ffffff",
       }}
     >
