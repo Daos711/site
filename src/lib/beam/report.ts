@@ -933,6 +933,98 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 /**
  * Раздел "Метод начальных параметров" (МНП)
  */
+/**
+ * Строит конкретное уравнение прогибов y(x) для данной балки
+ */
+function buildConcreteDeflectionEquation(
+  input: BeamInput,
+  result: BeamResult
+): string {
+  const { L, loads } = input;
+  const xA = result.reactions.xA ?? 0;
+  const xB = result.reactions.xB ?? L;
+  const RA = result.reactions.RA;
+  const RB = result.reactions.RB;
+  const Rf = result.reactions.Rf;
+  const Mf = result.reactions.Mf;
+
+  // Собираем слагаемые уравнения
+  const terms: string[] = [];
+
+  // Начальные параметры
+  terms.push("y_0");
+  terms.push("\\theta_0 \\cdot x");
+
+  // Реакции
+  if (RA !== undefined && Math.abs(RA) > 1e-9) {
+    const sign = RA >= 0 ? "+" : "-";
+    if (Math.abs(xA) < 1e-9) {
+      terms.push(`${sign} \\frac{R_A \\cdot x^3}{6}`);
+    } else {
+      terms.push(`${sign} \\frac{R_A \\cdot (x - ${formatNumber(xA)})^3}{6}`);
+    }
+  }
+
+  if (RB !== undefined && Math.abs(RB) > 1e-9) {
+    const sign = RB >= 0 ? "+" : "-";
+    terms.push(`${sign} \\frac{R_B \\cdot (x - ${formatNumber(xB)})^3}{6}`);
+  }
+
+  // Реакции консоли
+  if (Rf !== undefined && Math.abs(Rf) > 1e-9) {
+    const xf = result.reactions.xf ?? 0;
+    const sign = Rf >= 0 ? "+" : "-";
+    if (Math.abs(xf) < 1e-9) {
+      terms.push(`${sign} \\frac{R_f \\cdot x^3}{6}`);
+    } else {
+      terms.push(`${sign} \\frac{R_f \\cdot (x - ${formatNumber(xf)})^3}{6}`);
+    }
+  }
+
+  if (Mf !== undefined && Math.abs(Mf) > 1e-9) {
+    const xf = result.reactions.xf ?? 0;
+    // Момент заделки: положительный (против часовой) сжимает нижние волокна → минус
+    const sign = Mf >= 0 ? "-" : "+";
+    if (Math.abs(xf) < 1e-9) {
+      terms.push(`${sign} \\frac{M_f \\cdot x^2}{2}`);
+    } else {
+      terms.push(`${sign} \\frac{M_f \\cdot (x - ${formatNumber(xf)})^2}{2}`);
+    }
+  }
+
+  // Внешние нагрузки
+  for (const load of loads) {
+    if (load.type === "force") {
+      // Сила вниз (F > 0) сжимает нижние волокна → минус
+      const sign = load.F >= 0 ? "-" : "+";
+      terms.push(`${sign} \\frac{F \\cdot (x - ${formatNumber(load.x)})^3}{6}`);
+    } else if (load.type === "moment") {
+      // Момент против часовой (M > 0) сжимает нижние волокна → минус
+      const sign = load.M >= 0 ? "-" : "+";
+      terms.push(`${sign} \\frac{M \\cdot (x - ${formatNumber(load.x)})^2}{2}`);
+    } else if (load.type === "distributed") {
+      // Распределённая нагрузка вниз (q > 0) сжимает → минус
+      const sign = load.q >= 0 ? "-" : "+";
+      terms.push(`${sign} \\frac{q \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
+      // Компенсация после конца нагрузки
+      if (load.b < L) {
+        const compSign = load.q >= 0 ? "+" : "-";
+        terms.push(`${compSign} \\frac{q \\cdot (x - ${formatNumber(load.b)})^4}{24}`);
+      }
+    }
+  }
+
+  // Формируем уравнение
+  const equation = terms.join(" ");
+
+  return `
+  <p>Подставляя нагрузки с учётом знаков, получаем уравнение прогибов:</p>
+  <div class="formula">
+    \\[EI \\cdot y(x) = EI \\cdot ${equation}\\]
+  </div>
+  <p>где скобки \\((x - a)^n\\) включаются только при \\(x \\geq a\\) (скобки Маколея).</p>`;
+}
+
 function buildMNPSection(
   input: BeamInput,
   result: BeamResult,
@@ -1060,6 +1152,9 @@ function buildMNPSection(
   <ul>
     ${loadsList.map(l => `<li>${l}</li>`).join("\n    ")}
   </ul>
+
+  <h3>Уравнение прогибов для данной балки</h3>
+  ${buildConcreteDeflectionEquation(input, result)}
 
   <h3>Начальные параметры и граничные условия</h3>
   <p>Начальные параметры в точке \\(x = ${formatNumber(xA)}\\):</p>
