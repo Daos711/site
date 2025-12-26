@@ -3,7 +3,7 @@
  */
 
 import type { BeamInput, BeamResult, Reactions, Load } from "./types";
-import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula } from "./sections";
+import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula, type ForceContribution } from "./sections";
 
 /**
  * Вычисляет результирующие распределённые нагрузки по участкам
@@ -694,25 +694,211 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
   const varName = `z_{${idx}}`;
   const varDisplay = `z_${idx}`;
   const len = section.interval.b - section.interval.a;
+  const sectionStart = section.interval.a;
+
+  // Собираем описание сил слева от сечения
+  const contributions = section.contributions || [];
+  const hasQ = Math.abs(section.q) > 1e-9;
+
+  // Формируем вывод Q(z)
+  let qDerivation = "";
+  if (contributions.length > 0 || hasQ) {
+    qDerivation = buildQDerivation(contributions, section.q, varDisplay, sectionStart);
+  }
+
+  // Формируем вывод M(z)
+  let mDerivation = "";
+  if (contributions.length > 0 || hasQ) {
+    mDerivation = buildMDerivation(contributions, section.q, varDisplay, sectionStart);
+  }
 
   return `
-  <h3>Участок ${idx}: \\(x \\in [${formatNumber(section.interval.a)}; ${formatNumber(section.interval.b)}]\\)</h3>
+  <h3>Участок ${idx}: \\(x \\in [${formatNumber(sectionStart)}; ${formatNumber(section.interval.b)}]\\)</h3>
   <div class="formula-block">
-  <p>Локальная координата: \\(${varName} = x - ${formatNumber(section.interval.a)}\\), где \\(${varName} \\in [0; ${formatNumber(len)}]\\) м.</p>
-  ${Math.abs(section.q) > 1e-9 ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
+  <p>Локальная координата: \\(${varName} = x - ${formatNumber(sectionStart)}\\), где \\(${varName} \\in [0; ${formatNumber(len)}]\\) м.</p>
+  ${hasQ ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
+
   <p><strong>Поперечная сила:</strong></p>
+  ${qDerivation}
   <div class="formula">
-    \\[\\boxed{Q_{${idx}}(${varName}) = ${formatQFormula(section.polyQ, varDisplay)}}\\] <span class="unit">кН</span>
+    \\[\\boxed{Q_{${idx}}(${varName}) = ${formatQFormula(section.polyQ, varDisplay)} \\text{ кН}}\\]
   </div>
+
   <p><strong>Изгибающий момент:</strong></p>
+  ${mDerivation}
   <div class="formula">
-    \\[\\boxed{M_{${idx}}(${varName}) = ${formatMFormula(section.polyM, varDisplay)}}\\] <span class="unit">кН·м</span>
+    \\[\\boxed{M_{${idx}}(${varName}) = ${formatMFormula(section.polyM, varDisplay)} \\text{ кН}\\!\\cdot\\!\\text{м}}\\]
   </div>
+
   <p><strong>Проверка на границах:</strong></p>
   <ul>
     <li>При \\(${varName} = 0\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
     <li>При \\(${varName} = ${formatNumber(len)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
   </ul>
+  </div>`;
+}
+
+/**
+ * Формирует вывод Q(z) с пояснениями
+ */
+function buildQDerivation(
+  contributions: ForceContribution[],
+  activeQ: number,
+  varName: string,
+  sectionStart: number
+): string {
+  // Общий вид: Q = ΣF_left - q·z
+  // Силы вверх входят с +, силы вниз с -
+
+  // Разделяем: силы (реакции, точечные) и распределённые
+  const forces = contributions.filter(c => c.type !== "moment");
+
+  if (forces.length === 0 && Math.abs(activeQ) < 1e-9) {
+    return `<p>На данном участке нет нагрузок слева от сечения.</p>`;
+  }
+
+  // Символьная формула
+  const symbolicTerms: string[] = [];
+  const numericTerms: string[] = [];
+
+  for (const f of forces) {
+    if (f.type === "reaction" || f.type === "force") {
+      // Сила вверх (value < 0 для external load, value > 0 для reaction up)
+      // Реакция вверх: +R
+      // Сила вниз: -F
+      if (f.type === "reaction") {
+        symbolicTerms.push(`${f.label}`);
+        numericTerms.push(`${formatNumber(f.value)}`);
+      } else {
+        // force: если F > 0 (вниз), то -F; если F < 0 (вверх), то +|F|
+        const sign = f.value >= 0 ? "-" : "+";
+        symbolicTerms.push(`${sign} ${f.label}`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(f.value))}`);
+      }
+    } else if (f.type === "distributed_resultant") {
+      // Равнодействующая распределённой: -q·L (если q > 0 вниз)
+      const length = (f.qEnd ?? sectionStart) - (f.qStart ?? 0);
+      const resultant = f.value * length;
+      const sign = resultant >= 0 ? "-" : "+";
+      symbolicTerms.push(`${sign} ${f.label} \\cdot ${formatNumber(length)}`);
+      numericTerms.push(`${sign} ${formatNumber(Math.abs(resultant))}`);
+    }
+  }
+
+  // Активная q на участке
+  if (Math.abs(activeQ) > 1e-9) {
+    const sign = activeQ >= 0 ? "-" : "+";
+    symbolicTerms.push(`${sign} q \\cdot ${varName}`);
+    numericTerms.push(`${sign} ${formatNumber(Math.abs(activeQ))} \\cdot ${varName}`);
+  }
+
+  // Убираем начальный + если он есть
+  let symbolicStr = symbolicTerms.join(" ");
+  let numericStr = numericTerms.join(" ");
+  if (symbolicStr.startsWith("+ ")) symbolicStr = symbolicStr.slice(2);
+  if (numericStr.startsWith("+ ")) numericStr = numericStr.slice(2);
+
+  return `
+  <p>Сумма проекций сил слева от сечения на вертикальную ось:</p>
+  <div class="formula">
+    \\(Q(${varName}) = ${symbolicStr}\\)
+  </div>
+  <p>Подставляем числовые значения:</p>
+  <div class="formula">
+    \\(Q(${varName}) = ${numericStr}\\)
+  </div>`;
+}
+
+/**
+ * Формирует вывод M(z) с пояснениями
+ */
+function buildMDerivation(
+  contributions: ForceContribution[],
+  activeQ: number,
+  varName: string,
+  sectionStart: number
+): string {
+  // Общий вид: M = Σ(F·a) + ΣM - q·z²/2
+  // где a - плечо относительно сечения
+
+  if (contributions.length === 0 && Math.abs(activeQ) < 1e-9) {
+    return `<p>На данном участке нет нагрузок слева от сечения.</p>`;
+  }
+
+  const symbolicTerms: string[] = [];
+  const numericTerms: string[] = [];
+
+  for (const c of contributions) {
+    if (c.type === "reaction") {
+      // Реакция вверх создаёт положительный момент: +R·(a + z)
+      // где a = sectionStart - x_reaction
+      const arm = sectionStart - c.x;
+      if (Math.abs(arm) < 1e-9) {
+        // Реакция прямо под сечением - плечо = z
+        symbolicTerms.push(`${c.label} \\cdot ${varName}`);
+        numericTerms.push(`${formatNumber(c.value)} \\cdot ${varName}`);
+      } else {
+        symbolicTerms.push(`${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
+        numericTerms.push(`${formatNumber(c.value)} \\cdot (${formatNumber(arm)} + ${varName})`);
+      }
+    } else if (c.type === "force") {
+      // Сила вниз (F > 0) создаёт отрицательный момент: -F·(a + z)
+      const arm = sectionStart - c.x;
+      const sign = c.value >= 0 ? "-" : "+";
+      if (Math.abs(arm) < 1e-9) {
+        symbolicTerms.push(`${sign} ${c.label} \\cdot ${varName}`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot ${varName}`);
+      } else {
+        symbolicTerms.push(`${sign} ${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot (${formatNumber(arm)} + ${varName})`);
+      }
+    } else if (c.type === "moment") {
+      // Внешний момент: против часовой (+), по часовой (-)
+      // M > 0 (против часовой) → +M
+      const sign = c.value >= 0 ? "+" : "-";
+      symbolicTerms.push(`${sign} ${c.label}`);
+      numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))}`);
+    } else if (c.type === "distributed_resultant") {
+      // Равнодействующая распределённой нагрузки
+      const length = (c.qEnd ?? sectionStart) - (c.qStart ?? 0);
+      const resultant = c.value * length;
+      const armFromEnd = sectionStart - (c.qEnd ?? sectionStart);
+      // Плечо: от конца участка + z
+      const sign = resultant >= 0 ? "-" : "+";
+      if (Math.abs(armFromEnd) < 1e-9) {
+        // Нагрузка закончилась прямо в начале участка
+        symbolicTerms.push(`${sign} ${c.label} \\cdot ${formatNumber(length)} \\cdot \\frac{${formatNumber(length)}}{2}`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(resultant))} \\cdot ${formatNumber(length / 2)}`);
+      } else {
+        // Нагрузка закончилась раньше
+        const armToCenter = armFromEnd + length / 2;
+        symbolicTerms.push(`${sign} ${c.label} \\cdot ${formatNumber(length)} \\cdot (${formatNumber(armToCenter)} + ${varName})`);
+        numericTerms.push(`${sign} ${formatNumber(Math.abs(resultant))} \\cdot (${formatNumber(armToCenter)} + ${varName})`);
+      }
+    }
+  }
+
+  // Активная q на участке: -q·z²/2 (если q вниз)
+  if (Math.abs(activeQ) > 1e-9) {
+    const sign = activeQ >= 0 ? "-" : "+";
+    symbolicTerms.push(`${sign} \\frac{q \\cdot ${varName}^2}{2}`);
+    numericTerms.push(`${sign} \\frac{${formatNumber(Math.abs(activeQ))} \\cdot ${varName}^2}{2}`);
+  }
+
+  // Убираем начальный + если он есть
+  let symbolicStr = symbolicTerms.join(" ");
+  let numericStr = numericTerms.join(" ");
+  if (symbolicStr.startsWith("+ ")) symbolicStr = symbolicStr.slice(2);
+  if (numericStr.startsWith("+ ")) numericStr = numericStr.slice(2);
+
+  return `
+  <p>Сумма моментов сил слева от сечения относительно точки сечения:</p>
+  <div class="formula">
+    \\(M(${varName}) = ${symbolicStr}\\)
+  </div>
+  <p>Подставляем числовые значения:</p>
+  <div class="formula">
+    \\(M(${varName}) = ${numericStr}\\)
   </div>`;
 }
 
@@ -729,16 +915,16 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
-    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3}\\] <span class="unit">см³</span>
+    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3} \\text{ см}^3\\]
   </div>
   <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value) * 1000)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>
   <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
-    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm}}\\] <span class="unit">мм</span>
+    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm} \\text{ мм}}\\]
   </div>
   <p>Момент инерции:</p>
   <div class="formula">
-    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4}\\] <span class="unit">см⁴</span>
+    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
 }
 

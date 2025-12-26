@@ -24,6 +24,17 @@ export interface PolyM {
   q: number;        // интенсивность распределённой нагрузки
 }
 
+// Описание силы, действующей на отсечённую часть
+export interface ForceContribution {
+  type: "reaction" | "force" | "distributed_resultant" | "moment";
+  label: string;          // R_A, F, F_{q_1}, M и т.д.
+  value: number;          // числовое значение
+  x: number;              // точка приложения
+  arm?: number;           // плечо относительно сечения (для момента)
+  qStart?: number;        // начало участка распределённой нагрузки
+  qEnd?: number;          // конец участка (для текущего z)
+}
+
 // Формулы для одного участка
 export interface SectionFormula {
   interval: Interval;
@@ -34,6 +45,7 @@ export interface SectionFormula {
   Mb: number;                   // M(b-)
   polyQ: PolyQ;
   polyM: PolyM;
+  contributions: ForceContribution[];  // силы слева от сечения
 }
 
 // Событие в точке (скачок)
@@ -114,6 +126,134 @@ function getActiveQ(input: BeamInput, a: number, b: number): number {
 }
 
 /**
+ * Собирает силы, действующие слева от точки x (на участке)
+ */
+function collectContributions(
+  input: BeamInput,
+  reactions: Reactions,
+  sectionStart: number
+): ForceContribution[] {
+  const contributions: ForceContribution[] = [];
+  const { loads } = input;
+
+  // Подсчёт сил и распределённых нагрузок для индексации
+  const forceCount = loads.filter(l => l.type === "force").length;
+  const momentCount = loads.filter(l => l.type === "moment").length;
+
+  // Вычисляем результирующие распределённые нагрузки
+  const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
+  const resultingQLoads: Array<{ q: number; a: number; b: number; idx: number }> = [];
+
+  if (distributedLoads.length > 0) {
+    // Собираем все характерные точки
+    const points = new Set<number>();
+    points.add(0);
+    points.add(input.L);
+    for (const load of distributedLoads) {
+      if (load.a >= 0 && load.a <= input.L) points.add(load.a);
+      if (load.b >= 0 && load.b <= input.L) points.add(load.b);
+    }
+    const sortedPoints = Array.from(points).sort((a, b) => a - b);
+
+    // Вычисляем результирующую нагрузку на каждом участке
+    let qIdx = 1;
+    for (let i = 0; i < sortedPoints.length - 1; i++) {
+      const a = sortedPoints[i];
+      const b = sortedPoints[i + 1];
+      let totalQ = 0;
+      for (const load of distributedLoads) {
+        if (load.a <= a && load.b >= b) {
+          totalQ += load.q;
+        }
+      }
+      if (Math.abs(totalQ) > 0.001) {
+        resultingQLoads.push({ q: totalQ, a, b, idx: qIdx });
+        qIdx++;
+      }
+    }
+  }
+
+  // Реакция A (если левее или в точке сечения)
+  if (reactions.RA !== undefined && reactions.xA !== undefined && reactions.xA < sectionStart + EPS) {
+    contributions.push({
+      type: "reaction",
+      label: "R_A",
+      value: reactions.RA,
+      x: reactions.xA,
+    });
+  }
+
+  // Реакция заделки (для консольной балки)
+  if (reactions.Rf !== undefined && reactions.xf !== undefined && reactions.xf < sectionStart + EPS) {
+    contributions.push({
+      type: "reaction",
+      label: "R",
+      value: reactions.Rf,
+      x: reactions.xf,
+    });
+    if (reactions.Mf !== undefined) {
+      contributions.push({
+        type: "moment",
+        label: "M_f",
+        value: reactions.Mf,
+        x: reactions.xf,
+      });
+    }
+  }
+
+  // Сосредоточенные силы слева от сечения
+  let forceIdx = 1;
+  for (const load of loads) {
+    if (load.type === "force" && load.x < sectionStart + EPS) {
+      const label = forceCount === 1 ? "F" : `F_{${forceIdx}}`;
+      contributions.push({
+        type: "force",
+        label,
+        value: load.F,
+        x: load.x,
+      });
+    }
+    if (load.type === "force") forceIdx++;
+  }
+
+  // Сосредоточенные моменты слева от сечения
+  let momentIdx = 1;
+  for (const load of loads) {
+    if (load.type === "moment" && load.x < sectionStart + EPS) {
+      const label = momentCount === 1 ? "M" : `M_{${momentIdx}}`;
+      contributions.push({
+        type: "moment",
+        label,
+        value: load.M,
+        x: load.x,
+      });
+    }
+    if (load.type === "moment") momentIdx++;
+  }
+
+  // Распределённые нагрузки (полностью или частично слева от сечения)
+  for (const seg of resultingQLoads) {
+    if (seg.a < sectionStart + EPS) {
+      // Эта нагрузка начинается до начала участка
+      const endX = Math.min(seg.b, sectionStart);
+      if (endX > seg.a + EPS) {
+        // Равнодействующая завершённой части
+        contributions.push({
+          type: "distributed_resultant",
+          label: `q_{${seg.idx}}`,
+          value: seg.q,
+          x: (seg.a + endX) / 2,
+          qStart: seg.a,
+          qEnd: endX,
+        });
+      }
+    }
+  }
+
+  return contributions;
+}
+
+/**
  * Строит формулы Q и M для каждого участка
  */
 export function buildSectionFormulas(
@@ -138,6 +278,9 @@ export function buildSectionFormulas(
     const Qb = roundValue(Q(b - eps));
     const Mb = roundValue(M(b - eps));
 
+    // Собираем силы слева от начала участка
+    const contributions = collectContributions(input, reactions, a);
+
     formulas.push({
       interval,
       q,
@@ -147,6 +290,7 @@ export function buildSectionFormulas(
       Mb,
       polyQ: { Qa, q },
       polyM: { Ma, Qa, q },
+      contributions,
     });
   }
 
