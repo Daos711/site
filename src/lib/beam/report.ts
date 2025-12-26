@@ -748,29 +748,56 @@ function buildMNPSection(
   const isCantilever = beamType.startsWith("cantilever");
   const isLeft = beamType === "cantilever-left";
 
-  // Граничные условия
-  let boundaryConditions: string;
+  // Получаем константы интегрирования
+  const C1 = result.C1 ?? 0;
+  const C2 = result.C2 ?? 0;
+
+  // Граничные условия и вывод констант
+  let boundarySection: string;
   if (isCantilever) {
     if (isLeft) {
-      boundaryConditions = `
-      <ul>
-        <li>В заделке (\\(x = 0\\)): \\(y(0) = 0\\), \\(\\theta(0) = 0\\)</li>
-      </ul>`;
+      boundarySection = `
+  <p><strong>Граничные условия</strong> (заделка слева):</p>
+  <ul>
+    <li>\\(y(0) = 0\\) — прогиб в заделке равен нулю</li>
+    <li>\\(\\theta(0) = 0\\) — угол поворота в заделке равен нулю</li>
+  </ul>
+  <p>Из условия \\(\\theta(0) = 0\\): \\(C_1 = 0\\)</p>
+  <p>Из условия \\(y(0) = 0\\): \\(C_2 = 0\\)</p>`;
     } else {
-      boundaryConditions = `
-      <ul>
-        <li>В заделке (\\(x = L = ${formatNumber(L)}\\) м): \\(y(L) = 0\\), \\(\\theta(L) = 0\\)</li>
-      </ul>`;
+      boundarySection = `
+  <p><strong>Граничные условия</strong> (заделка справа):</p>
+  <ul>
+    <li>\\(y(L) = 0\\) — прогиб в заделке равен нулю</li>
+    <li>\\(\\theta(L) = 0\\) — угол поворота в заделке равен нулю</li>
+  </ul>
+  <p>Из условия \\(\\theta(L) = 0\\) находим: \\(C_1 = ${formatNumber(C1, 6)}\\)</p>
+  <p>Из условия \\(y(L) = 0\\) находим: \\(C_2 = ${formatNumber(C2, 6)}\\)`;
     }
   } else {
     const xA = result.reactions.xA ?? 0;
     const xB = result.reactions.xB ?? L;
-    boundaryConditions = `
-      <ul>
-        <li>В опоре A (\\(x = ${formatNumber(xA)}\\) м): \\(y = 0\\)</li>
-        <li>В опоре B (\\(x = ${formatNumber(xB)}\\) м): \\(y = 0\\)</li>
-      </ul>`;
+    boundarySection = `
+  <p><strong>Граничные условия</strong> (двухопорная балка):</p>
+  <ul>
+    <li>\\(y(${formatNumber(xA)}) = 0\\) — прогиб на опоре A равен нулю</li>
+    <li>\\(y(${formatNumber(xB)}) = 0\\) — прогиб на опоре B равен нулю</li>
+  </ul>
+  <p>Из системы уравнений находим константы интегрирования:</p>
+  <div class="formula">
+    \\(C_1 = ${formatNumber(C1, 6)}\\), \\quad C_2 = ${formatNumber(C2, 6)}
+  </div>`;
   }
+
+  // Итоговые формулы
+  const finalFormulas = `
+  <p><strong>Итоговые выражения:</strong></p>
+  <div class="formula">
+    \\(\\theta(x) = \\frac{1}{EI} \\int_0^x M(\\xi) \\, d\\xi + C_1\\)
+  </div>
+  <div class="formula">
+    \\(y(x) = \\frac{1}{EI} \\int_0^x \\int_0^\\xi M(\\eta) \\, d\\eta \\, d\\xi + C_1 x + C_2\\)
+  </div>`;
 
   // Таблица значений θ и y в характерных точках
   const points: number[] = [0];
@@ -803,7 +830,6 @@ function buildMNPSection(
   const tableRows = uniquePoints.map(x => {
     const theta = result.theta!(x);
     const y = result.y!(x);
-    // θ в радианах -> в градусы для наглядности, но показываем в радианах
     return `<tr>
       <td>${formatNumber(x)}</td>
       <td>${formatNumber(theta * 1000, 4)}</td>
@@ -813,9 +839,9 @@ function buildMNPSection(
 
   return `
   <h2>${sectionNum}. Метод начальных параметров</h2>
-  <p>Для определения углов поворота \\(\\theta(x)\\) и прогибов \\(y(x)\\) используем метод начальных параметров.</p>
+  <p>Для определения углов поворота \\(\\theta(x)\\) и прогибов \\(y(x)\\) используем метод начальных параметров (МНП).</p>
 
-  <p><strong>Исходные формулы:</strong></p>
+  <p><strong>Общий вид уравнений:</strong></p>
   <div class="formula">
     \\(EI \\cdot \\theta(x) = EI \\cdot \\theta_0 + \\int_0^x M(\\xi) \\, d\\xi\\)
   </div>
@@ -825,11 +851,12 @@ function buildMNPSection(
 
   <p><strong>Жёсткость сечения:</strong></p>
   <div class="formula">
-    \\(EI = ${formatNumber(E / 1e9)} \\cdot 10^9 \\cdot ${formatNumber(I * 1e8)} \\cdot 10^{-8} = ${formatNumber(EI_kNm2)}\\) кН·м²
+    \\(EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I * 1e8)} \\text{ см}^4 = ${formatNumber(EI_kNm2)}\\) кН·м²
   </div>
 
-  <p><strong>Граничные условия:</strong></p>
-  ${boundaryConditions}
+  ${boundarySection}
+
+  ${finalFormulas}
 
   <p><strong>Значения в характерных точках:</strong></p>
   <table>

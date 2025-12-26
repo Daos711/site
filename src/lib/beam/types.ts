@@ -60,6 +60,8 @@ export interface BeamResult {
   M: (x: number) => number;
   theta?: (x: number) => number;  // угол поворота
   y?: (x: number) => number;      // прогиб
+  C1?: number;                    // константа интегрирования для θ
+  C2?: number;                    // константа интегрирования для y
   Mmax: { value: number; x: number };
   Qmax: { value: number; x: number };
   events: number[];  // точки разрыва/перегиба

@@ -61,12 +61,16 @@ export function solveBeam(input: BeamInput): BeamResult {
   // Прогибы (если заданы E и I)
   let theta: ((x: number) => number) | undefined;
   let y: ((x: number) => number) | undefined;
+  let C1: number | undefined;
+  let C2: number | undefined;
 
   if (input.E && I_final) {
     const inputWithI = { ...input, I: I_final };
     const deflectionResult = computeDeflections(inputWithI, reactions, M);
     theta = deflectionResult.theta;
     y = deflectionResult.y;
+    C1 = deflectionResult.C1;
+    C2 = deflectionResult.C2;
   }
 
   return {
@@ -75,6 +79,8 @@ export function solveBeam(input: BeamInput): BeamResult {
     M,
     theta,
     y,
+    C1,
+    C2,
     Mmax,
     Qmax,
     events,
@@ -289,7 +295,7 @@ function computeDeflections(
   input: BeamInput,
   reactions: Reactions,
   M: (x: number) => number
-): { theta: (x: number) => number; y: (x: number) => number } {
+): { theta: (x: number) => number; y: (x: number) => number; C1: number; C2: number } {
   const { L, beamType, loads, E, I } = input;
   // E в Па (Н/м²), I в м⁴ => EI в Н·м²
   // Нагрузки в кН => моменты в кН·м => интегралы в кН·м², кН·м³
@@ -438,7 +444,7 @@ function computeDeflections(
     return doubleIntegralM(x) / EI + C1 * x + C2;
   };
 
-  return { theta, y };
+  return { theta, y, C1, C2 };
 }
 
 /**
