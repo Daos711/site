@@ -493,29 +493,30 @@ function findQExtremum(
   let maxX = 0;
   let actualValue = 0;
 
-  const eps = 1e-9;
+  const eps = 0.0001; // достаточно большой чтобы избежать численных проблем
 
-  const checkPoint = (x: number) => {
-    if (x < 0 || x > L) return;
-    // Проверяем слева и справа от точки (для скачков)
-    for (const offset of [-eps, eps]) {
-      const xi = x + offset;
-      if (xi < 0 || xi > L) continue;
-      const v = Q(xi);
-      if (Math.abs(v) > maxAbsValue) {
-        maxAbsValue = Math.abs(v);
-        maxX = x;
-        actualValue = v;
-      }
+  const checkValue = (x: number, v: number) => {
+    if (Math.abs(v) > maxAbsValue) {
+      maxAbsValue = Math.abs(v);
+      maxX = x;
+      actualValue = v;
     }
   };
 
   // Q линейная → max на концах участков (точках событий)
-  for (const e of events) {
-    checkPoint(e);
+  // Проверяем слева и справа от каждой точки (для скачков Q)
+  const allPoints = [...new Set([0, L, ...events])].sort((a, b) => a - b);
+
+  for (const x of allPoints) {
+    // Значение слева от точки
+    if (x - eps >= 0) {
+      checkValue(x, Q(x - eps));
+    }
+    // Значение справа от точки
+    if (x + eps <= L) {
+      checkValue(x, Q(x + eps));
+    }
   }
-  checkPoint(0);
-  checkPoint(L);
 
   return { value: actualValue, x: maxX };
 }
@@ -536,7 +537,7 @@ function findMExtremum(
   let maxX = 0;
   let actualValue = 0;
 
-  const eps = 1e-9;
+  const eps = 0.0001; // достаточно большой чтобы избежать численных проблем
 
   const checkPoint = (x: number) => {
     if (x < 0 || x > L) return;
@@ -563,7 +564,7 @@ function findMExtremum(
     const segLen = b - a;
     if (segLen < eps) continue;
 
-    // Определяем q на участке
+    // Определяем q на участке (суммируем все распределённые нагрузки)
     const midpoint = (a + b) / 2;
     let q = 0;
     for (const load of input.loads) {
@@ -574,7 +575,7 @@ function findMExtremum(
       }
     }
 
-    // Если q != 0, ищем точку где Q = 0
+    // Если q != 0, ищем точку где Q = 0 (вершина параболы M)
     if (Math.abs(q) > eps) {
       const Qa = Q(a + eps);
       // Q(s) = Qa - q*s, Q = 0 → s0 = Qa / q
