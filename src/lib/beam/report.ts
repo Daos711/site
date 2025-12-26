@@ -1027,16 +1027,50 @@ function buildSimplySupportedReactions(
     \\(\\boxed{R_B = ${formatNumber(RB)}\\text{ кН}}\\) (${RB >= 0 ? "вверх" : "вниз"})
   </div>`;
 
-  // Проверка
+  // Проверка через сумму моментов относительно B (независимое уравнение)
   html += `
-  <p><strong>Проверка:</strong></p>
+  <p><strong>Проверка</strong> (сумма моментов относительно точки B):</p>`;
+
+  // Вычисляем сумму моментов относительно B
+  let checkMomentSum = -RA * span; // R_A создаёт момент против часовой относительно B
+  const checkTerms: string[] = [`-R_A \\cdot (x_B - x_A)`];
+  const checkNumTerms: string[] = [`-${formatNumber(RA)} \\cdot ${formatNumber(span)}`];
+
+  for (const load of loadInfos) {
+    if (load.type === "force") {
+      const armB = load.x! - xB;
+      if (Math.abs(armB) > 1e-9) {
+        const contrib = load.value * armB;
+        checkMomentSum -= contrib; // -F·(x_F - x_B)
+        const sign = load.value >= 0 ? "-" : "+";
+        checkTerms.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_B)`);
+        checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot (${formatNumber(armB)})`);
+      }
+    } else if (load.type === "moment") {
+      checkMomentSum -= load.value;
+      const sign = load.value >= 0 ? "-" : "+";
+      checkTerms.push(`${sign} ${load.label}`);
+      checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.value))}`);
+    } else if (load.type === "distributed") {
+      const armB = load.xq! - xB;
+      if (Math.abs(armB) > 1e-9) {
+        const contrib = load.Fq! * armB;
+        checkMomentSum -= contrib;
+        const sign = load.Fq! >= 0 ? "-" : "+";
+        checkTerms.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_B)`);
+        checkNumTerms.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot (${formatNumber(armB)})`);
+      }
+    }
+  }
+
+  html += `
   <div class="formula">
-    \\(R_A + R_B = ${formatNumber(RA)} + (${formatNumber(RB)}) = ${formatNumber(RA + RB)}\\text{ кН}\\)
+    \\(\\sum M_B = ${checkTerms.join(" ")} = ${checkNumTerms.join(" ")} = ${formatNumber(checkMomentSum)}\\text{ кН·м}\\)
   </div>`;
 
-  const checkResult = Math.abs(RA + RB - totalLoad) < 0.01;
+  const checkResult = Math.abs(checkMomentSum) < 0.01;
   html += `
-  <p>Сумма внешних сил: \\(${formatNumber(totalLoad)}\\) кН. ${checkResult ? "Проверка выполнена ✓" : "Расхождение!"}</p>`;
+  <p>${checkResult ? "Проверка выполнена ✓" : "Расхождение: " + formatNumber(checkMomentSum) + " кН·м"}</p>`;
 
   return html;
 }
