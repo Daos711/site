@@ -183,6 +183,16 @@ function collectContributions(
     });
   }
 
+  // Реакция B (если левее или в точке сечения)
+  if (reactions.RB !== undefined && reactions.xB !== undefined && reactions.xB < sectionStart + EPS) {
+    contributions.push({
+      type: "reaction",
+      label: "R_B",
+      value: reactions.RB,
+      x: reactions.xB,
+    });
+  }
+
   // Реакция заделки (для консольной балки)
   if (reactions.Rf !== undefined && reactions.xf !== undefined && reactions.xf < sectionStart + EPS) {
     contributions.push({
