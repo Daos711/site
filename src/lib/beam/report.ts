@@ -853,9 +853,9 @@ function buildMDerivation(
         numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot (${formatNumber(arm)} + ${varName})`);
       }
     } else if (c.type === "moment") {
-      // Внешний момент: против часовой (+), по часовой (-)
-      // M > 0 (против часовой) → +M
-      const sign = c.value >= 0 ? "+" : "-";
+      // Внешний момент: против часовой (M > 0) сжимает нижние волокна → -M
+      // По часовой (M < 0) растягивает нижние волокна → +|M|
+      const sign = c.value >= 0 ? "-" : "+";
       symbolicTerms.push(`${sign} ${c.label}`);
       numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))}`);
     } else if (c.type === "distributed_resultant") {
