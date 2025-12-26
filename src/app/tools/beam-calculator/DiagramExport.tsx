@@ -39,9 +39,10 @@ export function DiagramExport({
   scale = 1,
   boundaries = [],
 }: DiagramExportProps) {
-  const width = 700;
-  const height = 180;
-  const padding = { left: 60, right: 40, top: 30, bottom: 35 };
+  // Размеры под A4 (180mm ≈ 680px)
+  const width = 680;
+  const height = 200;
+  const padding = { left: 55, right: 35, top: 35, bottom: 40 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -137,7 +138,7 @@ export function DiagramExport({
         textAnchor="end"
         dominantBaseline="middle"
         fill={lineColor}
-        fontSize={16}
+        fontSize={18}
         fontWeight="bold"
       >
         {title}
@@ -149,7 +150,7 @@ export function DiagramExport({
         y={padding.top + chartHeight / 2}
         dominantBaseline="middle"
         fill={PRINT_COLORS.textMuted}
-        fontSize={12}
+        fontSize={14}
       >
         {unit}
       </text>
@@ -270,7 +271,7 @@ export function DiagramExport({
               y={textY}
               textAnchor={anchor}
               fill={lineColor}
-              fontSize={11}
+              fontSize={13}
               fontWeight="500"
             >
               {formatNum(value)}
@@ -362,13 +363,13 @@ export function DiagramExport({
       {Math.abs(extremes.maxP.value) > 1e-9 &&
         !boundaries.some((b) => Math.abs(b - extremes.maxP.x) < 0.05) && (
           <g>
-            <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={3} fill={lineColor} />
+            <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={lineColor} />
             <text
               x={xToPx(extremes.maxP.x)}
-              y={scaleY(extremes.maxP.value) - 8}
+              y={scaleY(extremes.maxP.value) - 10}
               textAnchor="middle"
               fill={lineColor}
-              fontSize={11}
+              fontSize={13}
               fontWeight="600"
             >
               {formatNum(extremes.maxP.value)}
@@ -380,13 +381,13 @@ export function DiagramExport({
         Math.abs(extremes.minP.x - extremes.maxP.x) > 0.1 &&
         !boundaries.some((b) => Math.abs(b - extremes.minP.x) < 0.05) && (
           <g>
-            <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={3} fill={lineColor} />
+            <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={lineColor} />
             <text
               x={xToPx(extremes.minP.x)}
-              y={scaleY(extremes.minP.value) + 14}
+              y={scaleY(extremes.minP.value) + 16}
               textAnchor="middle"
               fill={lineColor}
-              fontSize={11}
+              fontSize={13}
               fontWeight="600"
             >
               {formatNum(extremes.minP.value)}
@@ -403,13 +404,13 @@ export function DiagramExport({
         stroke={PRINT_COLORS.text}
         strokeWidth={1}
       />
-      <text x={padding.left} y={height - 8} fill={PRINT_COLORS.text} fontSize={12}>
+      <text x={padding.left} y={height - 10} fill={PRINT_COLORS.text} fontSize={14}>
         0
       </text>
-      <text x={padding.left + chartWidth} y={height - 8} textAnchor="end" fill={PRINT_COLORS.text} fontSize={12}>
+      <text x={padding.left + chartWidth} y={height - 10} textAnchor="end" fill={PRINT_COLORS.text} fontSize={14}>
         {L} м
       </text>
-      <text x={padding.left + chartWidth / 2} y={height - 8} textAnchor="middle" fill={PRINT_COLORS.textMuted} fontSize={12}>
+      <text x={padding.left + chartWidth / 2} y={height - 10} textAnchor="middle" fill={PRINT_COLORS.textMuted} fontSize={14}>
         x, м
       </text>
     </svg>

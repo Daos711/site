@@ -4,7 +4,6 @@ import React from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
 import { COLORS } from "./constants";
 import { PinSupport, RollerSupport, FixedSupport } from "./BeamSupports";
-import { ReactionArrow, DistributedLoadArrows, ForceArrow, MomentArrow } from "./BeamLoads";
 
 const formatNum = (value: number, decimals = 2): string => {
   if (Math.abs(value) < 1e-10) return "0";
@@ -19,20 +18,29 @@ interface Props {
 
 /**
  * Отдельный SVG только со схемой балки для экспорта в отчёт.
- * Скрыт на странице, но сериализуется для вставки в HTML-отчёт.
+ * Размеры оптимизированы под A4 (680px ширина контента).
+ * Использует собственные крупные шрифты для подписей.
  */
 export function BeamSchemaExport({ input, result }: Props) {
   const { L, loads, beamType } = input;
 
-  // Размеры SVG (крупнее для лучшей читаемости)
-  const width = 1100;
-  const height = 400;
-  const padding = { left: 100, right: 100, top: 130, bottom: 100 };
-  const beamY = padding.top + 55;
-  const beamThickness = 24;
+  // Размеры SVG под A4 (180mm ≈ 680px)
+  const width = 680;
+  const height = 280;
+  const padding = { left: 55, right: 55, top: 75, bottom: 65 };
+  const beamY = padding.top + 40;
+  const beamThickness = 16; // тоньше балка
 
   const chartWidth = width - padding.left - padding.right;
   const xToPx = (x: number) => padding.left + (x / L) * chartWidth;
+
+  // Размеры шрифтов для экспорта (крупные)
+  const fontSize = {
+    label: 14,      // подписи нагрузок и реакций
+    subscript: 10,  // индексы
+    dimension: 14,  // размерные линии
+    support: 16,    // буквы A, B
+  };
 
   return (
     <svg
@@ -43,12 +51,12 @@ export function BeamSchemaExport({ input, result }: Props) {
         position: "absolute",
         left: "-9999px",
         top: "-9999px",
-        width: "1100px",
-        height: "400px",
+        width: `${width}px`,
+        height: `${height}px`,
         background: "#ffffff",
       }}
     >
-      {/* Маркеры для стрелок - refX=3 как на сайте */}
+      {/* Маркеры для стрелок */}
       <defs>
         <marker id="exp-arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill={COLORS.distributedLoad} />
@@ -77,7 +85,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         width={xToPx(L) - xToPx(0)}
         height={beamThickness}
         fill={COLORS.beam}
-        rx={3}
+        rx={2}
       />
 
       {/* Опоры */}
@@ -93,7 +101,7 @@ export function BeamSchemaExport({ input, result }: Props) {
         return null;
       })}
 
-      {/* Распределённые нагрузки */}
+      {/* Распределённые нагрузки — собственный рендеринг с крупными шрифтами */}
       {(() => {
         const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
         if (distributedLoads.length === 0) return null;
@@ -134,119 +142,162 @@ export function BeamSchemaExport({ input, result }: Props) {
           }
         }
 
-        // Отступ между участками с разной интенсивностью
-        const gap = 4;
+        const gap = 3;
+        const arrowLen = 22;
+        const markerOffset = 6;
+        const beamTopY = beamY - beamThickness / 2;
+
         return mergedSegments.map((seg, i) => {
           const isFirst = i === 0;
           const isLast = i === mergedSegments.length - 1;
           const x1 = xToPx(seg.a) + (isFirst ? 0 : gap);
           const x2 = xToPx(seg.b) - (isLast ? 0 : gap);
+          const numArrows = Math.max(3, Math.floor((x2 - x1) / 30));
+
           return (
-            <DistributedLoadArrows
-              key={`dist-${i}`}
-              x1={x1}
-              x2={x2}
-              beamTopY={beamY - beamThickness / 2}
-              beamBottomY={beamY + beamThickness / 2}
-              q={seg.q}
-              label={`q = ${Math.abs(seg.q)} кН/м`}
-              markerPrefix="exp-"
-            />
+            <g key={`dist-${i}`}>
+              <line x1={x1} y1={beamTopY - arrowLen} x2={x2} y2={beamTopY - arrowLen} stroke={COLORS.distributedLoad} strokeWidth={1.5} />
+              {Array.from({ length: numArrows }).map((_, j) => {
+                const px = x1 + (j / (numArrows - 1)) * (x2 - x1);
+                return (
+                  <line
+                    key={j}
+                    x1={px}
+                    y1={beamTopY - arrowLen}
+                    x2={px}
+                    y2={beamTopY - markerOffset}
+                    stroke={COLORS.distributedLoad}
+                    strokeWidth={1.5}
+                    markerEnd="url(#exp-arrowBlue)"
+                  />
+                );
+              })}
+              <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 6} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize.label} fontWeight="600">
+                q = {Math.abs(seg.q)} кН/м
+              </text>
+            </g>
           );
         });
       })()}
 
-      {/* Сосредоточенные силы */}
+      {/* Сосредоточенные силы — собственный рендеринг */}
       {loads.map((load, i) => {
-        if (load.type === "force") {
-          // Положительная сила вниз → верхняя поверхность, отрицательная вверх → нижняя
-          const forceY = load.F >= 0 ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
+        if (load.type !== "force") return null;
+        const arrowLen = 40;
+        const markerOffset = 6;
+        const pointsDown = load.F >= 0;
+        const y = pointsDown ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
+        const px = xToPx(load.x);
+
+        // Определяем позицию подписи
+        const nearEnd = load.x > L * 0.85;
+        const labelX = nearEnd ? px - 8 : px + 8;
+        const anchor = nearEnd ? "end" : "start";
+
+        if (pointsDown) {
           return (
-            <ForceArrow
-              key={`force-${i}`}
-              x={xToPx(load.x)}
-              y={forceY}
-              F={load.F}
-              label={`F = ${Math.abs(load.F)} кН`}
-              maxX={xToPx(L) + padding.right - 10}
-              markerPrefix="exp-"
-            />
+            <g key={`force-${i}`}>
+              <line x1={px} y1={y - arrowLen} x2={px} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
+              <text x={labelX} y={y - arrowLen - 4} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
+                F = {Math.abs(load.F)} кН
+              </text>
+            </g>
+          );
+        } else {
+          return (
+            <g key={`force-${i}`}>
+              <line x1={px} y1={y + arrowLen} x2={px} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
+              <text x={labelX} y={y + arrowLen + 12} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
+                F = {Math.abs(load.F)} кН
+              </text>
+            </g>
           );
         }
-        return null;
       })}
 
-      {/* Моменты */}
+      {/* Моменты — собственный рендеринг */}
       {loads.map((load, i) => {
-        if (load.type === "moment") {
-          return (
-            <MomentArrow
-              key={`moment-${i}`}
-              x={xToPx(load.x)}
-              y={beamY}
-              M={load.M}
-              label={`M = ${Math.abs(load.M)} кН·м`}
-              markerPrefix="exp-"
+        if (load.type !== "moment") return null;
+        const H = 28;
+        const R = 16;
+        const gap = 5;
+        const px = xToPx(load.x);
+        const Cy = beamY - gap - H;
+
+        const isCW = load.M < 0;
+        const aLeft = (240 * Math.PI) / 180;
+        const aRight = (330 * Math.PI) / 180;
+        const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
+        const pRight = { x: px + R * Math.cos(aRight), y: Cy + R * Math.sin(aRight) };
+
+        const legEnd = isCW ? pLeft : pRight;
+        const arcStart = isCW ? pLeft : pRight;
+        const arcEnd = isCW ? pRight : pLeft;
+        const sweepFlag = isCW ? 1 : 0;
+
+        const labelX = isCW ? pRight.x + 6 : pLeft.x - 6;
+        const labelAnchor = isCW ? "start" : "end";
+
+        return (
+          <g key={`moment-${i}`}>
+            <line x1={px} y1={beamY - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.moment} strokeWidth={2} />
+            <path
+              d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
+              fill="none"
+              stroke={COLORS.moment}
+              strokeWidth={2}
+              markerEnd="url(#exp-arrowPurple)"
             />
-          );
-        }
-        return null;
+            <text x={labelX} y={Cy - 4} textAnchor={labelAnchor} fill={COLORS.moment} fontSize={fontSize.label} fontWeight="600">
+              M = {Math.abs(load.M)} кН·м
+            </text>
+          </g>
+        );
       })}
 
-      {/* Реакции опор */}
+      {/* Реакции опор — собственный рендеринг с крупными шрифтами */}
       {(() => {
         const { reactions } = result;
         const elements: React.ReactNode[] = [];
         const beamTop = beamY - beamThickness / 2;
+        const arrowLen = 32;
+        const markerOffset = 6;
+
+        const drawReaction = (key: string, px: number, value: number, name: string, subscript: string, labelSide: "left" | "right") => {
+          const pointsUp = value >= 0;
+          let startY: number, endY: number, textY: number;
+
+          if (pointsUp) {
+            startY = beamTop;
+            endY = beamTop - arrowLen;
+            textY = endY - 8;
+          } else {
+            startY = beamTop - arrowLen;
+            endY = beamTop - markerOffset;
+            textY = startY - 4;
+          }
+
+          const textX = labelSide === "left" ? px - 8 : px + 8;
+          const anchor = labelSide === "left" ? "end" : "start";
+
+          elements.push(
+            <g key={key}>
+              <line x1={px} y1={startY} x2={px} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd="url(#exp-arrowGreen)" />
+              <text x={textX} y={textY} fill={COLORS.reaction} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor} dominantBaseline="middle">
+                {name}<tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan><tspan dy="-3"> = {formatNum(Math.abs(value))} кН</tspan>
+              </text>
+            </g>
+          );
+        };
 
         if (reactions.RA !== undefined && reactions.RA !== 0) {
-          const xA = reactions.xA ?? 0;
-          elements.push(
-            <ReactionArrow
-              key="RA"
-              x={xToPx(xA)}
-              baseY={beamTop}
-              value={reactions.RA}
-              name="R"
-              subscript="A"
-              valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
-              labelSide="right"
-              markerPrefix="exp-"
-            />
-          );
+          drawReaction("RA", xToPx(reactions.xA ?? 0), reactions.RA, "R", "A", "right");
         }
-
         if (reactions.RB !== undefined && reactions.RB !== 0) {
-          const xB = reactions.xB ?? L;
-          elements.push(
-            <ReactionArrow
-              key="RB"
-              x={xToPx(xB)}
-              baseY={beamTop}
-              value={reactions.RB}
-              name="R"
-              subscript="B"
-              valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
-              labelSide="left"
-              markerPrefix="exp-"
-            />
-          );
+          drawReaction("RB", xToPx(reactions.xB ?? L), reactions.RB, "R", "B", "left");
         }
-
         if (reactions.Rf !== undefined && reactions.Rf !== 0) {
-          const xf = reactions.xf ?? 0;
-          elements.push(
-            <ReactionArrow
-              key="Rf"
-              x={xToPx(xf)}
-              baseY={beamTop}
-              value={reactions.Rf}
-              name="R"
-              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide="right"
-              markerPrefix="exp-"
-            />
-          );
+          drawReaction("Rf", xToPx(reactions.xf ?? 0), reactions.Rf, "R", "", "right");
         }
 
         return <>{elements}</>;
@@ -265,35 +316,18 @@ export function BeamSchemaExport({ input, result }: Props) {
         if (!isSimplySupported) return null;
 
         const labels = [];
-        const labelY = beamY + 85;
+        const labelY = beamY + 60;
 
         if (pinSupport) {
           labels.push(
-            <text
-              key="label-A"
-              x={xToPx(pinSupport.x)}
-              y={labelY}
-              textAnchor="middle"
-              fill="#1f2937"
-              fontSize={20}
-              fontWeight="bold"
-            >
+            <text key="label-A" x={xToPx(pinSupport.x)} y={labelY} textAnchor="middle" fill="#1f2937" fontSize={fontSize.support} fontWeight="bold">
               A
             </text>
           );
         }
-
         if (rollerSupport) {
           labels.push(
-            <text
-              key="label-B"
-              x={xToPx(rollerSupport.x)}
-              y={labelY}
-              textAnchor="middle"
-              fill="#1f2937"
-              fontSize={20}
-              fontWeight="bold"
-            >
+            <text key="label-B" x={xToPx(rollerSupport.x)} y={labelY} textAnchor="middle" fill="#1f2937" fontSize={fontSize.support} fontWeight="bold">
               B
             </text>
           );
@@ -304,19 +338,14 @@ export function BeamSchemaExport({ input, result }: Props) {
 
       {/* Размерные линии участков */}
       {(() => {
-        const dimY = height - 40;
-        const tickH = 8;
+        const dimY = height - 28;
+        const tickH = 6;
         const elements: React.ReactNode[] = [];
 
-        // Собираем все ключевые точки
         const keyPoints = new Set<number>([0, L]);
-
-        // Точки опор
         for (const support of input.supports) {
           keyPoints.add(support.x);
         }
-
-        // Точки нагрузок
         for (const load of loads) {
           if (load.type === "distributed") {
             keyPoints.add(load.a);
@@ -330,27 +359,23 @@ export function BeamSchemaExport({ input, result }: Props) {
 
         const sortedPoints = Array.from(keyPoints).filter(p => p >= 0 && p <= L).sort((a, b) => a - b);
 
-        // Основная размерная линия
         elements.push(
-          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1.5} />
+          <line key="dim-main" x1={xToPx(0)} y1={dimY} x2={xToPx(L)} y2={dimY} stroke="#374151" strokeWidth={1} />
         );
 
-        // Засечки и подписи для каждого сегмента
         for (let i = 0; i < sortedPoints.length; i++) {
           const x = sortedPoints[i];
-          // Засечка
           elements.push(
-            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1.5} />
+            <line key={`tick-${i}`} x1={xToPx(x)} y1={dimY - tickH} x2={xToPx(x)} y2={dimY + tickH} stroke="#374151" strokeWidth={1} />
           );
 
-          // Подпись длины сегмента (между соседними точками)
           if (i < sortedPoints.length - 1) {
             const nextX = sortedPoints[i + 1];
             const segLen = nextX - x;
             if (segLen > 0.001) {
               const midX = (xToPx(x) + xToPx(nextX)) / 2;
               elements.push(
-                <text key={`seg-${i}`} x={midX} y={dimY + 22} textAnchor="middle" fill="#374151" fontSize={18} fontWeight="500">
+                <text key={`seg-${i}`} x={midX} y={dimY + 16} textAnchor="middle" fill="#374151" fontSize={fontSize.dimension} fontWeight="500">
                   {segLen % 1 === 0 ? segLen : segLen.toFixed(1)}
                 </text>
               );
@@ -358,9 +383,8 @@ export function BeamSchemaExport({ input, result }: Props) {
           }
         }
 
-        // Подпись общей длины L
         elements.push(
-          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 8} textAnchor="middle" fill="#374151" fontSize={18} fontWeight="500">
+          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 6} textAnchor="middle" fill="#374151" fontSize={fontSize.dimension} fontWeight="500">
             L = {L} м
           </text>
         );

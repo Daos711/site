@@ -373,7 +373,7 @@ function buildReportHTML(data: ReportData): string {
     * { box-sizing: border-box; }
     body {
       font-family: 'Times New Roman', Times, serif;
-      font-size: 18px;
+      font-size: 20px;
       line-height: 1.7;
       max-width: 210mm;
       margin: 0 auto;
@@ -381,10 +381,10 @@ function buildReportHTML(data: ReportData): string {
       background: white;
       color: black;
     }
-    h1 { font-size: 28px; text-align: center; margin-bottom: 28px; }
-    h2 { font-size: 22px; margin-top: 32px; margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-    h3 { font-size: 20px; margin-top: 24px; margin-bottom: 12px; }
-    table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 17px; }
+    h1 { font-size: 30px; text-align: center; margin-bottom: 28px; }
+    h2 { font-size: 24px; margin-top: 32px; margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    h3 { font-size: 22px; margin-top: 24px; margin-bottom: 12px; }
+    table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 18px; }
     th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
     th { background: #f5f5f5; }
     .formula { margin: 12px 0; padding: 12px 0; font-size: 18px; }
