@@ -942,75 +942,82 @@ function buildMNPSection(
   const I_used = result.I ?? input.I;
   if (!result.y || !result.theta || !input.E || !I_used) return "";
 
-  const { beamType, L, E } = input;
-  const EI_kNm2 = (E * I_used) / 1000; // кН·м²
+  const { beamType, L, E, loads } = input;
+  const EI = E * I_used; // Н·м²
+  const EI_kNm2 = EI / 1000; // кН·м²
   const isCantilever = beamType.startsWith("cantilever");
-  const isLeft = beamType === "cantilever-left";
 
-  // Получаем константы интегрирования
-  const C1 = result.C1 ?? 0;
-  const C2 = result.C2 ?? 0;
+  // Получаем начальные параметры
+  const theta0 = result.C1 ?? 0;
+  const y0 = result.C2 ?? 0;
 
-  // Граничные условия и вывод констант
-  let boundarySection: string;
-  if (isCantilever) {
-    if (isLeft) {
-      boundarySection = `
-  <p><strong>Граничные условия</strong> (заделка слева):</p>
-  <ul>
-    <li>\\(y(0) = 0\\) — прогиб в заделке равен нулю</li>
-    <li>\\(\\theta(0) = 0\\) — угол поворота в заделке равен нулю</li>
-  </ul>
-  <p>Из условия \\(\\theta(0) = 0\\): \\(C_1 = 0\\)</p>
-  <p>Из условия \\(y(0) = 0\\): \\(C_2 = 0\\)</p>`;
-    } else {
-      boundarySection = `
-  <p><strong>Граничные условия</strong> (заделка справа):</p>
-  <ul>
-    <li>\\(y(L) = 0\\) — прогиб в заделке равен нулю</li>
-    <li>\\(\\theta(L) = 0\\) — угол поворота в заделке равен нулю</li>
-  </ul>
-  <p>Из условия \\(\\theta(L) = 0\\) находим: \\(C_1 = ${formatNumber(C1, 6)}\\)</p>
-  <p>Из условия \\(y(L) = 0\\) находим: \\(C_2 = ${formatNumber(C2, 6)}\\)`;
+  // Позиции опор
+  const xA = result.reactions.xA ?? 0;
+  const xB = result.reactions.xB ?? L;
+
+  // Собираем нагрузки для отображения
+  const loadsList: string[] = [];
+
+  // Реакции
+  if (result.reactions.RA !== undefined) {
+    const dir = result.reactions.RA >= 0 ? "↑" : "↓";
+    const sign = result.reactions.RA >= 0 ? "+" : "-";
+    loadsList.push(`\\(R_A = ${formatNumber(Math.abs(result.reactions.RA))}\\) кН (${dir}) — ${result.reactions.RA >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
+  }
+  if (result.reactions.RB !== undefined) {
+    const dir = result.reactions.RB >= 0 ? "↑" : "↓";
+    const sign = result.reactions.RB >= 0 ? "+" : "-";
+    loadsList.push(`\\(R_B = ${formatNumber(Math.abs(result.reactions.RB))}\\) кН (${dir}) — ${result.reactions.RB >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
+  }
+
+  // Внешние нагрузки
+  for (const load of loads) {
+    if (load.type === "force") {
+      const dir = load.F >= 0 ? "↓" : "↑";
+      const sign = load.F >= 0 ? "-" : "+";
+      loadsList.push(`\\(F = ${formatNumber(Math.abs(load.F))}\\) кН в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.F >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+    } else if (load.type === "moment") {
+      const dir = load.M >= 0 ? "↺" : "↻";
+      const sign = load.M >= 0 ? "-" : "+";
+      loadsList.push(`\\(M = ${formatNumber(Math.abs(load.M))}\\) кН·м в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.M >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+    } else if (load.type === "distributed") {
+      const dir = load.q >= 0 ? "↓" : "↑";
+      const sign = load.q >= 0 ? "-" : "+";
+      loadsList.push(`\\(q = ${formatNumber(Math.abs(load.q))}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) (${dir}) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     }
+  }
+
+  // Граничные условия
+  let boundaryConditions: string;
+  let derivationSection: string;
+
+  if (isCantilever) {
+    const xf = result.reactions.xf ?? 0;
+    boundaryConditions = `
+    <ul>
+      <li>\\(y(${formatNumber(xf)}) = 0\\) — прогиб в заделке равен нулю</li>
+      <li>\\(\\theta(${formatNumber(xf)}) = 0\\) — угол поворота в заделке равен нулю</li>
+    </ul>`;
+    derivationSection = `
+    <p>Из граничных условий:</p>
+    <div class="formula">
+      \\[y_0 = 0, \\quad \\theta_0 = 0\\]
+    </div>`;
   } else {
-    const xA = result.reactions.xA ?? 0;
-    const xB = result.reactions.xB ?? L;
-    boundarySection = `
-  <p><strong>Граничные условия</strong> (двухопорная балка):</p>
-  <ul>
-    <li>\\(y(${formatNumber(xA)}) = 0\\) — прогиб на опоре A равен нулю</li>
-    <li>\\(y(${formatNumber(xB)}) = 0\\) — прогиб на опоре B равен нулю</li>
-  </ul>
-  <p>Из системы уравнений находим константы интегрирования:</p>
-  <div class="formula">
-    \\(C_1 = ${formatNumber(C1, 6)}\\), \\quad C_2 = ${formatNumber(C2, 6)}
-  </div>`;
+    boundaryConditions = `
+    <ul>
+      <li>\\(y(${formatNumber(xA)}) = 0\\) — прогиб на опоре A равен нулю</li>
+      <li>\\(y(${formatNumber(xB)}) = 0\\) — прогиб на опоре B равен нулю</li>
+    </ul>`;
+
+    // Для двухопорной балки y₀ = 0 (опора в начале), находим θ₀
+    derivationSection = buildTheta0Derivation(input, result, EI);
   }
 
-  // Итоговые формулы
-  const finalFormulas = `
-  <p><strong>Итоговые выражения:</strong></p>
-  <div class="formula">
-    \\(\\theta(x) = \\frac{1}{EI} \\int_0^x M(\\xi) \\, d\\xi + C_1\\)
-  </div>
-  <div class="formula">
-    \\(y(x) = \\frac{1}{EI} \\int_0^x \\int_0^\\xi M(\\eta) \\, d\\eta \\, d\\xi + C_1 x + C_2\\)
-  </div>`;
-
-  // Таблица значений θ и y в характерных точках
+  // Таблица значений
   const points: number[] = [0];
-
-  // Добавляем точки опор
-  if (result.reactions.xA !== undefined && result.reactions.xA > 0) {
-    points.push(result.reactions.xA);
-  }
-  if (result.reactions.xB !== undefined && result.reactions.xB < L) {
-    points.push(result.reactions.xB);
-  }
-
-  // Добавляем точки нагрузок
-  for (const load of input.loads) {
+  if (xA > 0) points.push(xA);
+  for (const load of loads) {
     if (load.type === "distributed") {
       if (load.a > 0 && !points.includes(load.a)) points.push(load.a);
       if (load.b < L && !points.includes(load.b)) points.push(load.b);
@@ -1018,21 +1025,18 @@ function buildMNPSection(
       if (load.x > 0 && load.x < L && !points.includes(load.x)) points.push(load.x);
     }
   }
-
+  if (xB < L) points.push(xB);
   points.push(L);
   points.sort((a, b) => a - b);
-
-  // Убираем дубликаты
   const uniquePoints = points.filter((p, i) => i === 0 || Math.abs(p - points[i - 1]) > 1e-6);
 
-  // Генерируем строки таблицы
   const tableRows = uniquePoints.map(x => {
     const theta = result.theta!(x);
     const y = result.y!(x);
     return `<tr>
       <td>${formatNumber(x)}</td>
-      <td>${formatNumber(theta * 1000, 4)}</td>
-      <td>${formatNumber(y * 1000, 4)}</td>
+      <td>${formatNumber(theta * 1000, 3)}</td>
+      <td>${formatNumber(y * 1000, 2)}</td>
     </tr>`;
   }).join("\n    ");
 
@@ -1040,28 +1044,171 @@ function buildMNPSection(
   <h2>${sectionNum}. Метод начальных параметров</h2>
   <p>Для определения углов поворота \\(\\theta(x)\\) и прогибов \\(y(x)\\) используем метод начальных параметров (МНП).</p>
 
-  <p><strong>Общий вид уравнений:</strong></p>
+  <h3>Универсальные уравнения МНП</h3>
+  <p>Дифференциальное уравнение изогнутой оси: \\(EI \\cdot y'' = M(x)\\).</p>
+  <p>Интегрируя, получаем:</p>
   <div class="formula">
-    \\(EI \\cdot \\theta(x) = EI \\cdot \\theta_0 + \\int_0^x M(\\xi) \\, d\\xi\\)
+    \\[\\theta(x) = \\theta_0 + \\frac{1}{EI}\\left[\\sum M_i(x-a_i) + \\sum F_i \\frac{(x-b_i)^2}{2} + \\sum q_i \\frac{(x-c_i)^3}{6}\\right]\\]
   </div>
   <div class="formula">
-    \\(EI \\cdot y(x) = EI \\cdot y_0 + EI \\cdot \\theta_0 \\cdot x + \\int_0^x \\int_0^\\xi M(\\eta) \\, d\\eta \\, d\\xi\\)
+    \\[y(x) = y_0 + \\theta_0 x + \\frac{1}{EI}\\left[\\sum M_i \\frac{(x-a_i)^2}{2} + \\sum F_i \\frac{(x-b_i)^3}{6} + \\sum q_i \\frac{(x-c_i)^4}{24}\\right]\\]
   </div>
+  <p>где слагаемые включаются только при \\(x \\geq\\) соответствующей координаты.</p>
 
-  <p><strong>Жёсткость сечения:</strong></p>
+  <h3>Правило знаков</h3>
+  <p>По растяжению нижних волокон: растягивает → «+», сжимает → «−».</p>
+  <ul>
+    ${loadsList.map(l => `<li>${l}</li>`).join("\n    ")}
+  </ul>
+
+  <h3>Начальные параметры и граничные условия</h3>
+  <p>Начальные параметры в точке \\(x = ${formatNumber(xA)}\\):</p>
+  <ul>
+    <li>\\(y_0\\) — прогиб в начале координат</li>
+    <li>\\(\\theta_0\\) — угол поворота в начале координат</li>
+  </ul>
+  <p><strong>Граничные условия:</strong></p>
+  ${boundaryConditions}
+
+  <h3>Определение начальных параметров</h3>
+  ${derivationSection}
+
+  <h3>Жёсткость сечения</h3>
   <div class="formula">
-    \\(EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I_used * 1e8)} \\text{ см}^4 = ${formatNumber(EI_kNm2)}\\) кН·м²
+    \\[EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I_used * 1e8, 2)} \\text{ см}^4 = ${formatNumber(EI_kNm2, 2)} \\text{ кН}\\cdot\\text{м}^2\\]
   </div>
 
-  ${boundarySection}
-
-  ${finalFormulas}
-
-  <p><strong>Значения в характерных точках:</strong></p>
+  <h3>Значения в характерных точках</h3>
   <table>
-    <tr><th>\\(x\\), м</th><th>\\(\\theta \\cdot 10^3\\), рад</th><th>\\(y\\), мм</th></tr>
-    ${tableRows}
-  </table>`;
+    <tr><th>Точка</th><th>\\(x\\), м</th><th>\\(\\theta \\cdot 10^3\\), рад</th><th>\\(y\\), мм</th></tr>
+    ${uniquePoints.map((x, i) => {
+      const theta = result.theta!(x);
+      const y = result.y!(x);
+      const label = getPointLabel(x, xA, xB, L, loads);
+      return `<tr>
+        <td>${label}</td>
+        <td>${formatNumber(x)}</td>
+        <td>${formatNumber(theta * 1000, 3)}</td>
+        <td>${formatNumber(y * 1000, 2)}</td>
+      </tr>`;
+    }).join("\n    ")}
+  </table>
+  <p>Знак прогиба: «+» — вверх, «−» — вниз.</p>`;
+}
+
+/**
+ * Получает метку точки (A, B, C, ...)
+ */
+function getPointLabel(x: number, xA: number, xB: number, L: number, loads: Load[]): string {
+  if (Math.abs(x) < 1e-6) return "A";
+  if (Math.abs(x - L) < 1e-6) return "E";
+  if (Math.abs(x - xB) < 1e-6) return "D";
+
+  // Ищем в нагрузках
+  for (const load of loads) {
+    if (load.type === "moment" && Math.abs(load.x - x) < 1e-6) return "B";
+    if (load.type === "distributed") {
+      if (Math.abs(load.b - x) < 1e-6) return "C";
+    }
+  }
+  return "";
+}
+
+/**
+ * Строит вывод θ₀ для двухопорной балки
+ */
+function buildTheta0Derivation(
+  input: BeamInput,
+  result: BeamResult,
+  EI: number
+): string {
+  const xA = result.reactions.xA ?? 0;
+  const xB = result.reactions.xB ?? input.L;
+  const RA = result.reactions.RA ?? 0;
+  const { loads } = input;
+
+  // Условие y(0) = 0 даёт y₀ = 0
+  // Условие y(xB) = 0 даёт уравнение для θ₀
+
+  let html = `
+  <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\)</p>
+  <p>При \\(x = ${formatNumber(xA)}\\) получаем: \\(y_0 = 0\\)</p>
+
+  <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\)</p>
+  <p>Подставляем \\(x = ${formatNumber(xB)}\\) и \\(y_0 = 0\\):</p>`;
+
+  // Собираем слагаемые для y(xB)
+  const terms: Array<{ symbolic: string; value: number }> = [];
+
+  // R_A · xB³/6
+  const RA_term = RA * 1000 * Math.pow(xB, 3) / 6; // в Н·м³
+  terms.push({
+    symbolic: `+\\frac{R_A \\cdot ${formatNumber(xB)}^3}{6}`,
+    value: RA_term
+  });
+
+  // Обрабатываем нагрузки
+  for (const load of loads) {
+    if (load.type === "moment" && load.x < xB) {
+      // -M · (xB - x)² / 2
+      const dx = xB - load.x;
+      const M_term = -load.M * 1000 * Math.pow(dx, 2) / 2;
+      terms.push({
+        symbolic: `-\\frac{M \\cdot ${formatNumber(dx)}^2}{2}`,
+        value: M_term
+      });
+    } else if (load.type === "distributed") {
+      // -q · (xB - a)⁴ / 24
+      if (load.a < xB) {
+        const dx = xB - load.a;
+        const q_term = -load.q * 1000 * Math.pow(dx, 4) / 24;
+        terms.push({
+          symbolic: `-\\frac{q \\cdot ${formatNumber(dx)}^4}{24}`,
+          value: q_term
+        });
+      }
+      // +q · (xB - b)⁴ / 24 (компенсация после конца нагрузки)
+      if (load.b < xB) {
+        const dx = xB - load.b;
+        const q_comp = load.q * 1000 * Math.pow(dx, 4) / 24;
+        terms.push({
+          symbolic: `+\\frac{q \\cdot ${formatNumber(dx)}^4}{24}`,
+          value: q_comp
+        });
+      }
+    } else if (load.type === "force" && load.x < xB) {
+      // Сила: ±F · (xB - x)³ / 6
+      const dx = xB - load.x;
+      const sign = load.F >= 0 ? -1 : 1;
+      const F_term = sign * Math.abs(load.F) * 1000 * Math.pow(dx, 3) / 6;
+      terms.push({
+        symbolic: `${sign >= 0 ? "+" : "-"}\\frac{F \\cdot ${formatNumber(dx)}^3}{6}`,
+        value: F_term
+      });
+    }
+  }
+
+  // Сумма слагаемых
+  const sumTerms = terms.reduce((acc, t) => acc + t.value, 0);
+
+  html += `
+  <div class="formula">
+    \\[0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)} ${terms.map(t => t.symbolic).join(" ")}\\]
+  </div>
+  <p>Числовые значения слагаемых:</p>
+  <ul>
+    ${terms.map(t => `<li>\\(${t.symbolic.replace(/^[+-]/, "")} = ${formatNumber(t.value)}\\) Н·м³</li>`).join("\n    ")}
+  </ul>
+  <p>Сумма: \\(${formatNumber(sumTerms)}\\) Н·м³</p>
+  <div class="formula">
+    \\[\\theta_0 = -\\frac{${formatNumber(sumTerms)}}{${formatNumber(xB)} \\cdot EI} = -\\frac{${formatNumber(sumTerms)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(result.C1 ?? 0, 6)} \\text{ рад}\\]
+  </div>
+  <p><strong>Итог:</strong></p>
+  <div class="formula">
+    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 180 / Math.PI, 2)}°}\\]
+  </div>`;
+
+  return html;
 }
 
 /**
