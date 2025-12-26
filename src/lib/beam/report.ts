@@ -5,6 +5,58 @@
 import type { BeamInput, BeamResult, Reactions, Load } from "./types";
 import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula } from "./sections";
 
+/**
+ * Вычисляет результирующие распределённые нагрузки по участкам
+ * (с учётом наложения нескольких q на одном участке)
+ */
+function computeResultingLoads(input: BeamInput): Array<{ a: number; b: number; q: number }> {
+  const { L, loads } = input;
+  const distributedLoads = loads.filter(l => l.type === "distributed") as Array<{ type: "distributed"; q: number; a: number; b: number }>;
+
+  if (distributedLoads.length === 0) return [];
+
+  // Собираем все характерные точки
+  const points = new Set<number>();
+  points.add(0);
+  points.add(L);
+  for (const load of distributedLoads) {
+    if (load.a >= 0 && load.a <= L) points.add(load.a);
+    if (load.b >= 0 && load.b <= L) points.add(load.b);
+  }
+  const sortedPoints = Array.from(points).sort((a, b) => a - b);
+
+  // Вычисляем результирующую нагрузку на каждом участке
+  const segments: Array<{ a: number; b: number; q: number }> = [];
+  for (let i = 0; i < sortedPoints.length - 1; i++) {
+    const a = sortedPoints[i];
+    const b = sortedPoints[i + 1];
+    let totalQ = 0;
+    for (const load of distributedLoads) {
+      const clampedA = Math.max(0, Math.min(L, load.a));
+      const clampedB = Math.max(0, Math.min(L, load.b));
+      if (clampedA <= a && clampedB >= b) {
+        totalQ += load.q;
+      }
+    }
+    if (Math.abs(totalQ) > 0.001) {
+      segments.push({ a, b, q: totalQ });
+    }
+  }
+
+  // Объединяем смежные участки с одинаковой нагрузкой
+  const merged: typeof segments = [];
+  for (const seg of segments) {
+    const last = merged[merged.length - 1];
+    if (last && Math.abs(last.q - seg.q) < 0.001 && Math.abs(last.b - seg.a) < 0.001) {
+      last.b = seg.b;
+    } else {
+      merged.push({ ...seg });
+    }
+  }
+
+  return merged;
+}
+
 // Цвета для SVG (тёмный фон, как в приложении)
 const SVG_COLORS = {
   beam: "#64748b",
@@ -449,6 +501,25 @@ function buildReportHTML(data: ReportData): string {
       }
     }).join("\n    ")}
   </table>
+
+  ${(() => {
+    const resultingLoads = computeResultingLoads(input);
+    if (resultingLoads.length === 0) return "";
+
+    // Проверяем, отличаются ли результирующие от исходных
+    const distributedCount = input.loads.filter(l => l.type === "distributed").length;
+    if (resultingLoads.length === distributedCount && distributedCount === 1) return ""; // Если одна нагрузка - таблица не нужна
+
+    return `
+  <h3>Результирующие распределённые нагрузки (на схеме)</h3>
+  <p>При наложении нескольких распределённых нагрузок на одном участке они суммируются:</p>
+  <table>
+    <tr><th>Участок</th><th>Обозначение</th><th>Интенсивность</th><th>Границы участка</th></tr>
+    ${resultingLoads.map((seg, i) =>
+      `<tr><td>${i + 1}</td><td>\\(q_{${i + 1}}\\)</td><td>${formatNumber(seg.q)} кН/м</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`
+    ).join("\n    ")}
+  </table>`;
+  })()}
 
   <h2>3. Определение реакций опор</h2>
   ${buildReactionsSection(input, reactions)}
