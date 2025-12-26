@@ -214,9 +214,6 @@ function generateBeamSVG(input: BeamInput, result: BeamResult): string {
     svg += generateMoment(xToPx(load.x), beamY - beamThickness / 2, load.M);
   }
 
-  // Размерная линия — ниже опор
-  svg += generateDimensionLine(xToPx(0), xToPx(L), height - 25, L);
-
   // Подписи опор
   const isSimplySupported = beamType.startsWith("simply-supported");
   if (isSimplySupported) {
@@ -1185,10 +1182,19 @@ function buildMNPSection(
       <li>\\(\\theta(${formatNumber(L)}) = 0\\) — угол поворота в заделке равен нулю</li>
     </ul>`;
     derivationSection = `
-    <p>Начальные параметры \\(y_0\\) и \\(\\theta_0\\) находятся из условий в заделке \\(x = ${formatNumber(L)}\\).</p>
-    <p><strong>Результат:</strong></p>
+    <p><strong>Условие 1:</strong> \\(\\theta(${formatNumber(L)}) = 0\\)</p>
+    <p>Подставляя \\(x = ${formatNumber(L)}\\) в уравнение углов поворота:</p>
     <div class="formula">
-      \\[\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
+      \\[\\theta_0 + \\frac{1}{EI}\\sum\\limits_{\\text{нагрузки}} = 0\\]
+    </div>
+    <p><strong>Условие 2:</strong> \\(y(${formatNumber(L)}) = 0\\)</p>
+    <p>Подставляя \\(x = ${formatNumber(L)}\\) в уравнение прогибов:</p>
+    <div class="formula">
+      \\[y_0 + \\theta_0 \\cdot ${formatNumber(L)} + \\frac{1}{EI}\\sum\\limits_{\\text{нагрузки}} = 0\\]
+    </div>
+    <p>Решая систему, получаем:</p>
+    <div class="formula">
+      \\[\\boxed{\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}}\\]
     </div>`;
   } else {
     // Двухопорные балки (включая с консолями)
@@ -1325,11 +1331,19 @@ function buildTheta0Derivation(
   if (hasLeftOverhang) {
     // Балка с консолью слева - система из двух уравнений
     html = `
-  <p>Из двух граничных условий \\(y(${formatNumber(xA)}) = 0\\) и \\(y(${formatNumber(xB)}) = 0\\)
-  определяются оба начальных параметра \\(y_0\\) и \\(\\theta_0\\).</p>
-  <p><strong>Результат:</strong></p>
+  <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\) (прогиб на опоре A)</p>
+  <p>Подставляя \\(x = ${formatNumber(xA)}\\) в уравнение прогибов:</p>
   <div class="formula">
-    \\[y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}, \\quad \\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xA)} + \\frac{1}{EI}\\sum\\limits_{x_i < ${formatNumber(xA)}} = 0 \\quad (1)\\]
+  </div>
+  <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\) (прогиб на опоре B)</p>
+  <p>Подставляя \\(x = ${formatNumber(xB)}\\) в уравнение прогибов:</p>
+  <div class="formula">
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xB)} + \\frac{1}{EI}\\sum\\limits_{x_i < ${formatNumber(xB)}} = 0 \\quad (2)\\]
+  </div>
+  <p>Вычитая (1) из (2), исключаем \\(y_0\\) и находим \\(\\theta_0\\), затем из (1) находим \\(y_0\\):</p>
+  <div class="formula">
+    \\[\\boxed{\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}}\\]
   </div>`;
     return html;
   }
