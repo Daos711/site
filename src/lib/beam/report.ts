@@ -514,9 +514,9 @@ function buildReportHTML(data: ReportData): string {
   <h3>Результирующие распределённые нагрузки (на схеме)</h3>
   <p>При наложении нескольких распределённых нагрузок на одном участке они суммируются:</p>
   <table>
-    <tr><th>Участок</th><th>Обозначение</th><th>Интенсивность</th><th>Границы участка</th></tr>
+    <tr><th>Участок</th><th>Обозначение</th><th>Интенсивность</th><th>Направление</th><th>Границы участка</th></tr>
     ${resultingLoads.map((seg, i) =>
-      `<tr><td>${i + 1}</td><td>\\(q_{${i + 1}}\\)</td><td>${formatNumber(seg.q)} кН/м</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`
+      `<tr><td>${i + 1}</td><td>\\(q_{${i + 1}}\\)</td><td>${formatNumber(Math.abs(seg.q))} кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`
     ).join("\n    ")}
   </table>`;
   })()}
