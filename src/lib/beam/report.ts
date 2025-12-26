@@ -1717,7 +1717,8 @@ function buildSimplySupportedReactions(
   const forceSymbolic: string[] = ["R_A", "R_B"];
   for (const load of loadInfos) {
     if (load.type === "force") {
-      forceSymbolic.push(load.value >= 0 ? `- ${load.label}` : `+ |${load.label}|`);
+      // Знак уже учтён на схеме: вниз → минус, вверх → плюс
+      forceSymbolic.push(load.value >= 0 ? `- ${load.label}` : `+ ${load.label}`);
     } else if (load.type === "distributed") {
       forceSymbolic.push(`- F_{${load.label}}`);
     }
