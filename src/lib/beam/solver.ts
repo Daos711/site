@@ -25,9 +25,9 @@ export function solveBeam(input: BeamInput): BeamResult {
   const Q = createQFunction(input, reactions);
   const M = createMFunction(input, reactions);
 
-  // Находим экстремумы
-  const Mmax = findExtremum(M, events, L);
-  const Qmax = findExtremum(Q, events, L, true);
+  // Находим экстремумы аналитически (без округления!)
+  const Qmax = findQExtremum(Q, events, L);
+  const Mmax = findMExtremum(M, Q, events, L, input);
 
   // Подбор сечения по [σ] (если задано)
   let diameter: number | undefined;
@@ -481,60 +481,112 @@ function collectEvents(input: BeamInput, reactions: Reactions): number[] {
 }
 
 /**
- * Поиск экстремума функции
- * Проверяем значения в точках событий и слева/справа от разрывов
+ * Аналитический поиск экстремума Q(x)
+ * Q линейная на каждом участке → максимум |Q| на концах участков
  */
-function findExtremum(
-  fn: (x: number) => number,
+function findQExtremum(
+  Q: (x: number) => number,
   events: number[],
-  L: number,
-  checkJumps = false
+  L: number
 ): { value: number; x: number } {
   let maxAbsValue = 0;
   let maxX = 0;
   let actualValue = 0;
 
-  const eps = 0.001; // смещение для проверки до/после разрыва
+  const eps = 1e-9;
 
-  const checkPoint = (x: number, reportX?: number) => {
+  const checkPoint = (x: number) => {
     if (x < 0 || x > L) return;
-    const v = fn(x);
-    const absV = Math.abs(v);
-    if (absV > maxAbsValue) {
-      maxAbsValue = absV;
-      maxX = reportX ?? x;
+    // Проверяем слева и справа от точки (для скачков)
+    for (const offset of [-eps, eps]) {
+      const xi = x + offset;
+      if (xi < 0 || xi > L) continue;
+      const v = Q(xi);
+      if (Math.abs(v) > maxAbsValue) {
+        maxAbsValue = Math.abs(v);
+        maxX = x;
+        actualValue = v;
+      }
+    }
+  };
+
+  // Q линейная → max на концах участков (точках событий)
+  for (const e of events) {
+    checkPoint(e);
+  }
+  checkPoint(0);
+  checkPoint(L);
+
+  return { value: actualValue, x: maxX };
+}
+
+/**
+ * Аналитический поиск экстремума M(x)
+ * M квадратичная/линейная на каждом участке
+ * Кандидаты: концы участков + точка где Q=0 (вершина параболы)
+ */
+function findMExtremum(
+  M: (x: number) => number,
+  Q: (x: number) => number,
+  events: number[],
+  L: number,
+  input: BeamInput
+): { value: number; x: number } {
+  let maxAbsValue = 0;
+  let maxX = 0;
+  let actualValue = 0;
+
+  const eps = 1e-9;
+
+  const checkPoint = (x: number) => {
+    if (x < 0 || x > L) return;
+    const v = M(x);
+    if (Math.abs(v) > maxAbsValue) {
+      maxAbsValue = Math.abs(v);
+      maxX = x;
       actualValue = v;
     }
   };
 
-  // Проверяем точки событий и их окрестности
-  for (const e of events) {
+  // Сортируем события для получения участков
+  const sortedEvents = [...new Set([0, L, ...events])].sort((a, b) => a - b);
+
+  // Проверяем концы каждого участка
+  for (const e of sortedEvents) {
     checkPoint(e);
-    // Значения ДО и ПОСЛЕ точки (для поимки значений перед/после скачка)
-    checkPoint(e - eps, e);
-    checkPoint(e + eps, e);
   }
 
-  // Дополнительно проверяем точки между событиями (для параболических участков)
-  const sortedEvents = [...events].sort((a, b) => a - b);
+  // Для каждого участка ищем внутренний экстремум (где Q=0)
   for (let i = 0; i < sortedEvents.length - 1; i++) {
     const a = sortedEvents[i];
     const b = sortedEvents[i + 1];
-    const mid = (a + b) / 2;
-    checkPoint(mid);
-    checkPoint((a + mid) / 2);
-    checkPoint((mid + b) / 2);
+    const segLen = b - a;
+    if (segLen < eps) continue;
+
+    // Определяем q на участке
+    const midpoint = (a + b) / 2;
+    let q = 0;
+    for (const load of input.loads) {
+      if (load.type === "distributed") {
+        if (midpoint > load.a + eps && midpoint < load.b - eps) {
+          q += load.q;
+        }
+      }
+    }
+
+    // Если q != 0, ищем точку где Q = 0
+    if (Math.abs(q) > eps) {
+      const Qa = Q(a + eps);
+      // Q(s) = Qa - q*s, Q = 0 → s0 = Qa / q
+      const s0 = Qa / q;
+      if (s0 > eps && s0 < segLen - eps) {
+        const x0 = a + s0;
+        checkPoint(x0);
+      }
+    }
   }
 
-  // Проверяем границы
-  checkPoint(0);
-  checkPoint(L);
-
-  // Округляем к ближайшему 0.5 для отображения (17.43 → 17.5)
-  const roundedX = Math.round(maxX * 10) / 10;
-  const roundedValue = Math.round(actualValue * 2) / 2;
-
-  return { value: roundedValue, x: roundedX };
+  return { value: actualValue, x: maxX };
 }
 
 /**
