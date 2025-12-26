@@ -1,4 +1,5 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
+import { buildSectionFormulas, type SectionFormula } from "./sections";
 import type {
   BeamInput,
   BeamResult,
@@ -25,9 +26,9 @@ export function solveBeam(input: BeamInput): BeamResult {
   const Q = createQFunction(input, reactions);
   const M = createMFunction(input, reactions);
 
-  // Находим экстремумы аналитически (без округления!)
-  const Qmax = findQExtremum(Q, events, L);
-  const Mmax = findMExtremum(M, Q, events, L, input);
+  // Находим экстремумы аналитически через формулы участков
+  const Qmax = findQExtremum(input, reactions, Q, M);
+  const Mmax = findMExtremum(input, reactions, Q, M);
 
   // Подбор сечения по [σ] (если задано)
   let diameter: number | undefined;
@@ -481,40 +482,46 @@ function collectEvents(input: BeamInput, reactions: Reactions): number[] {
 }
 
 /**
- * Аналитический поиск экстремума Q(x)
+ * Аналитический поиск экстремума Q(x) через формулы участков
  * Q линейная на каждом участке → максимум |Q| на концах участков
+ * Используем Q() напрямую, чтобы избежать округления в buildSectionFormulas
  */
 function findQExtremum(
+  input: BeamInput,
+  reactions: Reactions,
   Q: (x: number) => number,
-  events: number[],
-  L: number
+  M: (x: number) => number
 ): { value: number; x: number } {
+  const sections = buildSectionFormulas(input, reactions, Q, M);
+
   let maxAbsValue = 0;
   let maxX = 0;
   let actualValue = 0;
 
-  const eps = 0.0001; // достаточно большой чтобы избежать численных проблем
+  const EPS = 1e-6;
 
-  const checkValue = (x: number, v: number) => {
-    if (Math.abs(v) > maxAbsValue) {
-      maxAbsValue = Math.abs(v);
-      maxX = x;
-      actualValue = v;
+  // Q линейная на каждом участке, поэтому экстремум — на концах
+  for (const sec of sections) {
+    const { interval } = sec;
+    const segLen = interval.b - interval.a;
+    const eps = segLen * 1e-6;
+
+    // Получаем точные значения Q без округления
+    const Qa = Q(interval.a + eps);
+    const Qb = Q(interval.b - eps);
+
+    // Проверяем Qa (значение в начале участка)
+    if (Math.abs(Qa) > maxAbsValue + EPS) {
+      maxAbsValue = Math.abs(Qa);
+      maxX = interval.a;
+      actualValue = Qa;
     }
-  };
 
-  // Q линейная → max на концах участков (точках событий)
-  // Проверяем слева и справа от каждой точки (для скачков Q)
-  const allPoints = [...new Set([0, L, ...events])].sort((a, b) => a - b);
-
-  for (const x of allPoints) {
-    // Значение слева от точки
-    if (x - eps >= 0) {
-      checkValue(x, Q(x - eps));
-    }
-    // Значение справа от точки
-    if (x + eps <= L) {
-      checkValue(x, Q(x + eps));
+    // Проверяем Qb (значение в конце участка)
+    if (Math.abs(Qb) > maxAbsValue + EPS) {
+      maxAbsValue = Math.abs(Qb);
+      maxX = interval.b;
+      actualValue = Qb;
     }
   }
 
@@ -522,67 +529,59 @@ function findQExtremum(
 }
 
 /**
- * Аналитический поиск экстремума M(x)
- * M квадратичная/линейная на каждом участке
- * Кандидаты: концы участков + точка где Q=0 (вершина параболы)
+ * Аналитический поиск экстремума M(x) через формулы участков
+ * M = Ma + Qa*s - (q/2)*s² на каждом участке
+ * Кандидаты: концы участков + вершина параболы при q ≠ 0
+ * Используем M() и Q() напрямую, чтобы избежать округления
  */
 function findMExtremum(
-  M: (x: number) => number,
+  input: BeamInput,
+  reactions: Reactions,
   Q: (x: number) => number,
-  events: number[],
-  L: number,
-  input: BeamInput
+  M: (x: number) => number
 ): { value: number; x: number } {
+  const sections = buildSectionFormulas(input, reactions, Q, M);
+
   let maxAbsValue = 0;
   let maxX = 0;
   let actualValue = 0;
 
-  const eps = 0.0001; // достаточно большой чтобы избежать численных проблем
+  const EPS = 1e-6;
 
-  const checkPoint = (x: number) => {
-    if (x < 0 || x > L) return;
-    const v = M(x);
-    if (Math.abs(v) > maxAbsValue) {
+  const checkValue = (x: number, v: number) => {
+    if (Math.abs(v) > maxAbsValue + EPS) {
       maxAbsValue = Math.abs(v);
       maxX = x;
       actualValue = v;
     }
   };
 
-  // Сортируем события для получения участков
-  const sortedEvents = [...new Set([0, L, ...events])].sort((a, b) => a - b);
+  for (const sec of sections) {
+    const { interval, q } = sec;
+    const segLen = interval.b - interval.a;
+    const eps = segLen * 1e-6;
 
-  // Проверяем концы каждого участка
-  for (const e of sortedEvents) {
-    checkPoint(e);
-  }
+    // Получаем точные значения M без округления
+    const Ma = M(interval.a + eps);
+    const Mb = M(interval.b - eps);
+    const Qa = Q(interval.a + eps);
 
-  // Для каждого участка ищем внутренний экстремум (где Q=0)
-  for (let i = 0; i < sortedEvents.length - 1; i++) {
-    const a = sortedEvents[i];
-    const b = sortedEvents[i + 1];
-    const segLen = b - a;
-    if (segLen < eps) continue;
+    // Проверяем концы участка
+    checkValue(interval.a, Ma);
+    checkValue(interval.b, Mb);
 
-    // Определяем q на участке (суммируем все распределённые нагрузки)
-    const midpoint = (a + b) / 2;
-    let q = 0;
-    for (const load of input.loads) {
-      if (load.type === "distributed") {
-        if (midpoint > load.a + eps && midpoint < load.b - eps) {
-          q += load.q;
-        }
-      }
-    }
-
-    // Если q != 0, ищем точку где Q = 0 (вершина параболы M)
-    if (Math.abs(q) > eps) {
-      const Qa = Q(a + eps);
-      // Q(s) = Qa - q*s, Q = 0 → s0 = Qa / q
+    // Если q ≠ 0, проверяем вершину параболы
+    // M(s) = Ma + Qa*s - (q/2)*s²
+    // dM/ds = Qa - q*s = 0  →  s₀ = Qa / q
+    if (Math.abs(q) > EPS) {
       const s0 = Qa / q;
+
+      // Проверяем, что s₀ внутри участка (0 < s₀ < segLen)
       if (s0 > eps && s0 < segLen - eps) {
-        const x0 = a + s0;
-        checkPoint(x0);
+        // Вычисляем M в вершине параболы напрямую через M()
+        const xVertex = interval.a + s0;
+        const Mvertex = M(xVertex);
+        checkValue(xVertex, Mvertex);
       }
     }
   }
