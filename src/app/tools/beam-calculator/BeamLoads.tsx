@@ -97,7 +97,7 @@ export function DistributedLoadArrows({
               y2={beamBottomY + markerOffset}
               stroke={COLORS.distributedLoad}
               strokeWidth={2}
-              markerEnd={`url(#${markerPrefix}arrowBlueUp}`}
+              markerEnd={`url(#${markerPrefix}arrowBlueUp)`}
             />
           );
         })}
