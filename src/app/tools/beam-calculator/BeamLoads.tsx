@@ -5,10 +5,10 @@ import { COLORS } from "./constants";
 // baseY - верхняя поверхность балки (реакции всегда относительно верхней плоскости)
 // value >= 0: стрелка ВВЕРХ - начинается ОТ верхней плоскости, уходит вверх
 // value < 0: стрелка ВНИЗ - приходит сверху, наконечник касается верхней плоскости
-export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "", fontSize = 12, arrowLength = 40 }: {
-  x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string; fontSize?: number; arrowLength?: number
+export function ReactionArrow({ x, baseY, value, name, subscript, valueText, labelSide = "right", labelYOffset = 0, labelXOffset = 0, markerPrefix = "" }: {
+  x: number; baseY: number; value: number; name: string; subscript?: string; valueText: string; labelSide?: "left" | "right"; labelYOffset?: number; labelXOffset?: number; markerPrefix?: string
 }) {
-  const arrowLen = arrowLength;
+  const arrowLen = 40;
   // Маркер 6x6 с refX=3 при strokeWidth=2 масштабируется до 12x12
   // Острие выступает на 6px от конца линии
   const markerOffset = 8;
@@ -30,14 +30,13 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
 
   const textX = x + (labelSide === "left" ? -10 : 10) + labelXOffset;
   const textAnchor: "start" | "end" = labelSide === "left" ? "end" : "start";
-  const subFontSize = Math.round(fontSize * 0.75);
 
   return (
     <g>
       <line x1={x} y1={startY} x2={x} y2={endY} stroke={COLORS.reaction} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowGreen)`} />
-      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={fontSize} fontWeight="600" dominantBaseline="middle" textAnchor={textAnchor}>
+      <text x={textX} y={textY} fill={COLORS.reaction} fontSize={12} fontWeight="600" dominantBaseline="middle" textAnchor={textAnchor}>
         {name}
-        {subscript && <tspan dy="3" fontSize={subFontSize}>{subscript}</tspan>}
+        {subscript && <tspan dy="3" fontSize="9">{subscript}</tspan>}
         {subscript && <tspan dy="-3"> </tspan>}
         <tspan> = {valueText}</tspan>
       </text>
@@ -49,11 +48,11 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
 // q > 0: сверху балки, стрелки вниз
 // q < 0: снизу балки, стрелки вверх
 export function DistributedLoadArrows({
-  x1, x2, beamTopY, beamBottomY, q, label, markerPrefix = "", fontSize = 12, arrowLength = 28
+  x1, x2, beamTopY, beamBottomY, q, label, markerPrefix = ""
 }: {
-  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string; fontSize?: number; arrowLength?: number
+  x1: number; x2: number; beamTopY: number; beamBottomY: number; q: number; label: string; markerPrefix?: string
 }) {
-  const arrowLen = arrowLength;
+  const arrowLen = 28;
   const markerOffset = 8; // маркер масштабируется, острие выступает на ~6px
   const numArrows = Math.max(4, Math.floor((x2 - x1) / 35));
 
@@ -77,7 +76,7 @@ export function DistributedLoadArrows({
             />
           );
         })}
-        <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 8} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize} fontWeight="600">
+        <text x={(x1 + x2) / 2} y={beamTopY - arrowLen - 8} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
           {label}
         </text>
       </g>
@@ -102,7 +101,7 @@ export function DistributedLoadArrows({
             />
           );
         })}
-        <text x={(x1 + x2) / 2} y={beamBottomY + arrowLen + 18} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={fontSize} fontWeight="600">
+        <text x={(x1 + x2) / 2} y={beamBottomY + arrowLen + 18} textAnchor="middle" fill={COLORS.distributedLoad} fontSize={12} fontWeight="600">
           {label}
         </text>
       </g>
@@ -113,8 +112,8 @@ export function DistributedLoadArrows({
 // Сосредоточенная сила (КРАСНАЯ)
 // y - поверхность балки (верхняя для F>0, нижняя для F<0)
 // F > 0: вниз к верхней, F < 0: вверх к нижней
-export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "", fontSize = 13, arrowLength = 50 }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string; fontSize?: number; arrowLength?: number }) {
-  const arrowLen = arrowLength;
+export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: number; y: number; F: number; label: string; maxX?: number; markerPrefix?: string }) {
+  const arrowLen = 50;
   const markerOffset = 8; // маркер масштабируется, острие выступает на ~6px
   const pointsDown = F >= 0;
 
@@ -137,7 +136,7 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "", fontSize =
     return (
       <g>
         <line x1={x} y1={y - arrowLen} x2={x} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
-        <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={fontSize} fontWeight="600" textAnchor={textAnchor}>
+        <text x={labelX} y={y - arrowLen - 5} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
@@ -147,7 +146,7 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "", fontSize =
     return (
       <g>
         <line x1={x} y1={y + arrowLen} x2={x} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd={`url(#${markerPrefix}arrowRed)`} />
-        <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={fontSize} fontWeight="600" textAnchor={textAnchor}>
+        <text x={labelX} y={y + arrowLen + 15} fill={COLORS.pointForce} fontSize={13} fontWeight="600" textAnchor={textAnchor}>
           {label}
         </text>
       </g>
@@ -158,9 +157,9 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "", fontSize =
 // Момент (ножка + дуга со стрелкой, ФИОЛЕТОВАЯ)
 // M > 0: против часовой (↺), стрелка слева
 // M < 0: по часовой (↻), стрелка справа
-export function MomentArrow({ x, y, M, label, markerPrefix = "", fontSize = 12, arcRadius = 20, legHeight = 35 }: { x: number; y: number; M: number; label: string; markerPrefix?: string; fontSize?: number; arcRadius?: number; legHeight?: number }) {
-  const H = legHeight;
-  const R = arcRadius;
+export function MomentArrow({ x, y, M, label, markerPrefix = "" }: { x: number; y: number; M: number; label: string; markerPrefix?: string }) {
+  const H = 35;
+  const R = 20;
   const gap = 6;
 
   const Cx = x;
@@ -221,7 +220,7 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "", fontSize = 12, 
         y={labelPos.y}
         textAnchor={labelAnchor}
         fill={COLORS.moment}
-        fontSize={fontSize}
+        fontSize={12}
         fontWeight="600"
       >
         {label}
