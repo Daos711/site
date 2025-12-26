@@ -423,8 +423,8 @@ function buildReportHTML(data: ReportData): string {
   <h1>Расчёт балки</h1>
 
   <h2>1. Расчётная схема</h2>
-  <div style="margin: 16px 0; text-align: center; overflow: visible;">
-    <div style="transform: scale(1.8); transform-origin: top center; margin-bottom: 120px;">
+  <div style="margin: 0 0 60px 0; text-align: center; overflow: visible;">
+    <div style="transform: scale(2.0); transform-origin: top center;">
       ${beamSchemaSVG || generateBeamSVG(input, result)}
     </div>
   </div>
