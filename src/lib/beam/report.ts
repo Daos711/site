@@ -801,11 +801,11 @@ function buildQDerivation(
   return `
   <p>Сумма проекций сил слева от сечения на вертикальную ось:</p>
   <div class="formula">
-    \\(Q(${varName}) = ${symbolicStr}\\)
+    \\[Q(${varName}) = ${symbolicStr}\\]
   </div>
   <p>Подставляем числовые значения:</p>
   <div class="formula">
-    \\(Q(${varName}) = ${numericStr}\\)
+    \\[Q(${varName}) = ${numericStr}\\]
   </div>`;
 }
 
@@ -894,11 +894,11 @@ function buildMDerivation(
   return `
   <p>Сумма моментов сил слева от сечения относительно точки сечения:</p>
   <div class="formula">
-    \\(M(${varName}) = ${symbolicStr}\\)
+    \\[M(${varName}) = ${symbolicStr}\\]
   </div>
   <p>Подставляем числовые значения:</p>
   <div class="formula">
-    \\(M(${varName}) = ${numericStr}\\)
+    \\[M(${varName}) = ${numericStr}\\]
   </div>`;
 }
 
