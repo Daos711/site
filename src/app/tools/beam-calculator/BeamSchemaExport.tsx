@@ -25,13 +25,11 @@ export function BeamSchemaExport({ input, result }: Props) {
   const { L, loads, beamType } = input;
 
   // Размеры SVG (крупнее для лучшей читаемости)
-  // viewBox задаёт внутренние координаты, style задаёт размер отрисовки
-  // Увеличиваем style в 2x — всё масштабируется пропорционально
   const width = 1100;
   const height = 400;
   const padding = { left: 100, right: 100, top: 130, bottom: 100 };
   const beamY = padding.top + 55;
-  const beamThickness = 20; // толщина балки без изменений
+  const beamThickness = 24;
 
   const chartWidth = width - padding.left - padding.right;
   const xToPx = (x: number) => padding.left + (x / L) * chartWidth;
@@ -45,8 +43,8 @@ export function BeamSchemaExport({ input, result }: Props) {
         position: "absolute",
         left: "-9999px",
         top: "-9999px",
-        width: "2200px",
-        height: "800px",
+        width: "1100px",
+        height: "400px",
         background: "#ffffff",
       }}
     >
