@@ -506,7 +506,9 @@ function findQExtremum(
     }
   }
 
-  return { value: actualValue, x: maxX };
+  // Округляем значение до разумной точности (2 знака после запятой)
+  const roundedValue = Math.round(actualValue * 100) / 100;
+  return { value: roundedValue, x: maxX };
 }
 
 /**
@@ -575,7 +577,9 @@ function findMExtremum(
     }
   }
 
-  return { value: actualValue, x: maxX };
+  // Округляем значение до разумной точности (2 знака после запятой)
+  const roundedValue = Math.round(actualValue * 100) / 100;
+  return { value: roundedValue, x: maxX };
 }
 
 /**
