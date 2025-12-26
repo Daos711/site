@@ -78,15 +78,33 @@ export function DiagramPanel({ title, unit, segments, xToPx, y, height, color, c
         }
 
         const fillLines: React.ReactNode[] = [];
-        const step = Math.max(1, Math.floor(segment.length / 40));
-        for (let i = 0; i < segment.length; i += step) {
-          const p = segment[i];
-          const px = xToPx(p.x);
-          const py = scaleY(p.value);
+        // Фиксированный шаг штриховки в пикселях для одинаковой частоты
+        const hatchSpacingPx = 12;
+        const firstX = segment[0].x;
+        const lastX = segment[segment.length - 1].x;
+        const startPx = xToPx(firstX);
+        const endPx = xToPx(lastX);
+
+        // Интерполяция значения по X
+        const getValueAtX = (targetX: number): number => {
+          for (let i = 0; i < segment.length - 1; i++) {
+            if (segment[i].x <= targetX && segment[i + 1].x >= targetX) {
+              const t = (targetX - segment[i].x) / (segment[i + 1].x - segment[i].x);
+              return segment[i].value + t * (segment[i + 1].value - segment[i].value);
+            }
+          }
+          return segment[segment.length - 1].value;
+        };
+
+        for (let px = startPx; px <= endPx; px += hatchSpacingPx) {
+          // Обратное преобразование px -> x
+          const x = firstX + ((px - startPx) / (endPx - startPx)) * (lastX - firstX);
+          const value = getValueAtX(x);
+          const py = scaleY(value);
           if (Math.abs(py - zeroY) > 1) {
             fillLines.push(
               <line
-                key={i}
+                key={px}
                 x1={px}
                 y1={zeroY}
                 x2={px}
