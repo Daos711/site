@@ -483,9 +483,9 @@ function buildReportHTML(data: ReportData): string {
   <table>
     <tr><th>Параметр</th><th>Значение</th></tr>
     <tr><td>Тип балки</td><td>${formatBeamType(input.beamType)}</td></tr>
-    <tr><td>Длина балки \\(L\\)</td><td>${formatNumber(input.L)} м</td></tr>
-    ${input.E ? `<tr><td>Модуль упругости \\(E\\)</td><td>${formatNumber(input.E / 1e9)} ГПа</td></tr>` : ""}
-    ${input.I ? `<tr><td>Момент инерции \\(I\\)</td><td>${formatNumber(input.I * 1e8)} см⁴</td></tr>` : ""}
+    <tr><td>Длина балки \\(L\\)</td><td>\\(${formatNumber(input.L)}\\) м</td></tr>
+    ${input.E ? `<tr><td>Модуль упругости \\(E\\)</td><td>\\(${formatNumber(input.E / 1e9)}\\) ГПа</td></tr>` : ""}
+    ${input.I ? `<tr><td>Момент инерции \\(I\\)</td><td>\\(${formatNumber(input.I * 1e8)}\\) см⁴</td></tr>` : ""}
   </table>
 
   <h3>Нагрузки</h3>
