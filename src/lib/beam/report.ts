@@ -698,12 +698,18 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
   <div class="formula-block">
   <p>Локальная координата: \\(${varName} = x - ${formatNumber(section.interval.a)}\\), где \\(${varName} \\in [0; ${formatNumber(section.interval.b - section.interval.a)}]\\) м.</p>
   ${Math.abs(section.q) > 1e-9 ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
-  <p><strong>Поперечная сила:</strong> \\(Q(${varName}) = ${formatQFormula(section.polyQ, varDisplay)}\\) кН</p>
-  <p><strong>Изгибающий момент:</strong> \\(M(${varName}) = ${formatMFormula(section.polyM, varDisplay)}\\) кН·м</p>
-  <p><strong>Значения на границах:</strong></p>
+  <p><strong>Поперечная сила:</strong></p>
+  <div class="formula">
+    \\[\\boxed{Q_{${idx}}(${varName}) = ${formatQFormula(section.polyQ, varDisplay)} \\text{ кН}}\\]
+  </div>
+  <p><strong>Изгибающий момент:</strong></p>
+  <div class="formula">
+    \\[\\boxed{M_{${idx}}(${varName}) = ${formatMFormula(section.polyM, varDisplay)} \\text{ кН·м}}\\]
+  </div>
+  <p><strong>Проверка на границах:</strong></p>
   <ul>
-    <li>При \\(${varName} = 0\\) (\\(x = ${formatNumber(section.interval.a)}^+\\)): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
-    <li>При \\(${varName} = ${formatNumber(section.interval.b - section.interval.a)}\\) (\\(x = ${formatNumber(section.interval.b)}^-\\)): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
+    <li>При \\(${varName} = 0\\): \\(Q = ${formatNumber(section.Qa)}\\) кН, \\(M = ${formatNumber(section.Ma)}\\) кН·м</li>
+    <li>При \\(${varName} = ${formatNumber(section.interval.b - section.interval.a)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
   </ul>
   </div>`;
 }
@@ -721,15 +727,16 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
-    \\(W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)} \\text{ Н·м}}{${sigma_MPa} \\text{ МПа}} = ${W_cm3}\\) см³
+    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3} \\text{ см}^3\\]
   </div>
+  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value) * 1000)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>
   <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
-    \\(d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm}\\) мм
+    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm} \\text{ мм}}\\]
   </div>
   <p>Момент инерции:</p>
   <div class="formula">
-    \\(I = \\frac{\\pi d^4}{64} = ${I_cm4}\\) см⁴
+    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
 }
 
@@ -741,10 +748,12 @@ function buildMNPSection(
   result: BeamResult,
   sectionNum: number
 ): string {
-  if (!result.y || !result.theta || !input.E || !input.I) return "";
+  // I может быть в input.I (задан вручную) или result.I (вычислен из подбора сечения)
+  const I_used = result.I ?? input.I;
+  if (!result.y || !result.theta || !input.E || !I_used) return "";
 
-  const { beamType, L, E, I } = input;
-  const EI_kNm2 = (E * I) / 1000; // кН·м²
+  const { beamType, L, E } = input;
+  const EI_kNm2 = (E * I_used) / 1000; // кН·м²
   const isCantilever = beamType.startsWith("cantilever");
   const isLeft = beamType === "cantilever-left";
 
@@ -851,7 +860,7 @@ function buildMNPSection(
 
   <p><strong>Жёсткость сечения:</strong></p>
   <div class="formula">
-    \\(EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I * 1e8)} \\text{ см}^4 = ${formatNumber(EI_kNm2)}\\) кН·м²
+    \\(EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I_used * 1e8)} \\text{ см}^4 = ${formatNumber(EI_kNm2)}\\) кН·м²
   </div>
 
   ${boundarySection}
