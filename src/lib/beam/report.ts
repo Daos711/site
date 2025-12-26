@@ -1003,7 +1003,8 @@ function buildConcreteDeflectionEquation(
   terms.push("EI \\cdot y_0");
   terms.push("+ EI \\cdot \\theta_0 \\cdot x");
 
-  // Реакции (только внутри балки, не на конце)
+  // Реакции (включаем только если точка приложения < L, иначе скобка Маколея ≤ 0)
+  // RA - если опора A не на конце балки
   if (RA !== undefined && Math.abs(RA) > 1e-9 && xA < L - 1e-9) {
     const sign = RA >= 0 ? "+" : "-";
     if (Math.abs(xA) < 1e-9) {
@@ -1013,8 +1014,11 @@ function buildConcreteDeflectionEquation(
     }
   }
 
-  // RB не включаем - он на конце балки (x = L), скобка (x-L) ≤ 0
-  // if (RB !== undefined && Math.abs(RB) > 1e-9 && xB < L - 1e-9) { ... }
+  // RB - включаем если опора B не на конце балки (балка с консолью справа)
+  if (RB !== undefined && Math.abs(RB) > 1e-9 && xB < L - 1e-9) {
+    const sign = RB >= 0 ? "+" : "-";
+    terms.push(`${sign} \\frac{R_B \\cdot (x - ${formatNumber(xB)})^3}{6}`);
+  }
 
   // Реакции консоли
   if (Rf !== undefined && Math.abs(Rf) > 1e-9) {
@@ -1156,30 +1160,47 @@ function buildMNPSection(
     }
   }
 
-  // Граничные условия
+  // Граничные условия - зависят от типа балки
   let boundaryConditions: string;
   let derivationSection: string;
+  const isCantileverLeft = beamType === "cantilever-left";
+  const isCantileverRight = beamType === "cantilever-right";
 
-  if (isCantilever) {
-    const xf = result.reactions.xf ?? 0;
+  if (isCantileverLeft) {
+    // Заделка слева: y(0)=0, θ(0)=0
     boundaryConditions = `
     <ul>
-      <li>\\(y(${formatNumber(xf)}) = 0\\) — прогиб в заделке равен нулю</li>
-      <li>\\(\\theta(${formatNumber(xf)}) = 0\\) — угол поворота в заделке равен нулю</li>
+      <li>\\(y(0) = 0\\) — прогиб в заделке равен нулю</li>
+      <li>\\(\\theta(0) = 0\\) — угол поворота в заделке равен нулю</li>
     </ul>`;
     derivationSection = `
-    <p>Из граничных условий:</p>
+    <p>Из граничных условий в точке \\(x = 0\\) (заделка):</p>
     <div class="formula">
       \\[y_0 = 0, \\quad \\theta_0 = 0\\]
     </div>`;
+  } else if (isCantileverRight) {
+    // Заделка справа: y(L)=0, θ(L)=0 - начальные параметры НЕ нулевые
+    boundaryConditions = `
+    <ul>
+      <li>\\(y(${formatNumber(L)}) = 0\\) — прогиб в заделке равен нулю</li>
+      <li>\\(\\theta(${formatNumber(L)}) = 0\\) — угол поворота в заделке равен нулю</li>
+    </ul>`;
+    derivationSection = `
+    <p>Начальные параметры \\(y_0\\) и \\(\\theta_0\\) находятся из условий в заделке \\(x = ${formatNumber(L)}\\).</p>
+    <p><strong>Результат:</strong></p>
+    <div class="formula">
+      \\[\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
+    </div>`;
   } else {
+    // Двухопорные балки (включая с консолями)
     boundaryConditions = `
     <ul>
       <li>\\(y(${formatNumber(xA)}) = 0\\) — прогиб на опоре A равен нулю</li>
       <li>\\(y(${formatNumber(xB)}) = 0\\) — прогиб на опоре B равен нулю</li>
     </ul>`;
 
-    // Для двухопорной балки y₀ = 0 (опора в начале), находим θ₀
+    // Для балки с консолью слева (xA > 0): y₀ ≠ 0
+    // Для обычной двухопорной (xA = 0): y₀ = 0
     derivationSection = buildTheta0Derivation(input, result, EI);
   }
 
@@ -1234,10 +1255,10 @@ function buildMNPSection(
   ${buildConcreteDeflectionEquation(input, result)}
 
   <h3>Начальные параметры и граничные условия</h3>
-  <p>Начальные параметры в точке \\(x = ${formatNumber(xA)}\\):</p>
+  <p>Начальные параметры в точке \\(x = 0\\):</p>
   <ul>
-    <li>\\(y_0\\) — прогиб в начале координат</li>
-    <li>\\(\\theta_0\\) — угол поворота в начале координат</li>
+    <li>\\(y_0 = y(0)\\) — прогиб в начале координат</li>
+    <li>\\(\\theta_0 = \\theta(0)\\) — угол поворота в начале координат</li>
   </ul>
   <p><strong>Граничные условия:</strong></p>
   ${boundaryConditions}
@@ -1298,13 +1319,26 @@ function buildTheta0Derivation(
   const xB = result.reactions.xB ?? input.L;
   const RA = result.reactions.RA ?? 0;
   const { loads } = input;
+  const hasLeftOverhang = xA > 1e-9; // Есть консоль слева
 
-  // Условие y(0) = 0 даёт y₀ = 0
-  // Условие y(xB) = 0 даёт уравнение для θ₀
+  let html: string;
 
-  let html = `
-  <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\)</p>
-  <p>При \\(x = ${formatNumber(xA)}\\) получаем: \\(y_0 = 0\\)</p>
+  if (hasLeftOverhang) {
+    // Балка с консолью слева - система из двух уравнений
+    html = `
+  <p>Из двух граничных условий \\(y(${formatNumber(xA)}) = 0\\) и \\(y(${formatNumber(xB)}) = 0\\)
+  определяются оба начальных параметра \\(y_0\\) и \\(\\theta_0\\).</p>
+  <p><strong>Результат:</strong></p>
+  <div class="formula">
+    \\[y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}, \\quad \\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
+  </div>`;
+    return html;
+  }
+
+  // Обычная двухопорная балка (xA = 0) - y₀ = 0, находим θ₀
+  html = `
+  <p><strong>Условие 1:</strong> \\(y(0) = 0\\)</p>
+  <p>При \\(x = 0\\) получаем: \\(y_0 = 0\\)</p>
 
   <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\)</p>
   <p>Подставляем \\(x = ${formatNumber(xB)}\\) и \\(y_0 = 0\\):</p>`;
