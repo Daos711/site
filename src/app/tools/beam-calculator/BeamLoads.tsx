@@ -190,8 +190,8 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX, liftLabel
   let labelY: number;
   let labelAnchor: "start" | "end";
 
-  if (liftLabel || nearRightEdge) {
-    // Подпись слева и выше дуги (при наложении или у правого края)
+  if (nearRightEdge) {
+    // У правого края — подпись слева и выше дуги
     labelX = pLeft.x - 8;
     labelY = Cy - R - 5;
     labelAnchor = "end";
@@ -205,9 +205,14 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX, liftLabel
     labelAnchor = "end";
   }
 
-  if (!isCW && !nearRightEdge && !liftLabel && labelX < minX + 60) {
+  if (!isCW && !nearRightEdge && labelX < minX + 60) {
     labelX = pRight.x + 8;
     labelAnchor = "start";
+  }
+
+  // При наложении с силой/реакцией — поднимаем подпись выше
+  if (liftLabel) {
+    labelY = Cy - R - 5;
   }
 
   if (labelY < minY) {

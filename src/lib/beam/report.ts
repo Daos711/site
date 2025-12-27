@@ -53,7 +53,7 @@ function formatLongFormula(lhs: string, terms: string[], termsPerLine: number = 
  * Форматирует слагаемые внутри скобок с переносом строк
  * Для формул типа \frac{1}{EI}\left(...\right)
  */
-function formatBracketedTerms(terms: string[], maxPerLine: number = 3): { latex: string; isMultiline: boolean } {
+function formatBracketedTerms(terms: string[], maxPerLine: number = 4): { latex: string; isMultiline: boolean } {
   if (terms.length === 0) return { latex: "", isMultiline: false };
   if (terms.length <= maxPerLine) {
     return { latex: terms.join(" "), isMultiline: false };
@@ -856,7 +856,7 @@ function buildQDerivation(
 
   // Форматируем с переносами если формула длинная
   const symbolic = formatLongFormula(`Q(${varName})`, symbolicTerms, 4);
-  const numeric = formatLongFormula(`Q(${varName})`, numericTerms, 3);
+  const numeric = formatLongFormula(`Q(${varName})`, numericTerms, 4);
 
   const symbolicClass = symbolic.isMultiline ? "formula formula-multiline" : "formula";
   const numericClass = numeric.isMultiline ? "formula formula-multiline" : "formula";
@@ -953,7 +953,7 @@ function buildMDerivation(
 
   // Форматируем с переносами если формула длинная
   const symbolic = formatLongFormula(`M(${varName})`, symbolicTerms, 4);
-  const numeric = formatLongFormula(`M(${varName})`, numericTerms, 3);
+  const numeric = formatLongFormula(`M(${varName})`, numericTerms, 4);
 
   const symbolicClass = symbolic.isMultiline ? "formula formula-multiline" : "formula";
   const numericClass = numeric.isMultiline ? "formula formula-multiline" : "formula";
@@ -1397,7 +1397,7 @@ function buildTheta0Derivation(
 
     // Форматируем условие 1 с переносом при большом количестве слагаемых
     const termsAtASymbolic = termsAtA.map(t => t.symbolic);
-    const { latex: bracketsA, isMultiline: multiA } = formatBracketedTerms(termsAtASymbolic, 3);
+    const { latex: bracketsA, isMultiline: multiA } = formatBracketedTerms(termsAtASymbolic, 4);
 
     html = `
   <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\) (прогиб на опоре A)</p>
@@ -1420,7 +1420,7 @@ function buildTheta0Derivation(
 
     // Форматируем условие 2 с переносом при большом количестве слагаемых
     const termsAtBSymbolic = termsAtB.map(t => t.symbolic);
-    const { latex: bracketsB, isMultiline: multiB } = formatBracketedTerms(termsAtBSymbolic, 3);
+    const { latex: bracketsB, isMultiline: multiB } = formatBracketedTerms(termsAtBSymbolic, 4);
 
     html += `
   <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\) (прогиб на опоре B)</p>
