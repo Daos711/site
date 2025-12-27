@@ -1892,7 +1892,7 @@ function buildCantileverReactions(
   html += `
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\(R = ${formatNumber(Rf)}\\) кН ${Rf >= 0 ? "(вверх)" : "(вниз)"}, \\quad \\(M_f = ${formatNumber(Mf)}\\) кН·м
+    \\(R = ${formatNumber(Rf)}\\) кН ${Rf >= 0 ? "(вверх)" : "(вниз)"}, \\(M_f = ${formatNumber(Mf)}\\) кН·м
   </div>`;
 
   return html;

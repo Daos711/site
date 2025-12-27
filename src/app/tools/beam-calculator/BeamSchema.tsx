@@ -246,8 +246,8 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const sweepFlag = isCW ? 1 : 0;
 
           // Подпись всегда справа и выше, чтобы не уходила за край
-          const labelX = px + R + 25;
-          const labelY = Cy - 25;
+          const labelX = px + R + 8;
+          const labelY = Cy - 20;
 
           elements.push(
             <g key="Mf">

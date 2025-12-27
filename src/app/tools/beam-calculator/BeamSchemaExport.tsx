@@ -362,8 +362,8 @@ export function BeamSchemaExport({ input, result }: Props) {
           const sweepFlag = isCW ? 1 : 0;
 
           // Подпись всегда справа и выше
-          const labelX = px + R + 20;
-          const labelY = Cy - 18;
+          const labelX = px + R + 6;
+          const labelY = Cy - 14;
 
           elements.push(
             <g key="Mf">
