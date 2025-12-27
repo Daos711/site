@@ -569,9 +569,9 @@ function buildReportHTML(data: ReportData): string {
   <h2>5. Экстремальные значения</h2>
   <table>
     <tr><th>Величина</th><th>Значение</th><th>Координата</th></tr>
-    <tr><td>\\(|Q|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(Qmax.value))} кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
-    <tr><td>\\(|M|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(Mmax.value))} кН·м</td><td>\\(x = ${formatNumber(Mmax.x)}\\) м</td></tr>
-    ${y ? `<tr><td>\\(|y|_{\\max}\\)</td><td class="result">${formatNumber(Math.abs(yMax.value) * 1000)} мм</td><td>\\(x = ${formatNumber(yMax.x)}\\) м</td></tr>` : ""}
+    <tr><td>\\(|Q|_{\\max}\\)</td><td class="result">\\(${formatNumber(Math.abs(Qmax.value))}\\) кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
+    <tr><td>\\(|M|_{\\max}\\)</td><td class="result">\\(${formatNumber(Math.abs(Mmax.value))}\\) кН·м</td><td>\\(x = ${formatNumber(Mmax.x)}\\) м</td></tr>
+    ${y ? `<tr><td>\\(|y|_{\\max}\\)</td><td class="result">\\(${formatNumber(Math.abs(yMax.value) * 1000)}\\) мм</td><td>\\(x = ${formatNumber(yMax.x)}\\) м</td></tr>` : ""}
   </table>
 
   ${hasDiagrams ? `
@@ -686,10 +686,10 @@ function buildInputDataSection(input: BeamInput): string {
   <table>
     <tr><th>Параметр</th><th>Значение</th></tr>
     <tr><td>Тип балки</td><td>${formatBeamType(input.beamType)}</td></tr>
-    <tr><td>Длина балки \\(L\\)</td><td>${formatNumber(input.L)} м</td></tr>
-    ${input.E ? `<tr><td>Модуль упругости \\(E\\)</td><td>${formatNumber(input.E / 1e9)} ГПа</td></tr>` : ""}
-    ${input.I ? `<tr><td>Момент инерции \\(I\\)</td><td>${formatNumber(input.I * 1e8)} см⁴</td></tr>` : ""}
-    ${input.sigma ? `<tr><td>Допускаемое напряжение \\([\\sigma]\\)</td><td>${formatNumber(input.sigma / 1e6)} МПа</td></tr>` : ""}
+    <tr><td>Длина балки \\(L\\)</td><td>\\(${formatNumber(input.L)}\\) м</td></tr>
+    ${input.E ? `<tr><td>Модуль упругости \\(E\\)</td><td>\\(${formatNumber(input.E / 1e9)}\\) ГПа</td></tr>` : ""}
+    ${input.I ? `<tr><td>Момент инерции \\(I\\)</td><td>\\(${formatNumber(input.I * 1e8)}\\) см⁴</td></tr>` : ""}
+    ${input.sigma ? `<tr><td>Допускаемое напряжение \\([\\sigma]\\)</td><td>\\(${formatNumber(input.sigma / 1e6)}\\) МПа</td></tr>` : ""}
   </table>
 
   <h3>Нагрузки</h3>
@@ -698,13 +698,13 @@ function buildInputDataSection(input: BeamInput): string {
     ${input.loads.map(load => {
       if (load.type === "distributed") {
         const dir = load.q >= 0 ? "↓" : "↑";
-        return `<tr><td>Распределённая \\(q\\)</td><td>${formatNumber(Math.abs(load.q))} кН/м ${dir}</td><td>от ${formatNumber(load.a)} до ${formatNumber(load.b)} м</td></tr>`;
+        return `<tr><td>Распределённая \\(q\\)</td><td>\\(${formatNumber(Math.abs(load.q))}\\) кН/м ${dir}</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
       } else if (load.type === "force") {
         const dir = load.F >= 0 ? "↓" : "↑";
-        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>${formatNumber(Math.abs(load.F))} кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>\\(${formatNumber(Math.abs(load.F))}\\) кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
       } else {
         const dir = load.M >= 0 ? "↺" : "↻";
-        return `<tr><td>Момент \\(M\\)</td><td>${formatNumber(Math.abs(load.M))} кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        return `<tr><td>Момент \\(M\\)</td><td>\\(${formatNumber(Math.abs(load.M))}\\) кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
       }
     }).join("\n    ")}
   </table>`;
@@ -721,7 +721,7 @@ function buildInputDataSection(input: BeamInput): string {
     <tr><th>Обозначение</th><th>Интенсивность</th><th>Направление</th><th>Участок</th></tr>
     ${resultingLoads.map((seg, i) => {
       const qLabel = resultingLoads.length === 1 ? "q" : `q_{${i + 1}}`;
-      return `<tr><td>\\(${qLabel}\\)</td><td>${formatNumber(Math.abs(seg.q))} кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`;
+      return `<tr><td>\\(${qLabel}\\)</td><td>\\(${formatNumber(Math.abs(seg.q))}\\) кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от \\(${formatNumber(seg.a)}\\) до \\(${formatNumber(seg.b)}\\) м</td></tr>`;
     }).join("\n    ")}
   </table>`;
   }
@@ -1251,9 +1251,9 @@ function buildMNPSection(
     const theta = result.theta!(x);
     const y = result.y!(x);
     return `<tr>
-      <td>${formatNumber(x)}</td>
-      <td>${formatNumber(theta * 1000, 3)}</td>
-      <td>${formatNumber(y * 1000, 2)}</td>
+      <td>\\(${formatNumber(x)}\\)</td>
+      <td>\\(${formatNumber(theta * 1000, 3)}\\)</td>
+      <td>\\(${formatNumber(y * 1000, 2)}\\)</td>
     </tr>`;
   }).join("\n    ");
 
@@ -1305,9 +1305,9 @@ function buildMNPSection(
       const theta = result.theta!(x);
       const y = result.y!(x);
       return `<tr>
-        <td>${formatNumber(x)}</td>
-        <td>${formatNumber(theta * 1000, 3)}</td>
-        <td>${formatNumber(y * 1000, 2)}</td>
+        <td>\\(${formatNumber(x)}\\)</td>
+        <td>\\(${formatNumber(theta * 1000, 3)}\\)</td>
+        <td>\\(${formatNumber(y * 1000, 2)}\\)</td>
       </tr>`;
     }).join("\n    ")}
   </table>
