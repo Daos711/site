@@ -956,31 +956,31 @@ function buildJumpsSection(
 
     // Опоры и реакции
     if (reactions.xA !== undefined && Math.abs(x - reactions.xA) < EPS) {
-      items.push(`R_A = ${formatNumber(reactions.RA!)} кН`);
+      items.push(`\\(R_A = ${formatNumber(reactions.RA!)}\\)`);
     }
     if (reactions.xB !== undefined && Math.abs(x - reactions.xB) < EPS) {
-      items.push(`R_B = ${formatNumber(reactions.RB!)} кН`);
+      items.push(`\\(R_B = ${formatNumber(reactions.RB!)}\\)`);
     }
     if (reactions.xf !== undefined && Math.abs(x - reactions.xf) < EPS) {
-      items.push(`R_f = ${formatNumber(reactions.Rf!)} кН`);
+      items.push(`\\(R_f = ${formatNumber(reactions.Rf!)}\\)`);
       if (reactions.Mf !== undefined) {
-        items.push(`M_f = ${formatNumber(reactions.Mf)} кН·м`);
+        items.push(`\\(M_f = ${formatNumber(reactions.Mf)}\\)`);
       }
     }
 
     // Сосредоточенные силы и моменты
     for (const load of input.loads) {
       if (load.type === "force" && Math.abs(x - load.x) < EPS) {
-        items.push(`F = ${formatNumber(load.F)} кН`);
+        items.push(`\\(F = ${formatNumber(load.F)}\\)`);
       } else if (load.type === "moment" && Math.abs(x - load.x) < EPS) {
-        items.push(`M = ${formatNumber(load.M)} кН·м`);
+        items.push(`\\(M = ${formatNumber(load.M)}\\)`);
       } else if (load.type === "distributed") {
-        if (Math.abs(x - load.a) < EPS) items.push(`начало q = ${formatNumber(load.q)} кН/м`);
-        if (Math.abs(x - load.b) < EPS) items.push(`конец q = ${formatNumber(load.q)} кН/м`);
+        if (Math.abs(x - load.a) < EPS) items.push(`\\(q = ${formatNumber(load.q)}\\) нач.`);
+        if (Math.abs(x - load.b) < EPS) items.push(`\\(q = ${formatNumber(load.q)}\\) кон.`);
       }
     }
 
-    const label = items.length > 0 ? items.join("; ") : `x = ${formatNumber(x)}`;
+    const label = items.length > 0 ? items.join(", ") : `\\(x = ${formatNumber(x)}\\)`;
 
     // Вычисляем значения слева и справа
     // На границах (x=0 и x=L) внешние значения равны 0 (граничное условие)
