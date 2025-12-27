@@ -1978,15 +1978,15 @@ function buildCantileverReactions(
     if (load.type === "force") {
       const arm = load.x! - xf;
       if (Math.abs(arm) > 1e-9) {
-        // Сила вниз (>=0) создаёт положительный момент относительно заделки (при arm > 0)
-        const sign = load.value >= 0 ? "+" : "-";
+        // Сила вниз (>=0) создаёт ОТРИЦАТЕЛЬНЫЙ момент относительно заделки (по часовой)
+        const sign = load.value >= 0 ? "-" : "+";
         momentTermsSymbolic.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_f)`);
-        const momentContrib = load.value * arm;
+        const momentContrib = -load.value * arm; // минус, т.к. сила вниз → момент по часовой
         momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
       }
     } else if (load.type === "moment") {
-      // Момент против часовой (>=0) → +M, по часовой (<0) → -M
+      // Момент: значение уже содержит знак (+ = против часовой в конвенции solver)
       const sign = load.value >= 0 ? "+" : "-";
       momentTermsSymbolic.push(`${sign} ${load.label}`);
       momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))}`);
@@ -1994,10 +1994,10 @@ function buildCantileverReactions(
     } else if (load.type === "distributed") {
       const arm = load.xq! - xf;
       if (Math.abs(arm) > 1e-9) {
-        // Нагрузка вниз (>=0) создаёт положительный момент относительно заделки
-        const sign = load.Fq! >= 0 ? "+" : "-";
+        // Нагрузка вниз (>=0) создаёт ОТРИЦАТЕЛЬНЫЙ момент относительно заделки
+        const sign = load.Fq! >= 0 ? "-" : "+";
         momentTermsSymbolic.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_f)`);
-        const momentContrib = load.Fq! * arm;
+        const momentContrib = -load.Fq! * arm; // минус, т.к. нагрузка вниз → момент по часовой
         momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
       }
