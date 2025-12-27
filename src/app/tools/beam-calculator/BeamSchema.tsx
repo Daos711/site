@@ -224,6 +224,47 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           );
         }
 
+        // Реактивный момент Mf для консольных балок
+        if (reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9) {
+          const xf = reactions.xf ?? 0;
+          const px = xToPx(xf);
+          const H = 35;
+          const R = 20;
+          const gap = 6;
+          const Cy = beamTop - gap - H;
+
+          // Mf > 0 (против часовой) или Mf < 0 (по часовой)
+          const isCW = reactions.Mf < 0;
+          const aLeft = (240 * Math.PI) / 180;
+          const aRight = (330 * Math.PI) / 180;
+          const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
+          const pRight = { x: px + R * Math.cos(aRight), y: Cy + R * Math.sin(aRight) };
+
+          const legEnd = isCW ? pLeft : pRight;
+          const arcStart = isCW ? pLeft : pRight;
+          const arcEnd = isCW ? pRight : pLeft;
+          const sweepFlag = isCW ? 1 : 0;
+
+          const labelX = isCW ? pRight.x + 8 : pLeft.x - 8;
+          const labelAnchor = isCW ? "start" : "end";
+
+          elements.push(
+            <g key="Mf">
+              <line x1={px} y1={beamTop - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.reaction} strokeWidth={2} />
+              <path
+                d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
+                fill="none"
+                stroke={COLORS.reaction}
+                strokeWidth={2}
+                markerEnd="url(#arrowGreen)"
+              />
+              <text x={labelX} y={Cy - 15} textAnchor={labelAnchor} fill={COLORS.reaction} fontSize={13} fontWeight="600">
+                Mf = {formatNum(Math.abs(reactions.Mf))} кН·м
+              </text>
+            </g>
+          );
+        }
+
         return elements;
       })()}
 

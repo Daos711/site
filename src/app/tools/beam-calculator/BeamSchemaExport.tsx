@@ -341,6 +341,46 @@ export function BeamSchemaExport({ input, result }: Props) {
           drawReaction("Rf", xToPx(reactions.xf ?? 0), reactions.Rf, "R", "", "right");
         }
 
+        // Реактивный момент Mf для консольных балок
+        if (reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9) {
+          const px = xToPx(reactions.xf ?? 0);
+          const H = 28;
+          const R = 16;
+          const gap = 5;
+          const Cy = beamY - beamThickness / 2 - gap - H;
+
+          // Mf > 0 (против часовой) или Mf < 0 (по часовой)
+          const isCW = reactions.Mf < 0;
+          const aLeft = (240 * Math.PI) / 180;
+          const aRight = (330 * Math.PI) / 180;
+          const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
+          const pRight = { x: px + R * Math.cos(aRight), y: Cy + R * Math.sin(aRight) };
+
+          const legEnd = isCW ? pLeft : pRight;
+          const arcStart = isCW ? pLeft : pRight;
+          const arcEnd = isCW ? pRight : pLeft;
+          const sweepFlag = isCW ? 1 : 0;
+
+          const labelX = isCW ? pRight.x + 6 : pLeft.x - 6;
+          const labelAnchor = isCW ? "start" : "end";
+
+          elements.push(
+            <g key="Mf">
+              <line x1={px} y1={beamY - beamThickness / 2 - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.reaction} strokeWidth={2} />
+              <path
+                d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
+                fill="none"
+                stroke={COLORS.reaction}
+                strokeWidth={2}
+                markerEnd="url(#exp-arrowGreen)"
+              />
+              <text x={labelX} y={Cy - 12} textAnchor={labelAnchor} fill={COLORS.reaction} fontSize={fontSize.label} fontWeight="600">
+                M<tspan dy="3" fontSize={fontSize.subscript}>f</tspan>
+              </text>
+            </g>
+          );
+        }
+
         return <>{elements}</>;
       })()}
 
