@@ -227,39 +227,34 @@ export function DiagramExport({
         );
       })}
 
-      {/* Подписи значений на границах — сбоку от пунктиров */}
+      {/* Подписи: только концы балки и скачки (минимум подписей) */}
       {(() => {
         const labels: React.ReactNode[] = [];
 
-        // Функция поиска значения слева от точки (конец предыдущего сегмента)
+        // Функция поиска значения слева от точки
         const findLeftValue = (x: number): number | null => {
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
             const last = seg[seg.length - 1];
-            if (Math.abs(last.x - x) < 0.02) {
-              return last.value;
-            }
+            if (Math.abs(last.x - x) < 0.02) return last.value;
           }
           return null;
         };
 
-        // Функция поиска значения справа от точки (начало следующего сегмента)
+        // Функция поиска значения справа от точки
         const findRightValue = (x: number): number | null => {
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
             const first = seg[0];
-            if (Math.abs(first.x - x) < 0.02) {
-              return first.value;
-            }
+            if (Math.abs(first.x - x) < 0.02) return first.value;
           }
           return null;
         };
 
-        // Добавляет подпись со смещением влево или вправо от пунктира
+        // Добавляет подпись
         const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
-          // Пропускаем нулевые значения
-          if (Math.abs(value) < 1e-6) return;
-          const xOffset = placeRight ? 18 : -18;  // Увеличено с 12 до 18
+          if (Math.abs(value) < 1e-6) return; // Пропускаем нули
+          const xOffset = placeRight ? 18 : -18;
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);
           const textY = value >= 0 ? curveY - 8 : curveY + 14;
@@ -279,80 +274,36 @@ export function DiagramExport({
           );
         };
 
-        // Функция проверки: насколько сильно мешает кривая слева/справа от точки
-        // Возвращает "степень" коллизии (0 = нет, больше = хуже)
-        const getCurveCollisionScore = (bx: number, value: number, checkLeft: boolean): number => {
-          // Ищем значение кривой в области 0.3*L от границы (где будет подпись)
-          const offset = checkLeft ? -0.3 : 0.3;
-          const checkX = bx + offset;
-          if (checkX < 0 || checkX > L) return 0;
+        // 1. Концы балки (x=0 и x=L) — только если не ноль
+        const startValue = findRightValue(0);
+        const endValue = findLeftValue(L);
 
-          for (const seg of scaledSegments) {
-            for (let i = 0; i < seg.length - 1; i++) {
-              if (seg[i].x <= checkX && seg[i + 1].x >= checkX) {
-                const t = (checkX - seg[i].x) / (seg[i + 1].x - seg[i].x);
-                const curveVal = seg[i].value + t * (seg[i + 1].value - seg[i].value);
-                // Чем ближе кривая к значению подписи — тем хуже
-                const diff = Math.abs(curveVal - value);
-                const threshold = Math.abs(value) * 0.5 + 1;
-                if (diff < threshold) {
-                  return threshold - diff; // больше = хуже (ближе к коллизии)
-                }
-              }
-            }
-          }
-          return 0;
-        };
+        if (startValue !== null && Math.abs(startValue) > 1e-6) {
+          addLabel(0, startValue, true, "label-start");
+        }
+        if (endValue !== null && Math.abs(endValue) > 1e-6) {
+          addLabel(L, endValue, false, "label-end");
+        }
 
-        // Логика: для горизонтального участка подписываем только в его НАЧАЛЕ
-        // Начало = первая граница ИЛИ значение слева отличается от значения справа
-
-        // Вспомогательная функция: проверить, горизонтальный ли сегмент слева от границы
-        const isLeftSegmentHorizontal = (bIdx: number, endValue: number): boolean => {
-          if (bIdx === 0) return false; // нет сегмента слева
-          const prevBx = boundaries[bIdx - 1];
-          const startValue = findRightValue(prevBx); // начало сегмента
-          if (startValue === null) return false;
-          return Math.abs(startValue - endValue) < 0.1;
-        };
-
+        // 2. Скачки (разрывы) — только существенные
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
-          const isLast = bIdx === boundaries.length - 1;
+          if (Math.abs(bx) < 0.01 || Math.abs(bx - L) < 0.01) continue; // Пропускаем концы
 
-          const leftValue = findLeftValue(bx);  // конец предыдущего сегмента
-          const rightValue = findRightValue(bx); // начало следующего сегмента
+          const leftValue = findLeftValue(bx);
+          const rightValue = findRightValue(bx);
 
-          // Проверяем есть ли разрыв (скачок значения)
+          // Показываем только если есть разрыв (значения отличаются)
           const hasDiscontinuity = leftValue !== null && rightValue !== null &&
-            Math.abs(leftValue - rightValue) > 0.1;
+            Math.abs(leftValue - rightValue) > 0.5;
 
           if (hasDiscontinuity) {
-            // При разрыве: подписываем оба значения
-            // НО: если левый сегмент горизонтальный — он уже подписан в начале, пропускаем leftValue
-            if (leftValue !== null) {
-              const skipLeft = isLeftSegmentHorizontal(bIdx, leftValue);
-              if (!skipLeft) {
-                addLabel(bx, leftValue, false, `label-${bIdx}-left`);
-              }
+            if (leftValue !== null && Math.abs(leftValue) > 1e-6) {
+              addLabel(bx, leftValue, false, `label-${bIdx}-left`);
             }
-            if (rightValue !== null) {
+            if (rightValue !== null && Math.abs(rightValue) > 1e-6) {
               addLabel(bx, rightValue, true, `label-${bIdx}-right`);
             }
-          } else {
-            // Нет разрыва - одно значение
-            const value = rightValue ?? leftValue;
-            if (value === null) continue;
-
-            // Если слева горизонтальный сегмент — подпись уже есть в его начале, пропускаем
-            const skipHorizontal = isLeftSegmentHorizontal(bIdx, value);
-            if (skipHorizontal) {
-              continue;
-            }
-
-            // Добавляем подпись
-            const placeRight = !isLast;
-            addLabel(bx, value, placeRight, `label-${bIdx}`);
           }
         }
 
