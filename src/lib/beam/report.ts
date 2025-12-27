@@ -1076,30 +1076,41 @@ function buildConcreteDeflectionEquation(
     }
   }
 
-  // Внешние нагрузки (только если внутри балки, не на конце)
-  // Считаем количество каждого типа для индексации
-  const forceCount = loads.filter(l => l.type === "force" && l.x < L - 1e-9).length;
-  const momentCount = loads.filter(l => l.type === "moment" && l.x < L - 1e-9).length;
-  const distCount = loads.filter(l => l.type === "distributed").length;
-  let forceIdx = 1;
-  let momentIdx = 1;
-  let distIdx = 1;
+  // Внешние нагрузки
+  // Считаем ВСЕ нагрузки каждого типа для согласованной индексации со схемой
+  const allForces = loads.filter(l => l.type === "force");
+  const allMoments = loads.filter(l => l.type === "moment");
+  const allDist = loads.filter(l => l.type === "distributed");
+
+  // Создаём Map для согласованных индексов (как на схеме)
+  const forceLabels = new Map<typeof loads[number], string>();
+  const momentLabels = new Map<typeof loads[number], string>();
+  const distLabels = new Map<typeof loads[number], string>();
+
+  allForces.forEach((load, i) => {
+    forceLabels.set(load, allForces.length === 1 ? "F" : `F_{${i + 1}}`);
+  });
+  allMoments.forEach((load, i) => {
+    momentLabels.set(load, allMoments.length === 1 ? "M" : `M_{${i + 1}}`);
+  });
+  allDist.forEach((load, i) => {
+    distLabels.set(load, allDist.length === 1 ? "q" : `q^{(${i + 1})}`);
+  });
 
   for (const load of loads) {
     if (load.type === "force" && load.x < L - 1e-9) {
       // Сила вниз (F > 0) сжимает нижние волокна → минус
       const sign = load.F >= 0 ? "-" : "+";
-      const label = forceCount === 1 ? "F" : `F_{${forceIdx++}}`;
+      const label = forceLabels.get(load) ?? "F";
       terms.push(`${sign} \\frac{${label} \\cdot (x - ${formatNumber(load.x)})^3}{6}`);
     } else if (load.type === "moment" && load.x < L - 1e-9) {
       // Момент против часовой (M > 0) сжимает нижние волокна → минус
       const sign = load.M >= 0 ? "-" : "+";
-      const label = momentCount === 1 ? "M" : `M_{${momentIdx++}}`;
+      const label = momentLabels.get(load) ?? "M";
       terms.push(`${sign} \\frac{${label} \\cdot (x - ${formatNumber(load.x)})^2}{2}`);
     } else if (load.type === "distributed") {
       // Распределённая нагрузка вниз (q > 0) сжимает → минус
-      // Используем верхний индекс в скобках q^{(n)} для оригинальных нагрузок (не путать с q_i после компенсации)
-      const qLabel = distCount === 1 ? "q" : `q^{(${distIdx++})}`;
+      const qLabel = distLabels.get(load) ?? "q";
       if (load.a < L - 1e-9) {
         const sign = load.q >= 0 ? "-" : "+";
         terms.push(`${sign} \\frac{${qLabel} \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
