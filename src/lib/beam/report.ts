@@ -1281,12 +1281,19 @@ function buildMNPSection(
   points.sort((a, b) => a - b);
   const uniquePoints = points.filter((p, i) => i === 0 || Math.abs(p - points[i - 1]) > 1e-6);
 
-  const tableRows = uniquePoints.map(x => {
-    const theta = result.theta!(x);
+  // Определяем единицы измерения для углов: мрад если все углы < 0.1 рад, иначе рад
+  const thetaValues = uniquePoints.map(x => result.theta!(x));
+  const maxAbsTheta = Math.max(...thetaValues.map(t => Math.abs(t)));
+  const useMrad = maxAbsTheta < 0.1; // Если все углы < 100 мрад, используем мрад
+  const thetaUnit = useMrad ? "мрад" : "рад";
+  const thetaMultiplier = useMrad ? 1000 : 1;
+
+  const tableRows = uniquePoints.map((x, i) => {
+    const theta = thetaValues[i];
     const y = result.y!(x);
     return `<tr>
       <td>\\(${formatNumber(x)}\\)</td>
-      <td>\\(${formatNumber(theta * 1000, 3)}\\)</td>
+      <td>\\(${formatNumber(theta * thetaMultiplier, 3)}\\)</td>
       <td>\\(${formatNumber(y * 1000, 2)}\\)</td>
     </tr>`;
   }).join("\n    ");
@@ -1334,16 +1341,8 @@ function buildMNPSection(
 
   <h3>Значения в характерных точках</h3>
   <table>
-    <tr><th>\\(x\\), м</th><th>\\(\\theta \\cdot 10^3\\), рад</th><th>\\(y\\), мм</th></tr>
-    ${uniquePoints.map((x) => {
-      const theta = result.theta!(x);
-      const y = result.y!(x);
-      return `<tr>
-        <td>\\(${formatNumber(x)}\\)</td>
-        <td>\\(${formatNumber(theta * 1000, 3)}\\)</td>
-        <td>\\(${formatNumber(y * 1000, 2)}\\)</td>
-      </tr>`;
-    }).join("\n    ")}
+    <tr><th>\\(x\\), м</th><th>\\(\\theta\\), ${thetaUnit}</th><th>\\(y\\), мм</th></tr>
+    ${tableRows}
   </table>
   <p>Знак прогиба: «+» — вверх, «−» — вниз.</p>`;
 }
