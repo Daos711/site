@@ -1375,21 +1375,7 @@ function buildMNPSection(
       <li>\\(y(${formatNumber(L)}) = 0\\) — прогиб в заделке равен нулю</li>
       <li>\\(\\theta(${formatNumber(L)}) = 0\\) — угол поворота в заделке равен нулю</li>
     </ul>`;
-    derivationSection = `
-    <p><strong>Условие 1:</strong> \\(\\theta(${formatNumber(L)}) = 0\\)</p>
-    <p>Подставляя \\(x = ${formatNumber(L)}\\) в уравнение углов поворота:</p>
-    <div class="formula">
-      \\[\\theta_0 + \\frac{1}{EI}\\sum\\limits_{\\text{нагрузки}} = 0\\]
-    </div>
-    <p><strong>Условие 2:</strong> \\(y(${formatNumber(L)}) = 0\\)</p>
-    <p>Подставляя \\(x = ${formatNumber(L)}\\) в уравнение прогибов:</p>
-    <div class="formula">
-      \\[y_0 + \\theta_0 \\cdot ${formatNumber(L)} + \\frac{1}{EI}\\sum\\limits_{\\text{нагрузки}} = 0\\]
-    </div>
-    <p>Решая систему, получаем:</p>
-    <div class="formula">
-      \\[\\boxed{\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}}\\]
-    </div>`;
+    derivationSection = buildCantileverRightDerivation(input, result, EI);
   } else {
     // Двухопорные балки (включая с консолями)
     boundaryConditions = `
@@ -1764,6 +1750,206 @@ function buildTheta0Derivation(
   <p><strong>Итог:</strong></p>
   <div class="formula">
     \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 180 / Math.PI, 2)}°}\\]
+  </div>`;
+
+  return html;
+}
+
+/**
+ * Строит вывод начальных параметров для консольной балки с заделкой справа
+ */
+function buildCantileverRightDerivation(
+  input: BeamInput,
+  result: BeamResult,
+  EI: number
+): string {
+  const L = input.L;
+  const { loads } = input;
+  const Rf = result.reactions.Rf ?? 0;
+  const Mf = result.reactions.Mf ?? 0;
+  const xf = result.reactions.xf ?? L;
+
+  // Подготовим метки для нагрузок
+  const forceLoads = loads.filter(l => l.type === "force");
+  const momentLoads = loads.filter(l => l.type === "moment");
+  const distLoads = loads.filter(l => l.type === "distributed");
+  const forceLabels = new Map<typeof loads[number], string>();
+  const momentLabels = new Map<typeof loads[number], string>();
+  const distLabels = new Map<typeof loads[number], string>();
+  forceLoads.forEach((load, i) => {
+    forceLabels.set(load, forceLoads.length === 1 ? "F" : `F_{${i + 1}}`);
+  });
+  momentLoads.forEach((load, i) => {
+    momentLabels.set(load, momentLoads.length === 1 ? "M" : `M_{${i + 1}}`);
+  });
+  distLoads.forEach((load, i) => {
+    distLabels.set(load, distLoads.length === 1 ? "q" : `q^{(${i + 1})}`);
+  });
+
+  // Собираем слагаемые для θ(L) - угол поворота в точке L
+  const thetaTerms: Array<{ symbolic: string; value: number }> = [];
+
+  // Реакция силы в заделке: +Rf·(L-xf)²/2 = 0 (xf = L, так что плечо = 0)
+  // Реакция момента в заделке: -Mf·(L-xf) = 0 (плечо = 0)
+  // Поэтому реакции не дают вклада в θ(L) напрямую
+
+  // Внешние нагрузки
+  for (const load of loads) {
+    if (load.type === "force" && load.x < L) {
+      const dx = L - load.x;
+      // Сила вниз (F>0) создаёт отрицательный вклад в угол
+      const sign = load.F >= 0 ? -1 : 1;
+      const value = sign * Math.abs(load.F) * 1000 * Math.pow(dx, 2) / 2;
+      const label = forceLabels.get(load) ?? "F";
+      thetaTerms.push({
+        symbolic: `${sign >= 0 ? "+" : "-"}\\frac{${label} \\cdot ${formatNumber(dx)}^2}{2}`,
+        value
+      });
+    } else if (load.type === "moment" && load.x < L) {
+      const dx = L - load.x;
+      // Момент против часовой (M>0) создаёт отрицательный вклад
+      const value = -load.M * 1000 * dx;
+      const label = momentLabels.get(load) ?? "M";
+      const signStr = load.M >= 0 ? "-" : "+";
+      thetaTerms.push({
+        symbolic: `${signStr}${label} \\cdot ${formatNumber(dx)}`,
+        value
+      });
+    } else if (load.type === "distributed") {
+      const qLabel = distLabels.get(load) ?? "q";
+      if (load.a < L) {
+        const dx = L - load.a;
+        // q вниз (>0) создаёт отрицательный вклад
+        const value = -load.q * 1000 * Math.pow(dx, 3) / 6;
+        thetaTerms.push({
+          symbolic: `-\\frac{${qLabel} \\cdot ${formatNumber(dx)}^3}{6}`,
+          value
+        });
+      }
+      if (load.b < L) {
+        const dx = L - load.b;
+        const value = load.q * 1000 * Math.pow(dx, 3) / 6;
+        thetaTerms.push({
+          symbolic: `+\\frac{${qLabel} \\cdot ${formatNumber(dx)}^3}{6}`,
+          value
+        });
+      }
+    }
+  }
+
+  const sumTheta = thetaTerms.reduce((acc, t) => acc + t.value, 0);
+
+  // Собираем слагаемые для y(L) - прогиб в точке L
+  const yTerms: Array<{ symbolic: string; value: number }> = [];
+
+  for (const load of loads) {
+    if (load.type === "force" && load.x < L) {
+      const dx = L - load.x;
+      const sign = load.F >= 0 ? -1 : 1;
+      const value = sign * Math.abs(load.F) * 1000 * Math.pow(dx, 3) / 6;
+      const label = forceLabels.get(load) ?? "F";
+      yTerms.push({
+        symbolic: `${sign >= 0 ? "+" : "-"}\\frac{${label} \\cdot ${formatNumber(dx)}^3}{6}`,
+        value
+      });
+    } else if (load.type === "moment" && load.x < L) {
+      const dx = L - load.x;
+      const value = -load.M * 1000 * Math.pow(dx, 2) / 2;
+      const label = momentLabels.get(load) ?? "M";
+      const signStr = load.M >= 0 ? "-" : "+";
+      yTerms.push({
+        symbolic: `${signStr}\\frac{${label} \\cdot ${formatNumber(dx)}^2}{2}`,
+        value
+      });
+    } else if (load.type === "distributed") {
+      const qLabel = distLabels.get(load) ?? "q";
+      if (load.a < L) {
+        const dx = L - load.a;
+        const value = -load.q * 1000 * Math.pow(dx, 4) / 24;
+        yTerms.push({
+          symbolic: `-\\frac{${qLabel} \\cdot ${formatNumber(dx)}^4}{24}`,
+          value
+        });
+      }
+      if (load.b < L) {
+        const dx = L - load.b;
+        const value = load.q * 1000 * Math.pow(dx, 4) / 24;
+        yTerms.push({
+          symbolic: `+\\frac{${qLabel} \\cdot ${formatNumber(dx)}^4}{24}`,
+          value
+        });
+      }
+    }
+  }
+
+  const sumY = yTerms.reduce((acc, t) => acc + t.value, 0);
+
+  // Форматируем вывод
+  const { latex: thetaBrackets, isMultiline: thetaMulti } = formatBracketedTerms(thetaTerms.map(t => t.symbolic));
+  const { latex: yBrackets, isMultiline: yMulti } = formatBracketedTerms(yTerms.map(t => t.symbolic));
+
+  let html = `
+  <p><strong>Условие 1:</strong> \\(\\theta(${formatNumber(L)}) = 0\\) (угол поворота в заделке)</p>
+  <p>Подставляя \\(x = ${formatNumber(L)}\\) в уравнение углов поворота:</p>
+  <div class="formula${thetaMulti ? " formula-multiline" : ""}">
+    \\[\\theta_0 + \\frac{1}{EI}\\left(${thetaBrackets}\\right) = 0\\]
+  </div>`;
+
+  if (thetaTerms.length > 0) {
+    html += `
+  <p>Числовые значения слагаемых:</p>
+  <ul>
+    ${thetaTerms.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\) Н·м²</li>`).join("\n    ")}
+  </ul>`;
+    if (thetaTerms.length > 1) {
+      html += `<p>Сумма: \\(${formatNumber(sumTheta)}\\) Н·м²</p>`;
+    }
+  }
+
+  // Вычисляем θ₀
+  const theta0 = result.C1 ?? 0;
+  const thetaRhsPrefix = sumTheta >= 0 ? "-" : "";
+  const thetaRhsValue = Math.abs(sumTheta);
+
+  html += `
+  <div class="formula">
+    \\[\\theta_0 = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{EI} = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{${formatNumber(EI, 0)}} = ${formatNumber(theta0, 6)} \\text{ рад}\\]
+  </div>`;
+
+  html += `
+  <p><strong>Условие 2:</strong> \\(y(${formatNumber(L)}) = 0\\) (прогиб в заделке)</p>
+  <p>Подставляя \\(x = ${formatNumber(L)}\\) в уравнение прогибов:</p>
+  <div class="formula${yMulti ? " formula-multiline" : ""}">
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(L)} + \\frac{1}{EI}\\left(${yBrackets}\\right) = 0\\]
+  </div>`;
+
+  if (yTerms.length > 0) {
+    html += `
+  <p>Числовые значения слагаемых:</p>
+  <ul>
+    ${yTerms.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\) Н·м³</li>`).join("\n    ")}
+  </ul>`;
+    if (yTerms.length > 1) {
+      html += `<p>Сумма: \\(${formatNumber(sumY)}\\) Н·м³</p>`;
+    }
+  }
+
+  // Вычисляем y₀
+  const y0 = result.C2 ?? 0;
+
+  html += `
+  <p>Находим \\(y_0\\):</p>
+  <div class="formula">
+    \\[y_0 = -\\theta_0 \\cdot ${formatNumber(L)} - \\frac{${formatNumber(sumY)}}{EI}\\]
+  </div>
+  <div class="formula">
+    \\[y_0 = -${formatNumber(theta0, 6)} \\cdot ${formatNumber(L)} - \\frac{${formatNumber(sumY)}}{${formatNumber(EI, 0)}} = ${formatNumber(y0 * 1000, 2)} \\text{ мм}\\]
+  </div>`;
+
+  html += `
+  <p><strong>Итог:</strong></p>
+  <div class="formula">
+    \\[\\boxed{\\theta_0 = ${formatNumber(theta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber(y0 * 1000, 2)} \\text{ мм}}\\]
   </div>`;
 
   return html;
