@@ -669,7 +669,10 @@ function buildReportHTML(data: ReportData): string {
   <p>Разобьём балку на участки по характерным точкам. Для каждого участка составим выражения для поперечной силы \\(Q\\) и изгибающего момента \\(M\\).</p>
   ${sections.map(section => buildSectionBlock(section)).join("\n")}
 
-  <h2>5. Экстремальные значения</h2>
+  <h2>5. Скачки Q и M в характерных точках</h2>
+  ${buildJumpsSection(input, result, reactions)}
+
+  <h2>6. Экстремальные значения</h2>
   <table>
     <tr><th>Величина</th><th>Значение</th><th>Координата</th></tr>
     <tr><td>\\(|Q|_{\\max}\\)</td><td>\\(${formatNumber(Math.abs(Qmax.value))}\\) кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
@@ -678,7 +681,7 @@ function buildReportHTML(data: ReportData): string {
   </table>
 
   ${hasDiagrams ? `
-  <h2>6. Эпюры</h2>
+  <h2>7. Эпюры</h2>
   ${diagrams?.Q ? `
   <div class="diagram-block">
     <div class="diagram-title">Эпюра поперечных сил \\(Q(x)\\)</div>
@@ -703,7 +706,7 @@ function buildReportHTML(data: ReportData): string {
   ` : ""}
 
   ${(() => {
-    let sectionNum = hasDiagrams ? 7 : 6;
+    let sectionNum = hasDiagrams ? 8 : 7;
     let html = "";
 
     if (hasCrossSection) {
@@ -914,6 +917,130 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
     <li>При \\(s = ${formatNumber(len)}\\): \\(Q = ${formatNumber(section.Qb)}\\) кН, \\(M = ${formatNumber(section.Mb)}\\) кН·м</li>
   </ul>
   </div>`;
+}
+
+/**
+ * Формирует раздел "Скачки Q и M в характерных точках"
+ * Показывает значения Q(x⁻), Q(x⁺), M(x⁻), M(x⁺) в каждой характерной точке
+ */
+function buildJumpsSection(
+  input: BeamInput,
+  result: BeamResult,
+  reactions: Reactions
+): string {
+  const { Q, M, events } = result;
+  const L = input.L;
+  const EPS = 1e-6;
+
+  // Собираем информацию о каждой точке
+  interface JumpPoint {
+    x: number;
+    label: string;
+    Qleft: number;
+    Qright: number;
+    Mleft: number;
+    Mright: number;
+    deltaQ: number;
+    deltaM: number;
+  }
+
+  const jumpPoints: JumpPoint[] = [];
+
+  for (const x of events) {
+    // Определяем метку для точки
+    let label = `x = ${formatNumber(x)}`;
+
+    // Проверяем, что находится в этой точке
+    const items: string[] = [];
+
+    // Начало/конец балки
+    if (Math.abs(x) < EPS) items.push("начало балки");
+    if (Math.abs(x - L) < EPS) items.push("конец балки");
+
+    // Опоры
+    if (reactions.xA !== undefined && Math.abs(x - reactions.xA) < EPS) items.push("опора A");
+    if (reactions.xB !== undefined && Math.abs(x - reactions.xB) < EPS) items.push("опора B");
+    if (reactions.xf !== undefined && Math.abs(x - reactions.xf) < EPS) items.push("заделка");
+
+    // Нагрузки
+    for (const load of input.loads) {
+      if (load.type === "force" && Math.abs(x - load.x) < EPS) {
+        items.push(`сила ${formatNumber(load.F)} кН`);
+      } else if (load.type === "moment" && Math.abs(x - load.x) < EPS) {
+        items.push(`момент ${formatNumber(load.M)} кН·м`);
+      } else if (load.type === "distributed") {
+        if (Math.abs(x - load.a) < EPS) items.push(`начало q = ${formatNumber(load.q)} кН/м`);
+        if (Math.abs(x - load.b) < EPS) items.push(`конец q = ${formatNumber(load.q)} кН/м`);
+      }
+    }
+
+    if (items.length > 0) {
+      label = items.join(", ");
+    }
+
+    // Вычисляем значения слева и справа
+    // На границах (x=0 и x=L) внешние значения равны 0 (граничное условие)
+    const isStart = Math.abs(x) < EPS;
+    const isEnd = Math.abs(x - L) < EPS;
+
+    const Qleft = isStart ? 0 : Q(x - EPS);
+    const Qright = isEnd ? 0 : Q(x + EPS);
+    const Mleft = isStart ? 0 : M(x - EPS);
+    const Mright = isEnd ? 0 : M(x + EPS);
+
+    // Вычисляем скачки
+    const deltaQ = Qright - Qleft;
+    const deltaM = Mright - Mleft;
+
+    jumpPoints.push({ x, label, Qleft, Qright, Mleft, Mright, deltaQ, deltaM });
+  }
+
+  // Формируем таблицу
+  let rows = "";
+  for (const pt of jumpPoints) {
+    const formatDelta = (v: number) => {
+      if (Math.abs(v) < EPS) return "0";
+      return formatNumber(v);
+    };
+
+    rows += `
+    <tr>
+      <td>\\(${formatNumber(pt.x)}\\)</td>
+      <td style="font-size: 11pt;">${pt.label}</td>
+      <td>\\(${formatNumber(pt.Qleft)}\\)</td>
+      <td>\\(${formatNumber(pt.Qright)}\\)</td>
+      <td>\\(${formatDelta(pt.deltaQ)}\\)</td>
+      <td>\\(${formatNumber(pt.Mleft)}\\)</td>
+      <td>\\(${formatNumber(pt.Mright)}\\)</td>
+      <td>\\(${formatDelta(pt.deltaM)}\\)</td>
+    </tr>`;
+  }
+
+  return `
+  <p>В характерных точках балки значения \\(Q\\) и \\(M\\) могут иметь разрывы (скачки). Обозначим:</p>
+  <ul>
+    <li>\\(Q^-\\), \\(M^-\\) — значения слева от точки (при \\(x - \\varepsilon\\))</li>
+    <li>\\(Q^+\\), \\(M^+\\) — значения справа от точки (при \\(x + \\varepsilon\\))</li>
+    <li>\\(\\Delta Q = Q^+ - Q^-\\), \\(\\Delta M = M^+ - M^-\\) — величины скачков</li>
+  </ul>
+
+  <table style="font-size: 12pt;">
+    <tr>
+      <th>\\(x\\), м</th>
+      <th>Точка</th>
+      <th>\\(Q^-\\), кН</th>
+      <th>\\(Q^+\\), кН</th>
+      <th>\\(\\Delta Q\\), кН</th>
+      <th>\\(M^-\\), кН·м</th>
+      <th>\\(M^+\\), кН·м</th>
+      <th>\\(\\Delta M\\), кН·м</th>
+    </tr>
+    ${rows}
+  </table>
+
+  <p><em>Примечание: скачок \\(\\Delta Q\\) возникает при приложении сосредоточенной силы (равен её величине со знаком),
+  скачок \\(\\Delta M\\) — при приложении сосредоточенного момента. На границах балки (\\(x = 0\\) и \\(x = L\\)) внешние значения
+  \\(Q\\) и \\(M\\) равны нулю (граничные условия равновесия).</em></p>`;
 }
 
 /**
