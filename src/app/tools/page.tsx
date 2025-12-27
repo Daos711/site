@@ -8,12 +8,15 @@ const tools = [
     title: "Расчёт балки",
     description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров (МНП).",
     icon: LineChart,
+    href: "/tools/beam-calculator",
+    status: "prototype" as const,
   },
   {
     id: "oscillator",
     title: "Осциллятор",
     description: "Демонстрация затухающих колебаний: масса, жёсткость, демпфирование.",
     icon: Activity,
+    status: "coming-soon" as const,
   },
 ];
 
@@ -32,6 +35,8 @@ export default function ToolsPage() {
             title={tool.title}
             description={tool.description}
             icon={tool.icon}
+            href={tool.href}
+            status={tool.status}
           />
         ))}
       </div>

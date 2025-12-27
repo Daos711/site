@@ -4,6 +4,7 @@ export interface Project {
   description: string;
   tags: string[];
   status: "ready" | "prototype" | "coming-soon";
+  href?: string;
 }
 
 export const projects: Project[] = [
@@ -13,6 +14,7 @@ export const projects: Project[] = [
     description: "Головоломка с числами. Игра на логику и внимательность.",
     tags: ["игра", "Python", "Pygame", "desktop"],
     status: "prototype",
+    href: "/games/digits",
   },
   {
     id: "reynolds",
@@ -25,8 +27,9 @@ export const projects: Project[] = [
     id: "beam-calculator",
     title: "Расчёт балки",
     description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров.",
-    tags: ["инструмент", "сопромат"],
-    status: "coming-soon",
+    tags: ["инструмент", "сопромат", "TypeScript", "web"],
+    status: "prototype",
+    href: "/tools/beam-calculator",
   },
 ];
 

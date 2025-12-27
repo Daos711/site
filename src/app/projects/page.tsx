@@ -85,6 +85,7 @@ export default function ProjectsPage() {
               key={project.id}
               title={project.title}
               description={project.description}
+              href={project.href}
               tags={project.tags}
               status={project.status}
             />
