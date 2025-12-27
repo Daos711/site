@@ -695,18 +695,30 @@ function buildInputDataSection(input: BeamInput): string {
   <h3>Нагрузки</h3>
   <table>
     <tr><th>Тип</th><th>Значение</th><th>Положение</th></tr>
-    ${input.loads.map(load => {
-      if (load.type === "distributed") {
-        const dir = load.q >= 0 ? "↓" : "↑";
-        return `<tr><td>Распределённая \\(q\\)</td><td>\\(${formatNumber(Math.abs(load.q))}\\) кН/м ${dir}</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
-      } else if (load.type === "force") {
-        const dir = load.F >= 0 ? "↓" : "↑";
-        return `<tr><td>Сосредоточенная сила \\(F\\)</td><td>\\(${formatNumber(Math.abs(load.F))}\\) кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
-      } else {
-        const dir = load.M >= 0 ? "↺" : "↻";
-        return `<tr><td>Момент \\(M\\)</td><td>\\(${formatNumber(Math.abs(load.M))}\\) кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
-      }
-    }).join("\n    ")}
+    ${(() => {
+      // Считаем количество каждого типа для индексации
+      const distCount = input.loads.filter(l => l.type === "distributed").length;
+      const forceCount = input.loads.filter(l => l.type === "force").length;
+      const momentCount = input.loads.filter(l => l.type === "moment").length;
+      let distIdx = 1, forceIdx = 1, momentIdx = 1;
+
+      return input.loads.map(load => {
+        if (load.type === "distributed") {
+          const dir = load.q >= 0 ? "↓" : "↑";
+          // Используем верхний индекс в скобках для оригинальных нагрузок: q^{(1)}, q^{(2)}
+          const qLabel = distCount === 1 ? "q" : `q^{(${distIdx++})}`;
+          return `<tr><td>Распределённая \\(${qLabel}\\)</td><td>\\(${formatNumber(Math.abs(load.q))}\\) кН/м ${dir}</td><td>от \\(${formatNumber(load.a)}\\) до \\(${formatNumber(load.b)}\\) м</td></tr>`;
+        } else if (load.type === "force") {
+          const dir = load.F >= 0 ? "↓" : "↑";
+          const fLabel = forceCount === 1 ? "F" : `F_{${forceIdx++}}`;
+          return `<tr><td>Сосредоточенная сила \\(${fLabel}\\)</td><td>\\(${formatNumber(Math.abs(load.F))}\\) кН ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        } else {
+          const dir = load.M >= 0 ? "↺" : "↻";
+          const mLabel = momentCount === 1 ? "M" : `M_{${momentIdx++}}`;
+          return `<tr><td>Момент \\(${mLabel}\\)</td><td>\\(${formatNumber(Math.abs(load.M))}\\) кН·м ${dir}</td><td>\\(x = ${formatNumber(load.x)}\\) м</td></tr>`;
+        }
+      }).join("\n    ");
+    })()}
   </table>`;
 
   // Результирующие нагрузки (если есть наложение)
@@ -1068,8 +1080,10 @@ function buildConcreteDeflectionEquation(
   // Считаем количество каждого типа для индексации
   const forceCount = loads.filter(l => l.type === "force" && l.x < L - 1e-9).length;
   const momentCount = loads.filter(l => l.type === "moment" && l.x < L - 1e-9).length;
+  const distCount = loads.filter(l => l.type === "distributed").length;
   let forceIdx = 1;
   let momentIdx = 1;
+  let distIdx = 1;
 
   for (const load of loads) {
     if (load.type === "force" && load.x < L - 1e-9) {
@@ -1084,15 +1098,16 @@ function buildConcreteDeflectionEquation(
       terms.push(`${sign} \\frac{${label} \\cdot (x - ${formatNumber(load.x)})^2}{2}`);
     } else if (load.type === "distributed") {
       // Распределённая нагрузка вниз (q > 0) сжимает → минус
-      // q различается по позиции (x - a), индексы не добавляем чтобы не путать с q_i из таблицы компенсации
+      // Используем верхний индекс в скобках q^{(n)} для оригинальных нагрузок (не путать с q_i после компенсации)
+      const qLabel = distCount === 1 ? "q" : `q^{(${distIdx++})}`;
       if (load.a < L - 1e-9) {
         const sign = load.q >= 0 ? "-" : "+";
-        terms.push(`${sign} \\frac{q \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
+        terms.push(`${sign} \\frac{${qLabel} \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
       }
       // Компенсация после конца нагрузки
       if (load.b < L - 1e-9) {
         const compSign = load.q >= 0 ? "+" : "-";
-        terms.push(`${compSign} \\frac{q \\cdot (x - ${formatNumber(load.b)})^4}{24}`);
+        terms.push(`${compSign} \\frac{${qLabel} \\cdot (x - ${formatNumber(load.b)})^4}{24}`);
       }
     }
   }
@@ -1170,20 +1185,30 @@ function buildMNPSection(
     loadsList.push(`\\(R_B = ${formatNumber(Math.abs(result.reactions.RB))}\\) кН (${dir}) — ${result.reactions.RB >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
   }
 
-  // Внешние нагрузки
+  // Внешние нагрузки — с индексами для множественных нагрузок
+  const forceLoadsSign = loads.filter(l => l.type === "force");
+  const momentLoadsSign = loads.filter(l => l.type === "moment");
+  const distLoadsSign = loads.filter(l => l.type === "distributed");
+
+  let forceIdxSign = 1, momentIdxSign = 1, distIdxSign = 1;
+
   for (const load of loads) {
     if (load.type === "force") {
       const dir = load.F >= 0 ? "↓" : "↑";
       const sign = load.F >= 0 ? "-" : "+";
-      loadsList.push(`\\(F = ${formatNumber(Math.abs(load.F))}\\) кН в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.F >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+      const fLabel = forceLoadsSign.length === 1 ? "F" : `F_{${forceIdxSign++}}`;
+      loadsList.push(`\\(${fLabel} = ${formatNumber(Math.abs(load.F))}\\) кН в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.F >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     } else if (load.type === "moment") {
       const dir = load.M >= 0 ? "↺" : "↻";
       const sign = load.M >= 0 ? "-" : "+";
-      loadsList.push(`\\(M = ${formatNumber(Math.abs(load.M))}\\) кН·м в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.M >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+      const mLabel = momentLoadsSign.length === 1 ? "M" : `M_{${momentIdxSign++}}`;
+      loadsList.push(`\\(${mLabel} = ${formatNumber(Math.abs(load.M))}\\) кН·м в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.M >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     } else if (load.type === "distributed") {
       const dir = load.q >= 0 ? "↓" : "↑";
       const sign = load.q >= 0 ? "-" : "+";
-      loadsList.push(`\\(q = ${formatNumber(Math.abs(load.q))}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) (${dir}) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+      // Используем верхний индекс в скобках q^{(n)} для оригинальных нагрузок
+      const qLabel = distLoadsSign.length === 1 ? "q" : `q^{(${distIdxSign++})}`;
+      loadsList.push(`\\(${qLabel} = ${formatNumber(Math.abs(load.q))}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) (${dir}) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     }
   }
 
@@ -1337,16 +1362,22 @@ function buildTheta0Derivation(
   const { loads } = input;
   const hasLeftOverhang = xA > 1e-9; // Есть консоль слева
 
-  // Подготовим метки для сил и моментов (F_1, F_2, ... или просто F если одна)
+  // Подготовим метки для сил, моментов и распределённых нагрузок
   const forceLoads = loads.filter(l => l.type === "force");
   const momentLoads = loads.filter(l => l.type === "moment");
+  const distLoads = loads.filter(l => l.type === "distributed");
   const forceLabels = new Map<typeof loads[number], string>();
   const momentLabels = new Map<typeof loads[number], string>();
+  const distLabels = new Map<typeof loads[number], string>();
   forceLoads.forEach((load, i) => {
     forceLabels.set(load, forceLoads.length === 1 ? "F" : `F_{${i + 1}}`);
   });
   momentLoads.forEach((load, i) => {
     momentLabels.set(load, momentLoads.length === 1 ? "M" : `M_{${i + 1}}`);
+  });
+  // Для распределённых нагрузок используем верхний индекс: q^{(1)}, q^{(2)}
+  distLoads.forEach((load, i) => {
+    distLabels.set(load, distLoads.length === 1 ? "q" : `q^{(${i + 1})}`);
   });
 
   let html: string;
@@ -1363,8 +1394,9 @@ function buildTheta0Derivation(
         if (load.type === "distributed" && load.a < x) {
           const dx = x - load.a;
           const q_term = -load.q * 1000 * Math.pow(dx, 4) / 24;
+          const qLabel = distLabels.get(load) ?? "q";
           terms.push({
-            symbolic: `-\\frac{q \\cdot ${formatNumber(dx)}^4}{24}`,
+            symbolic: `-\\frac{${qLabel} \\cdot ${formatNumber(dx)}^4}{24}`,
             value: q_term
           });
           // Компенсация если нагрузка закончилась до x
@@ -1372,7 +1404,7 @@ function buildTheta0Derivation(
             const dx2 = x - load.b;
             const q_comp = load.q * 1000 * Math.pow(dx2, 4) / 24;
             terms.push({
-              symbolic: `+\\frac{q \\cdot ${formatNumber(dx2)}^4}{24}`,
+              symbolic: `+\\frac{${qLabel} \\cdot ${formatNumber(dx2)}^4}{24}`,
               value: q_comp
             });
           }
@@ -1532,11 +1564,12 @@ function buildTheta0Derivation(
       });
     } else if (load.type === "distributed") {
       // -q · (xB - a)⁴ / 24
+      const qLabel = distLabels.get(load) ?? "q";
       if (load.a < xB) {
         const dx = xB - load.a;
         const q_term = -load.q * 1000 * Math.pow(dx, 4) / 24;
         terms.push({
-          symbolic: `-\\frac{q \\cdot ${formatNumber(dx)}^4}{24}`,
+          symbolic: `-\\frac{${qLabel} \\cdot ${formatNumber(dx)}^4}{24}`,
           value: q_term
         });
       }
@@ -1545,7 +1578,7 @@ function buildTheta0Derivation(
         const dx = xB - load.b;
         const q_comp = load.q * 1000 * Math.pow(dx, 4) / 24;
         terms.push({
-          symbolic: `+\\frac{q \\cdot ${formatNumber(dx)}^4}{24}`,
+          symbolic: `+\\frac{${qLabel} \\cdot ${formatNumber(dx)}^4}{24}`,
           value: q_comp
         });
       }
