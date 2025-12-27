@@ -426,12 +426,6 @@ export function BeamSchemaExport({ input, result }: Props) {
           }
         }
 
-        elements.push(
-          <text key="dim-L" x={(xToPx(0) + xToPx(L)) / 2} y={height - 6} textAnchor="middle" fill="#374151" fontSize={fontSize.dimension} fontWeight="500">
-            L = {L} м
-          </text>
-        );
-
         return <g>{elements}</g>;
       })()}
     </svg>

@@ -362,7 +362,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
       </div>
 
       {/* Нагрузки */}
-      <div className="p-4 rounded-lg border border-border bg-card min-w-[420px]">
+      <div className="p-4 rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Нагрузки</h3>
           <div className="flex gap-2">
