@@ -234,10 +234,10 @@ export function DiagramExport({
         // Отслеживаем уже добавленные подписи для дедупликации
         const addedLabels: { x: number; value: number }[] = [];
 
-        // Проверка на дубль
+        // Проверка на дубль — по значению (если такое значение уже показано, не дублируем)
         const isDuplicate = (bx: number, value: number) => {
           return addedLabels.some(
-            (lbl) => Math.abs(lbl.x - bx) < 0.08 * L && Math.abs(lbl.value - value) < Math.abs(value) * 0.05 + 0.5
+            (lbl) => Math.abs(lbl.value - value) < Math.abs(value) * 0.02 + 0.1
           );
         };
 
