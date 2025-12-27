@@ -2169,7 +2169,7 @@ function buildCantileverReactions(
         // Сила вниз (F>=0) с отрицательным плечом → положительный момент (против часовой)
         const momentProduct = load.value * arm;
         const sign = momentProduct >= 0 ? "-" : "+";
-        momentTermsSymbolic.push(`${sign} ${load.label} \\cdot |x_{${load.label}} - x_f|`);
+        momentTermsSymbolic.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_f)`);
         const momentContrib = -momentProduct;
         momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
@@ -2186,7 +2186,7 @@ function buildCantileverReactions(
         // Знак момента зависит от направления нагрузки И знака плеча
         const momentProduct = load.Fq! * arm;
         const sign = momentProduct >= 0 ? "-" : "+";
-        momentTermsSymbolic.push(`${sign} F_{${load.label}} \\cdot |x_{${load.label}} - x_f|`);
+        momentTermsSymbolic.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_f)`);
         const momentContrib = -momentProduct;
         momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
