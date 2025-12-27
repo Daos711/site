@@ -180,7 +180,8 @@ export default function DigitsGamePage() {
                 leaderboard.map((entry, index) => {
                   const position = index + 1;
                   const rankInfo = getRank(entry.score);
-                  const dateStr = new Date(entry.created_at).toLocaleDateString("ru-RU");
+                  // Показываем updated_at если есть (дата последнего рекорда), иначе created_at
+                  const dateStr = new Date(entry.updated_at || entry.created_at).toLocaleDateString("ru-RU");
                   return (
                     <tr key={entry.id} className="border-b border-border last:border-0">
                       <td className="w-16 text-center p-4 text-lg">

@@ -11,6 +11,7 @@ export interface ScoreEntry {
   time_bonus: number;
   remaining_time: number;
   created_at: string;
+  updated_at?: string;  // Дата последнего обновления рекорда
 }
 
 export async function getScores(limit = 50): Promise<ScoreEntry[]> {
