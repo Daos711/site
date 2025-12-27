@@ -1262,7 +1262,7 @@ function buildMNPSection(
 
   <h3>Жёсткость сечения</h3>
   <div class="formula">
-    \\[EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I_used * 1e8, 2)} \\text{ см}^4 = ${formatNumber(EI_kNm2, 2)} \\text{ кН}\\cdot\\text{м}^2\\]
+    \\[EI = ${formatNumber(E / 1e9)} \\cdot 10^9 \\text{ Па} \\cdot ${formatNumber(I_used * 1e8, 2)} \\cdot 10^{-8} \\text{ м}^4 = ${formatNumber(EI, 0)} \\text{ Н}\\cdot\\text{м}^2\\]
   </div>
 
   <h3>Начальные параметры и граничные условия</h3>
@@ -1279,13 +1279,11 @@ function buildMNPSection(
 
   <h3>Значения в характерных точках</h3>
   <table>
-    <tr><th>Точка</th><th>\\(x\\), м</th><th>\\(\\theta \\cdot 10^3\\), рад</th><th>\\(y\\), мм</th></tr>
-    ${uniquePoints.map((x, i) => {
+    <tr><th>\\(x\\), м</th><th>\\(\\theta \\cdot 10^3\\), рад</th><th>\\(y\\), мм</th></tr>
+    ${uniquePoints.map((x) => {
       const theta = result.theta!(x);
       const y = result.y!(x);
-      const label = getPointLabel(x, xA, xB, L, loads);
       return `<tr>
-        <td>${label}</td>
         <td>${formatNumber(x)}</td>
         <td>${formatNumber(theta * 1000, 3)}</td>
         <td>${formatNumber(y * 1000, 2)}</td>
@@ -1293,24 +1291,6 @@ function buildMNPSection(
     }).join("\n    ")}
   </table>
   <p>Знак прогиба: «+» — вверх, «−» — вниз.</p>`;
-}
-
-/**
- * Получает метку точки (A, B, C, ...)
- */
-function getPointLabel(x: number, xA: number, xB: number, L: number, loads: Load[]): string {
-  if (Math.abs(x) < 1e-6) return "A";
-  if (Math.abs(x - L) < 1e-6) return "E";
-  if (Math.abs(x - xB) < 1e-6) return "D";
-
-  // Ищем в нагрузках
-  for (const load of loads) {
-    if (load.type === "moment" && Math.abs(load.x - x) < 1e-6) return "B";
-    if (load.type === "distributed") {
-      if (Math.abs(load.b - x) < 1e-6) return "C";
-    }
-  }
-  return "";
 }
 
 /**
