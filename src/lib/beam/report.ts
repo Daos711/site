@@ -1260,6 +1260,11 @@ function buildMNPSection(
   <h3>Уравнение прогибов для данной балки</h3>
   ${buildConcreteDeflectionEquation(input, result)}
 
+  <h3>Жёсткость сечения</h3>
+  <div class="formula">
+    \\[EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I_used * 1e8, 2)} \\text{ см}^4 = ${formatNumber(EI_kNm2, 2)} \\text{ кН}\\cdot\\text{м}^2\\]
+  </div>
+
   <h3>Начальные параметры и граничные условия</h3>
   <p>Начальные параметры в точке \\(x = 0\\):</p>
   <ul>
@@ -1271,11 +1276,6 @@ function buildMNPSection(
 
   <h3>Определение начальных параметров</h3>
   ${derivationSection}
-
-  <h3>Жёсткость сечения</h3>
-  <div class="formula">
-    \\[EI = ${formatNumber(E / 1e9)} \\text{ ГПа} \\cdot ${formatNumber(I_used * 1e8, 2)} \\text{ см}^4 = ${formatNumber(EI_kNm2, 2)} \\text{ кН}\\cdot\\text{м}^2\\]
-  </div>
 
   <h3>Значения в характерных точках</h3>
   <table>
@@ -1406,8 +1406,11 @@ function buildTheta0Derivation(
   <p>Подстановка числовых значений:</p>
   <ul>
     ${termsAtA.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\)</li>`).join("\n    ")}
-  </ul>
-  <p>Сумма слагаемых: \\(${formatNumber(sumAtA)}\\)</p>`;
+  </ul>`;
+      // "Сумма слагаемых" только если больше одного слагаемого
+      if (termsAtA.length > 1) {
+        html += `\n  <p>Сумма слагаемых: \\(${formatNumber(sumAtA)}\\)</p>`;
+      }
     }
 
     html += `
@@ -1421,8 +1424,11 @@ function buildTheta0Derivation(
   <p>Подстановка числовых значений:</p>
   <ul>
     ${termsAtB.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\)</li>`).join("\n    ")}
-  </ul>
-  <p>Сумма слагаемых: \\(${formatNumber(sumAtB)}\\)</p>`;
+  </ul>`;
+    // "Сумма слагаемых" только если больше одного слагаемого
+    if (termsAtB.length > 1) {
+      html += `\n  <p>Сумма слагаемых: \\(${formatNumber(sumAtB)}\\)</p>`;
+    }
 
     // Вычитание с корректными знаками
     const sumAtADisplay = sumAtA >= 0 ? `${formatNumber(sumAtA)}` : `(${formatNumber(sumAtA)})`;
