@@ -251,9 +251,21 @@ export function DiagramExport({
           return null;
         };
 
-        // Добавляет подпись
+        // Отслеживаем уже добавленные подписи для дедупликации
+        const addedLabels: { x: number; value: number }[] = [];
+
+        // Добавляет подпись с проверкой на дубли
         const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
           if (Math.abs(value) < 1e-6) return; // Пропускаем нули
+
+          // Проверка на дубль: не добавлять если уже есть подпись близко с таким же значением
+          const isDuplicate = addedLabels.some(
+            (lbl) => Math.abs(lbl.x - bx) < 0.05 * L && Math.abs(lbl.value - value) < 0.1
+          );
+          if (isDuplicate) return;
+
+          addedLabels.push({ x: bx, value });
+
           const xOffset = placeRight ? 18 : -18;
           const anchor = placeRight ? "start" : "end";
           const curveY = scaleY(value);
