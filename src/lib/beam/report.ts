@@ -6,13 +6,31 @@ import type { BeamInput, BeamResult, Reactions, Load } from "./types";
 import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula, type ForceContribution } from "./sections";
 
 /**
- * Форматирует длинную формулу с переносами строк
+ * Оценивает ширину LaTeX терма в условных единицах (примерно символах)
+ */
+function estimateTermWidth(term: string): number {
+  // Убираем LaTeX команды и считаем "визуальную" ширину
+  let width = term.length;
+  // \frac{...}{...} занимает меньше визуально чем символов в записи
+  const fracMatches = term.match(/\\frac\{[^}]*\}\{[^}]*\}/g);
+  if (fracMatches) {
+    for (const frac of fracMatches) {
+      width -= frac.length * 0.4; // frac компактнее текста
+    }
+  }
+  // \cdot короткий
+  width -= (term.match(/\\cdot/g) || []).length * 3;
+  return Math.max(width, 5);
+}
+
+/**
+ * Форматирует длинную формулу с переносами строк по ширине
  * @param lhs - левая часть (например "M(s)")
  * @param terms - массив слагаемых (например ["+R_A", "-F", ...])
- * @param termsPerLine - максимум слагаемых на строку
+ * @param maxLineWidth - максимальная ширина строки в условных единицах
  * @returns LaTeX строка с переносами через aligned если нужно
  */
-function formatLongFormula(lhs: string, terms: string[], termsPerLine: number = 4): { latex: string; isMultiline: boolean } {
+function formatLongFormula(lhs: string, terms: string[], maxLineWidth: number = 75): { latex: string; isMultiline: boolean } {
   if (terms.length === 0) {
     return { latex: `${lhs} = 0`, isMultiline: false };
   }
@@ -26,21 +44,48 @@ function formatLongFormula(lhs: string, terms: string[], termsPerLine: number = 
   }
   const cleanTerms = [firstTerm, ...terms.slice(1)];
 
-  if (cleanTerms.length <= termsPerLine) {
-    // Короткая формула - в одну строку
+  // Проверяем, влезет ли всё в одну строку
+  const lhsWidth = lhs.length + 3; // " = "
+  const totalWidth = lhsWidth + cleanTerms.reduce((sum, t) => sum + estimateTermWidth(t) + 1, 0);
+
+  if (totalWidth <= maxLineWidth) {
     return { latex: `${lhs} = ${cleanTerms.join(" ")}`, isMultiline: false };
   }
 
-  // Длинная формула - разбиваем на строки
+  // Разбиваем на строки по ширине
   const lines: string[] = [];
-  const firstLineTerms = cleanTerms.slice(0, termsPerLine);
-  lines.push(`${lhs} &= ${firstLineTerms.join(" ")}`);
+  let currentLine: string[] = [];
+  let currentWidth = lhsWidth;
 
-  let idx = termsPerLine;
-  while (idx < cleanTerms.length) {
-    const lineTerms = cleanTerms.slice(idx, idx + termsPerLine);
-    lines.push(`&\\phantom{=} ${lineTerms.join(" ")}`);
-    idx += termsPerLine;
+  for (const term of cleanTerms) {
+    const termWidth = estimateTermWidth(term) + 1; // +1 для пробела
+    if (currentWidth + termWidth > maxLineWidth && currentLine.length > 0) {
+      // Начинаем новую строку
+      if (lines.length === 0) {
+        lines.push(`${lhs} &= ${currentLine.join(" ")}`);
+      } else {
+        lines.push(`&\\phantom{=} ${currentLine.join(" ")}`);
+      }
+      currentLine = [term];
+      currentWidth = 10 + termWidth; // indent + term
+    } else {
+      currentLine.push(term);
+      currentWidth += termWidth;
+    }
+  }
+
+  // Добавляем последнюю строку
+  if (currentLine.length > 0) {
+    if (lines.length === 0) {
+      lines.push(`${lhs} &= ${currentLine.join(" ")}`);
+    } else {
+      lines.push(`&\\phantom{=} ${currentLine.join(" ")}`);
+    }
+  }
+
+  if (lines.length === 1) {
+    // Всё влезло в одну строку после пересчёта
+    return { latex: `${lhs} = ${cleanTerms.join(" ")}`, isMultiline: false };
   }
 
   return {
@@ -50,20 +95,43 @@ function formatLongFormula(lhs: string, terms: string[], termsPerLine: number = 
 }
 
 /**
- * Форматирует слагаемые внутри скобок с переносом строк
+ * Форматирует слагаемые внутри скобок с переносом строк по ширине
  * Для формул типа \frac{1}{EI}\left(...\right)
  */
-function formatBracketedTerms(terms: string[], maxPerLine: number = 4): { latex: string; isMultiline: boolean } {
+function formatBracketedTerms(terms: string[], maxLineWidth: number = 70): { latex: string; isMultiline: boolean } {
   if (terms.length === 0) return { latex: "", isMultiline: false };
-  if (terms.length <= maxPerLine) {
+
+  // Проверяем общую ширину
+  const totalWidth = terms.reduce((sum, t) => sum + estimateTermWidth(t) + 1, 0);
+  if (totalWidth <= maxLineWidth) {
     return { latex: terms.join(" "), isMultiline: false };
   }
 
-  // Многострочный формат
+  // Разбиваем на строки по ширине
   const lines: string[] = [];
-  for (let i = 0; i < terms.length; i += maxPerLine) {
-    lines.push(terms.slice(i, i + maxPerLine).join(" "));
+  let currentLine: string[] = [];
+  let currentWidth = 0;
+
+  for (const term of terms) {
+    const termWidth = estimateTermWidth(term) + 1;
+    if (currentWidth + termWidth > maxLineWidth && currentLine.length > 0) {
+      lines.push(currentLine.join(" "));
+      currentLine = [term];
+      currentWidth = termWidth;
+    } else {
+      currentLine.push(term);
+      currentWidth += termWidth;
+    }
   }
+
+  if (currentLine.length > 0) {
+    lines.push(currentLine.join(" "));
+  }
+
+  if (lines.length === 1) {
+    return { latex: terms.join(" "), isMultiline: false };
+  }
+
   return {
     latex: `\\begin{gathered}${lines.join(" \\\\ ")}\\end{gathered}`,
     isMultiline: true
@@ -1123,33 +1191,57 @@ function buildConcreteDeflectionEquation(
     }
   }
 
-  // Формируем уравнение с переносами для длинных формул
-  // Разбиваем на строки по 3 слагаемых (после EI·y_0 и EI·theta_0·x)
-  const TERMS_PER_LINE = 3;
+  // Формируем уравнение с переносами для длинных формул по ширине
+  const MAX_LINE_WIDTH = 75;
+  const lhs = "EI \\cdot y(x)";
+  const lhsWidth = lhs.length + 3; // " = "
+
+  // Проверяем общую ширину
+  const totalWidth = lhsWidth + terms.reduce((sum, t) => sum + estimateTermWidth(t) + 1, 0);
 
   let equation: string;
-  if (terms.length <= 4) {
+  if (totalWidth <= MAX_LINE_WIDTH) {
     // Короткая формула - в одну строку
-    equation = `EI \\cdot y(x) = ${terms.join(" ")}`;
+    equation = `${lhs} = ${terms.join(" ")}`;
   } else {
-    // Длинная формула - разбиваем на строки
+    // Длинная формула - разбиваем на строки по ширине
     const lines: string[] = [];
-    // Первая строка: EI·y(x) = EI·y_0 + EI·theta_0·x + первые слагаемые
-    const firstLineTerms = terms.slice(0, 2 + TERMS_PER_LINE); // EI·y_0, EI·theta_0*x + 3 слагаемых
-    lines.push(`EI \\cdot y(x) &= ${firstLineTerms.join(" ")}`);
+    let currentLine: string[] = [];
+    let currentWidth = lhsWidth;
 
-    // Остальные строки
-    let idx = 2 + TERMS_PER_LINE;
-    while (idx < terms.length) {
-      const lineTerms = terms.slice(idx, idx + TERMS_PER_LINE);
-      lines.push(`&\\phantom{=} ${lineTerms.join(" ")}`);
-      idx += TERMS_PER_LINE;
+    for (const term of terms) {
+      const termWidth = estimateTermWidth(term) + 1; // +1 для пробела
+      if (currentWidth + termWidth > MAX_LINE_WIDTH && currentLine.length > 0) {
+        // Начинаем новую строку
+        if (lines.length === 0) {
+          lines.push(`${lhs} &= ${currentLine.join(" ")}`);
+        } else {
+          lines.push(`&\\phantom{=} ${currentLine.join(" ")}`);
+        }
+        currentLine = [term];
+        currentWidth = 10 + termWidth; // indent + term
+      } else {
+        currentLine.push(term);
+        currentWidth += termWidth;
+      }
     }
 
-    equation = `\\begin{aligned}\n${lines.join(" \\\\\n")}\n\\end{aligned}`;
+    // Добавляем последнюю строку
+    if (currentLine.length > 0) {
+      if (lines.length === 0) {
+        lines.push(`${lhs} &= ${currentLine.join(" ")}`);
+      } else {
+        lines.push(`&\\phantom{=} ${currentLine.join(" ")}`);
+      }
+    }
+
+    equation = lines.length > 1
+      ? `\\begin{aligned}\n${lines.join(" \\\\\n")}\n\\end{aligned}`
+      : lines[0].replace(" &=", " =");
   }
 
-  const formulaClass = terms.length > 4 ? "formula formula-multiline" : "formula";
+  const isMultiline = equation.includes("\\begin{aligned}");
+  const formulaClass = isMultiline ? "formula formula-multiline" : "formula";
 
   return `
   <p>Подставляя нагрузки с учётом знаков, получаем уравнение прогибов:</p>
