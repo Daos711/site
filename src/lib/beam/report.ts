@@ -698,9 +698,10 @@ function buildInputDataSection(input: BeamInput): string {
   <p>При наложении нескольких распределённых нагрузок:</p>
   <table>
     <tr><th>Обозначение</th><th>Интенсивность</th><th>Направление</th><th>Участок</th></tr>
-    ${resultingLoads.map((seg, i) =>
-      `<tr><td>\\(q_{${i + 1}}\\)</td><td>${formatNumber(Math.abs(seg.q))} кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`
-    ).join("\n    ")}
+    ${resultingLoads.map((seg, i) => {
+      const qLabel = resultingLoads.length === 1 ? "q" : `q_{${i + 1}}`;
+      return `<tr><td>\\(${qLabel}\\)</td><td>${formatNumber(Math.abs(seg.q))} кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от ${formatNumber(seg.a)} до ${formatNumber(seg.b)} м</td></tr>`;
+    }).join("\n    ")}
   </table>`;
   }
 
@@ -1654,9 +1655,11 @@ function buildReactionsSection(input: BeamInput, reactions: Reactions): string {
   resultingLoads.forEach((seg, i) => {
     const Fq = seg.q * (seg.b - seg.a);
     const xq = (seg.a + seg.b) / 2;
+    // Если нагрузка одна - без индекса (q), если несколько - с индексом (q₁, q₂)
+    const label = resultingLoads.length === 1 ? "q" : `q_{${i + 1}}`;
     loadInfos.push({
       type: "distributed",
-      label: `q_{${i + 1}}`,
+      label,
       value: seg.q,
       a: seg.a,
       b: seg.b,
