@@ -172,7 +172,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (reactions.RB !== undefined && reactions.RB !== 0) {
           const xB = reactions.xB ?? L;
           const hasLoadAtB = hasLoadAt(xB);
-          // Если есть нагрузка в той же точке — ставим подпись справа от стрелки, чтобы не перекрывалась
+          // Подпись всегда слева от стрелки, чтобы не выходила за правый край диаграммы
           elements.push(
             <ReactionArrow
               key="RB"
@@ -182,9 +182,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               name="R"
               subscript="B"
               valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
-              labelSide={hasLoadAtB ? "right" : "left"}
-              labelYOffset={50}
-              labelXOffset={hasLoadAtB ? 5 : -30}
+              labelSide="left"
+              labelYOffset={hasLoadAtB ? 70 : 50}
+              labelXOffset={-30}
             />
           );
         }
