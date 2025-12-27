@@ -1382,14 +1382,14 @@ function buildTheta0Derivation(
     const deltaSum = sumAtB - sumAtA;
     const deltaX = xB - xA;
 
-    // Функция для форматирования числа в дроби (знак перед дробью): -sumAtA/EI
-    // Если sumAtA >= 0, то пишем -sumAtA/EI (минус перед дробью)
-    // Если sumAtA < 0, то пишем +|sumAtA|/EI (плюс перед дробью)
-    const formatFractionSign = (num: number, denom: string): string => {
+    // Функция для форматирования: -num/denom (инвертируем знак num)
+    // Если num >= 0, результат отрицательный: пишем -num/denom
+    // Если num < 0, результат положительный: пишем |num|/denom (без знака +)
+    const formatNegatedFraction = (num: number, denom: string): string => {
       if (num >= 0) {
-        return `-\\frac{${formatNumber(num)}}{${denom}}`;
+        return `- \\frac{${formatNumber(num)}}{${denom}}`;
       } else {
-        return `+\\frac{${formatNumber(Math.abs(num))}}{${denom}}`;
+        return `\\frac{${formatNumber(Math.abs(num))}}{${denom}}`;
       }
     };
 
@@ -1426,8 +1426,10 @@ function buildTheta0Derivation(
     // Вычитание с корректными знаками
     const sumAtADisplay = sumAtA >= 0 ? `${formatNumber(sumAtA)}` : `(${formatNumber(sumAtA)})`;
 
-    // Форматируем правую часть: -deltaSum/EI с корректными знаками
-    const rhsSign = deltaSum >= 0 ? "-" : "+";
+    // Форматируем правую часть: -deltaSum/EI
+    // Если deltaSum >= 0: результат отрицательный → пишем -deltaSum/EI
+    // Если deltaSum < 0: результат положительный → пишем |deltaSum|/EI (без знака)
+    const rhsPrefix = deltaSum >= 0 ? "-" : "";
     const rhsValue = Math.abs(deltaSum);
 
     html += `
@@ -1439,7 +1441,7 @@ function buildTheta0Derivation(
     \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${formatNumber(deltaSum)}}{EI} = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} = ${rhsSign}\\frac{${formatNumber(rhsValue)}}{EI} = ${rhsSign}\\frac{${formatNumber(rhsValue)}}{${formatNumber(EI, 0)}}\\]
+    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{EI} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(EI, 0)}}\\]
   </div>
   <div class="formula">
     \\[\\theta_0 = ${formatNumber((result.C1 ?? 0), 6)} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
@@ -1448,7 +1450,7 @@ function buildTheta0Derivation(
     html += `
   <p><strong>Из уравнения (1) находим \\(y_0\\):</strong></p>
   <div class="formula">
-    \\[y_0 = -\\theta_0 \\cdot ${formatNumber(xA)} ${formatFractionSign(sumAtA, "EI")}\\]
+    \\[y_0 = -\\theta_0 \\cdot ${formatNumber(xA)} ${formatNegatedFraction(sumAtA, "EI")}\\]
   </div>
   <div class="formula">
     \\[y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
@@ -1522,6 +1524,12 @@ function buildTheta0Derivation(
   // Сумма слагаемых
   const sumTerms = terms.reduce((acc, t) => acc + t.value, 0);
 
+  // Форматируем: -sumTerms/(xB·EI)
+  // Если sumTerms >= 0: результат отрицательный → пишем -sumTerms/...
+  // Если sumTerms < 0: результат положительный → пишем |sumTerms|/... (без знака)
+  const thetaPrefix = sumTerms >= 0 ? "-" : "";
+  const thetaValue = Math.abs(sumTerms);
+
   html += `
   <div class="formula">
     \\[0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)} ${terms.map(t => t.symbolic).join(" ")}\\]
@@ -1532,7 +1540,7 @@ function buildTheta0Derivation(
   </ul>
   <p>Сумма: \\(${formatNumber(sumTerms)}\\) Н·м³</p>
   <div class="formula">
-    \\[\\theta_0 = -\\frac{${formatNumber(sumTerms)}}{${formatNumber(xB)} \\cdot EI} = -\\frac{${formatNumber(sumTerms)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(result.C1 ?? 0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot EI} = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(result.C1 ?? 0, 6)} \\text{ рад}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
