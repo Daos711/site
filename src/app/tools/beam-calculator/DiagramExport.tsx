@@ -310,24 +310,26 @@ export function DiagramExport({
         return <>{labels}</>;
       })()}
 
-      {/* Маркеры экстремумов — показываем максимум и минимум если они значимые */}
-      {Math.abs(extremes.maxP.value) > 0.01 && (
-        <g>
-          <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={lineColor} />
-          <text
-            x={xToPx(extremes.maxP.x)}
-            y={scaleY(extremes.maxP.value) - 10}
-            textAnchor="middle"
-            fill={lineColor}
-            fontSize={13}
-            fontWeight="600"
-          >
-            {formatNum(extremes.maxP.value)}
-          </text>
-        </g>
-      )}
+      {/* Маркеры экстремумов — только если НЕ близко к границе (иначе уже подписано) */}
+      {Math.abs(extremes.maxP.value) > 0.01 &&
+        !boundaries.some((b) => Math.abs(b - extremes.maxP.x) < 0.03 * L) && (
+          <g>
+            <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={lineColor} />
+            <text
+              x={xToPx(extremes.maxP.x)}
+              y={scaleY(extremes.maxP.value) - 10}
+              textAnchor="middle"
+              fill={lineColor}
+              fontSize={13}
+              fontWeight="600"
+            >
+              {formatNum(extremes.maxP.value)}
+            </text>
+          </g>
+        )}
 
       {Math.abs(extremes.minP.value) > 0.01 &&
+        !boundaries.some((b) => Math.abs(b - extremes.minP.x) < 0.03 * L) &&
         (Math.abs(extremes.minP.x - extremes.maxP.x) > 0.05 * L ||
           Math.abs(extremes.minP.value - extremes.maxP.value) > 0.1) && (
           <g>
