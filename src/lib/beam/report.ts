@@ -503,12 +503,11 @@ function buildReportHTML(data: ReportData): string {
     }
     h1 { font-size: 18pt; text-align: center; margin-bottom: 20px; }
     h2 { font-size: 16pt; font-weight: bold; margin-top: 28px; margin-bottom: 14px; }
-    h3 { font-size: 13pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
+    h3 { font-size: 14pt; font-weight: bold; margin-top: 18px; margin-bottom: 10px; }
     table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; font-weight: normal; font-size: 13pt; }
     .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; }
-    .result { font-weight: bold; }
     .diagram-block { margin: 20px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
     .diagram-title { font-weight: bold; margin-bottom: 8px; font-size: 12pt; }
@@ -566,9 +565,9 @@ function buildReportHTML(data: ReportData): string {
   <h2>5. Экстремальные значения</h2>
   <table>
     <tr><th>Величина</th><th>Значение</th><th>Координата</th></tr>
-    <tr><td>\\(|Q|_{\\max}\\)</td><td class="result">\\(${formatNumber(Math.abs(Qmax.value))}\\) кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
-    <tr><td>\\(|M|_{\\max}\\)</td><td class="result">\\(${formatNumber(Math.abs(Mmax.value))}\\) кН·м</td><td>\\(x = ${formatNumber(Mmax.x)}\\) м</td></tr>
-    ${y ? `<tr><td>\\(|y|_{\\max}\\)</td><td class="result">\\(${formatNumber(Math.abs(yMax.value) * 1000)}\\) мм</td><td>\\(x = ${formatNumber(yMax.x)}\\) м</td></tr>` : ""}
+    <tr><td>\\(|Q|_{\\max}\\)</td><td>\\(${formatNumber(Math.abs(Qmax.value))}\\) кН</td><td>\\(x = ${formatNumber(Qmax.x)}\\) м</td></tr>
+    <tr><td>\\(|M|_{\\max}\\)</td><td>\\(${formatNumber(Math.abs(Mmax.value))}\\) кН·м</td><td>\\(x = ${formatNumber(Mmax.x)}\\) м</td></tr>
+    ${y ? `<tr><td>\\(|y|_{\\max}\\)</td><td>\\(${formatNumber(Math.abs(yMax.value) * 1000)}\\) мм</td><td>\\(x = ${formatNumber(yMax.x)}\\) м</td></tr>` : ""}
   </table>
 
   ${hasDiagrams ? `
