@@ -65,7 +65,7 @@ function estimateSimpleWidth(str: string): number {
  * @param maxLineWidth - максимальная ширина строки в условных единицах
  * @returns LaTeX строка с переносами через aligned если нужно
  */
-function formatLongFormula(lhs: string, terms: string[], maxLineWidth: number = 75): { latex: string; isMultiline: boolean } {
+function formatLongFormula(lhs: string, terms: string[], maxLineWidth: number = 90): { latex: string; isMultiline: boolean } {
   if (terms.length === 0) {
     return { latex: `${lhs} = 0`, isMultiline: false };
   }
@@ -133,7 +133,7 @@ function formatLongFormula(lhs: string, terms: string[], maxLineWidth: number = 
  * Форматирует слагаемые внутри скобок с переносом строк по ширине
  * Для формул типа \frac{1}{EI}\left(...\right)
  */
-function formatBracketedTerms(terms: string[], maxLineWidth: number = 70): { latex: string; isMultiline: boolean } {
+function formatBracketedTerms(terms: string[], maxLineWidth: number = 85): { latex: string; isMultiline: boolean } {
   if (terms.length === 0) return { latex: "", isMultiline: false };
 
   // Проверяем общую ширину
@@ -1227,7 +1227,7 @@ function buildConcreteDeflectionEquation(
   }
 
   // Формируем уравнение с переносами для длинных формул по ширине
-  const MAX_LINE_WIDTH = 75;
+  const MAX_LINE_WIDTH = 95;
   const lhs = "EI \\cdot y(x)";
   const lhsWidth = lhs.length + 3; // " = "
 
