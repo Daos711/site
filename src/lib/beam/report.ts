@@ -50,6 +50,27 @@ function formatLongFormula(lhs: string, terms: string[], termsPerLine: number = 
 }
 
 /**
+ * Форматирует слагаемые внутри скобок с переносом строк
+ * Для формул типа \frac{1}{EI}\left(...\right)
+ */
+function formatBracketedTerms(terms: string[], maxPerLine: number = 3): { latex: string; isMultiline: boolean } {
+  if (terms.length === 0) return { latex: "", isMultiline: false };
+  if (terms.length <= maxPerLine) {
+    return { latex: terms.join(" "), isMultiline: false };
+  }
+
+  // Многострочный формат
+  const lines: string[] = [];
+  for (let i = 0; i < terms.length; i += maxPerLine) {
+    lines.push(terms.slice(i, i + maxPerLine).join(" "));
+  }
+  return {
+    latex: `\\begin{gathered}${lines.join(" \\\\ ")}\\end{gathered}`,
+    isMultiline: true
+  };
+}
+
+/**
  * Вычисляет результирующие распределённые нагрузки по участкам
  * (с учётом наложения нескольких q на одном участке)
  */
@@ -1374,10 +1395,14 @@ function buildTheta0Derivation(
       }
     };
 
+    // Форматируем условие 1 с переносом при большом количестве слагаемых
+    const termsAtASymbolic = termsAtA.map(t => t.symbolic);
+    const { latex: bracketsA, isMultiline: multiA } = formatBracketedTerms(termsAtASymbolic, 3);
+
     html = `
   <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\) (прогиб на опоре A)</p>
-  <div class="formula">
-    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xA)} ${termsAtA.length > 0 ? `+ \\frac{1}{EI}\\left(${termsAtA.map(t => t.symbolic).join(" ")}\\right)` : ""} = 0 \\quad (1)\\]
+  <div class="formula${multiA ? " formula-multiline" : ""}">
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xA)} ${termsAtA.length > 0 ? `+ \\frac{1}{EI}\\left(${bracketsA}\\right)` : ""} = 0 \\quad (1)\\]
   </div>`;
 
     // Показываем числовые значения для условия 1
@@ -1393,10 +1418,14 @@ function buildTheta0Derivation(
       }
     }
 
+    // Форматируем условие 2 с переносом при большом количестве слагаемых
+    const termsAtBSymbolic = termsAtB.map(t => t.symbolic);
+    const { latex: bracketsB, isMultiline: multiB } = formatBracketedTerms(termsAtBSymbolic, 3);
+
     html += `
   <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\) (прогиб на опоре B)</p>
-  <div class="formula">
-    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xB)} + \\frac{1}{EI}\\left(${termsAtB.map(t => t.symbolic).join(" ")}\\right) = 0 \\quad (2)\\]
+  <div class="formula${multiB ? " formula-multiline" : ""}">
+    \\[y_0 + \\theta_0 \\cdot ${formatNumber(xB)} + \\frac{1}{EI}\\left(${bracketsB}\\right) = 0 \\quad (2)\\]
   </div>`;
 
     // Показываем числовые значения для условия 2
@@ -1517,9 +1546,17 @@ function buildTheta0Derivation(
   const thetaPrefix = sumTerms >= 0 ? "-" : "";
   const thetaValue = Math.abs(sumTerms);
 
+  // Формула с переносом строк при большом количестве слагаемых
+  const formulaTerms = terms.map(t => t.symbolic);
+  const { latex: thetaFormula, isMultiline: thetaMultiline } = formatLongFormula(
+    `0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)}`,
+    formulaTerms,
+    3 // макс. 3 слагаемых на строку
+  );
+
   html += `
-  <div class="formula">
-    \\[0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)} ${terms.map(t => t.symbolic).join(" ")}\\]
+  <div class="formula${thetaMultiline ? " formula-multiline" : ""}">
+    \\[${thetaFormula}\\]
   </div>
   <p>Числовые значения слагаемых:</p>
   <ul>
@@ -1892,9 +1929,18 @@ function buildSimplySupportedReactions(
     }
   }
 
+  // Форматируем с переносом при большом количестве слагаемых
+  const { latex: momentSymbolicLatex, isMultiline: momentSymbolicMulti } = formatLongFormula(
+    `\\sum M_A = 0: \\quad`,
+    momentSymbolic.concat(["= 0"]),
+    3
+  );
+  // Убираем "= 0" из массива и добавляем обратно в конец
+  const momentSymbolicFinal = momentSymbolicLatex.replace(/ = 0$/, " = 0");
+
   html += `
-  <div class="formula">
-    \\(\\sum M_A = 0: \\quad ${momentSymbolic.join(" ")} = 0\\)
+  <div class="formula${momentSymbolicMulti ? " formula-multiline" : ""}">
+    \\(${momentSymbolicMulti ? momentSymbolicLatex.replace("= 0 = 0", "= 0") : `\\sum M_A = 0: \\quad ${momentSymbolic.join(" ")} = 0`}\\)
   </div>`;
 
   // Подстановка чисел
@@ -1936,9 +1982,13 @@ function buildSimplySupportedReactions(
     }
   }
 
+  // Форматируем числовое уравнение с переносом
+  const { latex: momentNumLatex, isMultiline: momentNumMulti } = formatLongFormula("", momentNumTerms.concat(["= 0"]), 4);
+  const momentNumFinal = momentNumMulti ? momentNumLatex.replace(/ = 0$/, " = 0") : `${momentNumTerms.join(" ")} = 0`;
+
   html += `
-  <div class="formula">
-    \\(${momentNumTerms.join(" ")} = 0\\)
+  <div class="formula${momentNumMulti ? " formula-multiline" : ""}">
+    \\(${momentNumFinal}\\)
   </div>`;
 
   // Вычисляем R_B

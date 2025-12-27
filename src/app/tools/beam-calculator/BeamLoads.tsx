@@ -157,7 +157,7 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
 // Момент (ножка + дуга со стрелкой, ФИОЛЕТОВАЯ)
 // M > 0: против часовой (↺), стрелка слева
 // M < 0: по часовой (↻), стрелка справа
-export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX }: { x: number; y: number; M: number; label: string; markerPrefix?: string; maxX?: number }) {
+export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX, liftLabel = false }: { x: number; y: number; M: number; label: string; markerPrefix?: string; maxX?: number; liftLabel?: boolean }) {
   const H = 35;
   const R = 20;
   const gap = 6;
@@ -190,8 +190,8 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX }: { x: nu
   let labelY: number;
   let labelAnchor: "start" | "end";
 
-  if (nearRightEdge) {
-    // Подпись слева и выше дуги
+  if (liftLabel || nearRightEdge) {
+    // Подпись слева и выше дуги (при наложении или у правого края)
     labelX = pLeft.x - 8;
     labelY = Cy - R - 5;
     labelAnchor = "end";
@@ -205,7 +205,7 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX }: { x: nu
     labelAnchor = "end";
   }
 
-  if (!isCW && !nearRightEdge && labelX < minX + 60) {
+  if (!isCW && !nearRightEdge && !liftLabel && labelX < minX + 60) {
     labelX = pRight.x + 8;
     labelAnchor = "start";
   }
