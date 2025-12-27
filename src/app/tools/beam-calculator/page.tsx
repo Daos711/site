@@ -35,8 +35,8 @@ export default function BeamCalculatorPage() {
       />
 
       {/* Верхний блок: 2 колонки на десктопе */}
-      <div className="grid gap-6 lg:grid-cols-[5fr_7fr] mb-8">
-        {/* Левая колонка: Форма ввода */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(420px,5fr)_7fr] mb-8">
+        {/* Левая колонка: Форма ввода (min-width для q-строки) */}
         <BeamInput onCalculate={handleCalculate} />
 
         {/* Правая колонка: Результаты */}
