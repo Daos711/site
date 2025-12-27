@@ -326,7 +326,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
                 beamType === "simply-supported-overhang-both") && (
                 <div>
                   <label className="block text-sm text-muted mb-1">
-                    Опора A (xₐ), м
+                    Опора A (x<sub>A</sub>), м
                   </label>
                   <NumInput
                     value={xA}
@@ -336,14 +336,14 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
                     step={0.1}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                   />
-                  <p className="text-xs text-muted mt-1">Консоль слева: 0 → xₐ</p>
+                  <p className="text-xs text-muted mt-1">Консоль слева: 0 → x<sub>A</sub></p>
                 </div>
               )}
               {(beamType === "simply-supported-overhang-right" ||
                 beamType === "simply-supported-overhang-both") && (
                 <div>
                   <label className="block text-sm text-muted mb-1">
-                    Опора B (x_b), м
+                    Опора B (x<sub>B</sub>), м
                   </label>
                   <NumInput
                     value={xB}
@@ -353,7 +353,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
                     step={0.1}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                   />
-                  <p className="text-xs text-muted mt-1">Консоль справа: x_b → L</p>
+                  <p className="text-xs text-muted mt-1">Консоль справа: x<sub>B</sub> → L</p>
                 </div>
               )}
             </div>
