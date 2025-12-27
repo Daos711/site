@@ -1382,28 +1382,76 @@ function buildTheta0Derivation(
     const deltaSum = sumAtB - sumAtA;
     const deltaX = xB - xA;
 
+    // Функция для форматирования числа в дроби (знак перед дробью): -sumAtA/EI
+    // Если sumAtA >= 0, то пишем -sumAtA/EI (минус перед дробью)
+    // Если sumAtA < 0, то пишем +|sumAtA|/EI (плюс перед дробью)
+    const formatFractionSign = (num: number, denom: string): string => {
+      if (num >= 0) {
+        return `-\\frac{${formatNumber(num)}}{${denom}}`;
+      } else {
+        return `+\\frac{${formatNumber(Math.abs(num))}}{${denom}}`;
+      }
+    };
+
     html = `
   <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\) (прогиб на опоре A)</p>
   <div class="formula">
     \\[y_0 + \\theta_0 \\cdot ${formatNumber(xA)} ${termsAtA.length > 0 ? `+ \\frac{1}{EI}\\left(${termsAtA.map(t => t.symbolic).join(" ")}\\right)` : ""} = 0 \\quad (1)\\]
-  </div>
+  </div>`;
+
+    // Показываем числовые значения для условия 1
+    if (termsAtA.length > 0) {
+      html += `
+  <p>Подстановка числовых значений:</p>
+  <ul>
+    ${termsAtA.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\)</li>`).join("\n    ")}
+  </ul>
+  <p>Сумма слагаемых: \\(${formatNumber(sumAtA)}\\)</p>`;
+    }
+
+    html += `
   <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\) (прогиб на опоре B)</p>
   <div class="formula">
     \\[y_0 + \\theta_0 \\cdot ${formatNumber(xB)} + \\frac{1}{EI}\\left(${termsAtB.map(t => t.symbolic).join(" ")}\\right) = 0 \\quad (2)\\]
-  </div>
+  </div>`;
+
+    // Показываем числовые значения для условия 2
+    html += `
+  <p>Подстановка числовых значений:</p>
+  <ul>
+    ${termsAtB.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\)</li>`).join("\n    ")}
+  </ul>
+  <p>Сумма слагаемых: \\(${formatNumber(sumAtB)}\\)</p>`;
+
+    // Вычитание с корректными знаками
+    const sumAtADisplay = sumAtA >= 0 ? `${formatNumber(sumAtA)}` : `(${formatNumber(sumAtA)})`;
+
+    // Форматируем правую часть: -deltaSum/EI с корректными знаками
+    const rhsSign = deltaSum >= 0 ? "-" : "+";
+    const rhsValue = Math.abs(deltaSum);
+
+    html += `
   <p><strong>Вычитаем (1) из (2):</strong></p>
   <div class="formula">
-    \\[\\theta_0 \\cdot (${formatNumber(xB)} - ${formatNumber(xA)}) + \\frac{1}{EI}\\left(${formatNumber(sumAtB)} - ${formatNumber(sumAtA)}\\right) = 0\\]
+    \\[\\theta_0 \\cdot (${formatNumber(xB)} - ${formatNumber(xA)}) + \\frac{1}{EI}\\left(${formatNumber(sumAtB)} - ${sumAtADisplay}\\right) = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} = -\\frac{${formatNumber(deltaSum)}}{EI} = -\\frac{${formatNumber(deltaSum)}}{${formatNumber(EI, 0)}}\\]
+    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${formatNumber(deltaSum)}}{EI} = 0\\]
+  </div>
+  <div class="formula">
+    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} = ${rhsSign}\\frac{${formatNumber(rhsValue)}}{EI} = ${rhsSign}\\frac{${formatNumber(rhsValue)}}{${formatNumber(EI, 0)}}\\]
   </div>
   <div class="formula">
     \\[\\theta_0 = ${formatNumber((result.C1 ?? 0), 6)} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
-  </div>
+  </div>`;
+
+    html += `
   <p><strong>Из уравнения (1) находим \\(y_0\\):</strong></p>
   <div class="formula">
-    \\[y_0 = -\\theta_0 \\cdot ${formatNumber(xA)} - \\frac{${formatNumber(sumAtA)}}{EI} = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
+    \\[y_0 = -\\theta_0 \\cdot ${formatNumber(xA)} ${formatFractionSign(sumAtA, "EI")}\\]
+  </div>
+  <div class="formula">
+    \\[y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
