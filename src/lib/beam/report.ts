@@ -506,7 +506,7 @@ function buildReportHTML(data: ReportData): string {
     h3 { font-size: 13pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
     table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f5f5f5; }
+    th { background: #f5f5f5; font-weight: normal; font-size: 13pt; }
     .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; }
     .result { font-weight: bold; }
     .diagram-block { margin: 20px 0; text-align: center; }
@@ -515,8 +515,8 @@ function buildReportHTML(data: ReportData): string {
     .figure-caption { font-size: 11pt; font-style: italic; margin-top: 6px; }
     ul { margin: 8px 0; padding-left: 24px; }
     li { margin: 4px 0; }
-    .sign-convention { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; margin: 12px 0; }
-    .sign-convention h4 { margin: 0 0 8px 0; font-size: 12pt; }
+    .sign-convention { margin: 12px 0; }
+    .sign-convention h4 { margin: 0 0 8px 0; font-size: 12pt; font-weight: bold; }
     .conclusions { margin: 16px 0; }
     .unit { margin-left: 8px; font-style: normal; }
     @media print {
