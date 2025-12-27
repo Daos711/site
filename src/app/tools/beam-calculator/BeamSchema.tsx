@@ -245,8 +245,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const arcEnd = isCW ? pRight : pLeft;
           const sweepFlag = isCW ? 1 : 0;
 
-          const labelX = isCW ? pRight.x + 8 : pLeft.x - 8;
-          const labelAnchor = isCW ? "start" : "end";
+          // Подпись всегда справа и выше, чтобы не уходила за край
+          const labelX = px + R + 25;
+          const labelY = Cy - 25;
 
           elements.push(
             <g key="Mf">
@@ -258,7 +259,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
                 strokeWidth={2}
                 markerEnd="url(#arrowGreen)"
               />
-              <text x={labelX} y={Cy - 15} textAnchor={labelAnchor} fill={COLORS.reaction} fontSize={13} fontWeight="600">
+              <text x={labelX} y={labelY} textAnchor="start" fill={COLORS.reaction} fontSize={13} fontWeight="600">
                 Mf = {formatNum(Math.abs(reactions.Mf))} кН·м
               </text>
             </g>

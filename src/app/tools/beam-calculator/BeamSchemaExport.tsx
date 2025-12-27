@@ -361,8 +361,9 @@ export function BeamSchemaExport({ input, result }: Props) {
           const arcEnd = isCW ? pRight : pLeft;
           const sweepFlag = isCW ? 1 : 0;
 
-          const labelX = isCW ? pRight.x + 6 : pLeft.x - 6;
-          const labelAnchor = isCW ? "start" : "end";
+          // Подпись всегда справа и выше
+          const labelX = px + R + 20;
+          const labelY = Cy - 18;
 
           elements.push(
             <g key="Mf">
@@ -374,7 +375,7 @@ export function BeamSchemaExport({ input, result }: Props) {
                 strokeWidth={2}
                 markerEnd="url(#exp-arrowGreen)"
               />
-              <text x={labelX} y={Cy - 12} textAnchor={labelAnchor} fill={COLORS.reaction} fontSize={fontSize.label} fontWeight="600">
+              <text x={labelX} y={labelY} textAnchor="start" fill={COLORS.reaction} fontSize={fontSize.label} fontWeight="600">
                 M<tspan dy="3" fontSize={fontSize.subscript}>f</tspan>
               </text>
             </g>
