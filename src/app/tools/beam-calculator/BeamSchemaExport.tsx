@@ -206,79 +206,95 @@ export function BeamSchemaExport({ input, result }: Props) {
       })()}
 
       {/* Сосредоточенные силы — собственный рендеринг */}
-      {loads.map((load, i) => {
-        if (load.type !== "force") return null;
-        const arrowLen = 40;
-        const markerOffset = 6;
-        const pointsDown = load.F >= 0;
-        const y = pointsDown ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
-        const px = xToPx(load.x);
+      {(() => {
+        const forceLoads = loads.filter(l => l.type === "force");
+        const forceCount = forceLoads.length;
+        let forceIdx = 0;
 
-        // Определяем позицию подписи
-        const nearEnd = load.x > L * 0.85;
-        const labelX = nearEnd ? px - 8 : px + 8;
-        const anchor = nearEnd ? "end" : "start";
+        return loads.map((load, i) => {
+          if (load.type !== "force") return null;
+          forceIdx++;
+          const subscript = forceCount > 1 ? String(forceIdx) : "";
+          const arrowLen = 40;
+          const markerOffset = 6;
+          const pointsDown = load.F >= 0;
+          const y = pointsDown ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
+          const px = xToPx(load.x);
 
-        if (pointsDown) {
-          return (
-            <g key={`force-${i}`}>
-              <line x1={px} y1={y - arrowLen} x2={px} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
-              <text x={labelX} y={y - arrowLen - 4} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
-                F
-              </text>
-            </g>
-          );
-        } else {
-          return (
-            <g key={`force-${i}`}>
-              <line x1={px} y1={y + arrowLen} x2={px} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
-              <text x={labelX} y={y + arrowLen + 12} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
-                F
-              </text>
-            </g>
-          );
-        }
-      })}
+          // Определяем позицию подписи
+          const nearEnd = load.x > L * 0.85;
+          const labelX = nearEnd ? px - 8 : px + 8;
+          const anchor = nearEnd ? "end" : "start";
+
+          if (pointsDown) {
+            return (
+              <g key={`force-${i}`}>
+                <line x1={px} y1={y - arrowLen} x2={px} y2={y - markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
+                <text x={labelX} y={y - arrowLen - 4} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
+                  F{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
+                </text>
+              </g>
+            );
+          } else {
+            return (
+              <g key={`force-${i}`}>
+                <line x1={px} y1={y + arrowLen} x2={px} y2={y + markerOffset} stroke={COLORS.pointForce} strokeWidth={2} markerEnd="url(#exp-arrowRed)" />
+                <text x={labelX} y={y + arrowLen + 12} fill={COLORS.pointForce} fontSize={fontSize.label} fontWeight="600" textAnchor={anchor}>
+                  F{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
+                </text>
+              </g>
+            );
+          }
+        });
+      })()}
 
       {/* Моменты — собственный рендеринг */}
-      {loads.map((load, i) => {
-        if (load.type !== "moment") return null;
-        const H = 28;
-        const R = 16;
-        const gap = 5;
-        const px = xToPx(load.x);
-        const Cy = beamY - gap - H;
+      {(() => {
+        const momentLoads = loads.filter(l => l.type === "moment");
+        const momentCount = momentLoads.length;
+        let momentIdx = 0;
 
-        const isCW = load.M < 0;
-        const aLeft = (240 * Math.PI) / 180;
-        const aRight = (330 * Math.PI) / 180;
-        const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
-        const pRight = { x: px + R * Math.cos(aRight), y: Cy + R * Math.sin(aRight) };
+        return loads.map((load, i) => {
+          if (load.type !== "moment") return null;
+          momentIdx++;
+          const subscript = momentCount > 1 ? String(momentIdx) : "";
+          const H = 28;
+          const R = 16;
+          const gap = 5;
+          const px = xToPx(load.x);
+          const Cy = beamY - gap - H;
 
-        const legEnd = isCW ? pLeft : pRight;
-        const arcStart = isCW ? pLeft : pRight;
-        const arcEnd = isCW ? pRight : pLeft;
-        const sweepFlag = isCW ? 1 : 0;
+          const isCW = load.M < 0;
+          const aLeft = (240 * Math.PI) / 180;
+          const aRight = (330 * Math.PI) / 180;
+          const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
+          const pRight = { x: px + R * Math.cos(aRight), y: Cy + R * Math.sin(aRight) };
 
-        const labelX = isCW ? pRight.x + 6 : pLeft.x - 6;
-        const labelAnchor = isCW ? "start" : "end";
+          const legEnd = isCW ? pLeft : pRight;
+          const arcStart = isCW ? pLeft : pRight;
+          const arcEnd = isCW ? pRight : pLeft;
+          const sweepFlag = isCW ? 1 : 0;
 
-        return (
-          <g key={`moment-${i}`}>
-            <line x1={px} y1={beamY - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.moment} strokeWidth={2} />
-            <path
-              d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
-              fill="none"
-              stroke={COLORS.moment}
-              strokeWidth={2}
-              markerEnd="url(#exp-arrowPurple)"
-            />
-            <text x={labelX} y={Cy - 12} textAnchor={labelAnchor} fill={COLORS.moment} fontSize={fontSize.label} fontWeight="600">
-              M
-            </text>
-          </g>
-        );
-      })}
+          const labelX = isCW ? pRight.x + 6 : pLeft.x - 6;
+          const labelAnchor = isCW ? "start" : "end";
+
+          return (
+            <g key={`moment-${i}`}>
+              <line x1={px} y1={beamY - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.moment} strokeWidth={2} />
+              <path
+                d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
+                fill="none"
+                stroke={COLORS.moment}
+                strokeWidth={2}
+                markerEnd="url(#exp-arrowPurple)"
+              />
+              <text x={labelX} y={Cy - 12} textAnchor={labelAnchor} fill={COLORS.moment} fontSize={fontSize.label} fontWeight="600">
+                M{subscript && <tspan dy="3" fontSize={fontSize.subscript}>{subscript}</tspan>}
+              </text>
+            </g>
+          );
+        });
+      })()}
 
       {/* Реакции опор — собственный рендеринг с крупными шрифтами */}
       {(() => {

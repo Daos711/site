@@ -106,40 +106,51 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
       })()}
 
       {/* Сосредоточенные силы и моменты */}
-      {loads.map((load, i) => {
-        if (load.type === "force") {
-          // Положительная сила вниз → верхняя поверхность, отрицательная вверх → нижняя
-          const forceY = load.F >= 0 ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
-          return (
-            <ForceArrow
-              key={`force-${i}`}
-              x={xToPx(load.x)}
-              y={forceY}
-              F={load.F}
-              label={`F = ${Math.abs(load.F)} кН`}
-              maxX={xToPx(L) + PADDING.right - 10}
-            />
-          );
-        } else if (load.type === "moment") {
-          // Проверяем, есть ли внешняя сила в той же точке
-          // (реакции не проверяем - они рисуются у символов опор)
-          const hasForceAtSamePoint = loads.some(other =>
-            other.type === "force" && Math.abs(other.x - load.x) < 0.01
-          );
-          return (
-            <MomentArrow
-              key={`moment-${i}`}
-              x={xToPx(load.x)}
-              y={beamY}
-              M={load.M}
-              label={`M = ${Math.abs(load.M)} кН·м`}
-              maxX={xToPx(L) + PADDING.right - 10}
-              liftLabel={hasForceAtSamePoint}
-            />
-          );
-        }
-        return null;
-      })}
+      {(() => {
+        const forceLoads = loads.filter(l => l.type === "force");
+        const momentLoads = loads.filter(l => l.type === "moment");
+        let forceIdx = 0;
+        let momentIdx = 0;
+
+        return loads.map((load, i) => {
+          if (load.type === "force") {
+            forceIdx++;
+            const fLabel = forceLoads.length > 1 ? `F${forceIdx}` : "F";
+            // Положительная сила вниз → верхняя поверхность, отрицательная вверх → нижняя
+            const forceY = load.F >= 0 ? (beamY - beamThickness / 2) : (beamY + beamThickness / 2);
+            return (
+              <ForceArrow
+                key={`force-${i}`}
+                x={xToPx(load.x)}
+                y={forceY}
+                F={load.F}
+                label={`${fLabel} = ${Math.abs(load.F)} кН`}
+                maxX={xToPx(L) + PADDING.right - 10}
+              />
+            );
+          } else if (load.type === "moment") {
+            momentIdx++;
+            const mLabel = momentLoads.length > 1 ? `M${momentIdx}` : "M";
+            // Проверяем, есть ли внешняя сила в той же точке
+            // (реакции не проверяем - они рисуются у символов опор)
+            const hasForceAtSamePoint = loads.some(other =>
+              other.type === "force" && Math.abs(other.x - load.x) < 0.01
+            );
+            return (
+              <MomentArrow
+                key={`moment-${i}`}
+                x={xToPx(load.x)}
+                y={beamY}
+                M={load.M}
+                label={`${mLabel} = ${Math.abs(load.M)} кН·м`}
+                maxX={xToPx(L) + PADDING.right - 10}
+                liftLabel={hasForceAtSamePoint}
+              />
+            );
+          }
+          return null;
+        });
+      })()}
 
       {/* Реакции - ЗЕЛЁНЫЕ стрелки */}
       {(() => {
