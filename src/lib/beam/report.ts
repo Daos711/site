@@ -2164,10 +2164,13 @@ function buildCantileverReactions(
     if (load.type === "force") {
       const arm = load.x! - xf;
       if (Math.abs(arm) > 1e-9) {
-        // Сила вниз (>=0) создаёт ОТРИЦАТЕЛЬНЫЙ момент относительно заделки (по часовой)
-        const sign = load.value >= 0 ? "-" : "+";
-        momentTermsSymbolic.push(`${sign} ${load.label} \\cdot (x_{${load.label}} - x_f)`);
-        const momentContrib = -load.value * arm; // минус, т.к. сила вниз → момент по часовой
+        // Знак момента зависит от направления силы И знака плеча
+        // Сила вниз (F>=0) с положительным плечом → отрицательный момент (по часовой)
+        // Сила вниз (F>=0) с отрицательным плечом → положительный момент (против часовой)
+        const momentProduct = load.value * arm;
+        const sign = momentProduct >= 0 ? "-" : "+";
+        momentTermsSymbolic.push(`${sign} ${load.label} \\cdot |x_{${load.label}} - x_f|`);
+        const momentContrib = -momentProduct;
         momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.value))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
       }
@@ -2180,10 +2183,11 @@ function buildCantileverReactions(
     } else if (load.type === "distributed") {
       const arm = load.xq! - xf;
       if (Math.abs(arm) > 1e-9) {
-        // Нагрузка вниз (>=0) создаёт ОТРИЦАТЕЛЬНЫЙ момент относительно заделки
-        const sign = load.Fq! >= 0 ? "-" : "+";
-        momentTermsSymbolic.push(`${sign} F_{${load.label}} \\cdot (x_{${load.label}} - x_f)`);
-        const momentContrib = -load.Fq! * arm; // минус, т.к. нагрузка вниз → момент по часовой
+        // Знак момента зависит от направления нагрузки И знака плеча
+        const momentProduct = load.Fq! * arm;
+        const sign = momentProduct >= 0 ? "-" : "+";
+        momentTermsSymbolic.push(`${sign} F_{${load.label}} \\cdot |x_{${load.label}} - x_f|`);
+        const momentContrib = -momentProduct;
         momentTermsNumeric.push(`${sign} ${formatNumber(Math.abs(load.Fq!))} \\cdot ${formatNumber(Math.abs(arm))}`);
         totalMomentValue += momentContrib;
       }
