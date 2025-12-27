@@ -227,11 +227,59 @@ export function DiagramExport({
         );
       })}
 
-      {/* Подписи: только концы балки и скачки (минимум подписей) */}
+      {/* Подписи значений и экстремумов */}
       {(() => {
         const labels: React.ReactNode[] = [];
 
-        // Функция поиска значения слева от точки
+        // Отслеживаем уже добавленные подписи для дедупликации
+        const addedLabels: { x: number; value: number }[] = [];
+
+        // Проверка на дубль
+        const isDuplicate = (bx: number, value: number) => {
+          return addedLabels.some(
+            (lbl) => Math.abs(lbl.x - bx) < 0.08 * L && Math.abs(lbl.value - value) < Math.abs(value) * 0.05 + 0.5
+          );
+        };
+
+        // Добавляет подпись сбоку (для границ и скачков)
+        const addSideLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
+          if (Math.abs(value) < 1e-6) return;
+          if (isDuplicate(bx, value)) return;
+
+          addedLabels.push({ x: bx, value });
+          const xOffset = placeRight ? 18 : -18;
+          const anchor = placeRight ? "start" : "end";
+          const curveY = scaleY(value);
+          const textY = value >= 0 ? curveY - 8 : curveY + 14;
+
+          labels.push(
+            <text key={key} x={xToPx(bx) + xOffset} y={textY} textAnchor={anchor}
+              fill={lineColor} fontSize={13} fontWeight="500">
+              {formatNum(value)}
+            </text>
+          );
+        };
+
+        // Добавляет подпись экстремума (по центру, с маркером)
+        const addExtremumLabel = (pt: { x: number; value: number }, isMax: boolean, key: string) => {
+          if (Math.abs(pt.value) < 0.01) return;
+          if (isDuplicate(pt.x, pt.value)) return;
+
+          addedLabels.push({ x: pt.x, value: pt.value });
+          const textY = isMax ? scaleY(pt.value) - 10 : scaleY(pt.value) + 16;
+
+          labels.push(
+            <g key={key}>
+              <circle cx={xToPx(pt.x)} cy={scaleY(pt.value)} r={4} fill={lineColor} />
+              <text x={xToPx(pt.x)} y={textY} textAnchor="middle"
+                fill={lineColor} fontSize={13} fontWeight="600">
+                {formatNum(pt.value)}
+              </text>
+            </g>
+          );
+        };
+
+        // Функции поиска значений
         const findLeftValue = (x: number): number | null => {
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
@@ -241,7 +289,6 @@ export function DiagramExport({
           return null;
         };
 
-        // Функция поиска значения справа от точки
         const findRightValue = (x: number): number | null => {
           for (const seg of scaledSegments) {
             if (seg.length < 2) continue;
@@ -251,113 +298,38 @@ export function DiagramExport({
           return null;
         };
 
-        // Отслеживаем уже добавленные подписи для дедупликации
-        const addedLabels: { x: number; value: number }[] = [];
+        // 1. Экстремумы (добавляем первыми — они приоритетные)
+        addExtremumLabel(extremes.maxP, true, "extremum-max");
+        if (Math.abs(extremes.minP.x - extremes.maxP.x) > 0.03 * L ||
+            Math.abs(extremes.minP.value - extremes.maxP.value) > 0.5) {
+          addExtremumLabel(extremes.minP, false, "extremum-min");
+        }
 
-        // Добавляет подпись с проверкой на дубли
-        const addLabel = (bx: number, value: number, placeRight: boolean, key: string) => {
-          if (Math.abs(value) < 1e-6) return; // Пропускаем нули
-
-          // Проверка на дубль: не добавлять если уже есть подпись близко с таким же значением
-          const isDuplicate = addedLabels.some(
-            (lbl) => Math.abs(lbl.x - bx) < 0.05 * L && Math.abs(lbl.value - value) < 0.1
-          );
-          if (isDuplicate) return;
-
-          addedLabels.push({ x: bx, value });
-
-          const xOffset = placeRight ? 18 : -18;
-          const anchor = placeRight ? "start" : "end";
-          const curveY = scaleY(value);
-          const textY = value >= 0 ? curveY - 8 : curveY + 14;
-
-          labels.push(
-            <text
-              key={key}
-              x={xToPx(bx) + xOffset}
-              y={textY}
-              textAnchor={anchor}
-              fill={lineColor}
-              fontSize={13}
-              fontWeight="500"
-            >
-              {formatNum(value)}
-            </text>
-          );
-        };
-
-        // 1. Концы балки (x=0 и x=L) — только если не ноль
+        // 2. Концы балки
         const startValue = findRightValue(0);
         const endValue = findLeftValue(L);
+        if (startValue !== null) addSideLabel(0, startValue, true, "label-start");
+        if (endValue !== null) addSideLabel(L, endValue, false, "label-end");
 
-        if (startValue !== null && Math.abs(startValue) > 1e-6) {
-          addLabel(0, startValue, true, "label-start");
-        }
-        if (endValue !== null && Math.abs(endValue) > 1e-6) {
-          addLabel(L, endValue, false, "label-end");
-        }
-
-        // 2. Скачки (разрывы) — только существенные
+        // 3. Скачки (разрывы)
         for (let bIdx = 0; bIdx < boundaries.length; bIdx++) {
           const bx = boundaries[bIdx];
-          if (Math.abs(bx) < 0.01 || Math.abs(bx - L) < 0.01) continue; // Пропускаем концы
+          if (Math.abs(bx) < 0.01 || Math.abs(bx - L) < 0.01) continue;
 
           const leftValue = findLeftValue(bx);
           const rightValue = findRightValue(bx);
 
-          // Показываем только если есть разрыв (значения отличаются)
           const hasDiscontinuity = leftValue !== null && rightValue !== null &&
             Math.abs(leftValue - rightValue) > 0.5;
 
           if (hasDiscontinuity) {
-            if (leftValue !== null && Math.abs(leftValue) > 1e-6) {
-              addLabel(bx, leftValue, false, `label-${bIdx}-left`);
-            }
-            if (rightValue !== null && Math.abs(rightValue) > 1e-6) {
-              addLabel(bx, rightValue, true, `label-${bIdx}-right`);
-            }
+            if (leftValue !== null) addSideLabel(bx, leftValue, false, `label-${bIdx}-left`);
+            if (rightValue !== null) addSideLabel(bx, rightValue, true, `label-${bIdx}-right`);
           }
         }
 
         return <>{labels}</>;
       })()}
-
-      {/* Маркеры экстремумов — только если НЕ близко к границе (иначе уже подписано) */}
-      {Math.abs(extremes.maxP.value) > 0.01 &&
-        !boundaries.some((b) => Math.abs(b - extremes.maxP.x) < 0.03 * L) && (
-          <g>
-            <circle cx={xToPx(extremes.maxP.x)} cy={scaleY(extremes.maxP.value)} r={4} fill={lineColor} />
-            <text
-              x={xToPx(extremes.maxP.x)}
-              y={scaleY(extremes.maxP.value) - 10}
-              textAnchor="middle"
-              fill={lineColor}
-              fontSize={13}
-              fontWeight="600"
-            >
-              {formatNum(extremes.maxP.value)}
-            </text>
-          </g>
-        )}
-
-      {Math.abs(extremes.minP.value) > 0.01 &&
-        !boundaries.some((b) => Math.abs(b - extremes.minP.x) < 0.03 * L) &&
-        (Math.abs(extremes.minP.x - extremes.maxP.x) > 0.05 * L ||
-          Math.abs(extremes.minP.value - extremes.maxP.value) > 0.1) && (
-          <g>
-            <circle cx={xToPx(extremes.minP.x)} cy={scaleY(extremes.minP.value)} r={4} fill={lineColor} />
-            <text
-              x={xToPx(extremes.minP.x)}
-              y={scaleY(extremes.minP.value) + 16}
-              textAnchor="middle"
-              fill={lineColor}
-              fontSize={13}
-              fontWeight="600"
-            >
-              {formatNum(extremes.minP.value)}
-            </text>
-          </g>
-        )}
 
       {/* Ось X */}
       <line
