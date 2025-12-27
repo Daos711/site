@@ -518,8 +518,12 @@ function buildReportHTML(data: ReportData): string {
     .sign-convention h4 { margin: 0 0 8px 0; font-size: 12pt; font-weight: bold; }
     .conclusions { margin: 16px 0; }
     .unit { margin-left: 8px; font-style: normal; }
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
     @media print {
-      body { padding: 0; }
+      body { padding: 0; margin: 0; }
       .no-print { display: none; }
     }
     .print-btn {
