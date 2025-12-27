@@ -1065,17 +1065,26 @@ function buildConcreteDeflectionEquation(
   }
 
   // Внешние нагрузки (только если внутри балки, не на конце)
+  // Считаем количество каждого типа для индексации
+  const forceCount = loads.filter(l => l.type === "force" && l.x < L - 1e-9).length;
+  const momentCount = loads.filter(l => l.type === "moment" && l.x < L - 1e-9).length;
+  let forceIdx = 1;
+  let momentIdx = 1;
+
   for (const load of loads) {
     if (load.type === "force" && load.x < L - 1e-9) {
       // Сила вниз (F > 0) сжимает нижние волокна → минус
       const sign = load.F >= 0 ? "-" : "+";
-      terms.push(`${sign} \\frac{F \\cdot (x - ${formatNumber(load.x)})^3}{6}`);
+      const label = forceCount === 1 ? "F" : `F_{${forceIdx++}}`;
+      terms.push(`${sign} \\frac{${label} \\cdot (x - ${formatNumber(load.x)})^3}{6}`);
     } else if (load.type === "moment" && load.x < L - 1e-9) {
       // Момент против часовой (M > 0) сжимает нижние волокна → минус
       const sign = load.M >= 0 ? "-" : "+";
-      terms.push(`${sign} \\frac{M \\cdot (x - ${formatNumber(load.x)})^2}{2}`);
+      const label = momentCount === 1 ? "M" : `M_{${momentIdx++}}`;
+      terms.push(`${sign} \\frac{${label} \\cdot (x - ${formatNumber(load.x)})^2}{2}`);
     } else if (load.type === "distributed") {
       // Распределённая нагрузка вниз (q > 0) сжимает → минус
+      // q различается по позиции (x - a), индексы не добавляем чтобы не путать с q_i из таблицы компенсации
       if (load.a < L - 1e-9) {
         const sign = load.q >= 0 ? "-" : "+";
         terms.push(`${sign} \\frac{q \\cdot (x - ${formatNumber(load.a)})^4}{24}`);
@@ -1328,6 +1337,18 @@ function buildTheta0Derivation(
   const { loads } = input;
   const hasLeftOverhang = xA > 1e-9; // Есть консоль слева
 
+  // Подготовим метки для сил и моментов (F_1, F_2, ... или просто F если одна)
+  const forceLoads = loads.filter(l => l.type === "force");
+  const momentLoads = loads.filter(l => l.type === "moment");
+  const forceLabels = new Map<typeof loads[number], string>();
+  const momentLabels = new Map<typeof loads[number], string>();
+  forceLoads.forEach((load, i) => {
+    forceLabels.set(load, forceLoads.length === 1 ? "F" : `F_{${i + 1}}`);
+  });
+  momentLoads.forEach((load, i) => {
+    momentLabels.set(load, momentLoads.length === 1 ? "M" : `M_{${i + 1}}`);
+  });
+
   let html: string;
 
   if (hasLeftOverhang) {
@@ -1359,15 +1380,17 @@ function buildTheta0Derivation(
           const dx = x - load.x;
           const sign = load.F >= 0 ? -1 : 1;
           const F_term = sign * Math.abs(load.F) * 1000 * Math.pow(dx, 3) / 6;
+          const label = forceLabels.get(load) ?? "F";
           terms.push({
-            symbolic: `${sign >= 0 ? "+" : "-"}\\frac{F \\cdot ${formatNumber(dx)}^3}{6}`,
+            symbolic: `${sign >= 0 ? "+" : "-"}\\frac{${label} \\cdot ${formatNumber(dx)}^3}{6}`,
             value: F_term
           });
         } else if (load.type === "moment" && load.x < x) {
           const dx = x - load.x;
           const M_term = -load.M * 1000 * Math.pow(dx, 2) / 2;
+          const label = momentLabels.get(load) ?? "M";
           terms.push({
-            symbolic: `-\\frac{M \\cdot ${formatNumber(dx)}^2}{2}`,
+            symbolic: `-\\frac{${label} \\cdot ${formatNumber(dx)}^2}{2}`,
             value: M_term
           });
         }
@@ -1502,8 +1525,9 @@ function buildTheta0Derivation(
       // -M · (xB - x)² / 2
       const dx = xB - load.x;
       const M_term = -load.M * 1000 * Math.pow(dx, 2) / 2;
+      const label = momentLabels.get(load) ?? "M";
       terms.push({
-        symbolic: `-\\frac{M \\cdot ${formatNumber(dx)}^2}{2}`,
+        symbolic: `-\\frac{${label} \\cdot ${formatNumber(dx)}^2}{2}`,
         value: M_term
       });
     } else if (load.type === "distributed") {
@@ -1530,8 +1554,9 @@ function buildTheta0Derivation(
       const dx = xB - load.x;
       const sign = load.F >= 0 ? -1 : 1;
       const F_term = sign * Math.abs(load.F) * 1000 * Math.pow(dx, 3) / 6;
+      const label = forceLabels.get(load) ?? "F";
       terms.push({
-        symbolic: `${sign >= 0 ? "+" : "-"}\\frac{F \\cdot ${formatNumber(dx)}^3}{6}`,
+        symbolic: `${sign >= 0 ? "+" : "-"}\\frac{${label} \\cdot ${formatNumber(dx)}^3}{6}`,
         value: F_term
       });
     }
