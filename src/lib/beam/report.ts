@@ -947,36 +947,40 @@ function buildJumpsSection(
   const jumpPoints: JumpPoint[] = [];
 
   for (const x of events) {
-    // Определяем метку для точки
-    let label = `x = ${formatNumber(x)}`;
-
-    // Проверяем, что находится в этой точке
+    // Собираем описание точки с конкретными значениями
     const items: string[] = [];
 
     // Начало/конец балки
-    if (Math.abs(x) < EPS) items.push("начало балки");
-    if (Math.abs(x - L) < EPS) items.push("конец балки");
+    if (Math.abs(x) < EPS) items.push("начало");
+    if (Math.abs(x - L) < EPS) items.push("конец");
 
-    // Опоры
-    if (reactions.xA !== undefined && Math.abs(x - reactions.xA) < EPS) items.push("опора A");
-    if (reactions.xB !== undefined && Math.abs(x - reactions.xB) < EPS) items.push("опора B");
-    if (reactions.xf !== undefined && Math.abs(x - reactions.xf) < EPS) items.push("заделка");
+    // Опоры и реакции
+    if (reactions.xA !== undefined && Math.abs(x - reactions.xA) < EPS) {
+      items.push(`R_A = ${formatNumber(reactions.RA!)} кН`);
+    }
+    if (reactions.xB !== undefined && Math.abs(x - reactions.xB) < EPS) {
+      items.push(`R_B = ${formatNumber(reactions.RB!)} кН`);
+    }
+    if (reactions.xf !== undefined && Math.abs(x - reactions.xf) < EPS) {
+      items.push(`R_f = ${formatNumber(reactions.Rf!)} кН`);
+      if (reactions.Mf !== undefined) {
+        items.push(`M_f = ${formatNumber(reactions.Mf)} кН·м`);
+      }
+    }
 
-    // Нагрузки
+    // Сосредоточенные силы и моменты
     for (const load of input.loads) {
       if (load.type === "force" && Math.abs(x - load.x) < EPS) {
-        items.push(`сила ${formatNumber(load.F)} кН`);
+        items.push(`F = ${formatNumber(load.F)} кН`);
       } else if (load.type === "moment" && Math.abs(x - load.x) < EPS) {
-        items.push(`момент ${formatNumber(load.M)} кН·м`);
+        items.push(`M = ${formatNumber(load.M)} кН·м`);
       } else if (load.type === "distributed") {
         if (Math.abs(x - load.a) < EPS) items.push(`начало q = ${formatNumber(load.q)} кН/м`);
         if (Math.abs(x - load.b) < EPS) items.push(`конец q = ${formatNumber(load.q)} кН/м`);
       }
     }
 
-    if (items.length > 0) {
-      label = items.join(", ");
-    }
+    const label = items.length > 0 ? items.join("; ") : `x = ${formatNumber(x)}`;
 
     // Вычисляем значения слева и справа
     // На границах (x=0 и x=L) внешние значения равны 0 (граничное условие)
