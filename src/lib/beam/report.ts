@@ -560,7 +560,6 @@ function buildReportHTML(data: ReportData): string {
 
   <h2>3. Определение реакций опор</h2>
   ${buildReactionsSection(input, reactions)}
-  ${buildPointsSummarySection(input, reactions)}
 
   <h2>4. Внутренние усилия по участкам</h2>
   ${buildSignConventions()}
@@ -726,96 +725,6 @@ function buildInputDataSection(input: BeamInput): string {
     }).join("\n    ")}
   </table>`;
   }
-
-  return html;
-}
-
-/**
- * Раздел "Сводка по характерным точкам"
- * Показывает что действует в каждой точке: реакции, силы, моменты
- */
-function buildPointsSummarySection(input: BeamInput, reactions: Reactions): string {
-  const { L, loads } = input;
-
-  // Собираем все характерные точки
-  const pointsMap = new Map<number, { reactions: string[]; forces: string[]; moments: string[]; distributed: string[] }>();
-
-  const getPoint = (x: number) => {
-    const key = Math.round(x * 1000) / 1000; // округляем для сравнения
-    if (!pointsMap.has(key)) {
-      pointsMap.set(key, { reactions: [], forces: [], moments: [], distributed: [] });
-    }
-    return pointsMap.get(key)!;
-  };
-
-  // Добавляем реакции
-  if (reactions.RA !== undefined && reactions.xA !== undefined) {
-    const dir = reactions.RA >= 0 ? "↑" : "↓";
-    getPoint(reactions.xA).reactions.push(`R_A = ${formatNumber(Math.abs(reactions.RA))} кН ${dir}`);
-  }
-  if (reactions.RB !== undefined && reactions.xB !== undefined) {
-    const dir = reactions.RB >= 0 ? "↑" : "↓";
-    getPoint(reactions.xB).reactions.push(`R_B = ${formatNumber(Math.abs(reactions.RB))} кН ${dir}`);
-  }
-  // Момент и реакция в заделке (консольная балка)
-  if (reactions.Mf !== undefined && reactions.xf !== undefined) {
-    const dir = reactions.Mf >= 0 ? "↺" : "↻";
-    getPoint(reactions.xf).reactions.push(`M_f = ${formatNumber(Math.abs(reactions.Mf))} кН·м ${dir}`);
-  }
-  if (reactions.Rf !== undefined && reactions.xf !== undefined) {
-    const dir = reactions.Rf >= 0 ? "↑" : "↓";
-    getPoint(reactions.xf).reactions.push(`R_f = ${formatNumber(Math.abs(reactions.Rf))} кН ${dir}`);
-  }
-
-  // Добавляем нагрузки
-  let forceIdx = 1;
-  let momentIdx = 1;
-  const forceCount = loads.filter(l => l.type === "force").length;
-  const momentCount = loads.filter(l => l.type === "moment").length;
-
-  for (const load of loads) {
-    if (load.type === "force") {
-      const dir = load.F >= 0 ? "↓" : "↑";
-      const label = forceCount === 1 ? "F" : `F_{${forceIdx++}}`;
-      getPoint(load.x).forces.push(`${label} = ${formatNumber(Math.abs(load.F))} кН ${dir}`);
-    } else if (load.type === "moment") {
-      const dir = load.M >= 0 ? "↺" : "↻";
-      const label = momentCount === 1 ? "M" : `M_{${momentIdx++}}`;
-      getPoint(load.x).moments.push(`${label} = ${formatNumber(Math.abs(load.M))} кН·м ${dir}`);
-    } else if (load.type === "distributed") {
-      const dir = load.q >= 0 ? "↓" : "↑";
-      getPoint(load.a).distributed.push(`q начинается (${formatNumber(Math.abs(load.q))} кН/м ${dir})`);
-      if (load.b < L) {
-        getPoint(load.b).distributed.push(`q заканчивается`);
-      }
-    }
-  }
-
-  // Сортируем точки по x
-  const sortedPoints = Array.from(pointsMap.entries()).sort((a, b) => a[0] - b[0]);
-
-  if (sortedPoints.length === 0) {
-    return "";
-  }
-
-  let html = `
-  <h3>Сводка по характерным точкам</h3>
-  <ul>`;
-
-  for (const [x, data] of sortedPoints) {
-    const items: string[] = [];
-    for (const r of data.reactions) items.push(`\\(${r}\\)`);
-    for (const f of data.forces) items.push(`\\(${f}\\)`);
-    for (const m of data.moments) items.push(`\\(${m}\\)`);
-    for (const d of data.distributed) items.push(d);
-
-    if (items.length > 0) {
-      html += `\n    <li><strong>\\(x = ${formatNumber(x)}\\) м:</strong> ${items.join(", ")}</li>`;
-    }
-  }
-
-  html += `
-  </ul>`;
 
   return html;
 }
