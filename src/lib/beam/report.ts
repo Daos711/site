@@ -502,29 +502,26 @@ function buildReportHTML(data: ReportData): string {
       color: black;
     }
     h1 { font-size: 18pt; text-align: center; margin-bottom: 20px; }
-    h2 { font-size: 14pt; font-weight: bold; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    h2 { font-size: 16pt; font-weight: bold; margin-top: 28px; margin-bottom: 14px; }
     h3 { font-size: 13pt; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
-    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; page-break-inside: avoid; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 12pt; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #f5f5f5; }
     .formula { margin: 10px 0; padding: 8px 0; font-size: 13pt; }
-    .formula-block { page-break-inside: avoid; }
-    .result { color: #0066cc; font-weight: bold; }
-    .diagram-block { page-break-inside: avoid; margin: 20px 0; text-align: center; }
+    .result { font-weight: bold; }
+    .diagram-block { margin: 20px 0; text-align: center; }
     .diagram-block img { max-width: 100%; height: auto; }
     .diagram-title { font-weight: bold; margin-bottom: 8px; font-size: 12pt; }
     .figure-caption { font-size: 11pt; font-style: italic; margin-top: 6px; }
     ul { margin: 8px 0; padding-left: 24px; }
     li { margin: 4px 0; }
-    .sign-convention { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; margin: 12px 0; page-break-inside: avoid; }
+    .sign-convention { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 12px; margin: 12px 0; }
     .sign-convention h4 { margin: 0 0 8px 0; font-size: 12pt; }
-    .conclusions { background: #f0f7ff; border: 1px solid #cce5ff; border-radius: 4px; padding: 12px; margin: 12px 0; }
+    .conclusions { margin: 16px 0; }
     .unit { margin-left: 8px; font-style: normal; }
     @media print {
       body { padding: 0; }
       .no-print { display: none; }
-      h2 { page-break-after: avoid; }
-      h3 { page-break-after: avoid; }
     }
     .print-btn {
       position: fixed;
