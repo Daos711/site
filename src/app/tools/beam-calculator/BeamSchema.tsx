@@ -128,6 +128,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               y={beamY}
               M={load.M}
               label={`M = ${Math.abs(load.M)} кН·м`}
+              maxX={xToPx(L) + PADDING.right - 10}
             />
           );
         }

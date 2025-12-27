@@ -157,7 +157,7 @@ export function ForceArrow({ x, y, F, label, maxX, markerPrefix = "" }: { x: num
 // Момент (ножка + дуга со стрелкой, ФИОЛЕТОВАЯ)
 // M > 0: против часовой (↺), стрелка слева
 // M < 0: по часовой (↻), стрелка справа
-export function MomentArrow({ x, y, M, label, markerPrefix = "" }: { x: number; y: number; M: number; label: string; markerPrefix?: string }) {
+export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX }: { x: number; y: number; M: number; label: string; markerPrefix?: string; maxX?: number }) {
   const H = 35;
   const R = 20;
   const gap = 6;
@@ -183,11 +183,29 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "" }: { x: number; 
   const minX = 5;
   const minY = 15;
 
-  let labelX = isCW ? pRight.x + 8 : pLeft.x - 8;
-  let labelY = isCW ? pRight.y - 4 : pLeft.y - 4;
-  let labelAnchor: "start" | "end" = isCW ? "start" : "end";
+  // Проверяем, не вылезет ли подпись за правый край
+  const nearRightEdge = maxX !== undefined && x > maxX - 80;
 
-  if (!isCW && labelX < minX + 60) {
+  let labelX: number;
+  let labelY: number;
+  let labelAnchor: "start" | "end";
+
+  if (nearRightEdge) {
+    // Подпись слева и выше дуги
+    labelX = pLeft.x - 8;
+    labelY = Cy - R - 5;
+    labelAnchor = "end";
+  } else if (isCW) {
+    labelX = pRight.x + 8;
+    labelY = pRight.y - 4;
+    labelAnchor = "start";
+  } else {
+    labelX = pLeft.x - 8;
+    labelY = pLeft.y - 4;
+    labelAnchor = "end";
+  }
+
+  if (!isCW && !nearRightEdge && labelX < minX + 60) {
     labelX = pRight.x + 8;
     labelAnchor = "start";
   }
