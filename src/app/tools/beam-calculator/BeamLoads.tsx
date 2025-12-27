@@ -210,9 +210,10 @@ export function MomentArrow({ x, y, M, label, markerPrefix = "", maxX, liftLabel
     labelAnchor = "start";
   }
 
-  // При наложении с силой/реакцией — поднимаем подпись выше
+  // При наложении с силой/реакцией — поднимаем подпись значительно выше
+  // Сила: подпись на y - 55, поэтому момент нужно поднять выше
   if (liftLabel) {
-    labelY = Cy - R - 5;
+    labelY = Cy - R - 25;
   }
 
   if (labelY < minY) {
