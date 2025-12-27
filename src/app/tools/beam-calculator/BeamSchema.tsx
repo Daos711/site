@@ -121,14 +121,10 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
             />
           );
         } else if (load.type === "moment") {
-          // Проверяем, есть ли сила или реакция в той же точке
+          // Проверяем, есть ли внешняя сила в той же точке
+          // (реакции не проверяем - они рисуются у символов опор)
           const hasForceAtSamePoint = loads.some(other =>
             other.type === "force" && Math.abs(other.x - load.x) < 0.01
-          );
-          const hasReactionAtSamePoint = (
-            (result.reactions.xA !== undefined && Math.abs(result.reactions.xA - load.x) < 0.01) ||
-            (result.reactions.xB !== undefined && Math.abs(result.reactions.xB - load.x) < 0.01) ||
-            (result.reactions.xf !== undefined && Math.abs(result.reactions.xf - load.x) < 0.01)
           );
           return (
             <MomentArrow
@@ -138,7 +134,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               M={load.M}
               label={`M = ${Math.abs(load.M)} кН·м`}
               maxX={xToPx(L) + PADDING.right - 10}
-              liftLabel={hasForceAtSamePoint || hasReactionAtSamePoint}
+              liftLabel={hasForceAtSamePoint}
             />
           );
         }
