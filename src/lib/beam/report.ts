@@ -7,20 +7,55 @@ import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, for
 
 /**
  * Оценивает ширину LaTeX терма в условных единицах (примерно символах)
+ * Более точная оценка визуальной ширины после рендеринга
  */
 function estimateTermWidth(term: string): number {
-  // Убираем LaTeX команды и считаем "визуальную" ширину
-  let width = term.length;
-  // \frac{...}{...} занимает меньше визуально чем символов в записи
-  const fracMatches = term.match(/\\frac\{[^}]*\}\{[^}]*\}/g);
-  if (fracMatches) {
-    for (const frac of fracMatches) {
-      width -= frac.length * 0.4; // frac компактнее текста
-    }
+  let str = term;
+  let width = 0;
+
+  // \frac{num}{den} - ширина равна max(num, den) + небольшой запас
+  const fracRegex = /\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
+  let match;
+  while ((match = fracRegex.exec(term)) !== null) {
+    const numWidth = estimateSimpleWidth(match[1]);
+    const denWidth = estimateSimpleWidth(match[2]);
+    width += Math.max(numWidth, denWidth) + 2;
+    str = str.replace(match[0], "");
   }
-  // \cdot короткий
-  width -= (term.match(/\\cdot/g) || []).length * 3;
-  return Math.max(width, 5);
+
+  // Добавляем ширину оставшейся части
+  width += estimateSimpleWidth(str);
+
+  return Math.max(width, 2);
+}
+
+/**
+ * Оценивает ширину простой LaTeX строки (без \frac)
+ */
+function estimateSimpleWidth(str: string): number {
+  let w = str.length;
+  // \cdot → 1 символ (точка)
+  w -= (str.match(/\\cdot/g) || []).length * 4;
+  // _{...} рендерится мелко
+  const subMatches = str.match(/_\{[^}]*\}/g) || [];
+  for (const sub of subMatches) {
+    w -= sub.length * 0.5;
+  }
+  // ^{...} рендерится мелко
+  const supMatches = str.match(/\^\{[^}]*\}/g) || [];
+  for (const sup of supMatches) {
+    w -= sup.length * 0.5;
+  }
+  // \left( и \right) → просто скобки
+  w -= (str.match(/\\left/g) || []).length * 4;
+  w -= (str.match(/\\right/g) || []).length * 5;
+  // \text{...} - только содержимое
+  w -= (str.match(/\\text/g) || []).length * 5;
+  // Фигурные скобки {} для группировки не рендерятся
+  w -= (str.match(/[{}]/g) || []).length;
+  // Обратные слеши перед буквами
+  w -= (str.match(/\\/g) || []).length;
+  return Math.max(w, 1);
 }
 
 /**
@@ -935,8 +970,8 @@ function buildQDerivation(
   }
 
   // Форматируем с переносами если формула длинная
-  const symbolic = formatLongFormula(`Q(${varName})`, symbolicTerms, 4);
-  const numeric = formatLongFormula(`Q(${varName})`, numericTerms, 4);
+  const symbolic = formatLongFormula(`Q(${varName})`, symbolicTerms);
+  const numeric = formatLongFormula(`Q(${varName})`, numericTerms);
 
   const symbolicClass = symbolic.isMultiline ? "formula formula-multiline" : "formula";
   const numericClass = numeric.isMultiline ? "formula formula-multiline" : "formula";
@@ -1032,8 +1067,8 @@ function buildMDerivation(
   }
 
   // Форматируем с переносами если формула длинная
-  const symbolic = formatLongFormula(`M(${varName})`, symbolicTerms, 4);
-  const numeric = formatLongFormula(`M(${varName})`, numericTerms, 4);
+  const symbolic = formatLongFormula(`M(${varName})`, symbolicTerms);
+  const numeric = formatLongFormula(`M(${varName})`, numericTerms);
 
   const symbolicClass = symbolic.isMultiline ? "formula formula-multiline" : "formula";
   const numericClass = numeric.isMultiline ? "formula formula-multiline" : "formula";
@@ -1554,7 +1589,7 @@ function buildTheta0Derivation(
 
     // Форматируем условие 1 с переносом при большом количестве слагаемых
     const termsAtASymbolic = termsAtA.map(t => t.symbolic);
-    const { latex: bracketsA, isMultiline: multiA } = formatBracketedTerms(termsAtASymbolic, 4);
+    const { latex: bracketsA, isMultiline: multiA } = formatBracketedTerms(termsAtASymbolic);
 
     html = `
   <p><strong>Условие 1:</strong> \\(y(${formatNumber(xA)}) = 0\\) (прогиб на опоре A)</p>
@@ -1577,7 +1612,7 @@ function buildTheta0Derivation(
 
     // Форматируем условие 2 с переносом при большом количестве слагаемых
     const termsAtBSymbolic = termsAtB.map(t => t.symbolic);
-    const { latex: bracketsB, isMultiline: multiB } = formatBracketedTerms(termsAtBSymbolic, 4);
+    const { latex: bracketsB, isMultiline: multiB } = formatBracketedTerms(termsAtBSymbolic);
 
     html += `
   <p><strong>Условие 2:</strong> \\(y(${formatNumber(xB)}) = 0\\) (прогиб на опоре B)</p>
@@ -2142,8 +2177,8 @@ function buildSimplySupportedReactions(
     }
   }
 
-  // Форматируем числовое уравнение с переносом (5 термов — числа короче символов)
-  const { latex: momentNumLatex, isMultiline: momentNumMulti } = formatLongFormula("", momentNumTerms.concat(["= 0"]), 5);
+  // Форматируем числовое уравнение с переносом по ширине
+  const { latex: momentNumLatex, isMultiline: momentNumMulti } = formatLongFormula("", momentNumTerms.concat(["= 0"]));
   const momentNumFinal = momentNumMulti ? momentNumLatex.replace(/ = 0$/, " = 0") : `${momentNumTerms.join(" ")} = 0`;
 
   html += `
