@@ -1982,8 +1982,8 @@ function buildSimplySupportedReactions(
     }
   }
 
-  // Форматируем числовое уравнение с переносом
-  const { latex: momentNumLatex, isMultiline: momentNumMulti } = formatLongFormula("", momentNumTerms.concat(["= 0"]), 4);
+  // Форматируем числовое уравнение с переносом (5 термов — числа короче символов)
+  const { latex: momentNumLatex, isMultiline: momentNumMulti } = formatLongFormula("", momentNumTerms.concat(["= 0"]), 5);
   const momentNumFinal = momentNumMulti ? momentNumLatex.replace(/ = 0$/, " = 0") : `${momentNumTerms.join(" ")} = 0`;
 
   html += `
