@@ -943,7 +943,7 @@ export default function BallMergePage() {
       </div>
 
       {/* Таблица лидеров */}
-      <div className="w-full max-w-2xl mt-8 px-4">
+      <div className="w-full max-w-2xl mt-8 px-4 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-400" />
