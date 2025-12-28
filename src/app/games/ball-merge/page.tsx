@@ -348,8 +348,8 @@ export default function BallMergePage() {
                 // Плотность одинаковая, масса = density * area = density * π * r²
                 // Matter.js автоматически считает массу от density и площади круга
                 const newBall = Bodies.circle(midX, midY, newBallData.radius, {
-                  restitution: 0.15, // Минимальный отскок - не попрыгунчики
-                  friction: 0.001, // Стекло - почти без трения
+                  restitution: 0.1, // Минимальный отскок
+                  friction: 0.5, // Трение между шарами - держатся друг на друге
                   frictionAir: 0, // Нет сопротивления воздуха
                   density: 0.002, // Плотность (масса пропорциональна r²)
                   label: `ball-${newLevel}`,
@@ -510,8 +510,8 @@ export default function BallMergePage() {
     );
 
     const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2, ballRadius, {
-      restitution: 0.15, // Минимальный отскок - не попрыгунчики
-      friction: 0.001, // Стекло - почти без трения
+      restitution: 0.1, // Минимальный отскок
+      friction: 0.5, // Трение между шарами - держатся друг на друге
       frictionAir: 0, // Нет сопротивления воздуха
       density: 0.002, // Плотность (масса пропорциональна r²)
       label: `ball-${currentBallLevel}`,
