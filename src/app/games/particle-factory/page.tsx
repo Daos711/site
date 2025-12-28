@@ -58,6 +58,85 @@ function initializeLevel(levelIndex: number): GameState {
   };
 }
 
+// Функция рендера (вынесена отдельно для оптимизации)
+function renderCanvas(
+  ctx: CanvasRenderingContext2D,
+  particles: Particle[],
+  machines: Machine[]
+) {
+  // Очистка
+  ctx.fillStyle = "#1a1a2e";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Сетка
+  ctx.strokeStyle = "#2a2a4e";
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= GRID_WIDTH; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * CELL_SIZE, 0);
+    ctx.lineTo(x * CELL_SIZE, CANVAS_HEIGHT);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= GRID_HEIGHT; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * CELL_SIZE);
+    ctx.lineTo(CANVAS_WIDTH, y * CELL_SIZE);
+    ctx.stroke();
+  }
+
+  // Машины
+  for (const machine of machines) {
+    const props = MACHINE_PROPERTIES[machine.type];
+    const x = machine.x * CELL_SIZE;
+    const y = machine.y * CELL_SIZE;
+
+    // Фон клетки
+    ctx.fillStyle = machine.fixed ? "#2a2a4e" : "#3a3a5e";
+    ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+    // Цветная рамка
+    ctx.strokeStyle = props.color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 3, y + 3, CELL_SIZE - 6, CELL_SIZE - 6);
+
+    // Иконка
+    ctx.font = "24px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(props.icon, x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+  }
+
+  // Частицы
+  for (const particle of particles) {
+    const props = PARTICLE_PROPERTIES[particle.type];
+
+    // Свечение
+    const gradient = ctx.createRadialGradient(
+      particle.x,
+      particle.y,
+      0,
+      particle.x,
+      particle.y,
+      14
+    );
+    gradient.addColorStop(0, props.color);
+    gradient.addColorStop(0.6, props.glow || props.color);
+    gradient.addColorStop(1, "transparent");
+
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, 14, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Ядро частицы
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = props.color;
+    ctx.fill();
+  }
+}
+
 export default function ParticleFactoryPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [state, setState] = useState<GameState>(() => initializeLevel(0));
@@ -75,14 +154,28 @@ export default function ParticleFactoryPage() {
     [level]
   );
 
-  // Игровой цикл
+  // Единый игровой цикл (физика + рендер)
   useEffect(() => {
-    if (!state.isRunning || state.isComplete) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let running = true;
 
     const gameLoop = () => {
-      frameCountRef.current++;
+      if (!running) return;
 
       setState((prev) => {
+        // Если не запущено, просто рендерим текущее состояние
+        if (!prev.isRunning || prev.isComplete) {
+          renderCanvas(ctx, prev.particles, prev.machines);
+          animationRef.current = requestAnimationFrame(gameLoop);
+          return prev;
+        }
+
+        frameCountRef.current++;
+
         // Спавн частиц
         let particles = spawnParticles(
           prev.particles,
@@ -105,6 +198,11 @@ export default function ParticleFactoryPage() {
 
         const isComplete = checkLevelComplete(newCollected);
 
+        // Рендер
+        renderCanvas(ctx, updatedParticles, prev.machines);
+
+        animationRef.current = requestAnimationFrame(gameLoop);
+
         return {
           ...prev,
           particles: updatedParticles,
@@ -113,105 +211,18 @@ export default function ParticleFactoryPage() {
           isRunning: isComplete ? false : prev.isRunning,
         };
       });
-
-      animationRef.current = requestAnimationFrame(gameLoop);
     };
 
-    animationRef.current = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(animationRef.current);
-  }, [state.isRunning, state.isComplete, checkLevelComplete]);
+    gameLoop();
 
-  // Рендеринг canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const render = () => {
-      // Очистка
-      ctx.fillStyle = "#1a1a2e";
-      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-      // Сетка
-      ctx.strokeStyle = "#2a2a4e";
-      ctx.lineWidth = 1;
-      for (let x = 0; x <= GRID_WIDTH; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * CELL_SIZE, 0);
-        ctx.lineTo(x * CELL_SIZE, CANVAS_HEIGHT);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= GRID_HEIGHT; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * CELL_SIZE);
-        ctx.lineTo(CANVAS_WIDTH, y * CELL_SIZE);
-        ctx.stroke();
-      }
-
-      // Машины
-      for (const machine of state.machines) {
-        const props = MACHINE_PROPERTIES[machine.type];
-        const x = machine.x * CELL_SIZE;
-        const y = machine.y * CELL_SIZE;
-
-        // Фон клетки
-        ctx.fillStyle = machine.fixed ? "#2a2a4e" : "#3a3a5e";
-        ctx.fillRect(x + 1, y + 1, CELL_SIZE - 2, CELL_SIZE - 2);
-
-        // Цветная рамка
-        ctx.strokeStyle = props.color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-
-        // Иконка
-        ctx.font = "24px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText(props.icon, x + CELL_SIZE / 2, y + CELL_SIZE / 2);
-      }
-
-      // Частицы
-      for (const particle of state.particles) {
-        const props = PARTICLE_PROPERTIES[particle.type];
-
-        // Свечение
-        const gradient = ctx.createRadialGradient(
-          particle.x,
-          particle.y,
-          0,
-          particle.x,
-          particle.y,
-          12
-        );
-        gradient.addColorStop(0, props.color);
-        gradient.addColorStop(0.5, props.glow || props.color);
-        gradient.addColorStop(1, "transparent");
-
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 12, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Ядро частицы
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 6, 0, Math.PI * 2);
-        ctx.fillStyle = props.color;
-        ctx.fill();
-      }
-
-      requestAnimationFrame(render);
+    return () => {
+      running = false;
+      cancelAnimationFrame(animationRef.current);
     };
-
-    render();
-  }, [state.particles, state.machines]);
+  }, [checkLevelComplete]);
 
   // Обработка клика по canvas
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (state.isRunning) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -221,6 +232,8 @@ export default function ParticleFactoryPage() {
 
     const cellX = Math.floor(((e.clientX - rect.left) * scaleX) / CELL_SIZE);
     const cellY = Math.floor(((e.clientY - rect.top) * scaleY) / CELL_SIZE);
+
+    console.log("Click:", cellX, cellY, "Selected:", state.selectedMachine);
 
     const existingMachine = getMachineAt(state.machines, cellX, cellY);
 
@@ -243,6 +256,8 @@ export default function ParticleFactoryPage() {
         (a) => a.type === state.selectedMachine
       );
       const placed = state.placedMachines[state.selectedMachine] || 0;
+
+      console.log("Available:", available, "Placed:", placed);
 
       if (available && (available.count === -1 || placed < available.count)) {
         setState((prev) => {
@@ -370,13 +385,13 @@ export default function ParticleFactoryPage() {
       </div>
 
       {/* Canvas */}
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-6">
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
           onClick={handleCanvasClick}
-          className="border border-gray-700 rounded-lg cursor-pointer max-w-full"
+          className="border-2 border-gray-600 rounded-xl cursor-pointer max-w-full shadow-lg shadow-black/50"
           style={{ aspectRatio: `${GRID_WIDTH}/${GRID_HEIGHT}` }}
         />
       </div>
@@ -411,7 +426,9 @@ export default function ParticleFactoryPage() {
 
       {/* Панель машин */}
       <div className="bg-gray-900 rounded-xl p-5">
-        <h3 className="text-base text-gray-400 mb-4 text-center">Выберите машину</h3>
+        <h3 className="text-base text-gray-400 mb-4 text-center">
+          Выберите машину и кликните на поле
+        </h3>
         <div className="flex flex-wrap justify-center gap-3">
           {level.availableMachines.map((am) => {
             const props = MACHINE_PROPERTIES[am.type];
@@ -427,16 +444,16 @@ export default function ParticleFactoryPage() {
                   setState((prev) => ({ ...prev, selectedMachine: am.type }))
                 }
                 disabled={isDisabled}
-                className={`flex flex-col items-center gap-2 p-3 rounded-xl min-w-[90px] transition-all ${
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl min-w-[100px] transition-all ${
                   isSelected
-                    ? "bg-blue-600 ring-2 ring-blue-400"
+                    ? "bg-blue-600 ring-2 ring-blue-400 scale-105"
                     : isDisabled
                     ? "bg-gray-800 opacity-50 cursor-not-allowed"
                     : "bg-gray-800 hover:bg-gray-700"
                 }`}
                 title={props.description}
               >
-                <span className="text-3xl">{props.icon}</span>
+                <span className="text-4xl">{props.icon}</span>
                 <span className="text-sm text-gray-300">{props.name.split(" ")[0]}</span>
                 <span
                   className={`text-sm font-medium ${
