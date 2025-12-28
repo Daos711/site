@@ -11,6 +11,8 @@ import {
   DROP_ZONE_HEIGHT,
   DANGER_TIME_MS,
   MAX_SPAWN_LEVEL,
+  TOP_BUFFER,
+  CANVAS_HEIGHT,
 } from "@/lib/ball-merge";
 
 type MatterEngine = import("matter-js").Engine;
@@ -24,17 +26,18 @@ type MatterBody = import("matter-js").Body & {
 // Рисование 3D стеклянного стакана с реальной перспективой
 function drawGlassContainer(ctx: CanvasRenderingContext2D) {
   const w = GAME_WIDTH;
-  const h = GAME_HEIGHT;
+  const h = GAME_HEIGHT + TOP_BUFFER; // Полная высота с буфером
   const t = WALL_THICKNESS;
   const depth = 40; // глубина 3D эффекта
   const perspectiveOffset = 15; // смещение для перспективы (дальняя грань меньше)
+  const containerTop = DROP_ZONE_HEIGHT + TOP_BUFFER; // Верх стакана сдвинут вниз
 
   ctx.save();
 
   // Задняя стенка (меньше из-за перспективы)
   const backLeft = t + depth + perspectiveOffset;
   const backRight = w - t - depth - perspectiveOffset;
-  const backTop = DROP_ZONE_HEIGHT + depth + perspectiveOffset / 2;
+  const backTop = containerTop + depth + perspectiveOffset / 2;
   const backBottom = h - t - depth - perspectiveOffset / 2;
 
   ctx.strokeStyle = 'rgba(180, 170, 210, 0.4)';
@@ -50,7 +53,7 @@ function drawGlassContainer(ctx: CanvasRenderingContext2D) {
   // Левая боковая стенка (трапеция с перспективой)
   ctx.fillStyle = 'rgba(200, 190, 230, 0.12)';
   ctx.beginPath();
-  ctx.moveTo(t, DROP_ZONE_HEIGHT); // передний верх
+  ctx.moveTo(t, containerTop); // передний верх
   ctx.lineTo(backLeft, backTop); // задний верх (меньше)
   ctx.lineTo(backLeft, backBottom); // задний низ
   ctx.lineTo(t, h - t); // передний низ
@@ -65,7 +68,7 @@ function drawGlassContainer(ctx: CanvasRenderingContext2D) {
   // Правая боковая стенка (трапеция)
   ctx.fillStyle = 'rgba(200, 190, 230, 0.12)';
   ctx.beginPath();
-  ctx.moveTo(w - t, DROP_ZONE_HEIGHT);
+  ctx.moveTo(w - t, containerTop);
   ctx.lineTo(backRight, backTop);
   ctx.lineTo(backRight, backBottom);
   ctx.lineTo(w - t, h - t);
@@ -90,7 +93,7 @@ function drawGlassContainer(ctx: CanvasRenderingContext2D) {
   ctx.strokeStyle = 'rgba(235, 230, 255, 0.7)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.roundRect(t, DROP_ZONE_HEIGHT, w - 2*t, h - DROP_ZONE_HEIGHT - t, 12);
+  ctx.roundRect(t, containerTop, w - 2*t, h - containerTop - t, 12);
   ctx.stroke();
 
   // Вторая обводка (двойная линия)
@@ -98,22 +101,22 @@ function drawGlassContainer(ctx: CanvasRenderingContext2D) {
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(t + 3, DROP_ZONE_HEIGHT + 3, w - 2*t - 6, h - DROP_ZONE_HEIGHT - t - 6, 10);
+  ctx.roundRect(t + 3, containerTop + 3, w - 2*t - 6, h - containerTop - t - 6, 10);
   ctx.stroke();
 
   // Блик сверху
-  const gradient = ctx.createLinearGradient(t, DROP_ZONE_HEIGHT, t, DROP_ZONE_HEIGHT + 50);
+  const gradient = ctx.createLinearGradient(t, containerTop, t, containerTop + 50);
   gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
   gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = gradient;
-  ctx.fillRect(t + 5, DROP_ZONE_HEIGHT + 5, w - 2*t - 10, 45);
+  ctx.fillRect(t + 5, containerTop + 5, w - 2*t - 10, 45);
 
   // Угловые блики (стеклянный эффект)
   ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
   ctx.beginPath();
-  ctx.moveTo(t + 5, DROP_ZONE_HEIGHT + 5);
-  ctx.lineTo(t + 25, DROP_ZONE_HEIGHT + 5);
-  ctx.lineTo(t + 5, DROP_ZONE_HEIGHT + 60);
+  ctx.moveTo(t + 5, containerTop + 5);
+  ctx.lineTo(t + 25, containerTop + 5);
+  ctx.lineTo(t + 5, containerTop + 60);
   ctx.closePath();
   ctx.fill();
 
@@ -264,45 +267,51 @@ export default function BallMergePage() {
       engineRef.current = engine;
 
       // Невидимые стены (физика) - стекло, очень скользкое
+      // Стены простираются от самого верха до низа, чтобы удерживать отлетающие шары
       const wallOptions = {
         isStatic: true,
         render: { visible: false },
         label: 'wall',
         friction: 0.001, // Стекло - почти без трения
-        restitution: 0.1, // Минимальный отскок от стен
+        restitution: 0.3, // Отскок от невидимых стен выше стакана
       };
+
+      // Высота стен - вся видимая область + запас сверху
+      const totalWallHeight = CANVAS_HEIGHT + 200;
+      const wallCenterY = CANVAS_HEIGHT / 2 - 100;
 
       const leftWall = Bodies.rectangle(
         WALL_THICKNESS / 2,
-        GAME_HEIGHT / 2,
+        wallCenterY,
         WALL_THICKNESS,
-        GAME_HEIGHT,
+        totalWallHeight,
         wallOptions
       );
 
       const rightWall = Bodies.rectangle(
         GAME_WIDTH - WALL_THICKNESS / 2,
-        GAME_HEIGHT / 2,
+        wallCenterY,
         WALL_THICKNESS,
-        GAME_HEIGHT,
+        totalWallHeight,
         wallOptions
       );
 
+      // Пол сдвинут вниз на TOP_BUFFER
       const floor = Bodies.rectangle(
         GAME_WIDTH / 2,
-        GAME_HEIGHT - WALL_THICKNESS / 2,
+        CANVAS_HEIGHT - WALL_THICKNESS / 2,
         GAME_WIDTH,
         WALL_THICKNESS,
-        wallOptions
+        { ...wallOptions, restitution: 0.1 } // Пол менее упругий
       );
 
-      // Невидимый потолок чтобы шары не вылетали за экран
+      // Невидимый потолок высоко вверху - шары могут подлетать и отскакивать
       const ceiling = Bodies.rectangle(
         GAME_WIDTH / 2,
-        -50,
+        -150,
         GAME_WIDTH,
         100,
-        { ...wallOptions, restitution: 0.1 }
+        { ...wallOptions, restitution: 0.5 } // Потолок упругий - шары отскакивают вниз
       );
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
@@ -460,12 +469,17 @@ export default function BallMergePage() {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
 
+      // Верх стакана с учётом буфера
+      const containerTop = DROP_ZONE_HEIGHT + TOP_BUFFER;
+      // Позиция превью шара - над стаканом
+      const previewY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
+
       const render = () => {
         if (!ctx || !isMounted) return;
 
-        // Фон
+        // Фон - вся канвас область
         ctx.fillStyle = '#2d1b4e';
-        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        ctx.fillRect(0, 0, GAME_WIDTH, CANVAS_HEIGHT);
 
         // 3D стеклянный стакан
         drawGlassContainer(ctx);
@@ -476,7 +490,7 @@ export default function BallMergePage() {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
             // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана)
-            const isInDanger = body.position.y < DROP_ZONE_HEIGHT;
+            const isInDanger = body.position.y < containerTop;
             drawBall(ctx, body.position.x, body.position.y, BALL_LEVELS[b.ballLevel].radius, b.ballLevel, isInDanger);
           }
         }
@@ -486,7 +500,7 @@ export default function BallMergePage() {
           const previewBall = BALL_LEVELS[currentBallRef.current];
           if (previewBall) {
             ctx.globalAlpha = 0.8;
-            drawBall(ctx, dropXRef.current, DROP_ZONE_HEIGHT / 2, previewBall.radius, currentBallRef.current);
+            drawBall(ctx, dropXRef.current, previewY, previewBall.radius, currentBallRef.current);
             ctx.globalAlpha = 1;
 
             // Линия падения
@@ -494,8 +508,8 @@ export default function BallMergePage() {
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(dropXRef.current, DROP_ZONE_HEIGHT / 2 + previewBall.radius);
-            ctx.lineTo(dropXRef.current, GAME_HEIGHT);
+            ctx.moveTo(dropXRef.current, previewY + previewBall.radius);
+            ctx.lineTo(dropXRef.current, CANVAS_HEIGHT);
             ctx.stroke();
             ctx.setLineDash([]);
           }
@@ -506,8 +520,8 @@ export default function BallMergePage() {
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
-            // Если центр шара выше DROP_ZONE_HEIGHT - значит больше половины выпирает
-            if (body.position.y < DROP_ZONE_HEIGHT) {
+            // Если центр шара выше containerTop - значит больше половины выпирает
+            if (body.position.y < containerTop) {
               hasDangerBall = true;
               break;
             }
@@ -564,7 +578,10 @@ export default function BallMergePage() {
       Math.min(GAME_WIDTH - WALL_THICKNESS - ballRadius - 10, x)
     );
 
-    const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2, ballRadius, {
+    // Позиция сброса с учётом TOP_BUFFER
+    const dropY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
+
+    const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
       restitution: 0.1, // Минимальный отскок
       friction: 0.5, // Трение между шарами - держатся друг на друге
       frictionAir: 0, // Нет сопротивления воздуха
@@ -713,7 +730,7 @@ export default function BallMergePage() {
             <canvas
               ref={canvasRef}
               width={GAME_WIDTH}
-              height={GAME_HEIGHT}
+              height={CANVAS_HEIGHT}
               onClick={handleClick}
               onMouseMove={handleMouseMove}
               onTouchStart={handleTouchStart}

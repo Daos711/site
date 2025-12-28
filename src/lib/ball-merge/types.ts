@@ -27,6 +27,8 @@ export const GAME_WIDTH = 700;
 export const GAME_HEIGHT = 420;
 export const WALL_THICKNESS = 20;
 export const DROP_ZONE_HEIGHT = 60;
+export const TOP_BUFFER = 150; // Дополнительное пространство сверху для отлетающих шаров
+export const CANVAS_HEIGHT = GAME_HEIGHT + TOP_BUFFER; // Полная высота канваса
 
 // Линия проигрыша
 export const DANGER_LINE_Y = DROP_ZONE_HEIGHT + 25;
