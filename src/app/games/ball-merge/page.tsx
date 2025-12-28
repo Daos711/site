@@ -359,32 +359,40 @@ export default function BallMergePage() {
                 Composite.add(engine.world, newBall);
                 ballBodiesRef.current.set(newBall.id, newBall);
 
-                // Импульс на соседние шары при слиянии (через velocity)
-                const allBodies = Composite.allBodies(engine.world);
-                for (const otherBody of allBodies) {
-                  const ob = otherBody as MatterBody;
-                  if (ob.ballLevel !== undefined && ob.id !== newBall.id) {
-                    const dx = otherBody.position.x - midX;
-                    const dy = otherBody.position.y - midY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    const otherRadius = BALL_LEVELS[ob.ballLevel]?.radius || 50;
+                // ВЗРЫВ при слиянии - толкаем ВСЕ близкие шары
+                // Используем setTimeout чтобы импульс применился после physics step
+                setTimeout(() => {
+                  const allBodies = Composite.allBodies(engine.world);
+                  for (const otherBody of allBodies) {
+                    const ob = otherBody as MatterBody;
+                    if (ob.ballLevel !== undefined && ob.id !== newBall.id && !otherBody.isStatic) {
+                      const dx = otherBody.position.x - midX;
+                      const dy = otherBody.position.y - midY;
+                      const dist = Math.sqrt(dx * dx + dy * dy);
+                      const otherRadius = BALL_LEVELS[ob.ballLevel]?.radius || 50;
 
-                    // Если шар касается или очень близко к новому
-                    if (dist < newBallData.radius + otherRadius + 5) {
-                      // Скорость отталкивания зависит от размера нового шара
-                      // Чем больше шар появился, тем сильнее толчок
-                      const pushSpeed = (newBallData.radius / 25) * 8; // базовая скорость
-                      const currentVel = otherBody.velocity;
-                      const nx = dx / Math.max(dist, 1);
-                      const ny = dy / Math.max(dist, 1);
+                      // Проверяем пересечение: новый шар вырос и задел другой
+                      const overlap = newBallData.radius + otherRadius - dist;
 
-                      Body.setVelocity(otherBody, {
-                        x: currentVel.x + nx * pushSpeed,
-                        y: currentVel.y + ny * pushSpeed
-                      });
+                      if (overlap > -10) { // Касается или почти касается (10px запас)
+                        // Сила зависит от перекрытия и размера нового шара
+                        // Чем больше перекрытие, тем сильнее толчок
+                        const overlapFactor = Math.max(overlap, 10) / 10;
+                        const sizeFactor = newBallData.radius / 25;
+                        const pushSpeed = overlapFactor * sizeFactor * 15; // СИЛЬНЫЙ толчок
+
+                        const nx = dx / Math.max(dist, 1);
+                        const ny = dy / Math.max(dist, 1);
+
+                        // Применяем скорость напрямую
+                        Body.setVelocity(otherBody, {
+                          x: nx * pushSpeed,
+                          y: ny * pushSpeed - 2 // немного вверх чтобы перепрыгнуть
+                        });
+                      }
                     }
                   }
-                }
+                }, 10);
               }
 
               // +1 очко за слияние
