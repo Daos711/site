@@ -25,6 +25,7 @@ type MatterBody = import("matter-js").Body & {
   growTargetRadius?: number;
   growStartTime?: number;
   growDurationMs?: number;
+  growPrevRadius?: number; // Для отслеживания приращения радиуса
 };
 
 // Рисование 3D стеклянного стакана с реальной перспективой
@@ -325,39 +326,6 @@ export default function BallMergePage() {
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
-      // Функция "пинка" соседей при слиянии
-      // targetRadius - ЦЕЛЕВОЙ радиус нового шара (после роста)
-      const kickNeighbors = (newBall: MatterBody, targetRadius: number) => {
-        const K = 0.25;          // сила пинка (увеличена)
-        const MAX_KICK = 12;     // ограничение
-        const NEAR = 5;          // допуск "почти касается"
-
-        for (const other of ballBodiesRef.current.values()) {
-          if (other.id === newBall.id) continue;
-          if (other.ballLevel === undefined) continue;
-
-          const rO = other.circleRadius ?? BALL_LEVELS[other.ballLevel].radius;
-
-          const dx = other.position.x - newBall.position.x;
-          const dy = other.position.y - newBall.position.y;
-          const dist = Math.hypot(dx, dy) || 1e-6;
-
-          // Используем ЦЕЛЕВОЙ радиус для расчёта перекрытия
-          const overlap = (targetRadius + rO + NEAR) - dist;
-          if (overlap <= 0) continue;
-
-          const nx = dx / dist;
-          const ny = dy / dist;
-
-          const dv = Math.min(MAX_KICK, overlap * K);
-
-          Body.setVelocity(other, {
-            x: other.velocity.x + nx * dv,
-            y: other.velocity.y + ny * dv,
-          });
-        }
-      };
-
       // Обработка столкновений - слияние
       // Используем и collisionStart, и collisionActive для надёжности
       const handleCollision = (event: Matter.IEventCollision<Matter.Engine>) => {
@@ -445,8 +413,7 @@ export default function BallMergePage() {
               // Применяем сохранённый импульс к новому шару
               Body.setVelocity(newBall, { x: newVx, y: newVy });
 
-              // Пинок соседям от роста (используем целевой радиус)
-              kickNeighbors(newBall, targetRadius);
+              // Пинок соседям будет происходить во время роста в stepGrowth()
 
               // +1 очко за слияние
               setScore(prev => prev + 1);
@@ -467,30 +434,73 @@ export default function BallMergePage() {
 
       // Верх стакана с учётом буфера
       const containerTop = DROP_ZONE_HEIGHT + TOP_BUFFER;
-      // Позиция превью шара - выше стакана (с запасом для больших шаров)
-      const previewY = TOP_BUFFER / 2;
+      // Позиция превью шара - ближе к стакану, но не пересекает
+      const previewY = TOP_BUFFER * 0.7;
 
       // Фиксированный timestep для стабильной физики
       const FIXED_DELTA = 1000 / 60;  // 60 FPS физики
       let accumulator = 0;
       let lastTime = performance.now();
 
+      // Пинок соседям во время роста шара
+      const kickOnGrowth = (ball: MatterBody, currentRadius: number, deltaR: number) => {
+        const K = 0.4;          // сила пинка во время роста
+        const MAX_KICK = 8;
+        const NEAR = 2;
+
+        for (const other of ballBodiesRef.current.values()) {
+          if (other.id === ball.id) continue;
+          if (other.ballLevel === undefined) continue;
+
+          const rO = other.circleRadius ?? BALL_LEVELS[other.ballLevel].radius;
+
+          const dx = other.position.x - ball.position.x;
+          const dy = other.position.y - ball.position.y;
+          const dist = Math.hypot(dx, dy) || 1e-6;
+
+          const overlap = (currentRadius + rO + NEAR) - dist;
+          if (overlap <= 0) continue;
+
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          // импульс завязываем на приращение радиуса + факт перекрытия
+          const dv = Math.min(MAX_KICK, (overlap + deltaR * 4) * K);
+
+          Body.setVelocity(other, {
+            x: other.velocity.x + nx * dv,
+            y: other.velocity.y + ny * dv,
+          });
+        }
+      };
+
       // Функция плавного роста шаров после слияния
       const stepGrowth = (now: number) => {
         const MAX_SPEED = 25; // Кэп скорости для предотвращения туннелирования
 
         for (const b of ballBodiesRef.current.values()) {
-          // Плавный рост
+          // Плавный рост с пинком соседей
           if (b.growTargetRadius && b.growStartTime && b.growDurationMs && b.circleRadius) {
             const t = Math.min(1, (now - b.growStartTime) / b.growDurationMs);
             const tt = t * (2 - t); // easing
 
             const startR = b.growStartRadius ?? b.circleRadius;
             const desiredR = startR + (b.growTargetRadius - startR) * tt;
+
+            // Отслеживаем приращение радиуса
+            const prevR = b.growPrevRadius ?? b.circleRadius;
+            const deltaR = Math.max(0, desiredR - prevR);
+            b.growPrevRadius = desiredR;
+
             const scale = desiredR / b.circleRadius;
 
             if (Number.isFinite(scale) && scale > 0.0001 && Math.abs(scale - 1) > 1e-3) {
               Body.scale(b, scale, scale);
+            }
+
+            // Пинок соседям на каждом шаге роста
+            if (deltaR > 0.1) {
+              kickOnGrowth(b, desiredR, deltaR);
             }
 
             if (t >= 1) {
@@ -498,6 +508,7 @@ export default function BallMergePage() {
               b.growStartTime = undefined;
               b.growDurationMs = undefined;
               b.growStartRadius = undefined;
+              b.growPrevRadius = undefined;
             }
           }
 
@@ -645,8 +656,8 @@ export default function BallMergePage() {
       Math.min(GAME_WIDTH - WALL_THICKNESS - ballRadius - 10, x)
     );
 
-    // Позиция сброса - выше стакана (как превью)
-    const dropY = TOP_BUFFER / 2;
+    // Позиция сброса - ближе к стакану (как превью)
+    const dropY = TOP_BUFFER * 0.7;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
       restitution: 0.08,      // Чуть больше отскока для динамики
