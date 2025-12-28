@@ -341,15 +341,16 @@ export default function BallMergePage() {
             const relVelNormal = relVelX * nx + relVelY * ny;
 
             // Если шары сближаются
-            if (relVelNormal > 0.5) {
+            if (relVelNormal > 0.3) {
               // Коэффициент усиления передачи импульса (стекло скользкое, удар сильнее)
-              const boostFactor = 1.5;
+              // Увеличиваем для лучшей передачи при касательных ударах
+              const boostFactor = 2.5;
               const impulse = relVelNormal * boostFactor;
 
               // Применяем дополнительный импульс
               Body.setVelocity(bodyB, {
-                x: bodyB.velocity.x + nx * impulse * 0.5,
-                y: bodyB.velocity.y + ny * impulse * 0.5,
+                x: bodyB.velocity.x + nx * impulse * 0.7,
+                y: bodyB.velocity.y + ny * impulse * 0.7,
               });
             }
           }
@@ -435,7 +436,7 @@ export default function BallMergePage() {
                         // Чем больше перекрытие, тем сильнее толчок
                         const overlapFactor = Math.max(overlap, 10) / 10;
                         const sizeFactor = newBallData.radius / 25;
-                        const pushSpeed = overlapFactor * sizeFactor * 15; // СИЛЬНЫЙ толчок
+                        const pushSpeed = overlapFactor * sizeFactor * 10; // Умеренный толчок
 
                         const nx = dx / Math.max(dist, 1);
                         const ny = dy / Math.max(dist, 1);
@@ -490,7 +491,9 @@ export default function BallMergePage() {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
             // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана)
-            const isInDanger = body.position.y < containerTop;
+            // НО: не подсвечиваем падающие шары (velocity.y > 2 = быстро падает вниз)
+            const isFalling = body.velocity.y > 2;
+            const isInDanger = body.position.y < containerTop && !isFalling;
             drawBall(ctx, body.position.x, body.position.y, BALL_LEVELS[b.ballLevel].radius, b.ballLevel, isInDanger);
           }
         }
@@ -515,12 +518,14 @@ export default function BallMergePage() {
         }
 
         // Проверка game over: центр шара выше верхнего края стакана (= больше половины выпирает)
+        // Не считаем падающие шары - только те что выпирают снизу
         let hasDangerBall = false;
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
-            // Если центр шара выше containerTop - значит больше половины выпирает
-            if (body.position.y < containerTop) {
+            const isFalling = body.velocity.y > 2;
+            // Если центр шара выше containerTop И шар не падает - значит выпирает снизу
+            if (body.position.y < containerTop && !isFalling) {
               hasDangerBall = true;
               break;
             }
