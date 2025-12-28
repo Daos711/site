@@ -37,6 +37,28 @@ export const DANGER_TIME_MS = 3000; // 3 секунды на исправлен�
 // Максимальный уровень шарика для спавна (только маленькие)
 export const MAX_SPAWN_LEVEL = 4; // 0-3
 
+// Физические параметры шаров
+export const BALL_PHYSICS = {
+  restitution: 0.1,       // Отскок
+  friction: 0.05,         // Трение
+  frictionStatic: 0.02,   // Статическое трение
+  frictionAir: 0.001,     // Сопротивление воздуха
+  density: 0.002,         // Плотность
+};
+
+// Cooldown между бросками (мс)
+export const DROP_COOLDOWN = 150;
+
+// Параметры слияния
+export const MERGE_IMMUNITY_MS = 30;    // Иммунитет после слияния
+export const GROW_DURATION_MS = 300;    // Длительность анимации роста
+export const MAX_BALL_SPEED = 25;       // Максимальная скорость шара
+
+// Параметры kickNeighbors
+export const KICK_FORCE = 0.5;          // Сила пинка
+export const MAX_KICK_SPEED = 15;       // Максимальная скорость от пинка
+export const KICK_NEAR_THRESHOLD = 5;   // Допуск "почти касается"
+
 export interface GameState {
   score: number;
   nextBallLevel: number;

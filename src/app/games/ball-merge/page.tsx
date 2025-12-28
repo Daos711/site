@@ -13,6 +13,14 @@ import {
   MAX_SPAWN_LEVEL,
   TOP_BUFFER,
   CANVAS_HEIGHT,
+  BALL_PHYSICS,
+  DROP_COOLDOWN,
+  MERGE_IMMUNITY_MS,
+  GROW_DURATION_MS,
+  MAX_BALL_SPEED,
+  KICK_FORCE,
+  MAX_KICK_SPEED,
+  KICK_NEAR_THRESHOLD,
 } from "@/lib/ball-merge";
 import {
   getBallMergeScores,
@@ -261,11 +269,9 @@ export default function BallMergePage() {
 
   // Cooldown на бросок (anti-spam)
   const lastDropTimeRef = useRef(0);
-  const DROP_COOLDOWN = 150; // мс между бросками
 
   // Игрок и таблица лидеров
   const [playerName, setPlayerNameState] = useState("");
-  const [showNameInput, setShowNameInput] = useState(false);
   const [leaderboard, setLeaderboard] = useState<BallMergeScore[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [scoreSubmitting, setScoreSubmitting] = useState(false);
@@ -390,10 +396,6 @@ export default function BallMergePage() {
 
       // Мгновенный пинок соседям при слиянии
       const kickNeighbors = (newBall: MatterBody, targetRadius: number) => {
-        const K = 0.5;           // сила пинка
-        const MAX_KICK = 15;     // ограничение скорости
-        const NEAR = 5;          // допуск "почти касается"
-
         for (const other of ballBodiesRef.current.values()) {
           if (other.id === newBall.id) continue;
           if (other.ballLevel === undefined) continue;
@@ -405,13 +407,13 @@ export default function BallMergePage() {
           const dist = Math.hypot(dx, dy) || 1e-6;
 
           // Используем ЦЕЛЕВОЙ радиус для расчёта перекрытия
-          const overlap = (targetRadius + rO + NEAR) - dist;
+          const overlap = (targetRadius + rO + KICK_NEAR_THRESHOLD) - dist;
           if (overlap <= 0) continue;
 
           const nx = dx / dist;
           const ny = dy / dist;
 
-          const dv = Math.min(MAX_KICK, overlap * K);
+          const dv = Math.min(MAX_KICK_SPEED, overlap * KICK_FORCE);
 
           Body.setVelocity(other, {
             x: other.velocity.x + nx * dv,
@@ -484,22 +486,18 @@ export default function BallMergePage() {
               const targetRadius = BALL_LEVELS[newLevel].radius;
 
               const newBall = Bodies.circle(midX, midY, startRadius, {
-                restitution: 0.1,       // Небольшой отскок
-                friction: 0.05,
-                frictionStatic: 0.02,
-                frictionAir: 0.001,
-                density: 0.002,
+                ...BALL_PHYSICS,
                 label: `ball-${newLevel}`,
               }) as MatterBody;
               newBall.ballLevel = newLevel;
               newBall.hasEnteredContainer = true; // Новый шар от слияния уже "в игре"
-              newBall.mergeImmunityUntil = Date.now() + 30; // Короткий иммунитет
+              newBall.mergeImmunityUntil = Date.now() + MERGE_IMMUNITY_MS;
 
-              // Параметры плавного роста (медленнее для красоты)
+              // Параметры плавного роста
               newBall.growStartRadius = startRadius;
               newBall.growTargetRadius = targetRadius;
               newBall.growStartTime = performance.now();
-              newBall.growDurationMs = 300; // медленнее, чтобы видно было
+              newBall.growDurationMs = GROW_DURATION_MS;
 
               Composite.add(engine.world, newBall);
               ballBodiesRef.current.set(newBall.id, newBall);
@@ -539,8 +537,6 @@ export default function BallMergePage() {
 
       // Функция плавного ВИЗУАЛЬНОГО роста шаров (пинок уже был в момент слияния)
       const stepGrowth = (now: number) => {
-        const MAX_SPEED = 25; // Кэп скорости для предотвращения туннелирования
-
         for (const b of ballBodiesRef.current.values()) {
           // Плавный рост
           if (b.growTargetRadius && b.growStartTime && b.growDurationMs && b.circleRadius) {
@@ -566,8 +562,8 @@ export default function BallMergePage() {
 
           // Кэп скорости
           const speed = Math.sqrt(b.velocity.x ** 2 + b.velocity.y ** 2);
-          if (speed > MAX_SPEED) {
-            const factor = MAX_SPEED / speed;
+          if (speed > MAX_BALL_SPEED) {
+            const factor = MAX_BALL_SPEED / speed;
             Body.setVelocity(b, { x: b.velocity.x * factor, y: b.velocity.y * factor });
           }
         }
@@ -698,7 +694,7 @@ export default function BallMergePage() {
     const Matter = matterRef.current;
     if (!Matter || !engineRef.current || !canvasRef.current || isGameOver) return;
 
-    // Проверка cooldown (100ms)
+    // Проверка cooldown
     const now = Date.now();
     if (now - lastDropTimeRef.current < DROP_COOLDOWN) return;
     lastDropTimeRef.current = now;
@@ -718,11 +714,7 @@ export default function BallMergePage() {
     const dropY = TOP_BUFFER * 0.7;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
-      restitution: 0.1,       // Небольшой отскок
-      friction: 0.05,
-      frictionStatic: 0.02,
-      frictionAir: 0.001,
-      density: 0.002,
+      ...BALL_PHYSICS,
       label: `ball-${currentBallLevel}`,
     }) as MatterBody;
 
@@ -820,7 +812,7 @@ export default function BallMergePage() {
         {/* Прогрессия шаров слева - центрируется по вертикали с канвасом */}
         <div className="hidden md:flex flex-col gap-1 p-3 bg-gray-800/50 rounded-xl">
           <div className="text-xs text-gray-400 text-center mb-1">Шары</div>
-          {BALL_LEVELS.slice(0, 9).map((ball, i) => (
+          {BALL_LEVELS.map((ball, i) => (
             <div
               key={i}
               className="flex items-center justify-center"
