@@ -251,9 +251,40 @@ export default function BallMergePage() {
   const dangerTimersRef = useRef<Map<number, number>>(new Map());
   const mergedPairsRef = useRef<Set<string>>(new Set());
 
-  // Cooldown на бросок (anti-spam, но без блокировки)
+  // Cooldown на бросок (anti-spam)
   const lastDropTimeRef = useRef(0);
-  const DROP_COOLDOWN = 100; // мс между бросками
+  const DROP_COOLDOWN = 150; // мс между бросками
+
+  // Таблица лидеров
+  const [highScores, setHighScores] = useState<number[]>([]);
+
+  // Загрузка таблицы лидеров
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ballMergeHighScores');
+      if (saved) {
+        setHighScores(JSON.parse(saved));
+      }
+    } catch {
+      // Игнорируем ошибки localStorage
+    }
+  }, []);
+
+  // Сохранение результата при game over
+  useEffect(() => {
+    if (isGameOver && score > 0) {
+      const newScores = [...highScores, score]
+        .sort((a, b) => b - a)
+        .slice(0, 5); // Топ 5
+      setHighScores(newScores);
+      try {
+        localStorage.setItem('ballMergeHighScores', JSON.stringify(newScores));
+      } catch {
+        // Игнорируем
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGameOver]);
 
   // Инициализация Matter.js
   useEffect(() => {
@@ -425,9 +456,9 @@ export default function BallMergePage() {
               const targetRadius = BALL_LEVELS[newLevel].radius;
 
               const newBall = Bodies.circle(midX, midY, startRadius, {
-                restitution: 0.25,      // Больше отскока - шары реагируют на удары
-                friction: 0.03,         // Меньше трения - шары катятся легче
-                frictionStatic: 0.01,   // Почти нет "залипания"
+                restitution: 0.1,       // Небольшой отскок
+                friction: 0.05,
+                frictionStatic: 0.02,
                 frictionAir: 0.001,
                 density: 0.002,
                 label: `ball-${newLevel}`,
@@ -659,9 +690,9 @@ export default function BallMergePage() {
     const dropY = TOP_BUFFER * 0.7;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
-      restitution: 0.25,      // Больше отскока - шары реагируют на удары
-      friction: 0.03,         // Меньше трения - шары катятся легче
-      frictionStatic: 0.01,   // Почти нет "залипания"
+      restitution: 0.1,       // Небольшой отскок
+      friction: 0.05,
+      frictionStatic: 0.02,
       frictionAir: 0.001,
       density: 0.002,
       label: `ball-${currentBallLevel}`,
@@ -826,11 +857,30 @@ export default function BallMergePage() {
             )}
 
             {isGameOver && (
-              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4">
                 <h2 className="text-3xl font-bold text-red-400 mb-2">Игра окончена!</h2>
-                <p className="text-xl text-gray-300 mb-6">
+                <p className="text-xl text-gray-300 mb-4">
                   Слияний: <span className="text-yellow-400 font-bold">{score}</span>
                 </p>
+
+                {/* Таблица лидеров */}
+                {highScores.length > 0 && (
+                  <div className="bg-gray-800/80 rounded-lg p-3 mb-4 min-w-[200px]">
+                    <h3 className="text-sm text-gray-400 text-center mb-2">🏆 Лучшие результаты</h3>
+                    <div className="space-y-1">
+                      {highScores.map((s, i) => (
+                        <div
+                          key={i}
+                          className={`flex justify-between text-sm ${s === score ? 'text-yellow-400 font-bold' : 'text-gray-300'}`}
+                        >
+                          <span>{i + 1}.</span>
+                          <span>{s} слияний</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={restartGame}
                   className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg text-lg font-medium transition-colors"
