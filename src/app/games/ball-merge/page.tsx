@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, useCallback } from "react";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, User, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import {
   BALL_LEVELS,
@@ -14,6 +14,14 @@ import {
   TOP_BUFFER,
   CANVAS_HEIGHT,
 } from "@/lib/ball-merge";
+import {
+  getBallMergeScores,
+  submitBallMergeScore,
+  getOrCreatePlayerId,
+  getPlayerName,
+  setPlayerName,
+  BallMergeScore,
+} from "@/lib/ball-merge/supabase";
 
 type MatterEngine = import("matter-js").Engine;
 type MatterBody = import("matter-js").Body & {
@@ -255,36 +263,56 @@ export default function BallMergePage() {
   const lastDropTimeRef = useRef(0);
   const DROP_COOLDOWN = 150; // мс между бросками
 
-  // Таблица лидеров
-  const [highScores, setHighScores] = useState<number[]>([]);
+  // Игрок и таблица лидеров
+  const [playerName, setPlayerNameState] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<BallMergeScore[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [scoreSubmitting, setScoreSubmitting] = useState(false);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [isNewRecord, setIsNewRecord] = useState(false);
 
-  // Загрузка таблицы лидеров
+  // Загрузка имени игрока и таблицы лидеров
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('ballMergeHighScores');
-      if (saved) {
-        setHighScores(JSON.parse(saved));
-      }
-    } catch {
-      // Игнорируем ошибки localStorage
+    const savedName = getPlayerName();
+    if (savedName) {
+      setPlayerNameState(savedName);
     }
+    fetchLeaderboard();
   }, []);
 
-  // Сохранение результата при game over
-  useEffect(() => {
-    if (isGameOver && score > 0) {
-      const newScores = [...highScores, score]
-        .sort((a, b) => b - a)
-        .slice(0, 5); // Топ 5
-      setHighScores(newScores);
-      try {
-        localStorage.setItem('ballMergeHighScores', JSON.stringify(newScores));
-      } catch {
-        // Игнорируем
-      }
+  const fetchLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    try {
+      const scores = await getBallMergeScores(20);
+      setLeaderboard(scores);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    } finally {
+      setLeaderboardLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGameOver]);
+  };
+
+  // Сохранение результата при game over
+  const handleSubmitScore = async () => {
+    if (!playerName.trim() || score === 0 || scoreSubmitting || scoreSubmitted) return;
+
+    setScoreSubmitting(true);
+    try {
+      const playerId = getOrCreatePlayerId();
+      const result = await submitBallMergeScore(playerId, playerName.trim(), score);
+      if (result.success) {
+        setScoreSubmitted(true);
+        setIsNewRecord(result.isNewRecord);
+        setPlayerName(playerName.trim());
+        await fetchLeaderboard();
+      }
+    } catch (error) {
+      console.error("Failed to submit score:", error);
+    } finally {
+      setScoreSubmitting(false);
+    }
+  };
 
   // Инициализация Matter.js
   useEffect(() => {
@@ -761,6 +789,8 @@ export default function BallMergePage() {
     setNextBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
     setIsGameOver(false);
     setDropX(GAME_WIDTH / 2);
+    setScoreSubmitted(false);
+    setIsNewRecord(false);
   }, []);
 
   const nextBallData = BALL_LEVELS[nextBallLevel];
@@ -857,27 +887,40 @@ export default function BallMergePage() {
             )}
 
             {isGameOver && (
-              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4 overflow-y-auto">
                 <h2 className="text-3xl font-bold text-red-400 mb-2">Игра окончена!</h2>
                 <p className="text-xl text-gray-300 mb-4">
                   Слияний: <span className="text-yellow-400 font-bold">{score}</span>
                 </p>
 
-                {/* Таблица лидеров */}
-                {highScores.length > 0 && (
-                  <div className="bg-gray-800/80 rounded-lg p-3 mb-4 min-w-[200px]">
-                    <h3 className="text-sm text-gray-400 text-center mb-2">🏆 Лучшие результаты</h3>
-                    <div className="space-y-1">
-                      {highScores.map((s, i) => (
-                        <div
-                          key={i}
-                          className={`flex justify-between text-sm ${s === score ? 'text-yellow-400 font-bold' : 'text-gray-300'}`}
-                        >
-                          <span>{i + 1}.</span>
-                          <span>{s} слияний</span>
-                        </div>
-                      ))}
-                    </div>
+                {/* Форма сохранения результата */}
+                {score > 0 && !scoreSubmitted && (
+                  <div className="bg-gray-800/90 rounded-lg p-4 mb-4 w-full max-w-xs">
+                    <h3 className="text-sm text-gray-400 text-center mb-3">Сохранить результат</h3>
+                    <input
+                      type="text"
+                      placeholder="Ваше имя"
+                      value={playerName}
+                      onChange={(e) => setPlayerNameState(e.target.value)}
+                      maxLength={20}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 mb-3"
+                    />
+                    <button
+                      onClick={handleSubmitScore}
+                      disabled={!playerName.trim() || scoreSubmitting}
+                      className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+                    >
+                      {scoreSubmitting ? "Сохранение..." : "Сохранить"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Подтверждение сохранения */}
+                {scoreSubmitted && (
+                  <div className="bg-green-800/50 border border-green-600 rounded-lg p-3 mb-4 text-center">
+                    <p className="text-green-400">
+                      {isNewRecord ? "Новый рекорд сохранён!" : "Результат сохранён!"}
+                    </p>
                   </div>
                 )}
 
@@ -896,6 +939,79 @@ export default function BallMergePage() {
           <p className="mt-4 text-sm text-gray-500 text-center">
             Соединяй одинаковые шарики — они сливаются в больший!
           </p>
+        </div>
+      </div>
+
+      {/* Таблица лидеров */}
+      <div className="w-full max-w-2xl mt-8 px-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            Таблица лидеров
+          </h2>
+          <button
+            onClick={fetchLeaderboard}
+            disabled={leaderboardLoading}
+            className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Обновить"
+          >
+            <RefreshCw className={`w-5 h-5 ${leaderboardLoading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="w-12 text-center p-3 text-gray-400 font-medium">#</th>
+                <th className="text-left p-3 text-gray-400 font-medium">Игрок</th>
+                <th className="text-center p-3 text-gray-400 font-medium">Слияний</th>
+                <th className="text-center p-3 text-gray-400 font-medium hidden sm:table-cell">Дата</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboardLoading ? (
+                <tr>
+                  <td colSpan={4} className="p-6 text-center text-gray-400">
+                    Загрузка...
+                  </td>
+                </tr>
+              ) : leaderboard.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-6 text-center text-gray-400">
+                    Пока нет результатов. Будьте первым!
+                  </td>
+                </tr>
+              ) : (
+                leaderboard.map((entry, index) => {
+                  const position = index + 1;
+                  const dateStr = new Date(entry.updated_at || entry.created_at).toLocaleDateString("ru-RU");
+                  return (
+                    <tr key={entry.id} className="border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30">
+                      <td className="w-12 text-center p-3 text-lg">
+                        {position === 1 && "🥇"}
+                        {position === 2 && "🥈"}
+                        {position === 3 && "🥉"}
+                        {position > 3 && position}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-500" />
+                          <span className="text-white">{entry.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-center text-xl font-bold text-yellow-400">
+                        {entry.score}
+                      </td>
+                      <td className="p-3 text-center text-gray-400 hidden sm:table-cell">
+                        {dateStr}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
