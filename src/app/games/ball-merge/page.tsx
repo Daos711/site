@@ -16,7 +16,10 @@ import {
 type MatterEngine = import("matter-js").Engine;
 type MatterRender = import("matter-js").Render;
 type MatterRunner = import("matter-js").Runner;
-type MatterBody = import("matter-js").Body & { ballLevel?: number };
+type MatterBody = import("matter-js").Body & {
+  ballLevel?: number;
+  mergeImmunityUntil?: number; // timestamp когда закончится иммунитет к слиянию
+};
 
 // Рисование 3D стеклянного стакана с реальной перспективой
 function drawGlassContainer(ctx: CanvasRenderingContext2D) {
@@ -304,17 +307,59 @@ export default function BallMergePage() {
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
-      // Обработка столкновений для слияния
+      // Обработка столкновений шаров - усиление передачи импульса
       Events.on(engine, 'collisionStart', (event) => {
         for (const pair of event.pairs) {
           const bodyA = pair.bodyA as MatterBody;
           const bodyB = pair.bodyB as MatterBody;
 
+          // Усиление передачи импульса при столкновении двух шаров
+          if (
+            bodyA.ballLevel !== undefined &&
+            bodyB.ballLevel !== undefined &&
+            !bodyA.isStatic && !bodyB.isStatic
+          ) {
+            // Вектор от A к B
+            const dx = bodyB.position.x - bodyA.position.x;
+            const dy = bodyB.position.y - bodyA.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // Относительная скорость вдоль нормали
+            const relVelX = bodyA.velocity.x - bodyB.velocity.x;
+            const relVelY = bodyA.velocity.y - bodyB.velocity.y;
+            const relVelNormal = relVelX * nx + relVelY * ny;
+
+            // Если шары сближаются
+            if (relVelNormal > 0.5) {
+              // Коэффициент усиления передачи импульса (стекло скользкое, удар сильнее)
+              const boostFactor = 1.5;
+              const impulse = relVelNormal * boostFactor;
+
+              // Применяем дополнительный импульс
+              Body.setVelocity(bodyB, {
+                x: bodyB.velocity.x + nx * impulse * 0.5,
+                y: bodyB.velocity.y + ny * impulse * 0.5,
+              });
+            }
+          }
+
+          // Слияние одинаковых шаров
           if (
             bodyA.ballLevel !== undefined &&
             bodyB.ballLevel !== undefined &&
             bodyA.ballLevel === bodyB.ballLevel
           ) {
+            // Проверка иммунитета к слиянию (для цепных реакций)
+            const now = Date.now();
+            if (
+              (bodyA.mergeImmunityUntil && now < bodyA.mergeImmunityUntil) ||
+              (bodyB.mergeImmunityUntil && now < bodyB.mergeImmunityUntil)
+            ) {
+              continue; // Пропускаем - один из шаров ещё под иммунитетом
+            }
+
             const pairKey = [bodyA.id, bodyB.id].sort().join('-');
 
             if (!mergedPairsRef.current.has(pairKey)) {
@@ -355,6 +400,8 @@ export default function BallMergePage() {
                   label: `ball-${newLevel}`,
                 }) as MatterBody;
                 newBall.ballLevel = newLevel;
+                // Иммунитет к слиянию 300мс - чтобы видеть промежуточный шар
+                newBall.mergeImmunityUntil = Date.now() + 300;
 
                 Composite.add(engine.world, newBall);
                 ballBodiesRef.current.set(newBall.id, newBall);
