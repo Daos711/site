@@ -20,81 +20,101 @@ type MatterRender = import("matter-js").Render;
 type MatterRunner = import("matter-js").Runner;
 type MatterBody = import("matter-js").Body & { ballLevel?: number };
 
-// Рисование 3D стеклянного стакана
+// Рисование 3D стеклянного стакана с реальной перспективой
 function drawGlassContainer(ctx: CanvasRenderingContext2D) {
   const w = GAME_WIDTH;
   const h = GAME_HEIGHT;
   const t = WALL_THICKNESS;
-  const depth = 30; // глубина 3D эффекта
+  const depth = 40; // глубина 3D эффекта
+  const perspectiveOffset = 15; // смещение для перспективы (дальняя грань меньше)
 
   ctx.save();
 
-  // Задняя стенка (внутренняя рамка)
-  ctx.strokeStyle = 'rgba(200, 190, 230, 0.3)';
+  // Задняя стенка (меньше из-за перспективы)
+  const backLeft = t + depth + perspectiveOffset;
+  const backRight = w - t - depth - perspectiveOffset;
+  const backTop = DROP_ZONE_HEIGHT + depth + perspectiveOffset / 2;
+  const backBottom = h - t - depth - perspectiveOffset / 2;
+
+  ctx.strokeStyle = 'rgba(180, 170, 210, 0.4)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.roundRect(t + depth, DROP_ZONE_HEIGHT + depth, w - 2*t - 2*depth, h - DROP_ZONE_HEIGHT - t - 2*depth, 8);
+  ctx.roundRect(backLeft, backTop, backRight - backLeft, backBottom - backTop, 6);
   ctx.stroke();
 
-  // Боковые трапеции (левая и правая стенки с перспективой)
-  // Левая стенка
-  ctx.fillStyle = 'rgba(220, 215, 245, 0.08)';
+  // Заливка задней стенки (тёмная)
+  ctx.fillStyle = 'rgba(40, 30, 60, 0.5)';
+  ctx.fill();
+
+  // Левая боковая стенка (трапеция с перспективой)
+  ctx.fillStyle = 'rgba(200, 190, 230, 0.12)';
   ctx.beginPath();
-  ctx.moveTo(t, DROP_ZONE_HEIGHT);
-  ctx.lineTo(t + depth, DROP_ZONE_HEIGHT + depth);
-  ctx.lineTo(t + depth, h - t - depth);
-  ctx.lineTo(t, h - t);
+  ctx.moveTo(t, DROP_ZONE_HEIGHT); // передний верх
+  ctx.lineTo(backLeft, backTop); // задний верх (меньше)
+  ctx.lineTo(backLeft, backBottom); // задний низ
+  ctx.lineTo(t, h - t); // передний низ
   ctx.closePath();
   ctx.fill();
 
-  // Правая стенка
+  // Обводка левой стенки
+  ctx.strokeStyle = 'rgba(220, 215, 245, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Правая боковая стенка (трапеция)
+  ctx.fillStyle = 'rgba(200, 190, 230, 0.12)';
   ctx.beginPath();
   ctx.moveTo(w - t, DROP_ZONE_HEIGHT);
-  ctx.lineTo(w - t - depth, DROP_ZONE_HEIGHT + depth);
-  ctx.lineTo(w - t - depth, h - t - depth);
+  ctx.lineTo(backRight, backTop);
+  ctx.lineTo(backRight, backBottom);
   ctx.lineTo(w - t, h - t);
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
-  // Нижняя стенка (пол с перспективой)
+  // Нижняя стенка (пол - трапеция)
+  ctx.fillStyle = 'rgba(180, 170, 210, 0.15)';
   ctx.beginPath();
-  ctx.moveTo(t, h - t);
-  ctx.lineTo(t + depth, h - t - depth);
-  ctx.lineTo(w - t - depth, h - t - depth);
-  ctx.lineTo(w - t, h - t);
+  ctx.moveTo(t, h - t); // передний левый
+  ctx.lineTo(backLeft, backBottom); // задний левый
+  ctx.lineTo(backRight, backBottom); // задний правый
+  ctx.lineTo(w - t, h - t); // передний правый
   ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
-  // Внешняя рамка с glow эффектом
-  ctx.shadowColor = 'rgba(180, 170, 220, 0.5)';
-  ctx.shadowBlur = 15;
-  ctx.strokeStyle = 'rgba(230, 225, 250, 0.6)';
+  // Внешняя рамка (передняя грань) с glow
+  ctx.shadowColor = 'rgba(180, 170, 220, 0.6)';
+  ctx.shadowBlur = 20;
+  ctx.strokeStyle = 'rgba(235, 230, 255, 0.7)';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.roundRect(t, DROP_ZONE_HEIGHT, w - 2*t, h - DROP_ZONE_HEIGHT - t, 12);
   ctx.stroke();
 
-  // Внутренняя обводка (двойная линия эффект)
+  // Вторая обводка (двойная линия)
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.roundRect(t + 4, DROP_ZONE_HEIGHT + 4, w - 2*t - 8, h - DROP_ZONE_HEIGHT - t - 8, 10);
+  ctx.roundRect(t + 3, DROP_ZONE_HEIGHT + 3, w - 2*t - 6, h - DROP_ZONE_HEIGHT - t - 6, 10);
   ctx.stroke();
 
-  // Блик сверху (световой кант)
-  const gradient = ctx.createLinearGradient(t, DROP_ZONE_HEIGHT, t, DROP_ZONE_HEIGHT + 40);
-  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
+  // Блик сверху
+  const gradient = ctx.createLinearGradient(t, DROP_ZONE_HEIGHT, t, DROP_ZONE_HEIGHT + 50);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
   gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
   ctx.fillStyle = gradient;
-  ctx.fillRect(t + 5, DROP_ZONE_HEIGHT + 5, w - 2*t - 10, 35);
+  ctx.fillRect(t + 5, DROP_ZONE_HEIGHT + 5, w - 2*t - 10, 45);
 
-  // Тёплое отражение снизу
-  const bottomGlow = ctx.createLinearGradient(0, h - t - 20, 0, h - t);
-  bottomGlow.addColorStop(0, 'rgba(255, 200, 150, 0)');
-  bottomGlow.addColorStop(1, 'rgba(255, 200, 150, 0.1)');
-  ctx.fillStyle = bottomGlow;
-  ctx.fillRect(t + 5, h - t - 20, w - 2*t - 10, 20);
+  // Угловые блики (стеклянный эффект)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.beginPath();
+  ctx.moveTo(t + 5, DROP_ZONE_HEIGHT + 5);
+  ctx.lineTo(t + 25, DROP_ZONE_HEIGHT + 5);
+  ctx.lineTo(t + 5, DROP_ZONE_HEIGHT + 60);
+  ctx.closePath();
+  ctx.fill();
 
   ctx.restore();
 }
@@ -198,6 +218,10 @@ export default function BallMergePage() {
     canDrop: true,
     dangerTimer: null,
   });
+
+  // Refs для использования в render loop (чтобы не пересоздавать useEffect)
+  const gameStateRef = useRef(gameState);
+  gameStateRef.current = gameState;
 
   const dangerStartTimeRef = useRef<number | null>(null);
   const mergedPairsRef = useRef<Set<string>>(new Set());
@@ -371,21 +395,22 @@ export default function BallMergePage() {
           ctx.fillText(`${seconds}s`, GAME_WIDTH / 2, DANGER_LINE_Y - 10);
         }
 
-        // Превью шарика
-        if (!gameState.isGameOver) {
-          const previewBall = BALL_LEVELS[gameState.nextBallLevel];
+        // Превью шарика (используем ref для актуальных значений)
+        const currentState = gameStateRef.current;
+        if (!currentState.isGameOver) {
+          const previewBall = BALL_LEVELS[currentState.nextBallLevel];
           if (previewBall) {
-            ctx.globalAlpha = 0.5;
-            drawBall(ctx, gameState.dropX, DROP_ZONE_HEIGHT / 2 + 10, previewBall.radius, gameState.nextBallLevel);
+            ctx.globalAlpha = 0.7;
+            drawBall(ctx, currentState.dropX, DROP_ZONE_HEIGHT / 2 + 10, previewBall.radius, currentState.nextBallLevel);
             ctx.globalAlpha = 1;
 
             // Линия падения
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(gameState.dropX, DROP_ZONE_HEIGHT / 2 + 10 + previewBall.radius);
-            ctx.lineTo(gameState.dropX, GAME_HEIGHT);
+            ctx.moveTo(currentState.dropX, DROP_ZONE_HEIGHT / 2 + 10 + previewBall.radius);
+            ctx.lineTo(currentState.dropX, GAME_HEIGHT);
             ctx.stroke();
             ctx.setLineDash([]);
           }
@@ -435,7 +460,8 @@ export default function BallMergePage() {
       mergedPairsRef.current.clear();
       ballBodiesRef.current.clear();
     };
-  }, [gameState.dropX, gameState.nextBallLevel, gameState.isGameOver]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Инициализация только один раз!
 
   // Бросок шарика - БЕЗ ЗАДЕРЖКИ
   const dropBall = useCallback((clientX: number) => {
