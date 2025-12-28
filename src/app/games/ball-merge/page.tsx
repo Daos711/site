@@ -19,6 +19,11 @@ type MatterEngine = import("matter-js").Engine;
 type MatterBody = import("matter-js").Body & {
   ballLevel?: number;
   mergeImmunityUntil?: number;
+  // Для плавного роста при слиянии
+  growStartRadius?: number;
+  growTargetRadius?: number;
+  growStartTime?: number;
+  growDurationMs?: number;
 };
 
 // Рисование 3D стеклянного стакана с реальной перспективой
@@ -241,7 +246,8 @@ export default function BallMergePage() {
   const isGameOverRef = useRef(isGameOver);
   isGameOverRef.current = isGameOver;
 
-  const dangerStartTimeRef = useRef<number | null>(null);
+  // Per-ball danger timers: Map<ballId, startTime>
+  const dangerTimersRef = useRef<Map<number, number>>(new Map());
   const mergedPairsRef = useRef<Set<string>>(new Set());
 
   // Инициализация Matter.js
@@ -372,26 +378,32 @@ export default function BallMergePage() {
               Composite.remove(engine.world, bodyA);
               Composite.remove(engine.world, bodyB);
 
-              // Создаём новый шарик
-              const newBallData = BALL_LEVELS[newLevel];
-              if (newBallData) {
-                const newBall = Bodies.circle(midX, midY, newBallData.radius, {
-                  restitution: 0.05,      // Почти без отскока
-                  friction: 0.1,          // Небольшое трение между шарами
-                  frictionStatic: 0.2,    // Умеренное статическое трение
-                  frictionAir: 0.001,     // Лёгкое затухание
-                  density: 0.002,
-                  label: `ball-${newLevel}`,
-                }) as MatterBody;
-                newBall.ballLevel = newLevel;
-                newBall.mergeImmunityUntil = Date.now() + 300;
+              // Создаём новый шарик с НАЧАЛЬНЫМ радиусом (для плавного роста)
+              const startRadius = BALL_LEVELS[currentLevel].radius;
+              const targetRadius = BALL_LEVELS[newLevel].radius;
 
-                Composite.add(engine.world, newBall);
-                ballBodiesRef.current.set(newBall.id, newBall);
+              const newBall = Bodies.circle(midX, midY, startRadius, {
+                restitution: 0.08,      // Чуть больше отскока для динамики
+                friction: 0.04,         // Меньше трения - шары катятся легче
+                frictionStatic: 0.02,   // Почти нет "залипания"
+                frictionAir: 0.001,
+                density: 0.002,
+                label: `ball-${newLevel}`,
+              }) as MatterBody;
+              newBall.ballLevel = newLevel;
+              newBall.mergeImmunityUntil = Date.now() + 30; // Короткий иммунитет
 
-                // Применяем сохранённый импульс к новому шару
-                Body.setVelocity(newBall, { x: newVx, y: newVy });
-              }
+              // Параметры плавного роста
+              newBall.growStartRadius = startRadius;
+              newBall.growTargetRadius = targetRadius;
+              newBall.growStartTime = performance.now();
+              newBall.growDurationMs = 160;
+
+              Composite.add(engine.world, newBall);
+              ballBodiesRef.current.set(newBall.id, newBall);
+
+              // Применяем сохранённый импульс к новому шару
+              Body.setVelocity(newBall, { x: newVx, y: newVy });
 
               // +1 очко за слияние
               setScore(prev => prev + 1);
@@ -420,6 +432,41 @@ export default function BallMergePage() {
       let accumulator = 0;
       let lastTime = performance.now();
 
+      // Функция плавного роста шаров после слияния
+      const stepGrowth = (now: number) => {
+        const MAX_SPEED = 25; // Кэп скорости для предотвращения туннелирования
+
+        for (const b of ballBodiesRef.current.values()) {
+          // Плавный рост
+          if (b.growTargetRadius && b.growStartTime && b.growDurationMs && b.circleRadius) {
+            const t = Math.min(1, (now - b.growStartTime) / b.growDurationMs);
+            const tt = t * (2 - t); // easing
+
+            const startR = b.growStartRadius ?? b.circleRadius;
+            const desiredR = startR + (b.growTargetRadius - startR) * tt;
+            const scale = desiredR / b.circleRadius;
+
+            if (Number.isFinite(scale) && scale > 0.0001 && Math.abs(scale - 1) > 1e-3) {
+              Body.scale(b, scale, scale);
+            }
+
+            if (t >= 1) {
+              b.growTargetRadius = undefined;
+              b.growStartTime = undefined;
+              b.growDurationMs = undefined;
+              b.growStartRadius = undefined;
+            }
+          }
+
+          // Кэп скорости
+          const speed = Math.sqrt(b.velocity.x ** 2 + b.velocity.y ** 2);
+          if (speed > MAX_SPEED) {
+            const factor = MAX_SPEED / speed;
+            Body.setVelocity(b, { x: b.velocity.x * factor, y: b.velocity.y * factor });
+          }
+        }
+      };
+
       const render = (currentTime: number) => {
         if (!ctx || !isMounted) return;
 
@@ -434,6 +481,7 @@ export default function BallMergePage() {
           // Несколько апдейтов физики на кадр если нужно
           while (accumulator >= FIXED_DELTA) {
             Engine.update(engine, FIXED_DELTA);
+            stepGrowth(performance.now()); // Рост шаров после каждого шага физики
             accumulator -= FIXED_DELTA;
           }
         }
@@ -450,11 +498,13 @@ export default function BallMergePage() {
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
-            // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана)
-            // НО: не подсвечиваем падающие шары - если движется вниз вообще
+            // Используем фактический радиус тела (для плавного роста)
+            const actualRadius = b.circleRadius ?? BALL_LEVELS[b.ballLevel].radius;
+            // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана = выпирает на 50%+)
+            // НО: не подсвечиваем падающие шары
             const isMovingDown = body.velocity.y > 0.5;
             const isInDanger = body.position.y < containerTop && !isMovingDown;
-            drawBall(ctx, body.position.x, body.position.y, BALL_LEVELS[b.ballLevel].radius, b.ballLevel, isInDanger);
+            drawBall(ctx, body.position.x, body.position.y, actualRadius, b.ballLevel, isInDanger);
           }
         }
 
@@ -477,29 +527,39 @@ export default function BallMergePage() {
           }
         }
 
-        // Проверка game over: центр шара выше верхнего края стакана (= больше половины выпирает)
-        // Не считаем падающие шары - только те что выпирают снизу (стоят или поднимаются)
-        let hasDangerBall = false;
+        // Проверка game over с ИНДИВИДУАЛЬНЫМИ таймерами для каждого шара
+        // Условие: центр шара выше containerTop = выпирает на 50%+
+        // Каждый выпирающий шар получает свой таймер 3 секунды
+        const now = Date.now();
+        const currentDangerBalls = new Set<number>();
+
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
             const isMovingDown = body.velocity.y > 0.5;
-            // Если центр шара выше containerTop И шар НЕ движется вниз - значит выпирает снизу
+            // Если центр шара выше containerTop И шар НЕ падает - значит выпирает снизу
             if (body.position.y < containerTop && !isMovingDown) {
-              hasDangerBall = true;
-              break;
+              currentDangerBalls.add(b.id);
+
+              // Если этот шар ещё не имеет таймера - создаём
+              if (!dangerTimersRef.current.has(b.id)) {
+                dangerTimersRef.current.set(b.id, now);
+              } else {
+                // Проверяем, прошло ли 3 секунды
+                const startTime = dangerTimersRef.current.get(b.id)!;
+                if (now - startTime > DANGER_TIME_MS) {
+                  setIsGameOver(true);
+                }
+              }
             }
           }
         }
 
-        if (hasDangerBall) {
-          if (dangerStartTimeRef.current === null) {
-            dangerStartTimeRef.current = Date.now();
-          } else if (Date.now() - dangerStartTimeRef.current > DANGER_TIME_MS) {
-            setIsGameOver(true);
+        // Удаляем таймеры для шаров, которые вернулись в безопасную зону
+        for (const ballId of dangerTimersRef.current.keys()) {
+          if (!currentDangerBalls.has(ballId)) {
+            dangerTimersRef.current.delete(ballId);
           }
-        } else {
-          dangerStartTimeRef.current = null;
         }
 
         animationId = requestAnimationFrame(render);
@@ -544,10 +604,10 @@ export default function BallMergePage() {
     const dropY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
-      restitution: 0.05,      // Почти без отскока (Suika-стиль)
-      friction: 0.1,          // Небольшое трение между шарами
-      frictionStatic: 0.2,    // Умеренное статическое трение
-      frictionAir: 0.001,     // Лёгкое затухание
+      restitution: 0.08,      // Чуть больше отскока для динамики
+      friction: 0.04,         // Меньше трения - шары катятся легче
+      frictionStatic: 0.02,   // Почти нет "залипания"
+      frictionAir: 0.001,
       density: 0.002,
       label: `ball-${currentBallLevel}`,
     }) as MatterBody;
@@ -607,7 +667,7 @@ export default function BallMergePage() {
 
     mergedPairsRef.current.clear();
     ballBodiesRef.current.clear();
-    dangerStartTimeRef.current = null;
+    dangerTimersRef.current.clear();
 
     setScore(0);
     setCurrentBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
