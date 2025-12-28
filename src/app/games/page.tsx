@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Grid3X3, Factory } from "lucide-react";
+import { Grid3X3, Circle } from "lucide-react";
 
 const games = [
   {
@@ -12,11 +12,11 @@ const games = [
     status: "prototype" as const,
   },
   {
-    id: "particle-factory",
-    title: "Фабрика частиц",
-    description: "Строй конвейеры и трансформируй частицы. Головоломка с физикой.",
-    href: "/games/particle-factory",
-    icon: Factory,
+    id: "ball-merge",
+    title: "Шарики",
+    description: "Бросай шарики и соединяй одинаковые. Физика + головоломка.",
+    href: "/games/ball-merge",
+    icon: Circle,
     status: "prototype" as const,
   },
 ];

@@ -17,12 +17,12 @@ export const projects: Project[] = [
     href: "/games/digits",
   },
   {
-    id: "particle-factory",
-    title: "Фабрика частиц",
-    description: "Строй конвейеры и трансформируй частицы. Головоломка с физикой.",
-    tags: ["игра", "TypeScript", "React", "web", "Canvas"],
+    id: "ball-merge",
+    title: "Шарики",
+    description: "Бросай шарики и соединяй одинаковые. Физика Matter.js.",
+    tags: ["игра", "TypeScript", "React", "web", "Matter.js"],
     status: "prototype",
-    href: "/games/particle-factory",
+    href: "/games/ball-merge",
   },
   {
     id: "beam-calculator",
