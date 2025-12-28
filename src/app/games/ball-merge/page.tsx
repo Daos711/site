@@ -16,11 +16,9 @@ import {
 } from "@/lib/ball-merge";
 
 type MatterEngine = import("matter-js").Engine;
-type MatterRender = import("matter-js").Render;
-type MatterRunner = import("matter-js").Runner;
 type MatterBody = import("matter-js").Body & {
   ballLevel?: number;
-  mergeImmunityUntil?: number; // timestamp когда закончится иммунитет к слиянию
+  mergeImmunityUntil?: number;
 };
 
 // Рисование 3D стеклянного стакана с реальной перспективой
@@ -225,7 +223,6 @@ function shadeColor(color: string, percent: number): string {
 export default function BallMergePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<MatterEngine | null>(null);
-  const runnerRef = useRef<MatterRunner | null>(null);
   const matterRef = useRef<typeof import("matter-js") | null>(null);
   const ballBodiesRef = useRef<Map<number, MatterBody>>(new Map());
 
@@ -259,31 +256,36 @@ export default function BallMergePage() {
       if (!isMounted || !canvasRef.current) return;
 
       matterRef.current = Matter;
-      const { Engine, Runner, Bodies, Body, Composite, Events } = Matter;
+      const { Engine, Bodies, Body, Composite, Events } = Matter;
 
       const engine = Engine.create({
-        gravity: { x: 0, y: 1.5 }, // Земная гравитация (масштабированная)
+        gravity: { x: 0, y: 1.5 },
       });
+
+      // Увеличиваем итерации солвера для стабильности
+      engine.positionIterations = 10;  // было 6 по умолчанию
+      engine.velocityIterations = 8;   // было 4 по умолчанию
+
       engineRef.current = engine;
 
-      // Невидимые стены (физика) - стекло, очень скользкое
-      // Стены простираются от самого верха до низа, чтобы удерживать отлетающие шары
+      // Стены - БЕЗ трения, чтобы шары катились
       const wallOptions = {
         isStatic: true,
         render: { visible: false },
         label: 'wall',
-        friction: 0.001, // Стекло - почти без трения
-        restitution: 0.3, // Отскок от невидимых стен выше стакана
+        friction: 0,           // Нет трения
+        frictionStatic: 0,     // Нет статического трения - шары легко сдвигаются
+        restitution: 0.1,      // Минимальный отскок
       };
 
       // Высота стен - вся видимая область + запас сверху
-      const totalWallHeight = CANVAS_HEIGHT + 200;
+      const totalWallHeight = CANVAS_HEIGHT + 400;  // Толще для надёжности
       const wallCenterY = CANVAS_HEIGHT / 2 - 100;
 
       const leftWall = Bodies.rectangle(
         WALL_THICKNESS / 2,
         wallCenterY,
-        WALL_THICKNESS,
+        WALL_THICKNESS * 2,    // Толще стена
         totalWallHeight,
         wallOptions
       );
@@ -291,68 +293,39 @@ export default function BallMergePage() {
       const rightWall = Bodies.rectangle(
         GAME_WIDTH - WALL_THICKNESS / 2,
         wallCenterY,
-        WALL_THICKNESS,
+        WALL_THICKNESS * 2,    // Толще стена
         totalWallHeight,
         wallOptions
       );
 
-      // Пол сдвинут вниз на TOP_BUFFER
+      // Пол - толстый для предотвращения туннелирования
       const floor = Bodies.rectangle(
         GAME_WIDTH / 2,
-        CANVAS_HEIGHT - WALL_THICKNESS / 2,
-        GAME_WIDTH,
-        WALL_THICKNESS,
-        { ...wallOptions, restitution: 0.1 } // Пол менее упругий
+        CANVAS_HEIGHT - WALL_THICKNESS / 2 + 20,  // Чуть ниже
+        GAME_WIDTH + 100,
+        WALL_THICKNESS * 3,    // Толще пол
+        wallOptions
       );
 
-      // Невидимый потолок высоко вверху - шары могут подлетать и отскакивать
+      // Невидимый потолок
       const ceiling = Bodies.rectangle(
         GAME_WIDTH / 2,
-        -150,
-        GAME_WIDTH,
+        -200,
+        GAME_WIDTH + 100,
         100,
-        { ...wallOptions, restitution: 0.5 } // Потолок упругий - шары отскакивают вниз
+        wallOptions
       );
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
-      // Обработка столкновений шаров - усиление передачи импульса
+      // Обработка столкновений - ТОЛЬКО слияние
+      // Matter.js сам обрабатывает физику столкновений
       Events.on(engine, 'collisionStart', (event) => {
         for (const pair of event.pairs) {
           const bodyA = pair.bodyA as MatterBody;
           const bodyB = pair.bodyB as MatterBody;
 
-          // Усиление передачи импульса при столкновении двух шаров
-          if (
-            bodyA.ballLevel !== undefined &&
-            bodyB.ballLevel !== undefined &&
-            !bodyA.isStatic && !bodyB.isStatic
-          ) {
-            // Вектор от A к B (направление толчка)
-            const dx = bodyB.position.x - bodyA.position.x;
-            const dy = bodyB.position.y - bodyA.position.y;
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const nx = dx / dist;
-            const ny = dy / dist;
-
-            // Скорость падающего шара (A)
-            const speedA = Math.sqrt(bodyA.velocity.x ** 2 + bodyA.velocity.y ** 2);
-
-            // Если шар A движется достаточно быстро - передаём импульс B
-            if (speedA > 1) {
-              // Сила зависит от скорости падающего шара
-              // Чем сильнее удар, тем дальше откатится
-              const pushForce = speedA * 0.8;
-
-              // Толкаем B в направлении от A
-              Body.setVelocity(bodyB, {
-                x: bodyB.velocity.x + nx * pushForce,
-                y: bodyB.velocity.y + ny * pushForce * 0.5, // меньше вертикально
-              });
-            }
-          }
-
-          // Слияние одинаковых шаров
+          // Слияние только одинаковых шаров
           if (
             bodyA.ballLevel !== undefined &&
             bodyB.ballLevel !== undefined &&
@@ -364,7 +337,7 @@ export default function BallMergePage() {
               (bodyA.mergeImmunityUntil && now < bodyA.mergeImmunityUntil) ||
               (bodyB.mergeImmunityUntil && now < bodyB.mergeImmunityUntil)
             ) {
-              continue; // Пропускаем - один из шаров ещё под иммунитетом
+              continue;
             }
 
             const pairKey = [bodyA.id, bodyB.id].sort().join('-');
@@ -373,80 +346,51 @@ export default function BallMergePage() {
               mergedPairsRef.current.add(pairKey);
 
               const currentLevel = bodyA.ballLevel;
-              // При слиянии двух самых больших (8) -> золотой (9)
-              // При слиянии двух золотых (9) -> маленький (0) - цикл
               let newLevel: number;
               if (currentLevel === 8) {
-                newLevel = 9; // Золотой
+                newLevel = 9;
               } else if (currentLevel === 9) {
-                newLevel = 0; // Цикл - возврат к маленькому
+                newLevel = 0;
               } else {
                 newLevel = currentLevel + 1;
               }
 
+              // Позиция - центр между двумя шарами
               const midX = (bodyA.position.x + bodyB.position.x) / 2;
               const midY = (bodyA.position.y + bodyB.position.y) / 2;
 
-              // Удаляем из tracking
+              // СОХРАНЯЕМ ИМПУЛЬС: массо-взвешенная средняя скорость
+              const massA = bodyA.mass;
+              const massB = bodyB.mass;
+              const totalMass = massA + massB;
+              const newVx = (bodyA.velocity.x * massA + bodyB.velocity.x * massB) / totalMass;
+              const newVy = (bodyA.velocity.y * massA + bodyB.velocity.y * massB) / totalMass;
+
+              // Удаляем старые шары
               ballBodiesRef.current.delete(bodyA.id);
               ballBodiesRef.current.delete(bodyB.id);
-
               Composite.remove(engine.world, bodyA);
               Composite.remove(engine.world, bodyB);
 
               // Создаём новый шарик
               const newBallData = BALL_LEVELS[newLevel];
               if (newBallData) {
-                // Плотность одинаковая, масса = density * area = density * π * r²
-                // Matter.js автоматически считает массу от density и площади круга
                 const newBall = Bodies.circle(midX, midY, newBallData.radius, {
-                  restitution: 0.1, // Минимальный отскок
-                  friction: 0.5, // Трение между шарами - держатся друг на друге
-                  frictionAir: 0, // Нет сопротивления воздуха
-                  density: 0.002, // Плотность (масса пропорциональна r²)
+                  restitution: 0.05,      // Почти без отскока
+                  friction: 0.1,          // Небольшое трение между шарами
+                  frictionStatic: 0.2,    // Умеренное статическое трение
+                  frictionAir: 0.001,     // Лёгкое затухание
+                  density: 0.002,
                   label: `ball-${newLevel}`,
                 }) as MatterBody;
                 newBall.ballLevel = newLevel;
-                // Иммунитет к слиянию 300мс - чтобы видеть промежуточный шар
                 newBall.mergeImmunityUntil = Date.now() + 300;
 
                 Composite.add(engine.world, newBall);
                 ballBodiesRef.current.set(newBall.id, newBall);
 
-                // ВЗРЫВ при слиянии - толкаем ВСЕ близкие шары
-                // Используем setTimeout чтобы импульс применился после physics step
-                setTimeout(() => {
-                  const allBodies = Composite.allBodies(engine.world);
-                  for (const otherBody of allBodies) {
-                    const ob = otherBody as MatterBody;
-                    if (ob.ballLevel !== undefined && ob.id !== newBall.id && !otherBody.isStatic) {
-                      const dx = otherBody.position.x - midX;
-                      const dy = otherBody.position.y - midY;
-                      const dist = Math.sqrt(dx * dx + dy * dy);
-                      const otherRadius = BALL_LEVELS[ob.ballLevel]?.radius || 50;
-
-                      // Проверяем пересечение: новый шар вырос и задел другой
-                      const overlap = newBallData.radius + otherRadius - dist;
-
-                      if (overlap > -10) { // Касается или почти касается (10px запас)
-                        // Сила зависит от перекрытия и размера нового шара
-                        // Чем больше перекрытие, тем сильнее толчок
-                        const overlapFactor = Math.max(overlap, 10) / 10;
-                        const sizeFactor = newBallData.radius / 25;
-                        const pushSpeed = overlapFactor * sizeFactor * 4; // Мягкий толчок
-
-                        const nx = dx / Math.max(dist, 1);
-                        const ny = dy / Math.max(dist, 1);
-
-                        // Применяем скорость напрямую
-                        Body.setVelocity(otherBody, {
-                          x: nx * pushSpeed,
-                          y: ny * pushSpeed // без подброса вверх
-                        });
-                      }
-                    }
-                  }
-                }, 10);
+                // Применяем сохранённый импульс к новому шару
+                Body.setVelocity(newBall, { x: newVx, y: newVy });
               }
 
               // +1 очко за слияние
@@ -458,12 +402,7 @@ export default function BallMergePage() {
         }
       });
 
-      // Запускаем физику
-      const runner = Runner.create();
-      runnerRef.current = runner;
-      Runner.run(runner, engine);
-
-      // Кастомный рендер
+      // Кастомный рендер + физика с ФИКСИРОВАННЫМ TIMESTEP
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
 
@@ -472,8 +411,25 @@ export default function BallMergePage() {
       // Позиция превью шара - над стаканом
       const previewY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
 
-      const render = () => {
+      // Фиксированный timestep для стабильной физики
+      const FIXED_DELTA = 1000 / 60;  // 60 FPS физики
+      let accumulator = 0;
+      let lastTime = performance.now();
+
+      const render = (currentTime: number) => {
         if (!ctx || !isMounted) return;
+
+        // Фиксированный timestep + сабстеппинг
+        let dt = currentTime - lastTime;
+        lastTime = currentTime;
+        dt = Math.min(dt, 50);  // Clamp чтобы не было огромных скачков
+        accumulator += dt;
+
+        // Несколько апдейтов физики на кадр если нужно
+        while (accumulator >= FIXED_DELTA) {
+          Engine.update(engine, FIXED_DELTA);
+          accumulator -= FIXED_DELTA;
+        }
 
         // Фон - вся канвас область
         ctx.fillStyle = '#2d1b4e';
@@ -542,7 +498,8 @@ export default function BallMergePage() {
         animationId = requestAnimationFrame(render);
       };
 
-      render();
+      // Запускаем рендер-цикл
+      animationId = requestAnimationFrame(render);
       setIsLoaded(true);
     };
 
@@ -551,9 +508,6 @@ export default function BallMergePage() {
     return () => {
       isMounted = false;
       cancelAnimationFrame(animationId);
-      if (runnerRef.current && matterRef.current) {
-        matterRef.current.Runner.stop(runnerRef.current);
-      }
       if (engineRef.current && matterRef.current) {
         matterRef.current.Engine.clear(engineRef.current);
       }
@@ -583,10 +537,11 @@ export default function BallMergePage() {
     const dropY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
-      restitution: 0.1, // Минимальный отскок
-      friction: 0.5, // Трение между шарами - держатся друг на друге
-      frictionAir: 0, // Нет сопротивления воздуха
-      density: 0.002, // Плотность (масса пропорциональна r²)
+      restitution: 0.05,      // Почти без отскока (Suika-стиль)
+      friction: 0.1,          // Небольшое трение между шарами
+      frictionStatic: 0.2,    // Умеренное статическое трение
+      frictionAir: 0.001,     // Лёгкое затухание
+      density: 0.002,
       label: `ball-${currentBallLevel}`,
     }) as MatterBody;
 
