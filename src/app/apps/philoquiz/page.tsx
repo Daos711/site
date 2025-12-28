@@ -73,7 +73,7 @@ export default function PhiloQuizPage() {
               </div>
             </div>
             <a
-              href="https://github.com/Daos711/site/releases/download/philoquiz-v1.0/philoquiz.apk"
+              href="https://github.com/Daos711/site/releases/download/philoquiz-v1.0/app-debug.apk"
               className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors"
             >
               <Download className="w-4 h-4" />
