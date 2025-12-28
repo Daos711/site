@@ -20,14 +20,14 @@ export const BALL_LEVELS: BallLevel[] = [
   { level: 7, radius: 90, color: '#f9ca24', borderColor: '#f39c12', points: 34, name: 'Ананас' },
 ];
 
-// Размеры игрового поля (широкий стакан)
-export const GAME_WIDTH = 500;
-export const GAME_HEIGHT = 450;
-export const WALL_THICKNESS = 12;
-export const DROP_ZONE_HEIGHT = 60; // Зона сверху откуда бросаем
+// Размеры игрового поля (широкий стакан как в оригинале ~1.8:1)
+export const GAME_WIDTH = 600;
+export const GAME_HEIGHT = 340;
+export const WALL_THICKNESS = 16;
+export const DROP_ZONE_HEIGHT = 50; // Зона сверху откуда бросаем
 
 // Линия проигрыша (если шарик выше этой линии дольше N секунд)
-export const DANGER_LINE_Y = DROP_ZONE_HEIGHT + 30;
+export const DANGER_LINE_Y = DROP_ZONE_HEIGHT + 20;
 export const DANGER_TIME_MS = 2000; // 2 секунды
 
 // Максимальный уровень шарика для спавна (не даём сразу большие)
