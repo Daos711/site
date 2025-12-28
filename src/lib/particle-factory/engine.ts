@@ -55,7 +55,7 @@ export function updateParticles(
     particle.y += particle.vy;
 
     // Границы поля
-    const radius = 4;
+    const radius = 6;
     const minX = radius;
     const maxX = GRID_WIDTH * CELL_SIZE - radius;
     const minY = radius;

@@ -166,7 +166,7 @@ export default function ParticleFactoryPage() {
         ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
 
         // Иконка
-        ctx.font = "16px sans-serif";
+        ctx.font = "24px sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "#ffffff";
@@ -184,20 +184,20 @@ export default function ParticleFactoryPage() {
           0,
           particle.x,
           particle.y,
-          8
+          12
         );
         gradient.addColorStop(0, props.color);
         gradient.addColorStop(0.5, props.glow || props.color);
         gradient.addColorStop(1, "transparent");
 
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 8, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, 12, 0, Math.PI * 2);
         ctx.fillStyle = gradient;
         ctx.fill();
 
         // Ядро частицы
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 4, 0, Math.PI * 2);
+        ctx.arc(particle.x, particle.y, 6, 0, Math.PI * 2);
         ctx.fillStyle = props.color;
         ctx.fill();
       }
@@ -308,43 +308,43 @@ export default function ParticleFactoryPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen max-w-4xl mx-auto">
       {/* Шапка */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between">
         <Link
           href="/games"
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-lg"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
           <span>Назад</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={prevLevel}
             disabled={state.currentLevel === 0}
-            className="p-2 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm text-gray-400">
+          <span className="text-base text-gray-300 font-medium">
             Уровень {level.id}: {level.name}
           </span>
           <button
             onClick={nextLevel}
             disabled={state.currentLevel === LEVELS.length - 1}
-            className="p-2 rounded bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* Подсказка */}
-      <p className="text-sm text-gray-400 mb-4 text-center">{level.hint}</p>
+      <p className="text-base text-gray-400 mb-5 text-center">{level.hint}</p>
 
       {/* Цели уровня */}
-      <div className="mb-4 flex flex-wrap justify-center gap-4">
+      <div className="mb-5 flex flex-wrap justify-center gap-4">
         {level.goals.map((goal) => {
           const props = PARTICLE_PROPERTIES[goal.type];
           const current = state.collected[goal.type];
@@ -352,15 +352,15 @@ export default function ParticleFactoryPage() {
           return (
             <div
               key={goal.type}
-              className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
+              className={`flex items-center gap-3 px-4 py-2 rounded-full text-base ${
                 complete ? "bg-green-900/50 text-green-400" : "bg-gray-800 text-gray-300"
               }`}
             >
               <span
-                className="w-3 h-3 rounded-full"
+                className="w-4 h-4 rounded-full"
                 style={{ backgroundColor: props.color }}
               />
-              <span>
+              <span className="font-medium">
                 {props.name}: {current}/{goal.amount}
               </span>
               {complete && <span>✓</span>}
@@ -385,7 +385,7 @@ export default function ParticleFactoryPage() {
       <div className="flex justify-center gap-4 mb-6">
         <button
           onClick={toggleRunning}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-lg transition-colors ${
             state.isRunning
               ? "bg-yellow-600 hover:bg-yellow-700"
               : "bg-green-600 hover:bg-green-700"
@@ -393,26 +393,26 @@ export default function ParticleFactoryPage() {
         >
           {state.isRunning ? (
             <>
-              <Pause className="w-4 h-4" /> Пауза
+              <Pause className="w-5 h-5" /> Пауза
             </>
           ) : (
             <>
-              <Play className="w-4 h-4" /> Старт
+              <Play className="w-5 h-5" /> Старт
             </>
           )}
         </button>
         <button
           onClick={resetLevel}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 text-lg transition-colors"
         >
-          <RotateCcw className="w-4 h-4" /> Сброс
+          <RotateCcw className="w-5 h-5" /> Сброс
         </button>
       </div>
 
       {/* Панель машин */}
-      <div className="bg-gray-900 rounded-lg p-4">
-        <h3 className="text-sm text-gray-400 mb-3 text-center">Выберите машину</h3>
-        <div className="flex flex-wrap justify-center gap-2">
+      <div className="bg-gray-900 rounded-xl p-5">
+        <h3 className="text-base text-gray-400 mb-4 text-center">Выберите машину</h3>
+        <div className="flex flex-wrap justify-center gap-3">
           {level.availableMachines.map((am) => {
             const props = MACHINE_PROPERTIES[am.type];
             const isSelected = state.selectedMachine === am.type;
@@ -427,7 +427,7 @@ export default function ParticleFactoryPage() {
                   setState((prev) => ({ ...prev, selectedMachine: am.type }))
                 }
                 disabled={isDisabled}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg min-w-[70px] transition-all ${
+                className={`flex flex-col items-center gap-2 p-3 rounded-xl min-w-[90px] transition-all ${
                   isSelected
                     ? "bg-blue-600 ring-2 ring-blue-400"
                     : isDisabled
@@ -436,10 +436,10 @@ export default function ParticleFactoryPage() {
                 }`}
                 title={props.description}
               >
-                <span className="text-xl">{props.icon}</span>
-                <span className="text-xs text-gray-300">{props.name.split(" ")[0]}</span>
+                <span className="text-3xl">{props.icon}</span>
+                <span className="text-sm text-gray-300">{props.name.split(" ")[0]}</span>
                 <span
-                  className={`text-xs ${
+                  className={`text-sm font-medium ${
                     remaining === "0" ? "text-red-400" : "text-gray-500"
                   }`}
                 >

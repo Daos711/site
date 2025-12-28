@@ -7,8 +7,8 @@ export const LEVELS: Level[] = [
     hint: 'Направь песок в сборщик с помощью конвейеров',
     goals: [{ type: 'sand', amount: 10 }],
     fixedMachines: [
-      { type: 'spawner_sand', x: 5, y: 0, fixed: true },
-      { type: 'collector', x: 15, y: 15, fixed: true },
+      { type: 'spawner_sand', x: 4, y: 0, fixed: true },
+      { type: 'collector', x: 12, y: 11, fixed: true },
     ],
     availableMachines: [
       { type: 'conveyor_right', count: -1 },
@@ -21,8 +21,8 @@ export const LEVELS: Level[] = [
     hint: 'Преврати песок в стекло через нагреватель',
     goals: [{ type: 'glass', amount: 10 }],
     fixedMachines: [
-      { type: 'spawner_sand', x: 3, y: 0, fixed: true },
-      { type: 'collector', x: 17, y: 15, fixed: true },
+      { type: 'spawner_sand', x: 2, y: 0, fixed: true },
+      { type: 'collector', x: 13, y: 11, fixed: true },
     ],
     availableMachines: [
       { type: 'conveyor_right', count: -1 },
@@ -40,9 +40,9 @@ export const LEVELS: Level[] = [
       { type: 'steam', amount: 8 },
     ],
     fixedMachines: [
-      { type: 'spawner_sand', x: 3, y: 0, fixed: true },
-      { type: 'spawner_water', x: 10, y: 0, fixed: true },
-      { type: 'collector', x: 17, y: 15, fixed: true },
+      { type: 'spawner_sand', x: 2, y: 0, fixed: true },
+      { type: 'spawner_water', x: 8, y: 0, fixed: true },
+      { type: 'collector', x: 13, y: 11, fixed: true },
     ],
     availableMachines: [
       { type: 'conveyor_right', count: -1 },

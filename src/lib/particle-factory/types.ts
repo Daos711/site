@@ -134,10 +134,10 @@ export interface GameState {
 }
 
 // Константы
-export const GRID_WIDTH = 20;
-export const GRID_HEIGHT = 16;
-export const CELL_SIZE = 25;
+export const GRID_WIDTH = 16;
+export const GRID_HEIGHT = 12;
+export const CELL_SIZE = 40;
 export const CANVAS_WIDTH = GRID_WIDTH * CELL_SIZE;
 export const CANVAS_HEIGHT = GRID_HEIGHT * CELL_SIZE;
 export const MAX_PARTICLES = 200;
-export const SPAWN_INTERVAL = 30; // кадров между спавном
+export const SPAWN_INTERVAL = 12; // кадров между спавном (быстрее)
