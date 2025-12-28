@@ -25,7 +25,6 @@ type MatterBody = import("matter-js").Body & {
   growTargetRadius?: number;
   growStartTime?: number;
   growDurationMs?: number;
-  growPrevRadius?: number; // Для отслеживания приращения радиуса
 };
 
 // Рисование 3D стеклянного стакана с реальной перспективой
@@ -252,6 +251,12 @@ export default function BallMergePage() {
   const dangerTimersRef = useRef<Map<number, number>>(new Map());
   const mergedPairsRef = useRef<Set<string>>(new Set());
 
+  // Drop-lock: нельзя бросить новый шар пока предыдущий не упал
+  const lastDroppedBallIdRef = useRef<number | null>(null);
+  const dropLockedRef = useRef(false);
+  const lastDropTimeRef = useRef(0);
+  const DROP_COOLDOWN = 200; // мс между бросками
+
   // Инициализация Matter.js
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -325,6 +330,38 @@ export default function BallMergePage() {
       );
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
+
+      // Мгновенный пинок соседям при слиянии
+      const kickNeighbors = (newBall: MatterBody, targetRadius: number) => {
+        const K = 0.5;           // сила пинка
+        const MAX_KICK = 15;     // ограничение скорости
+        const NEAR = 5;          // допуск "почти касается"
+
+        for (const other of ballBodiesRef.current.values()) {
+          if (other.id === newBall.id) continue;
+          if (other.ballLevel === undefined) continue;
+
+          const rO = other.circleRadius ?? BALL_LEVELS[other.ballLevel].radius;
+
+          const dx = other.position.x - newBall.position.x;
+          const dy = other.position.y - newBall.position.y;
+          const dist = Math.hypot(dx, dy) || 1e-6;
+
+          // Используем ЦЕЛЕВОЙ радиус для расчёта перекрытия
+          const overlap = (targetRadius + rO + NEAR) - dist;
+          if (overlap <= 0) continue;
+
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          const dv = Math.min(MAX_KICK, overlap * K);
+
+          Body.setVelocity(other, {
+            x: other.velocity.x + nx * dv,
+            y: other.velocity.y + ny * dv,
+          });
+        }
+      };
 
       // Обработка столкновений - слияние
       // Используем и collisionStart, и collisionActive для надёжности
@@ -401,11 +438,11 @@ export default function BallMergePage() {
               newBall.hasEnteredContainer = true; // Новый шар от слияния уже "в игре"
               newBall.mergeImmunityUntil = Date.now() + 30; // Короткий иммунитет
 
-              // Параметры плавного роста
+              // Параметры плавного роста (медленнее для красоты)
               newBall.growStartRadius = startRadius;
               newBall.growTargetRadius = targetRadius;
               newBall.growStartTime = performance.now();
-              newBall.growDurationMs = 160;
+              newBall.growDurationMs = 300; // медленнее, чтобы видно было
 
               Composite.add(engine.world, newBall);
               ballBodiesRef.current.set(newBall.id, newBall);
@@ -413,7 +450,8 @@ export default function BallMergePage() {
               // Применяем сохранённый импульс к новому шару
               Body.setVelocity(newBall, { x: newVx, y: newVy });
 
-              // Пинок соседям будет происходить во время роста в stepGrowth()
+              // МГНОВЕННЫЙ пинок соседям (используем целевой радиус)
+              kickNeighbors(newBall, targetRadius);
 
               // +1 очко за слияние
               setScore(prev => prev + 1);
@@ -442,44 +480,12 @@ export default function BallMergePage() {
       let accumulator = 0;
       let lastTime = performance.now();
 
-      // Пинок соседям во время роста шара
-      const kickOnGrowth = (ball: MatterBody, currentRadius: number, deltaR: number) => {
-        const K = 0.4;          // сила пинка во время роста
-        const MAX_KICK = 8;
-        const NEAR = 2;
-
-        for (const other of ballBodiesRef.current.values()) {
-          if (other.id === ball.id) continue;
-          if (other.ballLevel === undefined) continue;
-
-          const rO = other.circleRadius ?? BALL_LEVELS[other.ballLevel].radius;
-
-          const dx = other.position.x - ball.position.x;
-          const dy = other.position.y - ball.position.y;
-          const dist = Math.hypot(dx, dy) || 1e-6;
-
-          const overlap = (currentRadius + rO + NEAR) - dist;
-          if (overlap <= 0) continue;
-
-          const nx = dx / dist;
-          const ny = dy / dist;
-
-          // импульс завязываем на приращение радиуса + факт перекрытия
-          const dv = Math.min(MAX_KICK, (overlap + deltaR * 4) * K);
-
-          Body.setVelocity(other, {
-            x: other.velocity.x + nx * dv,
-            y: other.velocity.y + ny * dv,
-          });
-        }
-      };
-
-      // Функция плавного роста шаров после слияния
+      // Функция плавного ВИЗУАЛЬНОГО роста шаров (пинок уже был в момент слияния)
       const stepGrowth = (now: number) => {
         const MAX_SPEED = 25; // Кэп скорости для предотвращения туннелирования
 
         for (const b of ballBodiesRef.current.values()) {
-          // Плавный рост с пинком соседей
+          // Плавный рост
           if (b.growTargetRadius && b.growStartTime && b.growDurationMs && b.circleRadius) {
             const t = Math.min(1, (now - b.growStartTime) / b.growDurationMs);
             const tt = t * (2 - t); // easing
@@ -487,20 +493,10 @@ export default function BallMergePage() {
             const startR = b.growStartRadius ?? b.circleRadius;
             const desiredR = startR + (b.growTargetRadius - startR) * tt;
 
-            // Отслеживаем приращение радиуса
-            const prevR = b.growPrevRadius ?? b.circleRadius;
-            const deltaR = Math.max(0, desiredR - prevR);
-            b.growPrevRadius = desiredR;
-
             const scale = desiredR / b.circleRadius;
 
             if (Number.isFinite(scale) && scale > 0.0001 && Math.abs(scale - 1) > 1e-3) {
               Body.scale(b, scale, scale);
-            }
-
-            // Пинок соседям на каждом шаге роста
-            if (deltaR > 0.1) {
-              kickOnGrowth(b, desiredR, deltaR);
             }
 
             if (t >= 1) {
@@ -508,7 +504,6 @@ export default function BallMergePage() {
               b.growStartTime = undefined;
               b.growDurationMs = undefined;
               b.growStartRadius = undefined;
-              b.growPrevRadius = undefined;
             }
           }
 
@@ -537,6 +532,23 @@ export default function BallMergePage() {
             Engine.update(engine, FIXED_DELTA);
             stepGrowth(performance.now()); // Рост шаров после каждого шага физики
             accumulator -= FIXED_DELTA;
+          }
+
+          // Проверка drop-lock: разблокировать когда последний шар опустился в стакан
+          if (dropLockedRef.current && lastDroppedBallIdRef.current !== null) {
+            const lastBall = ballBodiesRef.current.get(lastDroppedBallIdRef.current);
+            if (lastBall) {
+              const ballRadius = lastBall.circleRadius ?? BALL_LEVELS[lastBall.ballLevel!].radius;
+              // Шар считается "упавшим" когда его центр ниже верхнего края на радиус
+              if (lastBall.position.y > containerTop + ballRadius * 0.5) {
+                dropLockedRef.current = false;
+                lastDroppedBallIdRef.current = null;
+              }
+            } else {
+              // Шар был удалён (слит) - разблокируем
+              dropLockedRef.current = false;
+              lastDroppedBallIdRef.current = null;
+            }
           }
         }
 
@@ -640,10 +652,18 @@ export default function BallMergePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Инициализация только один раз!
 
-  // Бросок шарика - БЕЗ ЗАДЕРЖКИ
+  // Бросок шарика с защитой от спама
   const dropBall = useCallback((clientX: number) => {
     const Matter = matterRef.current;
     if (!Matter || !engineRef.current || !canvasRef.current || isGameOver) return;
+
+    // Проверка drop-lock: нельзя бросить пока предыдущий не упал
+    if (dropLockedRef.current) return;
+
+    // Проверка cooldown
+    const now = Date.now();
+    if (now - lastDropTimeRef.current < DROP_COOLDOWN) return;
+    lastDropTimeRef.current = now;
 
     const rect = canvasRef.current.getBoundingClientRect();
     const scaleX = GAME_WIDTH / rect.width;
@@ -671,6 +691,10 @@ export default function BallMergePage() {
     ball.ballLevel = currentBallLevel;
     Matter.Composite.add(engineRef.current.world, ball);
     ballBodiesRef.current.set(ball.id, ball);
+
+    // Устанавливаем drop-lock
+    dropLockedRef.current = true;
+    lastDroppedBallIdRef.current = ball.id;
 
     // Текущий становится следующим, генерируем новый следующий
     setCurrentBallLevel(nextBallLevel);
@@ -724,6 +748,11 @@ export default function BallMergePage() {
     mergedPairsRef.current.clear();
     ballBodiesRef.current.clear();
     dangerTimersRef.current.clear();
+
+    // Сброс drop-lock
+    dropLockedRef.current = false;
+    lastDroppedBallIdRef.current = null;
+    lastDropTimeRef.current = 0;
 
     setScore(0);
     setCurrentBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
