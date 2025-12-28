@@ -54,9 +54,9 @@ export default function BallMergePage() {
       matterRef.current = Matter;
       const { Engine, Render, Runner, Bodies, Body, Composite, Events } = Matter;
 
-      // Создаём движок
+      // Создаём движок (сильная гравитация для быстрой физики)
       const engine = Engine.create({
-        gravity: { x: 0, y: 1.5 },
+        gravity: { x: 0, y: 2.5 },
       });
       engineRef.current = engine;
 
@@ -112,10 +112,10 @@ export default function BallMergePage() {
         if (!ballData) return null;
 
         const ball = Bodies.circle(x, y, ballData.radius, {
-          restitution: 0.3,
-          friction: 0.5,
-          frictionAir: 0.001,
-          density: 0.001 * (level + 1),
+          restitution: 0.05, // минимальная упругость (не прыгают)
+          friction: 0.3,
+          frictionAir: 0.01, // небольшое сопротивление воздуха
+          density: 0.002 * (level + 1),
           label: `ball-${level}`,
           render: {
             fillStyle: ballData.color,
@@ -259,10 +259,10 @@ export default function BallMergePage() {
     );
 
     const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2, ballRadius, {
-      restitution: 0.3,
-      friction: 0.5,
-      frictionAir: 0.001,
-      density: 0.001 * (gameState.nextBallLevel + 1),
+      restitution: 0.05,
+      friction: 0.3,
+      frictionAir: 0.01,
+      density: 0.002 * (gameState.nextBallLevel + 1),
       label: `ball-${gameState.nextBallLevel}`,
       render: {
         fillStyle: ballData?.color || '#fff',
@@ -459,28 +459,6 @@ export default function BallMergePage() {
       <p className="mt-4 text-sm text-gray-500 text-center px-4">
         Соединяй одинаковые шарики — они сливаются в больший!
       </p>
-
-      {/* Легенда */}
-      <div className="mt-6 flex flex-wrap justify-center gap-2 px-4 max-w-md">
-        {BALL_LEVELS.slice(0, 6).map((ball) => (
-          <div
-            key={ball.level}
-            className="flex items-center gap-1 bg-gray-800 rounded-full px-2 py-1"
-            title={ball.name}
-          >
-            <div
-              className="rounded-full border"
-              style={{
-                width: 16,
-                height: 16,
-                backgroundColor: ball.color,
-                borderColor: ball.borderColor,
-              }}
-            />
-            <span className="text-xs text-gray-400">{ball.points}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
