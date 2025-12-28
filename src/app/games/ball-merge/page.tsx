@@ -328,29 +328,26 @@ export default function BallMergePage() {
             bodyB.ballLevel !== undefined &&
             !bodyA.isStatic && !bodyB.isStatic
           ) {
-            // Вектор от A к B
+            // Вектор от A к B (направление толчка)
             const dx = bodyB.position.x - bodyA.position.x;
             const dy = bodyB.position.y - bodyA.position.y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
             const nx = dx / dist;
             const ny = dy / dist;
 
-            // Относительная скорость вдоль нормали
-            const relVelX = bodyA.velocity.x - bodyB.velocity.x;
-            const relVelY = bodyA.velocity.y - bodyB.velocity.y;
-            const relVelNormal = relVelX * nx + relVelY * ny;
+            // Скорость падающего шара (A)
+            const speedA = Math.sqrt(bodyA.velocity.x ** 2 + bodyA.velocity.y ** 2);
 
-            // Если шары сближаются
-            if (relVelNormal > 0.3) {
-              // Коэффициент усиления передачи импульса (стекло скользкое, удар сильнее)
-              // Увеличиваем для лучшей передачи при касательных ударах
-              const boostFactor = 2.5;
-              const impulse = relVelNormal * boostFactor;
+            // Если шар A движется достаточно быстро - передаём импульс B
+            if (speedA > 1) {
+              // Сила зависит от скорости падающего шара
+              // Чем сильнее удар, тем дальше откатится
+              const pushForce = speedA * 0.8;
 
-              // Применяем дополнительный импульс
+              // Толкаем B в направлении от A
               Body.setVelocity(bodyB, {
-                x: bodyB.velocity.x + nx * impulse * 0.7,
-                y: bodyB.velocity.y + ny * impulse * 0.7,
+                x: bodyB.velocity.x + nx * pushForce,
+                y: bodyB.velocity.y + ny * pushForce * 0.5, // меньше вертикально
               });
             }
           }
@@ -436,7 +433,7 @@ export default function BallMergePage() {
                         // Чем больше перекрытие, тем сильнее толчок
                         const overlapFactor = Math.max(overlap, 10) / 10;
                         const sizeFactor = newBallData.radius / 25;
-                        const pushSpeed = overlapFactor * sizeFactor * 10; // Умеренный толчок
+                        const pushSpeed = overlapFactor * sizeFactor * 4; // Мягкий толчок
 
                         const nx = dx / Math.max(dist, 1);
                         const ny = dy / Math.max(dist, 1);
@@ -444,7 +441,7 @@ export default function BallMergePage() {
                         // Применяем скорость напрямую
                         Body.setVelocity(otherBody, {
                           x: nx * pushSpeed,
-                          y: ny * pushSpeed - 2 // немного вверх чтобы перепрыгнуть
+                          y: ny * pushSpeed // без подброса вверх
                         });
                       }
                     }
@@ -491,9 +488,9 @@ export default function BallMergePage() {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
             // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана)
-            // НО: не подсвечиваем падающие шары (velocity.y > 2 = быстро падает вниз)
-            const isFalling = body.velocity.y > 2;
-            const isInDanger = body.position.y < containerTop && !isFalling;
+            // НО: не подсвечиваем падающие шары - если движется вниз вообще
+            const isMovingDown = body.velocity.y > 0.5;
+            const isInDanger = body.position.y < containerTop && !isMovingDown;
             drawBall(ctx, body.position.x, body.position.y, BALL_LEVELS[b.ballLevel].radius, b.ballLevel, isInDanger);
           }
         }
@@ -518,14 +515,14 @@ export default function BallMergePage() {
         }
 
         // Проверка game over: центр шара выше верхнего края стакана (= больше половины выпирает)
-        // Не считаем падающие шары - только те что выпирают снизу
+        // Не считаем падающие шары - только те что выпирают снизу (стоят или поднимаются)
         let hasDangerBall = false;
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
-            const isFalling = body.velocity.y > 2;
-            // Если центр шара выше containerTop И шар не падает - значит выпирает снизу
-            if (body.position.y < containerTop && !isFalling) {
+            const isMovingDown = body.velocity.y > 0.5;
+            // Если центр шара выше containerTop И шар НЕ движется вниз - значит выпирает снизу
+            if (body.position.y < containerTop && !isMovingDown) {
               hasDangerBall = true;
               break;
             }
