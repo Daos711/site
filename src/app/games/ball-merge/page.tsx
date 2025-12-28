@@ -9,10 +9,8 @@ import {
   GAME_HEIGHT,
   WALL_THICKNESS,
   DROP_ZONE_HEIGHT,
-  DANGER_LINE_Y,
   DANGER_TIME_MS,
   MAX_SPAWN_LEVEL,
-  GameState,
 } from "@/lib/ball-merge";
 
 type MatterEngine = import("matter-js").Engine;
@@ -210,18 +208,19 @@ export default function BallMergePage() {
   const ballBodiesRef = useRef<Map<number, MatterBody>>(new Map());
 
   const [isLoaded, setIsLoaded] = useState(false);
-  const [gameState, setGameState] = useState<GameState>({
-    score: 0,
-    nextBallLevel: Math.floor(Math.random() * MAX_SPAWN_LEVEL),
-    isGameOver: false,
-    dropX: GAME_WIDTH / 2,
-    canDrop: true,
-    dangerTimer: null,
-  });
+  const [score, setScore] = useState(0);
+  const [currentBallLevel, setCurrentBallLevel] = useState(() => Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+  const [nextBallLevel, setNextBallLevel] = useState(() => Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [dropX, setDropX] = useState(GAME_WIDTH / 2);
 
-  // Refs для использования в render loop (чтобы не пересоздавать useEffect)
-  const gameStateRef = useRef(gameState);
-  gameStateRef.current = gameState;
+  // Refs для использования в render loop
+  const currentBallRef = useRef(currentBallLevel);
+  currentBallRef.current = currentBallLevel;
+  const dropXRef = useRef(dropX);
+  dropXRef.current = dropX;
+  const isGameOverRef = useRef(isGameOver);
+  isGameOverRef.current = isGameOver;
 
   const dangerStartTimeRef = useRef<number | null>(null);
   const mergedPairsRef = useRef<Set<string>>(new Set());
@@ -241,7 +240,7 @@ export default function BallMergePage() {
       const { Engine, Runner, Bodies, Body, Composite, Events } = Matter;
 
       const engine = Engine.create({
-        gravity: { x: 0, y: 1.8 }, // Более реалистичная гравитация
+        gravity: { x: 0, y: 3 }, // Сильная гравитация для быстрого падения
       });
       engineRef.current = engine;
 
@@ -250,8 +249,8 @@ export default function BallMergePage() {
         isStatic: true,
         render: { visible: false },
         label: 'wall',
-        friction: 0.1,
-        restitution: 0.1,
+        friction: 0.3,
+        restitution: 0.2, // Небольшой отскок от стен
       };
 
       const leftWall = Bodies.rectangle(
@@ -322,21 +321,21 @@ export default function BallMergePage() {
               const newBallData = BALL_LEVELS[newLevel];
               if (newBallData) {
                 const newBall = Bodies.circle(midX, midY, newBallData.radius, {
-                  restitution: 0.1,
-                  friction: 0.5,
-                  frictionAir: 0.005,
-                  density: 0.001 * (newLevel + 1),
+                  restitution: 0.3, // Отскок при столкновении
+                  friction: 0.1, // Меньше трения для скольжения
+                  frictionAir: 0.0005, // Почти без сопротивления воздуха
+                  density: 0.002, // Плотность для массы
                   label: `ball-${newLevel}`,
                 }) as MatterBody;
                 newBall.ballLevel = newLevel;
 
-                Body.setVelocity(newBall, { x: 0, y: -3 });
+                Body.setVelocity(newBall, { x: 0, y: -2 }); // Небольшой "всплеск" вверх
                 Composite.add(engine.world, newBall);
                 ballBodiesRef.current.set(newBall.id, newBall);
               }
 
               // +1 очко за слияние
-              setGameState(prev => ({ ...prev, score: prev.score + 1 }));
+              setScore(prev => prev + 1);
 
               setTimeout(() => mergedPairsRef.current.delete(pairKey), 100);
             }
@@ -372,57 +371,33 @@ export default function BallMergePage() {
           }
         }
 
-        // Линия опасности
-        const inDanger = dangerStartTimeRef.current !== null;
-        ctx.strokeStyle = inDanger ? '#ff4444' : 'rgba(255, 68, 68, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([10, 10]);
-        ctx.beginPath();
-        ctx.moveTo(WALL_THICKNESS + 10, DANGER_LINE_Y);
-        ctx.lineTo(GAME_WIDTH - WALL_THICKNESS - 10, DANGER_LINE_Y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Таймер опасности
-        if (inDanger && dangerStartTimeRef.current) {
-          const elapsed = Date.now() - dangerStartTimeRef.current;
-          const remaining = Math.max(0, DANGER_TIME_MS - elapsed);
-          const seconds = (remaining / 1000).toFixed(1);
-
-          ctx.fillStyle = '#ff4444';
-          ctx.font = 'bold 24px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(`${seconds}s`, GAME_WIDTH / 2, DANGER_LINE_Y - 10);
-        }
-
-        // Превью шарика (используем ref для актуальных значений)
-        const currentState = gameStateRef.current;
-        if (!currentState.isGameOver) {
-          const previewBall = BALL_LEVELS[currentState.nextBallLevel];
+        // Превью шарика (используем refs для актуальных значений)
+        if (!isGameOverRef.current) {
+          const previewBall = BALL_LEVELS[currentBallRef.current];
           if (previewBall) {
-            ctx.globalAlpha = 0.7;
-            drawBall(ctx, currentState.dropX, DROP_ZONE_HEIGHT / 2 + 10, previewBall.radius, currentState.nextBallLevel);
+            ctx.globalAlpha = 0.8;
+            drawBall(ctx, dropXRef.current, DROP_ZONE_HEIGHT / 2, previewBall.radius, currentBallRef.current);
             ctx.globalAlpha = 1;
 
             // Линия падения
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(currentState.dropX, DROP_ZONE_HEIGHT / 2 + 10 + previewBall.radius);
-            ctx.lineTo(currentState.dropX, GAME_HEIGHT);
+            ctx.moveTo(dropXRef.current, DROP_ZONE_HEIGHT / 2 + previewBall.radius);
+            ctx.lineTo(dropXRef.current, GAME_HEIGHT);
             ctx.stroke();
             ctx.setLineDash([]);
           }
         }
 
-        // Проверка game over
+        // Проверка game over: центр шара выше верхнего края стакана (= больше половины выпирает)
         let hasDangerBall = false;
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
-            const ballData = BALL_LEVELS[b.ballLevel];
-            if (ballData && body.position.y - ballData.radius < DANGER_LINE_Y) {
+            // Если центр шара выше DROP_ZONE_HEIGHT - значит больше половины выпирает
+            if (body.position.y < DROP_ZONE_HEIGHT) {
               hasDangerBall = true;
               break;
             }
@@ -433,7 +408,7 @@ export default function BallMergePage() {
           if (dangerStartTimeRef.current === null) {
             dangerStartTimeRef.current = Date.now();
           } else if (Date.now() - dangerStartTimeRef.current > DANGER_TIME_MS) {
-            setGameState(prev => ({ ...prev, isGameOver: true }));
+            setIsGameOver(true);
           }
         } else {
           dangerStartTimeRef.current = null;
@@ -466,37 +441,35 @@ export default function BallMergePage() {
   // Бросок шарика - БЕЗ ЗАДЕРЖКИ
   const dropBall = useCallback((clientX: number) => {
     const Matter = matterRef.current;
-    if (!Matter || !engineRef.current || !canvasRef.current || gameState.isGameOver) return;
+    if (!Matter || !engineRef.current || !canvasRef.current || isGameOver) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
     const scaleX = GAME_WIDTH / rect.width;
     const x = (clientX - rect.left) * scaleX;
 
-    const ballData = BALL_LEVELS[gameState.nextBallLevel];
+    const ballData = BALL_LEVELS[currentBallLevel];
     const ballRadius = ballData?.radius || 25;
     const clampedX = Math.max(
       WALL_THICKNESS + ballRadius + 10,
       Math.min(GAME_WIDTH - WALL_THICKNESS - ballRadius - 10, x)
     );
 
-    const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2 + 10, ballRadius, {
-      restitution: 0.1,
-      friction: 0.5,
-      frictionAir: 0.005,
-      density: 0.001 * (gameState.nextBallLevel + 1),
-      label: `ball-${gameState.nextBallLevel}`,
+    const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2, ballRadius, {
+      restitution: 0.3, // Отскок при столкновении
+      friction: 0.1, // Меньше трения
+      frictionAir: 0.0005, // Почти без сопротивления воздуха
+      density: 0.002,
+      label: `ball-${currentBallLevel}`,
     }) as MatterBody;
 
-    ball.ballLevel = gameState.nextBallLevel;
+    ball.ballLevel = currentBallLevel;
     Matter.Composite.add(engineRef.current.world, ball);
     ballBodiesRef.current.set(ball.id, ball);
 
-    // Следующий шарик - сразу, без задержки
-    setGameState(prev => ({
-      ...prev,
-      nextBallLevel: Math.floor(Math.random() * MAX_SPAWN_LEVEL),
-    }));
-  }, [gameState.isGameOver, gameState.nextBallLevel]);
+    // Текущий становится следующим, генерируем новый следующий
+    setCurrentBallLevel(nextBallLevel);
+    setNextBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+  }, [isGameOver, currentBallLevel, nextBallLevel]);
 
   // Обновление позиции превью
   const updateDropPosition = useCallback((clientX: number) => {
@@ -506,14 +479,14 @@ export default function BallMergePage() {
     const scaleX = GAME_WIDTH / rect.width;
     const x = (clientX - rect.left) * scaleX;
 
-    const ballRadius = BALL_LEVELS[gameState.nextBallLevel]?.radius || 25;
+    const ballRadius = BALL_LEVELS[currentBallLevel]?.radius || 25;
     const clampedX = Math.max(
       WALL_THICKNESS + ballRadius + 10,
       Math.min(GAME_WIDTH - WALL_THICKNESS - ballRadius - 10, x)
     );
 
-    setGameState(prev => ({ ...prev, dropX: clampedX }));
-  }, [gameState.nextBallLevel]);
+    setDropX(clampedX);
+  }, [currentBallLevel]);
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => dropBall(e.clientX);
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => updateDropPosition(e.clientX);
@@ -546,17 +519,14 @@ export default function BallMergePage() {
     ballBodiesRef.current.clear();
     dangerStartTimeRef.current = null;
 
-    setGameState({
-      score: 0,
-      nextBallLevel: Math.floor(Math.random() * MAX_SPAWN_LEVEL),
-      isGameOver: false,
-      dropX: GAME_WIDTH / 2,
-      canDrop: true,
-      dangerTimer: null,
-    });
+    setScore(0);
+    setCurrentBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+    setNextBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+    setIsGameOver(false);
+    setDropX(GAME_WIDTH / 2);
   }, []);
 
-  const nextBallData = BALL_LEVELS[gameState.nextBallLevel];
+  const nextBallData = BALL_LEVELS[nextBallLevel];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center py-4">
@@ -609,7 +579,7 @@ export default function BallMergePage() {
           <div className="w-full max-w-xl mb-4 flex items-center justify-between px-4">
             <div className="bg-gray-800 rounded-lg px-4 py-2">
               <div className="text-xs text-gray-400">Слияний</div>
-              <div className="text-3xl font-bold text-yellow-400">{gameState.score}</div>
+              <div className="text-3xl font-bold text-yellow-400">{score}</div>
             </div>
 
             <div className="bg-gray-800 rounded-lg px-4 py-2 flex items-center gap-3">
@@ -649,11 +619,11 @@ export default function BallMergePage() {
               </div>
             )}
 
-            {gameState.isGameOver && (
+            {isGameOver && (
               <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
                 <h2 className="text-3xl font-bold text-red-400 mb-2">Игра окончена!</h2>
                 <p className="text-xl text-gray-300 mb-6">
-                  Слияний: <span className="text-yellow-400 font-bold">{gameState.score}</span>
+                  Слияний: <span className="text-yellow-400 font-bold">{score}</span>
                 </p>
                 <button
                   onClick={restartGame}
