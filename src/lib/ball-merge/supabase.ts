@@ -11,10 +11,10 @@ export interface BallMergeScore {
   updated_at?: string;
 }
 
-// Получить таблицу лидеров
+// Получить таблицу лидеров (только лучший результат для каждого игрока)
 export async function getBallMergeScores(limit = 50): Promise<BallMergeScore[]> {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/ball_merge_scores?select=*&order=score.desc&limit=${limit}`,
+    `${SUPABASE_URL}/rest/v1/ball_merge_scores?select=*&order=score.desc`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
@@ -28,7 +28,21 @@ export async function getBallMergeScores(limit = 50): Promise<BallMergeScore[]> 
     return [];
   }
 
-  return res.json();
+  const allScores: BallMergeScore[] = await res.json();
+
+  // Оставляем только лучший результат для каждого имени
+  const bestByName = new Map<string, BallMergeScore>();
+  for (const score of allScores) {
+    const existing = bestByName.get(score.name);
+    if (!existing || score.score > existing.score) {
+      bestByName.set(score.name, score);
+    }
+  }
+
+  // Сортируем по убыванию и ограничиваем
+  return Array.from(bestByName.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 // Сохранить или обновить результат игрока
