@@ -251,11 +251,9 @@ export default function BallMergePage() {
   const dangerTimersRef = useRef<Map<number, number>>(new Map());
   const mergedPairsRef = useRef<Set<string>>(new Set());
 
-  // Drop-lock: нельзя бросить новый шар пока предыдущий не упал
-  const lastDroppedBallIdRef = useRef<number | null>(null);
-  const dropLockedRef = useRef(false);
+  // Cooldown на бросок (anti-spam, но без блокировки)
   const lastDropTimeRef = useRef(0);
-  const DROP_COOLDOWN = 200; // мс между бросками
+  const DROP_COOLDOWN = 100; // мс между бросками
 
   // Инициализация Matter.js
   useEffect(() => {
@@ -427,9 +425,9 @@ export default function BallMergePage() {
               const targetRadius = BALL_LEVELS[newLevel].radius;
 
               const newBall = Bodies.circle(midX, midY, startRadius, {
-                restitution: 0.08,      // Чуть больше отскока для динамики
-                friction: 0.04,         // Меньше трения - шары катятся легче
-                frictionStatic: 0.02,   // Почти нет "залипания"
+                restitution: 0.25,      // Больше отскока - шары реагируют на удары
+                friction: 0.03,         // Меньше трения - шары катятся легче
+                frictionStatic: 0.01,   // Почти нет "залипания"
                 frictionAir: 0.001,
                 density: 0.002,
                 label: `ball-${newLevel}`,
@@ -534,22 +532,6 @@ export default function BallMergePage() {
             accumulator -= FIXED_DELTA;
           }
 
-          // Проверка drop-lock: разблокировать когда последний шар опустился в стакан
-          if (dropLockedRef.current && lastDroppedBallIdRef.current !== null) {
-            const lastBall = ballBodiesRef.current.get(lastDroppedBallIdRef.current);
-            if (lastBall) {
-              const ballRadius = lastBall.circleRadius ?? BALL_LEVELS[lastBall.ballLevel!].radius;
-              // Шар считается "упавшим" когда его центр ниже верхнего края на радиус
-              if (lastBall.position.y > containerTop + ballRadius * 0.5) {
-                dropLockedRef.current = false;
-                lastDroppedBallIdRef.current = null;
-              }
-            } else {
-              // Шар был удалён (слит) - разблокируем
-              dropLockedRef.current = false;
-              lastDroppedBallIdRef.current = null;
-            }
-          }
         }
 
         // Фон - вся канвас область
@@ -652,15 +634,12 @@ export default function BallMergePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Инициализация только один раз!
 
-  // Бросок шарика с защитой от спама
+  // Бросок шарика с коротким cooldown
   const dropBall = useCallback((clientX: number) => {
     const Matter = matterRef.current;
     if (!Matter || !engineRef.current || !canvasRef.current || isGameOver) return;
 
-    // Проверка drop-lock: нельзя бросить пока предыдущий не упал
-    if (dropLockedRef.current) return;
-
-    // Проверка cooldown
+    // Проверка cooldown (100ms)
     const now = Date.now();
     if (now - lastDropTimeRef.current < DROP_COOLDOWN) return;
     lastDropTimeRef.current = now;
@@ -680,9 +659,9 @@ export default function BallMergePage() {
     const dropY = TOP_BUFFER * 0.7;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
-      restitution: 0.08,      // Чуть больше отскока для динамики
-      friction: 0.04,         // Меньше трения - шары катятся легче
-      frictionStatic: 0.02,   // Почти нет "залипания"
+      restitution: 0.25,      // Больше отскока - шары реагируют на удары
+      friction: 0.03,         // Меньше трения - шары катятся легче
+      frictionStatic: 0.01,   // Почти нет "залипания"
       frictionAir: 0.001,
       density: 0.002,
       label: `ball-${currentBallLevel}`,
@@ -691,10 +670,6 @@ export default function BallMergePage() {
     ball.ballLevel = currentBallLevel;
     Matter.Composite.add(engineRef.current.world, ball);
     ballBodiesRef.current.set(ball.id, ball);
-
-    // Устанавливаем drop-lock
-    dropLockedRef.current = true;
-    lastDroppedBallIdRef.current = ball.id;
 
     // Текущий становится следующим, генерируем новый следующий
     setCurrentBallLevel(nextBallLevel);
@@ -748,10 +723,6 @@ export default function BallMergePage() {
     mergedPairsRef.current.clear();
     ballBodiesRef.current.clear();
     dangerTimersRef.current.clear();
-
-    // Сброс drop-lock
-    dropLockedRef.current = false;
-    lastDroppedBallIdRef.current = null;
     lastDropTimeRef.current = 0;
 
     setScore(0);
