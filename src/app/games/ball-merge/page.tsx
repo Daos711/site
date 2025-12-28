@@ -118,11 +118,25 @@ function drawGlassContainer(ctx: CanvasRenderingContext2D) {
 }
 
 // Рисование красивого шарика с градиентом и бликом
-function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, level: number) {
+function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, level: number, inDanger: boolean = false) {
   const ballData = BALL_LEVELS[level];
   if (!ballData) return;
 
   ctx.save();
+
+  // Если в опасной зоне - красное мигающее свечение
+  if (inDanger) {
+    const pulse = Math.sin(Date.now() / 100) * 0.5 + 0.5; // мигание
+    ctx.shadowColor = `rgba(255, 50, 50, ${0.6 + pulse * 0.4})`;
+    ctx.shadowBlur = 20 + pulse * 10;
+
+    // Красная обводка
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 50, 50, ${0.5 + pulse * 0.5})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
 
   // Основной градиент шара
   const gradient = ctx.createRadialGradient(
@@ -133,10 +147,12 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, radius: n
   gradient.addColorStop(0.7, ballData.color);
   gradient.addColorStop(1, shadeColor(ballData.color, -20));
 
-  // Тень под шаром
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  ctx.shadowBlur = 8;
-  ctx.shadowOffsetY = 4;
+  // Тень под шаром (если не в опасности)
+  if (!inDanger) {
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 4;
+  }
 
   // Рисуем шар
   ctx.beginPath();
@@ -169,8 +185,8 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, radius: n
   ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
   ctx.fill();
 
-  // Обводка для больших шаров (делает их "круче")
-  if (level >= 5) {
+  // Обводка для больших шаров
+  if (level >= 5 && !inDanger) {
     ctx.beginPath();
     ctx.arc(x, y, radius - 2, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -179,7 +195,7 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number, radius: n
   }
 
   // Для золотого шара - особый эффект
-  if (level === 9) {
+  if (level === 9 && !inDanger) {
     ctx.beginPath();
     ctx.arc(x, y, radius + 3, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
@@ -240,7 +256,7 @@ export default function BallMergePage() {
       const { Engine, Runner, Bodies, Body, Composite, Events } = Matter;
 
       const engine = Engine.create({
-        gravity: { x: 0, y: 3 }, // Сильная гравитация для быстрого падения
+        gravity: { x: 0, y: 2.5 }, // Реалистичная гравитация
       });
       engineRef.current = engine;
 
@@ -249,23 +265,23 @@ export default function BallMergePage() {
         isStatic: true,
         render: { visible: false },
         label: 'wall',
-        friction: 0.3,
-        restitution: 0.2, // Небольшой отскок от стен
+        friction: 0.05, // Мало трения - шары скользят
+        restitution: 0.3, // Отскок от стен
       };
 
       const leftWall = Bodies.rectangle(
         WALL_THICKNESS / 2,
-        GAME_HEIGHT / 2 + DROP_ZONE_HEIGHT / 2,
+        GAME_HEIGHT / 2,
         WALL_THICKNESS,
-        GAME_HEIGHT - DROP_ZONE_HEIGHT,
+        GAME_HEIGHT,
         wallOptions
       );
 
       const rightWall = Bodies.rectangle(
         GAME_WIDTH - WALL_THICKNESS / 2,
-        GAME_HEIGHT / 2 + DROP_ZONE_HEIGHT / 2,
+        GAME_HEIGHT / 2,
         WALL_THICKNESS,
-        GAME_HEIGHT - DROP_ZONE_HEIGHT,
+        GAME_HEIGHT,
         wallOptions
       );
 
@@ -277,7 +293,16 @@ export default function BallMergePage() {
         wallOptions
       );
 
-      Composite.add(engine.world, [leftWall, rightWall, floor]);
+      // Невидимый потолок чтобы шары не вылетали за экран
+      const ceiling = Bodies.rectangle(
+        GAME_WIDTH / 2,
+        -50,
+        GAME_WIDTH,
+        100,
+        { ...wallOptions, restitution: 0.5 }
+      );
+
+      Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
       // Обработка столкновений для слияния
       Events.on(engine, 'collisionStart', (event) => {
@@ -321,17 +346,40 @@ export default function BallMergePage() {
               const newBallData = BALL_LEVELS[newLevel];
               if (newBallData) {
                 const newBall = Bodies.circle(midX, midY, newBallData.radius, {
-                  restitution: 0.3, // Отскок при столкновении
-                  friction: 0.1, // Меньше трения для скольжения
-                  frictionAir: 0.0005, // Почти без сопротивления воздуха
-                  density: 0.002, // Плотность для массы
+                  restitution: 0.6, // Хороший отскок при столкновении
+                  friction: 0.02, // Очень мало трения - шары легко катаются
+                  frictionAir: 0.0001, // Почти нет сопротивления воздуха
+                  density: 0.003, // Плотность для массы
                   label: `ball-${newLevel}`,
                 }) as MatterBody;
                 newBall.ballLevel = newLevel;
 
-                Body.setVelocity(newBall, { x: 0, y: -2 }); // Небольшой "всплеск" вверх
+                // Небольшой всплеск вверх
+                Body.setVelocity(newBall, { x: 0, y: -3 });
                 Composite.add(engine.world, newBall);
                 ballBodiesRef.current.set(newBall.id, newBall);
+
+                // ВЗРЫВНОЙ ИМПУЛЬС - толкаем соседние шары!
+                const allBodies = Composite.allBodies(engine.world);
+                for (const otherBody of allBodies) {
+                  const ob = otherBody as MatterBody;
+                  if (ob.ballLevel !== undefined && ob.id !== newBall.id) {
+                    const dx = otherBody.position.x - midX;
+                    const dy = otherBody.position.y - midY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const otherRadius = BALL_LEVELS[ob.ballLevel]?.radius || 50;
+
+                    // Если шар близко (в радиусе нового шара + его радиус + запас)
+                    if (dist < newBallData.radius + otherRadius + 20) {
+                      // Сила зависит от размера нового шара и обратно от расстояния
+                      const forceMagnitude = (newBallData.radius / 50) * (1 / Math.max(dist, 1)) * 15;
+                      const forceX = (dx / dist) * forceMagnitude;
+                      const forceY = (dy / dist) * forceMagnitude;
+
+                      Body.applyForce(otherBody, otherBody.position, { x: forceX, y: forceY });
+                    }
+                  }
+                }
               }
 
               // +1 очко за слияние
@@ -367,7 +415,9 @@ export default function BallMergePage() {
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
-            drawBall(ctx, body.position.x, body.position.y, BALL_LEVELS[b.ballLevel].radius, b.ballLevel);
+            // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана)
+            const isInDanger = body.position.y < DROP_ZONE_HEIGHT;
+            drawBall(ctx, body.position.x, body.position.y, BALL_LEVELS[b.ballLevel].radius, b.ballLevel, isInDanger);
           }
         }
 
@@ -455,10 +505,10 @@ export default function BallMergePage() {
     );
 
     const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2, ballRadius, {
-      restitution: 0.3, // Отскок при столкновении
-      friction: 0.1, // Меньше трения
-      frictionAir: 0.0005, // Почти без сопротивления воздуха
-      density: 0.002,
+      restitution: 0.6, // Хороший отскок при столкновении
+      friction: 0.02, // Очень мало трения - шары легко катаются
+      frictionAir: 0.0001, // Почти нет сопротивления воздуха
+      density: 0.003, // Плотность для массы
       label: `ball-${currentBallLevel}`,
     }) as MatterBody;
 
