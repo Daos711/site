@@ -499,9 +499,8 @@ export default function BallMergePage() {
         if (!isGameOverRef.current) {
           const previewBall = BALL_LEVELS[currentBallRef.current];
           if (previewBall) {
-            ctx.globalAlpha = 0.8;
+            // Рисуем превью с полной яркостью, как настоящий шар
             drawBall(ctx, dropXRef.current, previewY, previewBall.radius, currentBallRef.current);
-            ctx.globalAlpha = 1;
 
             // Линия падения
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
@@ -704,7 +703,7 @@ export default function BallMergePage() {
         <div className="flex flex-col items-center">
           {/* Счёт и следующий */}
           <div className="w-full max-w-xl mb-4 flex items-center justify-between px-4">
-            <div className="bg-gray-800 rounded-lg px-4 py-2">
+            <div className="bg-gray-800 rounded-lg px-4 py-2 text-center">
               <div className="text-xs text-gray-400">Слияний</div>
               <div className="text-3xl font-bold text-yellow-400">{score}</div>
             </div>
