@@ -19,6 +19,7 @@ type MatterEngine = import("matter-js").Engine;
 type MatterBody = import("matter-js").Body & {
   ballLevel?: number;
   mergeImmunityUntil?: number;
+  hasLanded?: boolean; // Шар уже касался чего-то (не только что сброшен)
   // Для плавного роста при слиянии
   growStartRadius?: number;
   growTargetRadius?: number;
@@ -324,6 +325,38 @@ export default function BallMergePage() {
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
+      // Функция "пинка" соседей при слиянии
+      const kickNeighbors = (newBall: MatterBody, deltaR: number) => {
+        const rNew = newBall.circleRadius ?? BALL_LEVELS[newBall.ballLevel!].radius;
+        const K = 0.12;          // сила пинка
+        const MAX_KICK = 8;      // ограничение
+        const NEAR = 2;          // допуск "почти касается"
+
+        for (const other of ballBodiesRef.current.values()) {
+          if (other.id === newBall.id) continue;
+          if (other.ballLevel === undefined) continue;
+
+          const rO = other.circleRadius ?? BALL_LEVELS[other.ballLevel].radius;
+
+          const dx = other.position.x - newBall.position.x;
+          const dy = other.position.y - newBall.position.y;
+          const dist = Math.hypot(dx, dy) || 1e-6;
+
+          const overlap = (rNew + rO + NEAR) - dist;
+          if (overlap <= 0) continue;
+
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          const dv = Math.min(MAX_KICK, overlap * K + deltaR * 0.02);
+
+          Body.setVelocity(other, {
+            x: other.velocity.x + nx * dv,
+            y: other.velocity.y + ny * dv,
+          });
+        }
+      };
+
       // Обработка столкновений - слияние
       // Используем и collisionStart, и collisionActive для надёжности
       const handleCollision = (event: Matter.IEventCollision<Matter.Engine>) => {
@@ -331,12 +364,21 @@ export default function BallMergePage() {
           const bodyA = pair.bodyA as MatterBody;
           const bodyB = pair.bodyB as MatterBody;
 
+          // Помечаем шары как "приземлившиеся" при любом столкновении
+          if (bodyA.ballLevel !== undefined) bodyA.hasLanded = true;
+          if (bodyB.ballLevel !== undefined) bodyB.hasLanded = true;
+
           // Слияние только одинаковых шаров
           if (
             bodyA.ballLevel !== undefined &&
             bodyB.ballLevel !== undefined &&
             bodyA.ballLevel === bodyB.ballLevel
           ) {
+            // Защита от уже удалённых тел
+            if (!ballBodiesRef.current.has(bodyA.id) || !ballBodiesRef.current.has(bodyB.id)) {
+              continue;
+            }
+
             // Проверка иммунитета к слиянию (для цепных реакций)
             const now = Date.now();
             if (
@@ -391,6 +433,7 @@ export default function BallMergePage() {
                 label: `ball-${newLevel}`,
               }) as MatterBody;
               newBall.ballLevel = newLevel;
+              newBall.hasLanded = true; // Новый шар от слияния уже "в игре"
               newBall.mergeImmunityUntil = Date.now() + 30; // Короткий иммунитет
 
               // Параметры плавного роста
@@ -404,6 +447,10 @@ export default function BallMergePage() {
 
               // Применяем сохранённый импульс к новому шару
               Body.setVelocity(newBall, { x: newVx, y: newVy });
+
+              // Пинок соседям от роста
+              const deltaR = targetRadius - startRadius;
+              kickNeighbors(newBall, deltaR);
 
               // +1 очко за слияние
               setScore(prev => prev + 1);
@@ -500,10 +547,8 @@ export default function BallMergePage() {
           if (b.ballLevel !== undefined) {
             // Используем фактический радиус тела (для плавного роста)
             const actualRadius = b.circleRadius ?? BALL_LEVELS[b.ballLevel].radius;
-            // Проверяем, в опасной ли зоне шар (центр выше верхнего края стакана = выпирает на 50%+)
-            // НО: не подсвечиваем падающие шары
-            const isMovingDown = body.velocity.y > 0.5;
-            const isInDanger = body.position.y < containerTop && !isMovingDown;
+            // Опасная зона: центр на уровне или выше верхнего края + шар уже приземлился
+            const isInDanger = b.hasLanded && body.position.y <= containerTop;
             drawBall(ctx, body.position.x, body.position.y, actualRadius, b.ballLevel, isInDanger);
           }
         }
@@ -528,17 +573,17 @@ export default function BallMergePage() {
         }
 
         // Проверка game over с ИНДИВИДУАЛЬНЫМИ таймерами для каждого шара
-        // Условие: центр шара выше containerTop = выпирает на 50%+
-        // Каждый выпирающий шар получает свой таймер 3 секунды
+        // Условие: центр шара на уровне или выше containerTop = выпирает на 50%+
+        // Только для шаров, которые уже "приземлились" (не только что сброшены)
         const now = Date.now();
         const currentDangerBalls = new Set<number>();
 
         for (const body of bodies) {
           const b = body as MatterBody;
-          if (b.ballLevel !== undefined) {
-            const isMovingDown = body.velocity.y > 0.5;
-            // Если центр шара выше containerTop И шар НЕ падает - значит выпирает снизу
-            if (body.position.y < containerTop && !isMovingDown) {
+          // Проверяем только шары, которые уже касались чего-то (hasLanded)
+          if (b.ballLevel !== undefined && b.hasLanded) {
+            // Центр на уровне или выше верхней границы = половина или больше выпирает
+            if (body.position.y <= containerTop) {
               currentDangerBalls.add(b.id);
 
               // Если этот шар ещё не имеет таймера - создаём
@@ -547,7 +592,7 @@ export default function BallMergePage() {
               } else {
                 // Проверяем, прошло ли 3 секунды
                 const startTime = dangerTimersRef.current.get(b.id)!;
-                if (now - startTime > DANGER_TIME_MS) {
+                if (now - startTime >= DANGER_TIME_MS) {
                   setIsGameOver(true);
                 }
               }

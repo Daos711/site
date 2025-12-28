@@ -19,7 +19,7 @@ export const BALL_LEVELS: BallLevel[] = [
   { level: 6, radius: 150, color: '#3b82f6', glowColor: '#60a5fa', name: 'Синий' },
   { level: 7, radius: 169, color: '#ec4899', glowColor: '#f472b6', name: 'Розовый' },
   { level: 8, radius: 206, color: '#84cc16', glowColor: '#a3e635', name: 'Лайм' },
-  { level: 9, radius: 188, color: '#fbbf24', glowColor: '#fcd34d', name: 'Золотой' },
+  { level: 9, radius: 231, color: '#fbbf24', glowColor: '#fcd34d', name: 'Золотой' },
 ];
 
 // Размеры игрового поля - увеличены на 25%
