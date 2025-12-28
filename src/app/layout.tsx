@@ -27,6 +27,19 @@ export default function RootLayout({
           src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
           strategy="beforeInteractive"
         />
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-CGZVDNQV3W"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-CGZVDNQV3W');
+          `}
+        </Script>
         <Navigation />
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
