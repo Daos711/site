@@ -318,9 +318,9 @@ export default function BallMergePage() {
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
-      // Обработка столкновений - ТОЛЬКО слияние
-      // Matter.js сам обрабатывает физику столкновений
-      Events.on(engine, 'collisionStart', (event) => {
+      // Обработка столкновений - слияние
+      // Используем и collisionStart, и collisionActive для надёжности
+      const handleCollision = (event: Matter.IEventCollision<Matter.Engine>) => {
         for (const pair of event.pairs) {
           const bodyA = pair.bodyA as MatterBody;
           const bodyB = pair.bodyB as MatterBody;
@@ -400,7 +400,11 @@ export default function BallMergePage() {
             }
           }
         }
-      });
+      };
+
+      // Слушаем оба события - начало и продолжение касания
+      Events.on(engine, 'collisionStart', handleCollision);
+      Events.on(engine, 'collisionActive', handleCollision);
 
       // Кастомный рендер + физика с ФИКСИРОВАННЫМ TIMESTEP
       const canvas = canvasRef.current;
