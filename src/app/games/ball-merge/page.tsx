@@ -256,17 +256,17 @@ export default function BallMergePage() {
       const { Engine, Runner, Bodies, Body, Composite, Events } = Matter;
 
       const engine = Engine.create({
-        gravity: { x: 0, y: 2.5 }, // Реалистичная гравитация
+        gravity: { x: 0, y: 1.5 }, // Земная гравитация (масштабированная)
       });
       engineRef.current = engine;
 
-      // Невидимые стены (физика)
+      // Невидимые стены (физика) - стекло, очень скользкое
       const wallOptions = {
         isStatic: true,
         render: { visible: false },
         label: 'wall',
-        friction: 0.05, // Мало трения - шары скользят
-        restitution: 0.3, // Отскок от стен
+        friction: 0.001, // Стекло - почти без трения
+        restitution: 0.1, // Минимальный отскок от стен
       };
 
       const leftWall = Bodies.rectangle(
@@ -299,7 +299,7 @@ export default function BallMergePage() {
         -50,
         GAME_WIDTH,
         100,
-        { ...wallOptions, restitution: 0.5 }
+        { ...wallOptions, restitution: 0.1 }
       );
 
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
@@ -345,21 +345,21 @@ export default function BallMergePage() {
               // Создаём новый шарик
               const newBallData = BALL_LEVELS[newLevel];
               if (newBallData) {
+                // Плотность одинаковая, масса = density * area = density * π * r²
+                // Matter.js автоматически считает массу от density и площади круга
                 const newBall = Bodies.circle(midX, midY, newBallData.radius, {
-                  restitution: 0.6, // Хороший отскок при столкновении
-                  friction: 0.02, // Очень мало трения - шары легко катаются
-                  frictionAir: 0.0001, // Почти нет сопротивления воздуха
-                  density: 0.003, // Плотность для массы
+                  restitution: 0.15, // Минимальный отскок - не попрыгунчики
+                  friction: 0.001, // Стекло - почти без трения
+                  frictionAir: 0, // Нет сопротивления воздуха
+                  density: 0.002, // Плотность (масса пропорциональна r²)
                   label: `ball-${newLevel}`,
                 }) as MatterBody;
                 newBall.ballLevel = newLevel;
 
-                // Небольшой всплеск вверх
-                Body.setVelocity(newBall, { x: 0, y: -3 });
                 Composite.add(engine.world, newBall);
                 ballBodiesRef.current.set(newBall.id, newBall);
 
-                // ВЗРЫВНОЙ ИМПУЛЬС - толкаем соседние шары!
+                // Импульс на соседние шары при слиянии (через velocity)
                 const allBodies = Composite.allBodies(engine.world);
                 for (const otherBody of allBodies) {
                   const ob = otherBody as MatterBody;
@@ -369,14 +369,19 @@ export default function BallMergePage() {
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const otherRadius = BALL_LEVELS[ob.ballLevel]?.radius || 50;
 
-                    // Если шар близко (в радиусе нового шара + его радиус + запас)
-                    if (dist < newBallData.radius + otherRadius + 20) {
-                      // Сила зависит от размера нового шара и обратно от расстояния
-                      const forceMagnitude = (newBallData.radius / 50) * (1 / Math.max(dist, 1)) * 15;
-                      const forceX = (dx / dist) * forceMagnitude;
-                      const forceY = (dy / dist) * forceMagnitude;
+                    // Если шар касается или очень близко к новому
+                    if (dist < newBallData.radius + otherRadius + 5) {
+                      // Скорость отталкивания зависит от размера нового шара
+                      // Чем больше шар появился, тем сильнее толчок
+                      const pushSpeed = (newBallData.radius / 25) * 8; // базовая скорость
+                      const currentVel = otherBody.velocity;
+                      const nx = dx / Math.max(dist, 1);
+                      const ny = dy / Math.max(dist, 1);
 
-                      Body.applyForce(otherBody, otherBody.position, { x: forceX, y: forceY });
+                      Body.setVelocity(otherBody, {
+                        x: currentVel.x + nx * pushSpeed,
+                        y: currentVel.y + ny * pushSpeed
+                      });
                     }
                   }
                 }
@@ -505,10 +510,10 @@ export default function BallMergePage() {
     );
 
     const ball = Matter.Bodies.circle(clampedX, DROP_ZONE_HEIGHT / 2, ballRadius, {
-      restitution: 0.6, // Хороший отскок при столкновении
-      friction: 0.02, // Очень мало трения - шары легко катаются
-      frictionAir: 0.0001, // Почти нет сопротивления воздуха
-      density: 0.003, // Плотность для массы
+      restitution: 0.15, // Минимальный отскок - не попрыгунчики
+      friction: 0.001, // Стекло - почти без трения
+      frictionAir: 0, // Нет сопротивления воздуха
+      density: 0.002, // Плотность (масса пропорциональна r²)
       label: `ball-${currentBallLevel}`,
     }) as MatterBody;
 
