@@ -1,4 +1,4 @@
-import { Wrench, Box, Gamepad2, FolderOpen } from "lucide-react";
+import { Wrench, Box, Gamepad2, FolderOpen, Smartphone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface Section {
@@ -30,6 +30,13 @@ export const sections: Section[] = [
     description: "Головоломки и мини-игры.",
     href: "/games",
     icon: Gamepad2,
+  },
+  {
+    id: "apps",
+    title: "Приложения",
+    description: "Мобильные и десктопные приложения.",
+    href: "/apps",
+    icon: Smartphone,
   },
   {
     id: "projects",

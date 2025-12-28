@@ -17,13 +17,6 @@ export const projects: Project[] = [
     href: "/games/digits",
   },
   {
-    id: "reynolds",
-    title: "Уравнение Рейнольдса",
-    description: "Модель для расчёта параметров смазочного слоя в опорах скольжения.",
-    tags: ["модель", "Python", "NumPy"],
-    status: "coming-soon",
-  },
-  {
     id: "beam-calculator",
     title: "Расчёт балки",
     description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров.",
