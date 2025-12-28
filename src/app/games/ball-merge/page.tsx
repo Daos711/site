@@ -939,79 +939,79 @@ export default function BallMergePage() {
           <p className="mt-4 text-sm text-gray-500 text-center">
             Соединяй одинаковые шарики — они сливаются в больший!
           </p>
-        </div>
-      </div>
 
-      {/* Таблица лидеров */}
-      <div className="w-full max-w-2xl mt-8 px-4 mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            Таблица лидеров
-          </h2>
-          <button
-            onClick={fetchLeaderboard}
-            disabled={leaderboardLoading}
-            className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-            title="Обновить"
-          >
-            <RefreshCw className={`w-5 h-5 ${leaderboardLoading ? "animate-spin" : ""}`} />
-          </button>
-        </div>
+          {/* Таблица лидеров */}
+          <div className="w-full mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-400" />
+                Таблица лидеров
+              </h2>
+              <button
+                onClick={fetchLeaderboard}
+                disabled={leaderboardLoading}
+                className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                title="Обновить"
+              >
+                <RefreshCw className={`w-5 h-5 ${leaderboardLoading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
 
-        <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="w-12 text-center p-3 text-gray-400 font-medium">#</th>
-                <th className="text-left p-3 text-gray-400 font-medium">Игрок</th>
-                <th className="text-center p-3 text-gray-400 font-medium">Слияний</th>
-                <th className="text-center p-3 text-gray-400 font-medium hidden sm:table-cell">Дата</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboardLoading ? (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-gray-400">
-                    Загрузка...
-                  </td>
-                </tr>
-              ) : leaderboard.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-6 text-center text-gray-400">
-                    Пока нет результатов. Будьте первым!
-                  </td>
-                </tr>
-              ) : (
-                leaderboard.map((entry, index) => {
-                  const position = index + 1;
-                  const dateStr = new Date(entry.updated_at || entry.created_at).toLocaleDateString("ru-RU");
-                  return (
-                    <tr key={entry.id} className="border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30">
-                      <td className="w-12 text-center p-3 text-lg">
-                        {position === 1 && "🥇"}
-                        {position === 2 && "🥈"}
-                        {position === 3 && "🥉"}
-                        {position > 3 && position}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-500" />
-                          <span className="text-white">{entry.name}</span>
-                        </div>
-                      </td>
-                      <td className="p-3 text-center text-xl font-bold text-yellow-400">
-                        {entry.score}
-                      </td>
-                      <td className="p-3 text-center text-gray-400 hidden sm:table-cell">
-                        {dateStr}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="w-12 text-center p-3 text-gray-400 font-medium">#</th>
+                    <th className="text-left p-3 text-gray-400 font-medium">Игрок</th>
+                    <th className="text-center p-3 text-gray-400 font-medium">Слияний</th>
+                    <th className="text-center p-3 text-gray-400 font-medium hidden sm:table-cell">Дата</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboardLoading ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-gray-400">
+                        Загрузка...
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : leaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-gray-400">
+                        Пока нет результатов. Будьте первым!
+                      </td>
+                    </tr>
+                  ) : (
+                    leaderboard.map((entry, index) => {
+                      const position = index + 1;
+                      const dateStr = new Date(entry.updated_at || entry.created_at).toLocaleDateString("ru-RU");
+                      return (
+                        <tr key={entry.id} className="border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30">
+                          <td className="w-12 text-center p-3 text-lg">
+                            {position === 1 && "🥇"}
+                            {position === 2 && "🥈"}
+                            {position === 3 && "🥉"}
+                            {position > 3 && position}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-gray-500" />
+                              <span className="text-white">{entry.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-3 text-center text-xl font-bold text-yellow-400">
+                            {entry.score}
+                          </td>
+                          <td className="p-3 text-center text-gray-400 hidden sm:table-cell">
+                            {dateStr}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
