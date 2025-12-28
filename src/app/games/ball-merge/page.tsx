@@ -19,7 +19,7 @@ type MatterEngine = import("matter-js").Engine;
 type MatterBody = import("matter-js").Body & {
   ballLevel?: number;
   mergeImmunityUntil?: number;
-  hasLanded?: boolean; // Шар уже касался чего-то (не только что сброшен)
+  hasEnteredContainer?: boolean; // Шар был внутри стакана (ниже верхнего края)
   // Для плавного роста при слиянии
   growStartRadius?: number;
   growTargetRadius?: number;
@@ -326,11 +326,11 @@ export default function BallMergePage() {
       Composite.add(engine.world, [leftWall, rightWall, floor, ceiling]);
 
       // Функция "пинка" соседей при слиянии
-      const kickNeighbors = (newBall: MatterBody, deltaR: number) => {
-        const rNew = newBall.circleRadius ?? BALL_LEVELS[newBall.ballLevel!].radius;
-        const K = 0.12;          // сила пинка
-        const MAX_KICK = 8;      // ограничение
-        const NEAR = 2;          // допуск "почти касается"
+      // targetRadius - ЦЕЛЕВОЙ радиус нового шара (после роста)
+      const kickNeighbors = (newBall: MatterBody, targetRadius: number) => {
+        const K = 0.25;          // сила пинка (увеличена)
+        const MAX_KICK = 12;     // ограничение
+        const NEAR = 5;          // допуск "почти касается"
 
         for (const other of ballBodiesRef.current.values()) {
           if (other.id === newBall.id) continue;
@@ -342,13 +342,14 @@ export default function BallMergePage() {
           const dy = other.position.y - newBall.position.y;
           const dist = Math.hypot(dx, dy) || 1e-6;
 
-          const overlap = (rNew + rO + NEAR) - dist;
+          // Используем ЦЕЛЕВОЙ радиус для расчёта перекрытия
+          const overlap = (targetRadius + rO + NEAR) - dist;
           if (overlap <= 0) continue;
 
           const nx = dx / dist;
           const ny = dy / dist;
 
-          const dv = Math.min(MAX_KICK, overlap * K + deltaR * 0.02);
+          const dv = Math.min(MAX_KICK, overlap * K);
 
           Body.setVelocity(other, {
             x: other.velocity.x + nx * dv,
@@ -363,10 +364,6 @@ export default function BallMergePage() {
         for (const pair of event.pairs) {
           const bodyA = pair.bodyA as MatterBody;
           const bodyB = pair.bodyB as MatterBody;
-
-          // Помечаем шары как "приземлившиеся" при любом столкновении
-          if (bodyA.ballLevel !== undefined) bodyA.hasLanded = true;
-          if (bodyB.ballLevel !== undefined) bodyB.hasLanded = true;
 
           // Слияние только одинаковых шаров
           if (
@@ -433,7 +430,7 @@ export default function BallMergePage() {
                 label: `ball-${newLevel}`,
               }) as MatterBody;
               newBall.ballLevel = newLevel;
-              newBall.hasLanded = true; // Новый шар от слияния уже "в игре"
+              newBall.hasEnteredContainer = true; // Новый шар от слияния уже "в игре"
               newBall.mergeImmunityUntil = Date.now() + 30; // Короткий иммунитет
 
               // Параметры плавного роста
@@ -448,9 +445,8 @@ export default function BallMergePage() {
               // Применяем сохранённый импульс к новому шару
               Body.setVelocity(newBall, { x: newVx, y: newVy });
 
-              // Пинок соседям от роста
-              const deltaR = targetRadius - startRadius;
-              kickNeighbors(newBall, deltaR);
+              // Пинок соседям от роста (используем целевой радиус)
+              kickNeighbors(newBall, targetRadius);
 
               // +1 очко за слияние
               setScore(prev => prev + 1);
@@ -471,8 +467,8 @@ export default function BallMergePage() {
 
       // Верх стакана с учётом буфера
       const containerTop = DROP_ZONE_HEIGHT + TOP_BUFFER;
-      // Позиция превью шара - над стаканом
-      const previewY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
+      // Позиция превью шара - выше стакана (с запасом для больших шаров)
+      const previewY = TOP_BUFFER / 2;
 
       // Фиксированный timestep для стабильной физики
       const FIXED_DELTA = 1000 / 60;  // 60 FPS физики
@@ -545,10 +541,14 @@ export default function BallMergePage() {
         for (const body of bodies) {
           const b = body as MatterBody;
           if (b.ballLevel !== undefined) {
+            // Отмечаем, что шар вошёл в стакан (центр ниже верхнего края)
+            if (body.position.y > containerTop && !b.hasEnteredContainer) {
+              b.hasEnteredContainer = true;
+            }
             // Используем фактический радиус тела (для плавного роста)
             const actualRadius = b.circleRadius ?? BALL_LEVELS[b.ballLevel].radius;
-            // Опасная зона: центр на уровне или выше верхнего края + шар уже приземлился
-            const isInDanger = b.hasLanded && body.position.y <= containerTop;
+            // Опасная зона: центр на уровне или выше верхнего края + шар уже был в стакане
+            const isInDanger = b.hasEnteredContainer && body.position.y <= containerTop;
             drawBall(ctx, body.position.x, body.position.y, actualRadius, b.ballLevel, isInDanger);
           }
         }
@@ -574,14 +574,14 @@ export default function BallMergePage() {
 
         // Проверка game over с ИНДИВИДУАЛЬНЫМИ таймерами для каждого шара
         // Условие: центр шара на уровне или выше containerTop = выпирает на 50%+
-        // Только для шаров, которые уже "приземлились" (не только что сброшены)
+        // Только для шаров, которые уже были внутри стакана
         const now = Date.now();
         const currentDangerBalls = new Set<number>();
 
         for (const body of bodies) {
           const b = body as MatterBody;
-          // Проверяем только шары, которые уже касались чего-то (hasLanded)
-          if (b.ballLevel !== undefined && b.hasLanded) {
+          // Проверяем только шары, которые уже были в стакане (hasEnteredContainer)
+          if (b.ballLevel !== undefined && b.hasEnteredContainer) {
             // Центр на уровне или выше верхней границы = половина или больше выпирает
             if (body.position.y <= containerTop) {
               currentDangerBalls.add(b.id);
@@ -645,8 +645,8 @@ export default function BallMergePage() {
       Math.min(GAME_WIDTH - WALL_THICKNESS - ballRadius - 10, x)
     );
 
-    // Позиция сброса с учётом TOP_BUFFER
-    const dropY = TOP_BUFFER + DROP_ZONE_HEIGHT / 2;
+    // Позиция сброса - выше стакана (как превью)
+    const dropY = TOP_BUFFER / 2;
 
     const ball = Matter.Bodies.circle(clampedX, dropY, ballRadius, {
       restitution: 0.08,      // Чуть больше отскока для динамики
