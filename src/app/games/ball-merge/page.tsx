@@ -423,16 +423,19 @@ export default function BallMergePage() {
       const render = (currentTime: number) => {
         if (!ctx || !isMounted) return;
 
-        // Фиксированный timestep + сабстеппинг
-        let dt = currentTime - lastTime;
-        lastTime = currentTime;
-        dt = Math.min(dt, 50);  // Clamp чтобы не было огромных скачков
-        accumulator += dt;
+        // НЕ обновляем физику если игра окончена
+        if (!isGameOverRef.current) {
+          // Фиксированный timestep + сабстеппинг
+          let dt = currentTime - lastTime;
+          lastTime = currentTime;
+          dt = Math.min(dt, 50);  // Clamp чтобы не было огромных скачков
+          accumulator += dt;
 
-        // Несколько апдейтов физики на кадр если нужно
-        while (accumulator >= FIXED_DELTA) {
-          Engine.update(engine, FIXED_DELTA);
-          accumulator -= FIXED_DELTA;
+          // Несколько апдейтов физики на кадр если нужно
+          while (accumulator >= FIXED_DELTA) {
+            Engine.update(engine, FIXED_DELTA);
+            accumulator -= FIXED_DELTA;
+          }
         }
 
         // Фон - вся канвас область
@@ -636,22 +639,22 @@ export default function BallMergePage() {
       </div>
 
       {/* Основная область */}
-      <div className="flex gap-6 items-start">
-        {/* Прогрессия шаров слева */}
-        <div className="hidden md:flex flex-col gap-2 p-3 bg-gray-800/50 rounded-xl">
-          <div className="text-xs text-gray-400 text-center mb-2">Шары</div>
+      <div className="flex gap-6 items-center">
+        {/* Прогрессия шаров слева - центрируется по вертикали с канвасом */}
+        <div className="hidden md:flex flex-col gap-1 p-3 bg-gray-800/50 rounded-xl">
+          <div className="text-xs text-gray-400 text-center mb-1">Шары</div>
           {BALL_LEVELS.slice(0, 9).map((ball, i) => (
             <div
               key={i}
               className="flex items-center justify-center"
-              style={{ width: 40, height: 40 }}
+              style={{ width: 36, height: 36 }}
               title={ball.name}
             >
               <div
                 className="rounded-full"
                 style={{
-                  width: Math.min(ball.radius * 0.4, 35),
-                  height: Math.min(ball.radius * 0.4, 35),
+                  width: Math.min(ball.radius * 0.3, 30),
+                  height: Math.min(ball.radius * 0.3, 30),
                   background: `radial-gradient(circle at 30% 30%, ${ball.glowColor}, ${ball.color})`,
                   boxShadow: `0 2px 4px rgba(0,0,0,0.3)`,
                 }}
