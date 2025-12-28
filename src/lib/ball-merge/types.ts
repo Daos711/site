@@ -8,17 +8,18 @@ export interface BallLevel {
 }
 
 // 10 уровней шариков (диаметры: 50, 70, 90, 130, 170, 200, 240, 270, 330, 300-бонус)
+// Цвета максимально различимые друг от друга
 export const BALL_LEVELS: BallLevel[] = [
-  { level: 0, radius: 25, color: '#ff6b6b', glowColor: '#ff8a8a', name: 'Красный' },
-  { level: 1, radius: 35, color: '#4ecdc4', glowColor: '#7ee8e1', name: 'Бирюзовый' },
-  { level: 2, radius: 45, color: '#ffe66d', glowColor: '#fff4a3', name: 'Жёлтый' },
-  { level: 3, radius: 65, color: '#95e1d3', glowColor: '#c4f0e8', name: 'Мятный' },
-  { level: 4, radius: 85, color: '#dda0dd', glowColor: '#e8c4e8', name: 'Сиреневый' },
-  { level: 5, radius: 100, color: '#f38181', glowColor: '#f7a8a8', name: 'Коралловый' },
-  { level: 6, radius: 120, color: '#aa96da', glowColor: '#c9bde8', name: 'Лавандовый' },
-  { level: 7, radius: 135, color: '#fcbad3', glowColor: '#fdd5e4', name: 'Розовый' },
-  { level: 8, radius: 165, color: '#a8d8ea', glowColor: '#d0ebf5', name: 'Голубой' },
-  { level: 9, radius: 150, color: '#ffd700', glowColor: '#ffe44d', name: 'Золотой' }, // бонусный при слиянии двух больших
+  { level: 0, radius: 25, color: '#ef4444', glowColor: '#f87171', name: 'Красный' },
+  { level: 1, radius: 35, color: '#06b6d4', glowColor: '#22d3ee', name: 'Циан' },
+  { level: 2, radius: 45, color: '#eab308', glowColor: '#facc15', name: 'Жёлтый' },
+  { level: 3, radius: 65, color: '#22c55e', glowColor: '#4ade80', name: 'Зелёный' },
+  { level: 4, radius: 85, color: '#a855f7', glowColor: '#c084fc', name: 'Фиолетовый' },
+  { level: 5, radius: 100, color: '#f97316', glowColor: '#fb923c', name: 'Оранжевый' },
+  { level: 6, radius: 120, color: '#3b82f6', glowColor: '#60a5fa', name: 'Синий' },
+  { level: 7, radius: 135, color: '#ec4899', glowColor: '#f472b6', name: 'Розовый' },
+  { level: 8, radius: 165, color: '#84cc16', glowColor: '#a3e635', name: 'Лайм' },
+  { level: 9, radius: 150, color: '#fbbf24', glowColor: '#fcd34d', name: 'Золотой' },
 ];
 
 // Размеры игрового поля (широкий стакан ~1.8:1)
