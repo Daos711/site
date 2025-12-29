@@ -44,16 +44,17 @@ export default function TribologyLabPage() {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
 
-  // Увеличенные размеры
-  const cellSize = 100;
-  const cellGap = 8;
-  const cellInset = 6;
-  const conveyorWidth = 52;
+  // Увеличенные размеры (x2)
+  const cellSize = 120;
+  const cellGap = 10;
+  const conveyorWidth = Math.round(cellSize * 0.7); // 70% от стороны карточки
   const gridWidth = GRID_COLS * cellSize + (GRID_COLS - 1) * cellGap;
   const gridHeight = GRID_ROWS * cellSize + (GRID_ROWS - 1) * cellGap;
-  const panelPadding = 16;
+  const panelPadding = 20;
+
+  // Размеры всего поля (без нижней дорожки!)
   const totalWidth = gridWidth + panelPadding * 2 + conveyorWidth * 2;
-  const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth * 2;
+  const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth; // только верхний конвейер
 
   // Получить модуль в ячейке
   const getModuleAt = (x: number, y: number): Module | undefined => {
@@ -74,7 +75,6 @@ export default function TribologyLabPage() {
     const cellY = Math.floor(relY / (cellSize + cellGap));
 
     if (cellX >= 0 && cellX < GRID_COLS && cellY >= 0 && cellY < GRID_ROWS) {
-      // Проверяем, что мы внутри ячейки, а не в gap
       const inCellX = relX - cellX * (cellSize + cellGap);
       const inCellY = relY - cellY * (cellSize + cellGap);
       if (inCellX >= 0 && inCellX < cellSize && inCellY >= 0 && inCellY < cellSize) {
@@ -141,7 +141,6 @@ export default function TribologyLabPage() {
         const existingModule = getModuleAt(targetCell.x, targetCell.y);
 
         if (dragState.type === 'shop') {
-          // Покупка из магазина
           if (!existingModule) {
             const config = MODULES[dragState.moduleType];
             if (gold >= config.basePrice) {
@@ -158,11 +157,9 @@ export default function TribologyLabPage() {
             }
           }
         } else if (dragState.type === 'field' && dragState.moduleId) {
-          // Перемещение или мердж
           const draggedModule = modules.find(m => m.id === dragState.moduleId);
           if (draggedModule) {
             if (!existingModule) {
-              // Просто перемещение
               setModules(prev => prev.map(m =>
                 m.id === dragState.moduleId ? { ...m, x: targetCell.x, y: targetCell.y } : m
               ));
@@ -172,7 +169,6 @@ export default function TribologyLabPage() {
               existingModule.level === draggedModule.level &&
               existingModule.level < 5
             ) {
-              // Мердж
               setModules(prev => prev
                 .filter(m => m.id !== dragState.moduleId)
                 .map(m => m.id === existingModule.id ? { ...m, level: m.level + 1 } : m)
@@ -199,7 +195,7 @@ export default function TribologyLabPage() {
   }, [dragState, gold, modules]);
 
   // Компонент плитки модуля
-  const ModuleTile = ({ module, isDragging = false }: { module: { type: ModuleType; level: number }; isDragging?: boolean }) => {
+  const ModuleTile = ({ module, isDragging = false, size = cellSize }: { module: { type: ModuleType; level: number }; isDragging?: boolean; size?: number }) => {
     const config = MODULES[module.type];
     const gradient = MODULE_GRADIENTS[module.type];
 
@@ -211,14 +207,17 @@ export default function TribologyLabPage() {
         `}
         style={{
           background: gradient.bg,
-          border: `2px solid ${gradient.border}`,
+          border: `3px solid ${gradient.border}`,
           boxShadow: `0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px ${config.color}40`,
         }}
       >
-        <span className="text-4xl drop-shadow-lg">{config.icon}</span>
+        <span style={{ fontSize: size * 0.4 }} className="drop-shadow-lg">{config.icon}</span>
         <div
-          className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold shadow-lg"
+          className="absolute top-2 right-2 rounded-full flex items-center justify-center font-bold shadow-lg"
           style={{
+            width: size * 0.22,
+            height: size * 0.22,
+            fontSize: size * 0.14,
             background: 'linear-gradient(145deg, #1e1e1e, #2a2a2a)',
             border: `2px solid ${gradient.border}`,
             color: '#fff',
@@ -231,11 +230,11 @@ export default function TribologyLabPage() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 py-4">
-      <h1 className="text-2xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
+    <div className="flex flex-col items-center gap-3 py-4">
+      <h1 className="text-3xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
 
       {/* Статус-бар */}
-      <div className="flex items-center gap-8 text-lg mb-2">
+      <div className="flex items-center gap-10 text-xl mb-2">
         <div className="flex items-center gap-2">
           <span className="text-gray-400">Волна:</span>
           <span className="font-bold text-white">{wave}</span>
@@ -261,169 +260,112 @@ export default function TribologyLabPage() {
           className="absolute inset-0 rounded-2xl"
           style={{
             background: 'linear-gradient(145deg, #4a4a4a 0%, #2a2a2a 50%, #3a3a3a 100%)',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
-            border: '3px solid #f59e0b',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+            border: '4px solid #f59e0b',
           }}
         />
 
-        {/* Конвейер - левая сторона (вверх) */}
+        {/* SVG для скруглённого пути конвейера */}
+        <svg
+          className="absolute inset-0 pointer-events-none"
+          width={totalWidth}
+          height={totalHeight}
+        >
+          {/* Путь конвейера: старт внизу слева → вверх → вправо → вниз до финиша */}
+          <path
+            d={`
+              M ${conveyorWidth / 2} ${totalHeight}
+              L ${conveyorWidth / 2} ${conveyorWidth}
+              Q ${conveyorWidth / 2} ${conveyorWidth / 2} ${conveyorWidth} ${conveyorWidth / 2}
+              L ${totalWidth - conveyorWidth} ${conveyorWidth / 2}
+              Q ${totalWidth - conveyorWidth / 2} ${conveyorWidth / 2} ${totalWidth - conveyorWidth / 2} ${conveyorWidth}
+              L ${totalWidth - conveyorWidth / 2} ${totalHeight}
+            `}
+            fill="none"
+            stroke="#4b5563"
+            strokeWidth={conveyorWidth - 8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Внутренняя линия (разметка) */}
+          <path
+            d={`
+              M ${conveyorWidth / 2} ${totalHeight}
+              L ${conveyorWidth / 2} ${conveyorWidth}
+              Q ${conveyorWidth / 2} ${conveyorWidth / 2} ${conveyorWidth} ${conveyorWidth / 2}
+              L ${totalWidth - conveyorWidth} ${conveyorWidth / 2}
+              Q ${totalWidth - conveyorWidth / 2} ${conveyorWidth / 2} ${totalWidth - conveyorWidth / 2} ${conveyorWidth}
+              L ${totalWidth - conveyorWidth / 2} ${totalHeight}
+            `}
+            fill="none"
+            stroke="#374151"
+            strokeWidth={conveyorWidth - 20}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Центральная линия-разметка */}
+          <path
+            d={`
+              M ${conveyorWidth / 2} ${totalHeight}
+              L ${conveyorWidth / 2} ${conveyorWidth}
+              Q ${conveyorWidth / 2} ${conveyorWidth / 2} ${conveyorWidth} ${conveyorWidth / 2}
+              L ${totalWidth - conveyorWidth} ${conveyorWidth / 2}
+              Q ${totalWidth - conveyorWidth / 2} ${conveyorWidth / 2} ${totalWidth - conveyorWidth / 2} ${conveyorWidth}
+              L ${totalWidth - conveyorWidth / 2} ${totalHeight}
+            `}
+            fill="none"
+            stroke="#6b7280"
+            strokeWidth={2}
+            strokeDasharray="10 10"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+
+        {/* Стрелки направления */}
         <div
-          className="absolute overflow-hidden"
+          className="absolute text-gray-400 text-2xl font-bold"
+          style={{ left: conveyorWidth / 2 - 10, top: totalHeight / 2 }}
+        >
+          ↑
+        </div>
+        <div
+          className="absolute text-gray-400 text-2xl font-bold"
+          style={{ left: totalWidth / 2 - 10, top: conveyorWidth / 2 - 12 }}
+        >
+          →
+        </div>
+        <div
+          className="absolute text-gray-400 text-2xl font-bold"
+          style={{ right: conveyorWidth / 2 - 10, top: totalHeight / 2 }}
+        >
+          ↓
+        </div>
+
+        {/* Старт */}
+        <div
+          className="absolute flex items-center justify-center"
           style={{
             left: 0,
-            top: conveyorWidth,
+            bottom: -30,
             width: conveyorWidth,
-            height: totalHeight - conveyorWidth * 2,
+            height: 30,
           }}
         >
-          <div
-            className="w-full h-full flex flex-col items-center justify-around"
-            style={{
-              background: 'linear-gradient(90deg, #374151 0%, #4b5563 50%, #374151 100%)',
-              borderRight: '2px solid #6b7280',
-              borderLeft: '2px solid #1f2937',
-            }}
-          >
-            {/* Разметка конвейера */}
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-8 h-1 bg-gray-600 rounded opacity-60" />
-            ))}
-            <div className="absolute text-gray-400 text-lg">↑</div>
-          </div>
+          <span className="text-green-400 text-lg font-bold">▶ СТАРТ</span>
         </div>
 
-        {/* Конвейер - верхняя сторона (вправо) */}
+        {/* Финиш */}
         <div
-          className="absolute overflow-hidden"
-          style={{
-            left: conveyorWidth,
-            top: 0,
-            width: totalWidth - conveyorWidth * 2,
-            height: conveyorWidth,
-          }}
-        >
-          <div
-            className="w-full h-full flex items-center justify-around"
-            style={{
-              background: 'linear-gradient(180deg, #374151 0%, #4b5563 50%, #374151 100%)',
-              borderBottom: '2px solid #6b7280',
-              borderTop: '2px solid #1f2937',
-            }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="w-1 h-8 bg-gray-600 rounded opacity-60" />
-            ))}
-            <div className="absolute text-gray-400 text-lg">→</div>
-          </div>
-        </div>
-
-        {/* Конвейер - правая сторона (вниз) */}
-        <div
-          className="absolute overflow-hidden"
+          className="absolute flex items-center justify-center"
           style={{
             right: 0,
-            top: conveyorWidth,
+            bottom: -30,
             width: conveyorWidth,
-            height: totalHeight - conveyorWidth * 2,
+            height: 30,
           }}
         >
-          <div
-            className="w-full h-full flex flex-col items-center justify-around"
-            style={{
-              background: 'linear-gradient(90deg, #374151 0%, #4b5563 50%, #374151 100%)',
-              borderLeft: '2px solid #6b7280',
-              borderRight: '2px solid #1f2937',
-            }}
-          >
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-8 h-1 bg-gray-600 rounded opacity-60" />
-            ))}
-            <div className="absolute text-gray-400 text-lg">↓</div>
-          </div>
-        </div>
-
-        {/* Конвейер - нижняя сторона */}
-        <div
-          className="absolute overflow-hidden"
-          style={{
-            left: conveyorWidth,
-            bottom: 0,
-            width: totalWidth - conveyorWidth * 2,
-            height: conveyorWidth,
-          }}
-        >
-          <div
-            className="w-full h-full flex items-center justify-around relative"
-            style={{
-              background: 'linear-gradient(0deg, #374151 0%, #4b5563 50%, #374151 100%)',
-              borderTop: '2px solid #6b7280',
-              borderBottom: '2px solid #1f2937',
-            }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="w-1 h-8 bg-gray-600 rounded opacity-60" />
-            ))}
-          </div>
-        </div>
-
-        {/* Угол: старт (левый нижний) */}
-        <div
-          className="absolute flex items-center justify-center rounded-bl-2xl"
-          style={{
-            left: 0,
-            bottom: 0,
-            width: conveyorWidth,
-            height: conveyorWidth,
-            background: 'linear-gradient(135deg, #374151, #4b5563)',
-            borderRight: '2px solid #6b7280',
-            borderTop: '2px solid #6b7280',
-          }}
-        >
-          <div className="text-green-400 text-xl font-bold">▶</div>
-        </div>
-
-        {/* Угол: левый верхний */}
-        <div
-          className="absolute rounded-tl-2xl"
-          style={{
-            left: 0,
-            top: 0,
-            width: conveyorWidth,
-            height: conveyorWidth,
-            background: 'linear-gradient(135deg, #374151, #4b5563)',
-            borderRight: '2px solid #6b7280',
-            borderBottom: '2px solid #6b7280',
-          }}
-        />
-
-        {/* Угол: правый верхний */}
-        <div
-          className="absolute rounded-tr-2xl"
-          style={{
-            right: 0,
-            top: 0,
-            width: conveyorWidth,
-            height: conveyorWidth,
-            background: 'linear-gradient(135deg, #374151, #4b5563)',
-            borderLeft: '2px solid #6b7280',
-            borderBottom: '2px solid #6b7280',
-          }}
-        />
-
-        {/* Угол: правый нижний (финиш) */}
-        <div
-          className="absolute flex items-center justify-center rounded-br-2xl"
-          style={{
-            right: 0,
-            bottom: 0,
-            width: conveyorWidth,
-            height: conveyorWidth,
-            background: 'linear-gradient(135deg, #374151, #4b5563)',
-            borderLeft: '2px solid #6b7280',
-            borderTop: '2px solid #6b7280',
-          }}
-        >
-          <div className="text-red-400 text-xl">🏁</div>
+          <span className="text-red-400 text-lg font-bold">🏁 ФИНИШ</span>
         </div>
 
         {/* Внутренняя панель с сеткой */}
@@ -435,7 +377,7 @@ export default function TribologyLabPage() {
             width: gridWidth + panelPadding * 2,
             height: gridHeight + panelPadding * 2,
             background: 'linear-gradient(145deg, #1a1a2e 0%, #16162a 100%)',
-            boxShadow: 'inset 0 2px 15px rgba(0,0,0,0.6)',
+            boxShadow: 'inset 0 3px 20px rgba(0,0,0,0.6)',
           }}
         >
           {/* Сетка 4x3 */}
@@ -466,27 +408,24 @@ export default function TribologyLabPage() {
                   <div
                     key={`${x}-${y}`}
                     className={`
-                      rounded-xl transition-all duration-150 relative
-                      ${isDropTarget ? 'ring-2 ring-green-500 ring-opacity-70' : ''}
-                      ${canMerge ? 'ring-2 ring-yellow-400 ring-opacity-70' : ''}
+                      rounded-xl transition-all duration-150 relative overflow-hidden
+                      ${isDropTarget ? 'ring-4 ring-green-500 ring-opacity-70' : ''}
+                      ${canMerge ? 'ring-4 ring-yellow-400 ring-opacity-70' : ''}
                     `}
                     style={{
                       width: cellSize,
                       height: cellSize,
                       background: 'linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 100%)',
-                      boxShadow: 'inset 0 3px 10px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.05)',
+                      boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.05)',
                     }}
                   >
                     {module && !isDraggingThis && (
                       <div
-                        className="absolute cursor-grab active:cursor-grabbing"
-                        style={{
-                          inset: cellInset,
-                        }}
+                        className="absolute inset-0 cursor-grab active:cursor-grabbing"
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
-                        <ModuleTile module={module} />
+                        <ModuleTile module={module} size={cellSize} />
                       </div>
                     )}
                   </div>
@@ -497,19 +436,19 @@ export default function TribologyLabPage() {
         </div>
       </div>
 
-      {/* Нижняя панель магазина - ближе к полю */}
+      {/* Нижняя панель магазина */}
       <div
-        className="w-full max-w-2xl rounded-xl p-4 -mt-1"
+        className="w-full max-w-3xl rounded-xl p-5 mt-8"
         style={{
           background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
           boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
-          border: '1px solid #3a3a3a',
+          border: '2px solid #3a3a3a',
         }}
       >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-gray-400 text-sm font-medium">Магазин модулей</span>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-gray-400 text-base font-medium">Магазин модулей</span>
           <button
-            className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm bg-slate-700 hover:bg-slate-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-base bg-slate-700 hover:bg-slate-600 transition-colors"
             onClick={() => {
               if (gold >= 10) {
                 setGold(gold - 10);
@@ -524,34 +463,37 @@ export default function TribologyLabPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 justify-center">
+        <div className="flex items-center gap-4 justify-center">
           {shop.map((moduleType, index) => {
             const config = MODULES[moduleType];
             const gradient = MODULE_GRADIENTS[moduleType];
             const canAfford = gold >= config.basePrice;
             const isDraggingThis = dragState?.type === 'shop' && dragState.shopIndex === index;
+            const shopCardSize = 90;
 
             return (
               <div
                 key={index}
                 className={`
-                  relative w-20 h-24 rounded-xl transition-all duration-150
+                  relative rounded-xl transition-all duration-150
                   ${!canAfford ? 'opacity-50 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing hover:scale-105'}
                   ${isDraggingThis ? 'opacity-30' : ''}
                 `}
                 style={{
+                  width: shopCardSize,
+                  height: shopCardSize + 20,
                   background: gradient.bg,
-                  border: `2px solid ${gradient.border}`,
+                  border: `3px solid ${gradient.border}`,
                   boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 15px ${config.color}30`,
                 }}
                 onMouseDown={(e) => canAfford && handleShopDragStart(e, index)}
                 onTouchStart={(e) => canAfford && handleShopDragStart(e, index)}
               >
-                <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                  <span className="text-3xl drop-shadow-lg">{config.icon}</span>
-                  <div className="flex items-center gap-1 text-xs bg-black/30 px-2 py-0.5 rounded-full">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <span className="text-4xl drop-shadow-lg">{config.icon}</span>
+                  <div className="flex items-center gap-1 text-sm bg-black/30 px-3 py-1 rounded-full">
                     <span className="text-yellow-400">🪙</span>
-                    <span className={canAfford ? 'text-white' : 'text-red-400'}>{config.basePrice}</span>
+                    <span className={canAfford ? 'text-white font-medium' : 'text-red-400 font-medium'}>{config.basePrice}</span>
                   </div>
                 </div>
               </div>
@@ -565,10 +507,10 @@ export default function TribologyLabPage() {
         <div
           className="fixed pointer-events-none z-50"
           style={{
-            left: dragState.currentX - 40,
-            top: dragState.currentY - 40,
-            width: 80,
-            height: 80,
+            left: dragState.currentX - cellSize / 2,
+            top: dragState.currentY - cellSize / 2,
+            width: cellSize,
+            height: cellSize,
           }}
         >
           <ModuleTile
@@ -579,12 +521,13 @@ export default function TribologyLabPage() {
                 : 1
             }}
             isDragging
+            size={cellSize}
           />
         </div>
       )}
 
       {/* Подсказка */}
-      <p className="text-gray-500 text-sm text-center max-w-md">
+      <p className="text-gray-500 text-base text-center max-w-lg mt-2">
         Перетащи модуль из магазина на поле. Два одинаковых модуля одного уровня можно объединить.
       </p>
     </div>
