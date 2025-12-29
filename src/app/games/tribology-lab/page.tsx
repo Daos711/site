@@ -593,29 +593,29 @@ export default function TribologyLabPage() {
             />
           </g>
 
-          {/* Карман магазина */}
+          {/* Карман магазина — расширен до бортиков */}
           <rect
-            x={20}
+            x={innerOffset}
             y={totalHeight + 5}
-            width={totalWidth - 40}
-            height={100}
-            rx={12}
+            width={totalWidth - innerOffset * 2}
+            height={115}
+            rx={8}
             fill="rgba(0,0,0,0.3)"
             stroke="rgba(255,255,255,0.05)"
             strokeWidth={1}
           />
 
           {/* Винты крепления кармана */}
-          <circle cx={35} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
-          <circle cx={totalWidth - 35} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
-          <circle cx={35} cy={totalHeight + 90} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
-          <circle cx={totalWidth - 35} cy={totalHeight + 90} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={innerOffset + 15} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={totalWidth - innerOffset - 15} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={innerOffset + 15} cy={totalHeight + 100} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={totalWidth - innerOffset - 15} cy={totalHeight + 100} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
 
           {/* LED индикаторы */}
-          <circle cx={45} cy={totalHeight + 55} r={4} fill="#0ea5e9" opacity={0.6}>
+          <circle cx={innerOffset + 25} cy={totalHeight + 60} r={4} fill="#0ea5e9" opacity={0.6}>
             <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
           </circle>
-          <circle cx={totalWidth - 45} cy={totalHeight + 55} r={4} fill="#f59e0b" opacity={0.6}>
+          <circle cx={totalWidth - innerOffset - 25} cy={totalHeight + 60} r={4} fill="#f59e0b" opacity={0.6}>
             <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
           </circle>
         </svg>
