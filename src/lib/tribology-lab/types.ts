@@ -42,6 +42,7 @@ export interface Enemy {
   progress: number;       // 0-1 (позиция на пути)
   effects: Effect[];
   reward: number;
+  lastDamageTime: number; // timestamp последнего получения урона
 }
 
 export interface Effect {

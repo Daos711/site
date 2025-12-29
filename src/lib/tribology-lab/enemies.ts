@@ -194,6 +194,18 @@ export function createEnemy(type: EnemyType, wave: number): Enemy {
     progress: 0,
     effects: [],
     reward: config.reward,
+    lastDamageTime: 0, // 0 = ни разу не получал урон
+  };
+}
+
+/**
+ * Наносит урон врагу и обновляет lastDamageTime
+ */
+export function damageEnemy(enemy: Enemy, damage: number): Enemy {
+  return {
+    ...enemy,
+    hp: Math.max(0, enemy.hp - damage),
+    lastDamageTime: Date.now(),
   };
 }
 
@@ -346,4 +358,33 @@ export function hasReachedFinish(enemy: Enemy): boolean {
  */
 export function isDead(enemy: Enemy): boolean {
   return enemy.hp <= 0;
+}
+
+/**
+ * Предотвращает визуальное наложение врагов
+ * Отодвигает слишком близких врагов назад по пути
+ */
+export function separateEnemies(enemies: Enemy[]): Enemy[] {
+  if (enemies.length < 2) return enemies;
+
+  // Сортируем по progress (кто впереди — первый)
+  const sorted = [...enemies].sort((a, b) => b.progress - a.progress);
+
+  const minGap = 0.025; // минимальный отступ (2.5% пути)
+
+  // Отодвигаем тех, кто слишком близко к впереди идущему
+  for (let i = 1; i < sorted.length; i++) {
+    const ahead = sorted[i - 1];
+    const behind = sorted[i];
+
+    // Если слишком близко — отодвигаем назад
+    if (ahead.progress - behind.progress < minGap) {
+      sorted[i] = {
+        ...behind,
+        progress: Math.max(0, ahead.progress - minGap),
+      };
+    }
+  }
+
+  return sorted;
 }

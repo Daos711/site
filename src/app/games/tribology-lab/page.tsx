@@ -21,6 +21,7 @@ import {
   updateEnemy,
   hasReachedFinish,
   isDead,
+  separateEnemies,
   type WaveEnemy,
 } from "@/lib/tribology-lab/enemies";
 
@@ -188,7 +189,8 @@ export default function TribologyLabPage() {
           setGold(g => g + goldEarned);
         }
 
-        return updated;
+        // Предотвращаем визуальное наложение врагов
+        return separateEnemies(updated);
       });
 
       // Проверка окончания волны (с защитой от многократного вызова)
@@ -896,6 +898,10 @@ export default function TribologyLabPage() {
             const size = config.size;
             const hpPercent = enemy.hp / enemy.maxHp;
 
+            // HP-бар показываем только если: получал урон в последние 2 сек ИЛИ HP < 99%
+            const now = Date.now();
+            const showHpBar = (enemy.lastDamageTime > 0 && now - enemy.lastDamageTime < 2000) || hpPercent < 0.99;
+
             // Fade in/out
             const opacity = enemy.progress < 0.03
               ? enemy.progress / 0.03
@@ -1366,15 +1372,17 @@ export default function TribologyLabPage() {
 
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    HP БАР
+                    HP БАР (показывается только при уроне)
                     ═══════════════════════════════════════════════════════════════ */}
-                <g>
-                  <rect x={-size*0.9} y={-size - 12} width={size * 1.8} height={6} rx={3} fill="rgba(0,0,0,0.7)" />
-                  <rect x={-size*0.9} y={-size - 12} width={size * 1.8 * hpPercent} height={6} rx={3}
-                    fill={hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#f59e0b' : '#ef4444'}
-                  />
-                  <rect x={-size*0.85} y={-size - 11} width={size * 1.7 * hpPercent} height={2} rx={1} fill="rgba(255,255,255,0.3)" />
-                </g>
+                {showHpBar && (
+                  <g>
+                    <rect x={-size*0.9} y={-size - 12} width={size * 1.8} height={6} rx={3} fill="rgba(0,0,0,0.7)" />
+                    <rect x={-size*0.9} y={-size - 12} width={size * 1.8 * hpPercent} height={6} rx={3}
+                      fill={hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#f59e0b' : '#ef4444'}
+                    />
+                    <rect x={-size*0.85} y={-size - 11} width={size * 1.7 * hpPercent} height={2} rx={1} fill="rgba(255,255,255,0.3)" />
+                  </g>
+                )}
 
 
                 {/* ═══════════════════════════════════════════════════════════════
