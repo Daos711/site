@@ -366,6 +366,24 @@ export default function TribologyLabPage() {
                 Z
               `} />
             </clipPath>
+
+            {/* ClipPath для масла - по внутреннему контуру бортика */}
+            {(() => {
+              const innerR = cornerRadius - innerOffset;
+              return (
+                <clipPath id="oilClip">
+                  <path d={`
+                    M ${innerOffset} ${totalHeight}
+                    L ${innerOffset} ${innerOffset + innerR}
+                    A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
+                    L ${totalWidth - innerOffset - innerR} ${innerOffset}
+                    A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
+                    L ${totalWidth - innerOffset} ${totalHeight}
+                    Z
+                  `} />
+                </clipPath>
+              );
+            })()}
           </defs>
 
           {/* Металлический бортик - с дугами для одинаковой ширины */}
@@ -394,9 +412,8 @@ export default function TribologyLabPage() {
             );
           })()}
 
-          {/* Масляный канал - точно внутри бортика */}
+          {/* Масляный канал - с clipPath по внутреннему контуру бортика */}
           {(() => {
-            const innerCornerRadius = cornerRadius * 0.4;
             const innerR = cornerRadius - innerOffset;
             return (
               <path
@@ -408,14 +425,13 @@ export default function TribologyLabPage() {
                   A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
                   L ${totalWidth - innerOffset} ${totalHeight}
                   L ${totalWidth - conveyorWidth} ${totalHeight}
-                  L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
-                  L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
-                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                  L ${totalWidth - conveyorWidth} ${conveyorWidth}
+                  L ${conveyorWidth} ${conveyorWidth}
                   L ${conveyorWidth} ${totalHeight}
                   Z
                 `}
                 fill="url(#oilGradientMain)"
+                clipPath="url(#oilClip)"
               />
             );
           })()}
