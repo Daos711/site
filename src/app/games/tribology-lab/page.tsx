@@ -412,48 +412,47 @@ export default function TribologyLabPage() {
             );
           })()}
 
-          {/* Масляный канал - с clipPath по внутреннему контуру бортика */}
-          {(() => {
-            const innerR = cornerRadius - innerOffset;
-            return (
-              <path
-                d={`
-                  M ${innerOffset} ${totalHeight}
-                  L ${innerOffset} ${innerOffset + innerR}
-                  A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
-                  L ${totalWidth - innerOffset - innerR} ${innerOffset}
-                  A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
-                  L ${totalWidth - innerOffset} ${totalHeight}
-                  L ${totalWidth - conveyorWidth} ${totalHeight}
-                  L ${totalWidth - conveyorWidth} ${conveyorWidth}
-                  L ${conveyorWidth} ${conveyorWidth}
-                  L ${conveyorWidth} ${totalHeight}
-                  Z
-                `}
-                fill="url(#oilGradientMain)"
-                clipPath="url(#oilClip)"
-              />
-            );
-          })()}
+          {/* Масляный канал и пятна масла - всё в группе с clipPath */}
+          <g clipPath="url(#oilClip)">
+            {(() => {
+              const innerR = cornerRadius - innerOffset;
+              return (
+                <path
+                  d={`
+                    M ${innerOffset} ${totalHeight}
+                    L ${innerOffset} ${innerOffset + innerR}
+                    A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
+                    L ${totalWidth - innerOffset - innerR} ${innerOffset}
+                    A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
+                    L ${totalWidth - innerOffset} ${totalHeight}
+                    L ${totalWidth - conveyorWidth} ${totalHeight}
+                    L ${totalWidth - conveyorWidth} ${conveyorWidth}
+                    L ${conveyorWidth} ${conveyorWidth}
+                    L ${conveyorWidth} ${totalHeight}
+                    Z
+                  `}
+                  fill="url(#oilGradientMain)"
+                />
+              );
+            })()}
 
-{/* Убраны проблемные элементы затемнения */}
-
-          {/* Мелкие органичные пятна масла (у краёв и в углах) */}
-          {/* Левый участок - у внутреннего края */}
-          <ellipse cx={conveyorWidth - 15} cy={totalHeight * 0.35} rx={6} ry={10} fill="rgba(25, 50, 80, 0.35)" transform="rotate(-5)" />
-          <ellipse cx={conveyorWidth - 20} cy={totalHeight * 0.55} rx={4} ry={7} fill="rgba(30, 55, 85, 0.3)" />
-          <ellipse cx={conveyorWidth - 12} cy={totalHeight * 0.75} rx={5} ry={8} fill="rgba(25, 50, 80, 0.25)" transform="rotate(10)" />
-          {/* В левом верхнем углу */}
-          <ellipse cx={conveyorWidth * 0.7} cy={conveyorWidth * 0.7} rx={8} ry={6} fill="rgba(30, 55, 85, 0.3)" transform="rotate(-30)" />
-          {/* Верхний участок */}
-          <ellipse cx={totalWidth * 0.3} cy={conveyorWidth - 15} rx={7} ry={4} fill="rgba(25, 50, 80, 0.3)" />
-          <ellipse cx={totalWidth * 0.5} cy={conveyorWidth - 18} rx={5} ry={3} fill="rgba(30, 55, 85, 0.25)" transform="rotate(5)" />
-          <ellipse cx={totalWidth * 0.7} cy={conveyorWidth - 12} rx={6} ry={4} fill="rgba(25, 50, 80, 0.3)" transform="rotate(-8)" />
-          {/* В правом верхнем углу */}
-          <ellipse cx={totalWidth - conveyorWidth * 0.7} cy={conveyorWidth * 0.7} rx={7} ry={5} fill="rgba(30, 55, 85, 0.3)" transform="rotate(25)" />
-          {/* Правый участок */}
-          <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
-          <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
+            {/* Мелкие органичные пятна масла (у краёв и в углах) */}
+            {/* Левый участок - у внутреннего края */}
+            <ellipse cx={conveyorWidth - 15} cy={totalHeight * 0.35} rx={6} ry={10} fill="rgba(25, 50, 80, 0.35)" transform="rotate(-5)" />
+            <ellipse cx={conveyorWidth - 20} cy={totalHeight * 0.55} rx={4} ry={7} fill="rgba(30, 55, 85, 0.3)" />
+            <ellipse cx={conveyorWidth - 12} cy={totalHeight * 0.75} rx={5} ry={8} fill="rgba(25, 50, 80, 0.25)" transform="rotate(10)" />
+            {/* В левом верхнем углу */}
+            <ellipse cx={conveyorWidth * 0.7} cy={conveyorWidth * 0.7} rx={8} ry={6} fill="rgba(30, 55, 85, 0.3)" transform="rotate(-30)" />
+            {/* Верхний участок */}
+            <ellipse cx={totalWidth * 0.3} cy={conveyorWidth - 15} rx={7} ry={4} fill="rgba(25, 50, 80, 0.3)" />
+            <ellipse cx={totalWidth * 0.5} cy={conveyorWidth - 18} rx={5} ry={3} fill="rgba(30, 55, 85, 0.25)" transform="rotate(5)" />
+            <ellipse cx={totalWidth * 0.7} cy={conveyorWidth - 12} rx={6} ry={4} fill="rgba(25, 50, 80, 0.3)" transform="rotate(-8)" />
+            {/* В правом верхнем углу */}
+            <ellipse cx={totalWidth - conveyorWidth * 0.7} cy={conveyorWidth * 0.7} rx={7} ry={5} fill="rgba(30, 55, 85, 0.3)" transform="rotate(25)" />
+            {/* Правый участок */}
+            <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
+            <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
+          </g>
 
           {/* Внутренний бортик - только верхние углы, без линии к старту/финишу */}
           {(() => {
@@ -543,7 +542,7 @@ export default function TribologyLabPage() {
 
         {/* Внутренняя панель с сеткой */}
         <div
-          className="absolute rounded-xl"
+          className="absolute"
           style={{
             left: conveyorWidth,
             top: conveyorWidth,
@@ -551,6 +550,7 @@ export default function TribologyLabPage() {
             height: gridHeight + panelPadding * 2,
             background: 'linear-gradient(145deg, #0a0f15 0%, #0d1218 100%)',
             boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9), 0 0 0 2px #1a2530',
+            borderRadius: '12px 12px 0 0',
           }}
         >
           {/* Сетка 4x3 */}
