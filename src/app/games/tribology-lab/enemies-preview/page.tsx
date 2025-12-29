@@ -16,8 +16,47 @@ export default function EnemiesPreview() {
 
           return (
             <div key={type} className="bg-gray-800 rounded-lg p-6 flex items-center gap-6">
-              {/* SVG preview */}
-              <svg width={80} height={80} viewBox="-40 -40 80 80">
+              {/* SVG preview с масляным фоном */}
+              <div
+                className="rounded-lg flex items-center justify-center relative overflow-hidden"
+                style={{
+                  width: 80,
+                  height: 80,
+                  background: 'linear-gradient(145deg, #0a1520 0%, #132740 50%, #0f1f30 100%)',
+                  boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.6), 0 0 0 2px #2d3138',
+                }}
+              >
+                {/* Масляный блик */}
+                <div
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    background: 'radial-gradient(ellipse at 30% 20%, rgba(100, 150, 200, 0.15) 0%, transparent 50%)',
+                  }}
+                />
+                {/* Пятна масла */}
+                <div
+                  className="absolute"
+                  style={{
+                    width: 12,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: 'rgba(25, 50, 80, 0.4)',
+                    top: 8,
+                    right: 10,
+                  }}
+                />
+                <div
+                  className="absolute"
+                  style={{
+                    width: 8,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: 'rgba(30, 55, 85, 0.35)',
+                    bottom: 12,
+                    left: 8,
+                  }}
+                />
+              <svg width={80} height={80} viewBox="-40 -40 80 80" className="relative z-10">
                 <defs>
                   <radialGradient id={`heatGradient-${type}`}>
                     <stop offset="0%" stopColor="#ffcc00" />
@@ -333,6 +372,7 @@ export default function EnemiesPreview() {
                 <rect x={-size} y={-size - 10} width={size * 2} height={5} rx={2} fill="rgba(0,0,0,0.6)" />
                 <rect x={-size} y={-size - 10} width={size} height={5} rx={2} fill="#f59e0b" />
               </svg>
+              </div>
 
               {/* Info */}
               <div className="flex-1">
