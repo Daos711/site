@@ -2,7 +2,7 @@ import {
   Module, ModuleConfig, MODULES, getDamage,
   Enemy, EnemyConfig, ENEMIES, EnemyTag,
   Effect, EffectType, AttackEffect,
-  CELL_SIZE, CONVEYOR_WIDTH,
+  CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH,
   MODULE_UNLOCK_WAVES, ModuleType
 } from './types';
 import { PathPoint, getPositionOnPath } from './enemies';
@@ -11,14 +11,17 @@ import { PathPoint, getPositionOnPath } from './enemies';
 
 /**
  * Получает позицию центра модуля в пикселях
+ * Координаты совпадают с рендером в page.tsx
  */
 export function getModulePosition(module: Module): { x: number; y: number } {
-  // Учитываем что сетка начинается после левого конвейера
-  const gridStartX = CONVEYOR_WIDTH;
-  const gridStartY = CONVEYOR_WIDTH;
+  // Внутренняя панель начинается на conveyorWidth от края
+  // Сетка внутри панели начинается с отступом panelPadding
+  // Ячейки имеют размер cellSize и зазор cellGap между ними
+  const gridStartX = CONVEYOR_WIDTH + PANEL_PADDING;
+  const gridStartY = CONVEYOR_WIDTH + PANEL_PADDING;
 
-  const x = gridStartX + module.x * CELL_SIZE + CELL_SIZE / 2;
-  const y = gridStartY + module.y * CELL_SIZE + CELL_SIZE / 2;
+  const x = gridStartX + module.x * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
+  const y = gridStartY + module.y * (CELL_SIZE + CELL_GAP) + CELL_SIZE / 2;
 
   return { x, y };
 }

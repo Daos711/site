@@ -61,10 +61,16 @@ export default function TribologyLabPage() {
   const [lives, setLives] = useState(INITIAL_LIVES);
   const [gold, setGold] = useState(99999); // Для тестирования
   const [modules, setModules] = useState<Module[]>([]);
+  const modulesRef = useRef<Module[]>([]); // Ref для актуальных модулей в game loop
   const [shop, setShop] = useState<ModuleType[]>(INITIAL_SHOP);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
+
+  // Синхронизируем ref с state
+  useEffect(() => {
+    modulesRef.current = modules;
+  }, [modules]);
 
   // Игровое состояние
   const [gamePhase, setGamePhase] = useState<GamePhase>('preparing');
@@ -178,9 +184,10 @@ export default function TribologyLabPage() {
         updated = processBossRegeneration(updated, deltaTime);
 
         // 3. Боевая система — атаки модулей
-        if (modules.length > 0 && updated.length > 0) {
+        const currentModules = modulesRef.current;
+        if (currentModules.length > 0 && updated.length > 0) {
           const attackResult = processAllAttacks(
-            modules,
+            currentModules,
             updated,
             enemyPath,
             timestamp
@@ -188,13 +195,10 @@ export default function TribologyLabPage() {
 
           updated = attackResult.updatedEnemies;
 
-          // Обновляем модули (lastAttack)
-          if (attackResult.updatedModules.some((m, i) => m.lastAttack !== modules[i]?.lastAttack)) {
-            setModules(attackResult.updatedModules);
-          }
-
-          // Добавляем эффекты атак
+          // Обновляем модули (lastAttack) — сразу в ref и в state
           if (attackResult.newAttackEffects.length > 0) {
+            modulesRef.current = attackResult.updatedModules;
+            setModules(attackResult.updatedModules);
             setAttackEffects(prevEffects => [...prevEffects, ...attackResult.newAttackEffects]);
           }
         }

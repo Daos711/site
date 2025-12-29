@@ -129,8 +129,11 @@ export const GRID_ROWS = 3;
 export const INITIAL_LIVES = 10;
 export const INITIAL_GOLD = 100;
 
-export const CELL_SIZE = 100;       // размер ячейки в пикселях (+25%)
-export const CONVEYOR_WIDTH = 60;   // ширина конвейера (+25%)
+// Layout константы (должны совпадать с page.tsx)
+export const CELL_SIZE = 110;           // размер ячейки в пикселях
+export const CELL_GAP = 14;             // зазор между ячейками
+export const PANEL_PADDING = 16;        // отступ внутри панели
+export const CONVEYOR_WIDTH = Math.round(CELL_SIZE * 0.95); // ширина конвейера ~105px
 
 // Формула урона: baseDamage * 1.5^(level-1)
 export function getDamage(baseDamage: number, level: number): number {
@@ -156,7 +159,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🧲',
     basePrice: 25,
     baseDamage: 12,
-    range: 88,        // +25%
+    range: 150,       // достаёт до канала из центра
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
     description: 'x1.5 урона по металлу',
@@ -170,7 +173,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '❄️',
     basePrice: 35,
     baseDamage: 8,
-    range: 113,       // +25%
+    range: 180,       // большой радиус для замедления
     attackSpeed: 0.8,
     color: '#38bdf8',  // голубой
     description: 'Замедляет на 40%',
@@ -187,7 +190,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🛡️',
     basePrice: 50,
     baseDamage: 18,
-    range: 100,       // +25%
+    range: 170,       // средний радиус
     attackSpeed: 1.2,
     color: '#fbbf24',  // золотой
     description: 'Чистый урон',
@@ -200,7 +203,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '💧',
     basePrice: 45,
     baseDamage: 6,
-    range: 75,        // +25%
+    range: 140,       // ближний бой, но достаёт до края
     attackSpeed: 0.6,
     color: '#a855f7',  // пурпурный
     description: '+25% урон соседним модулям',
@@ -213,12 +216,12 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '📡',
     basePrice: 65,
     baseDamage: 10,
-    range: 125,       // +25%
+    range: 200,       // большой радиус для AOE
     attackSpeed: 0.4,
     color: '#2dd4bf',  // бирюзовый
     description: 'AOE урон',
     attackType: 'aoe',
-    aoeRadius: 60,  // пиксели
+    aoeRadius: 80,    // увеличен радиус AOE
     tagBonuses: { dusty: 1.2 },  // +20% по пыльным
     // Особенность: урон растёт от количества врагов
   },
@@ -228,7 +231,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🔬',
     basePrice: 80,
     baseDamage: 15,
-    range: 150,       // +25%
+    range: 250,       // максимальный радиус для снайпера
     attackSpeed: 0.3,
     color: '#ef4444',  // красный
     description: 'Пробивает насквозь',
