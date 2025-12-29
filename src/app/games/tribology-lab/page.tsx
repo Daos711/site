@@ -458,26 +458,6 @@ export default function TribologyLabPage() {
             <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
           </g>
 
-          {/* Внутренний бортик - только верхние углы, без линии к старту/финишу */}
-          {(() => {
-            const innerCornerRadius = cornerRadius * 0.4;
-            return (
-              <path
-                d={`
-                  M ${conveyorWidth} ${conveyorWidth + innerCornerRadius + 50}
-                  L ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
-                  L ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
-                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius + 50}
-                `}
-                fill="none"
-                stroke="#2a2f35"
-                strokeWidth={2}
-              />
-            );
-          })()}
-
           {/* Болты/заклёпки - приглушённые */}
           {/* Левая сторона */}
           <circle cx={innerOffset / 2 + 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
