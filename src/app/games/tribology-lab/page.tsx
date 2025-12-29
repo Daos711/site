@@ -45,15 +45,14 @@ export default function TribologyLabPage() {
   const fieldRef = useRef<HTMLDivElement>(null);
 
   // Размеры
-  const cellSize = 120;
-  const cellGap = 16; // Увеличенный зазор между ячейками
-  const conveyorWidth = Math.round(cellSize * 0.7);
-  const cornerRadius = conveyorWidth * 0.6; // Радиус скругления углов
+  const cellSize = 110;
+  const cellGap = 14;
+  const conveyorWidth = Math.round(cellSize * 0.95); // Увеличенная ширина канала (~1.0 ячейки)
+  const cornerRadius = conveyorWidth * 0.5;
   const gridWidth = GRID_COLS * cellSize + (GRID_COLS - 1) * cellGap;
   const gridHeight = GRID_ROWS * cellSize + (GRID_ROWS - 1) * cellGap;
-  const panelPadding = 20;
+  const panelPadding = 16;
 
-  // Размеры всего поля (без нижней дорожки)
   const totalWidth = gridWidth + panelPadding * 2 + conveyorWidth * 2;
   const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth;
 
@@ -230,51 +229,54 @@ export default function TribologyLabPage() {
     );
   };
 
-  // Координаты для SVG пути (масляный канал)
+  // Координаты для SVG пути
+  const innerOffset = 8; // Толщина бортика
   const pathOuter = {
-    // Внешний край канала
     startX: 0,
     startY: totalHeight,
-    // Левая сторона (вверх)
-    leftTopX: 0,
     leftTopY: cornerRadius,
-    // Левый верхний угол
     topLeftX: cornerRadius,
-    topLeftY: 0,
-    // Верхняя сторона (вправо)
     topRightX: totalWidth - cornerRadius,
-    topRightY: 0,
-    // Правый верхний угол
-    rightTopX: totalWidth,
     rightTopY: cornerRadius,
-    // Правая сторона (вниз)
-    rightBottomX: totalWidth,
     rightBottomY: totalHeight,
   };
 
   const pathInner = {
-    // Внутренний край канала
     startX: conveyorWidth,
     startY: totalHeight,
-    // Левая сторона (вверх)
-    leftTopX: conveyorWidth,
-    leftTopY: conveyorWidth + cornerRadius * 0.5,
-    // Левый верхний угол (скруглённый)
-    topLeftX: conveyorWidth + cornerRadius * 0.5,
-    topLeftY: conveyorWidth,
-    // Верхняя сторона (вправо)
-    topRightX: totalWidth - conveyorWidth - cornerRadius * 0.5,
-    topRightY: conveyorWidth,
-    // Правый верхний угол (скруглённый)
-    rightTopX: totalWidth - conveyorWidth,
-    rightTopY: conveyorWidth + cornerRadius * 0.5,
-    // Правая сторона (вниз)
-    rightBottomX: totalWidth - conveyorWidth,
+    leftTopY: conveyorWidth + cornerRadius * 0.4,
+    topLeftX: conveyorWidth + cornerRadius * 0.4,
+    topRightX: totalWidth - conveyorWidth - cornerRadius * 0.4,
+    rightTopY: conveyorWidth + cornerRadius * 0.4,
     rightBottomY: totalHeight,
   };
 
   return (
     <div className="flex flex-col items-center gap-3 py-4">
+      <style jsx>{`
+        @keyframes oilFlow {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(20px); }
+        }
+        @keyframes oilFlowHorizontal {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(20px); }
+        }
+        @keyframes pulseFinish {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.05); }
+        }
+        .oil-flow-vertical {
+          animation: oilFlow 3s linear infinite;
+        }
+        .oil-flow-horizontal {
+          animation: oilFlowHorizontal 3s linear infinite;
+        }
+        .pulse-finish {
+          animation: pulseFinish 2s ease-in-out infinite;
+        }
+      `}</style>
+
       <h1 className="text-3xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
 
       {/* Статус-бар */}
@@ -299,173 +301,237 @@ export default function TribologyLabPage() {
         className="relative select-none"
         style={{ width: totalWidth, height: totalHeight }}
       >
-        {/* Фон поля (без оранжевой рамки) */}
+        {/* Фон поля */}
         <div
           className="absolute inset-0 rounded-2xl"
           style={{
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%)',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.6)',
+            background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
           }}
         />
 
         {/* SVG для масляного канала */}
         <svg
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none overflow-visible"
           width={totalWidth}
           height={totalHeight}
         >
           <defs>
             {/* Градиент для масляной плёнки */}
-            <linearGradient id="oilGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#1e3a5f" />
-              <stop offset="30%" stopColor="#2d4a6f" />
-              <stop offset="50%" stopColor="#1e3a5f" />
-              <stop offset="70%" stopColor="#3d5a7f" />
-              <stop offset="100%" stopColor="#1e3a5f" />
+            <linearGradient id="oilGradientMain" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0c1929" />
+              <stop offset="40%" stopColor="#152238" />
+              <stop offset="60%" stopColor="#1a2d4a" />
+              <stop offset="100%" stopColor="#0c1929" />
             </linearGradient>
+
             {/* Градиент для металлических бортиков */}
-            <linearGradient id="metalBorder" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#6b7280" />
-              <stop offset="50%" stopColor="#4b5563" />
-              <stop offset="100%" stopColor="#374151" />
+            <linearGradient id="metalBorderGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#5a6270" />
+              <stop offset="30%" stopColor="#3d4550" />
+              <stop offset="70%" stopColor="#2a3038" />
+              <stop offset="100%" stopColor="#1a1f25" />
             </linearGradient>
+
+            {/* Specular highlight */}
+            <linearGradient id="specularHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="50%" stopColor="rgba(150, 200, 255, 0.15)" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+
+            {/* Виньетка для канала */}
+            <radialGradient id="channelVignette" cx="50%" cy="50%" r="70%">
+              <stop offset="0%" stopColor="rgba(30, 60, 100, 0.3)" />
+              <stop offset="100%" stopColor="rgba(0, 0, 0, 0.5)" />
+            </radialGradient>
+
+            {/* Градиент для старта (бирюзовый) */}
+            <radialGradient id="startGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(20, 184, 166, 0.6)" />
+              <stop offset="100%" stopColor="rgba(20, 184, 166, 0)" />
+            </radialGradient>
+
+            {/* Градиент для финиша (красно-янтарный) */}
+            <radialGradient id="finishGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(239, 68, 68, 0.7)" />
+              <stop offset="60%" stopColor="rgba(245, 158, 11, 0.4)" />
+              <stop offset="100%" stopColor="rgba(239, 68, 68, 0)" />
+            </radialGradient>
+
+            {/* Фильтр для масляного блеска */}
+            <filter id="oilSheen" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
           </defs>
 
           {/* Внешний контур канала (металлический бортик) */}
           <path
             d={`
-              M ${pathOuter.startX} ${pathOuter.startY}
-              L ${pathOuter.leftTopX} ${pathOuter.leftTopY}
-              Q ${pathOuter.leftTopX} 0 ${pathOuter.topLeftX} ${pathOuter.topLeftY}
-              L ${pathOuter.topRightX} ${pathOuter.topRightY}
-              Q ${totalWidth} 0 ${pathOuter.rightTopX} ${pathOuter.rightTopY}
-              L ${pathOuter.rightBottomX} ${pathOuter.rightBottomY}
-              L ${pathInner.rightBottomX} ${pathInner.rightBottomY}
-              L ${pathInner.rightTopX} ${pathInner.rightTopY}
-              Q ${pathInner.rightTopX} ${conveyorWidth} ${pathInner.topRightX} ${pathInner.topRightY}
-              L ${pathInner.topLeftX} ${pathInner.topLeftY}
-              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.leftTopX} ${pathInner.leftTopY}
-              L ${pathInner.startX} ${pathInner.startY}
+              M 0 ${totalHeight}
+              L 0 ${cornerRadius}
+              Q 0 0 ${cornerRadius} 0
+              L ${totalWidth - cornerRadius} 0
+              Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
+              L ${totalWidth} ${totalHeight}
+              L ${totalWidth - innerOffset} ${totalHeight}
+              L ${totalWidth - innerOffset} ${cornerRadius + innerOffset}
+              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius - innerOffset} ${innerOffset}
+              L ${cornerRadius + innerOffset} ${innerOffset}
+              Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius + innerOffset}
+              L ${innerOffset} ${totalHeight}
               Z
             `}
-            fill="url(#oilGradient)"
-            stroke="url(#metalBorder)"
+            fill="url(#metalBorderGradient)"
+          />
+
+          {/* Масляный канал (основа) */}
+          <path
+            d={`
+              M ${innerOffset} ${totalHeight}
+              L ${innerOffset} ${cornerRadius + innerOffset}
+              Q ${innerOffset} ${innerOffset} ${cornerRadius + innerOffset} ${innerOffset}
+              L ${totalWidth - cornerRadius - innerOffset} ${innerOffset}
+              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius + innerOffset}
+              L ${totalWidth - innerOffset} ${totalHeight}
+              L ${conveyorWidth} ${totalHeight}
+              L ${conveyorWidth} ${pathInner.leftTopY}
+              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.topLeftX} ${conveyorWidth}
+              L ${pathInner.topRightX} ${conveyorWidth}
+              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${pathInner.rightTopY}
+              L ${totalWidth - conveyorWidth} ${totalHeight}
+              Z
+            `}
+            fill="url(#oilGradientMain)"
+          />
+
+          {/* Виньетка поверх канала */}
+          <path
+            d={`
+              M ${innerOffset} ${totalHeight}
+              L ${innerOffset} ${cornerRadius + innerOffset}
+              Q ${innerOffset} ${innerOffset} ${cornerRadius + innerOffset} ${innerOffset}
+              L ${totalWidth - cornerRadius - innerOffset} ${innerOffset}
+              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius + innerOffset}
+              L ${totalWidth - innerOffset} ${totalHeight}
+              L ${conveyorWidth} ${totalHeight}
+              L ${conveyorWidth} ${pathInner.leftTopY}
+              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.topLeftX} ${conveyorWidth}
+              L ${pathInner.topRightX} ${conveyorWidth}
+              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${pathInner.rightTopY}
+              L ${totalWidth - conveyorWidth} ${totalHeight}
+              Z
+            `}
+            fill="url(#channelVignette)"
+          />
+
+          {/* Specular highlight (блик вдоль канала) */}
+          <path
+            d={`
+              M ${innerOffset + 15} ${totalHeight - 30}
+              L ${innerOffset + 15} ${cornerRadius + 30}
+            `}
+            stroke="rgba(100, 160, 220, 0.2)"
+            strokeWidth={4}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d={`
+              M ${cornerRadius + 30} ${innerOffset + 15}
+              L ${totalWidth - cornerRadius - 30} ${innerOffset + 15}
+            `}
+            stroke="rgba(100, 160, 220, 0.2)"
+            strokeWidth={4}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <path
+            d={`
+              M ${totalWidth - innerOffset - 15} ${cornerRadius + 30}
+              L ${totalWidth - innerOffset - 15} ${totalHeight - 30}
+            `}
+            stroke="rgba(100, 160, 220, 0.2)"
+            strokeWidth={4}
+            strokeLinecap="round"
+            fill="none"
+          />
+
+          {/* Масляные разводы/пятна */}
+          <ellipse cx={conveyorWidth / 2 + innerOffset} cy={totalHeight * 0.4} rx={15} ry={25} fill="rgba(40, 80, 120, 0.3)" />
+          <ellipse cx={conveyorWidth / 2 + innerOffset} cy={totalHeight * 0.7} rx={12} ry={20} fill="rgba(50, 90, 130, 0.25)" />
+          <ellipse cx={totalWidth / 2} cy={conveyorWidth / 2 + innerOffset} rx={30} ry={12} fill="rgba(40, 80, 120, 0.3)" />
+          <ellipse cx={totalWidth * 0.7} cy={conveyorWidth / 2 + innerOffset} rx={20} ry={10} fill="rgba(50, 90, 130, 0.25)" />
+          <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset} cy={totalHeight * 0.5} rx={15} ry={22} fill="rgba(40, 80, 120, 0.3)" />
+
+          {/* Внутренний бортик (разделитель) */}
+          <path
+            d={`
+              M ${conveyorWidth} ${totalHeight}
+              L ${conveyorWidth} ${pathInner.leftTopY}
+              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.topLeftX} ${conveyorWidth}
+              L ${pathInner.topRightX} ${conveyorWidth}
+              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${pathInner.rightTopY}
+              L ${totalWidth - conveyorWidth} ${totalHeight}
+            `}
+            fill="none"
+            stroke="#3d4550"
             strokeWidth={3}
           />
 
-          {/* Блики на масле */}
-          <path
-            d={`
-              M ${conveyorWidth / 2} ${totalHeight - 50}
-              L ${conveyorWidth / 2} ${conveyorWidth + 30}
-            `}
-            fill="none"
-            stroke="rgba(100, 180, 255, 0.15)"
-            strokeWidth={conveyorWidth * 0.3}
-            strokeLinecap="round"
-          />
-          <path
-            d={`
-              M ${conveyorWidth + 30} ${conveyorWidth / 2}
-              L ${totalWidth - conveyorWidth - 30} ${conveyorWidth / 2}
-            `}
-            fill="none"
-            stroke="rgba(100, 180, 255, 0.15)"
-            strokeWidth={conveyorWidth * 0.3}
-            strokeLinecap="round"
-          />
-          <path
-            d={`
-              M ${totalWidth - conveyorWidth / 2} ${conveyorWidth + 30}
-              L ${totalWidth - conveyorWidth / 2} ${totalHeight - 50}
-            `}
-            fill="none"
-            stroke="rgba(100, 180, 255, 0.15)"
-            strokeWidth={conveyorWidth * 0.3}
-            strokeLinecap="round"
-          />
+          {/* Болты/заклёпки на внешнем бортике */}
+          {/* Левая сторона */}
+          <circle cx={innerOffset / 2 + 2} cy={conveyorWidth + 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={innerOffset / 2 + 2} cy={totalHeight - 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          {/* Верхняя сторона */}
+          <circle cx={conveyorWidth + 50} cy={innerOffset / 2 + 2} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={totalWidth / 2} cy={innerOffset / 2 + 2} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={totalWidth - conveyorWidth - 50} cy={innerOffset / 2 + 2} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          {/* Правая сторона */}
+          <circle cx={totalWidth - innerOffset / 2 - 2} cy={conveyorWidth + 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={totalWidth - innerOffset / 2 - 2} cy={totalHeight - 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
 
-          {/* Сегменты/рифление на канале */}
-          {Array.from({ length: 8 }).map((_, i) => (
-            <line
-              key={`left-${i}`}
-              x1={conveyorWidth * 0.2}
-              y1={conveyorWidth + 40 + i * 45}
-              x2={conveyorWidth * 0.8}
-              y2={conveyorWidth + 40 + i * 45}
-              stroke="rgba(255,255,255,0.1)"
+          {/* СТАРТ - бирюзовый патрубок */}
+          <g>
+            {/* Свечение */}
+            <ellipse cx={conveyorWidth / 2 + innerOffset / 2} cy={totalHeight + 5} rx={conveyorWidth * 0.4} ry={15} fill="url(#startGlow)" />
+            {/* Патрубок */}
+            <rect x={innerOffset + 10} y={totalHeight - 8} width={conveyorWidth - 20 - innerOffset} height={16} rx={4} fill="#0d3d38" stroke="#14b8a6" strokeWidth={2} />
+            {/* Щель */}
+            <rect x={innerOffset + 20} y={totalHeight - 3} width={conveyorWidth - 40 - innerOffset} height={6} rx={2} fill="#0a2a28" />
+            {/* Пузырьки/частицы */}
+            <circle cx={conveyorWidth / 2} cy={totalHeight - 20} r={3} fill="rgba(20, 184, 166, 0.5)" />
+            <circle cx={conveyorWidth / 2 + 15} cy={totalHeight - 35} r={2} fill="rgba(20, 184, 166, 0.4)" />
+            <circle cx={conveyorWidth / 2 - 10} cy={totalHeight - 45} r={2.5} fill="rgba(20, 184, 166, 0.3)" />
+          </g>
+
+          {/* ФИНИШ - красно-янтарная горловина */}
+          <g className="pulse-finish">
+            {/* Свечение всасывания */}
+            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 5} rx={conveyorWidth * 0.4} ry={20} fill="url(#finishGlow)" />
+          </g>
+          <g>
+            {/* Горловина */}
+            <path
+              d={`
+                M ${totalWidth - conveyorWidth + 10} ${totalHeight - 5}
+                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 10} ${totalWidth - innerOffset - 10} ${totalHeight - 5}
+                L ${totalWidth - innerOffset - 15} ${totalHeight + 8}
+                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 25} ${totalWidth - conveyorWidth + 15} ${totalHeight + 8}
+                Z
+              `}
+              fill="#2a1a15"
+              stroke="#ef4444"
               strokeWidth={2}
             />
-          ))}
-          {Array.from({ length: 10 }).map((_, i) => (
-            <line
-              key={`top-${i}`}
-              x1={conveyorWidth + 40 + i * 52}
-              y1={conveyorWidth * 0.2}
-              x2={conveyorWidth + 40 + i * 52}
-              y2={conveyorWidth * 0.8}
-              stroke="rgba(255,255,255,0.1)"
-              strokeWidth={2}
-            />
-          ))}
-          {Array.from({ length: 8 }).map((_, i) => (
-            <line
-              key={`right-${i}`}
-              x1={totalWidth - conveyorWidth * 0.8}
-              y1={conveyorWidth + 40 + i * 45}
-              x2={totalWidth - conveyorWidth * 0.2}
-              y2={conveyorWidth + 40 + i * 45}
-              stroke="rgba(255,255,255,0.1)"
-              strokeWidth={2}
-            />
-          ))}
+            {/* Внутренняя тень */}
+            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 8} rx={conveyorWidth * 0.25} ry={8} fill="rgba(0,0,0,0.6)" />
+            {/* Предупреждающие полоски */}
+            <line x1={totalWidth - conveyorWidth + 25} y1={totalHeight - 20} x2={totalWidth - conveyorWidth + 25} y2={totalHeight - 5} stroke="#f59e0b" strokeWidth={3} strokeLinecap="round" />
+            <line x1={totalWidth - innerOffset - 25} y1={totalHeight - 20} x2={totalWidth - innerOffset - 25} y2={totalHeight - 5} stroke="#f59e0b" strokeWidth={3} strokeLinecap="round" />
+          </g>
         </svg>
-
-        {/* Стрелки направления */}
-        <div
-          className="absolute text-cyan-400/60 text-xl font-bold"
-          style={{ left: conveyorWidth / 2 - 8, top: totalHeight / 2 }}
-        >
-          ↑
-        </div>
-        <div
-          className="absolute text-cyan-400/60 text-xl font-bold"
-          style={{ left: totalWidth / 2 - 8, top: conveyorWidth / 2 - 10 }}
-        >
-          →
-        </div>
-        <div
-          className="absolute text-cyan-400/60 text-xl font-bold"
-          style={{ right: conveyorWidth / 2 - 8, top: totalHeight / 2 }}
-        >
-          ↓
-        </div>
-
-        {/* Старт */}
-        <div
-          className="absolute flex items-center justify-center"
-          style={{
-            left: 0,
-            bottom: -32,
-            width: conveyorWidth,
-            height: 30,
-          }}
-        >
-          <span className="text-green-400 text-base font-bold">▶ СТАРТ</span>
-        </div>
-
-        {/* Финиш */}
-        <div
-          className="absolute flex items-center justify-center"
-          style={{
-            right: 0,
-            bottom: -32,
-            width: conveyorWidth,
-            height: 30,
-          }}
-        >
-          <span className="text-red-400 text-base font-bold">🏁 ФИНИШ</span>
-        </div>
 
         {/* Внутренняя панель с сеткой */}
         <div
@@ -475,9 +541,8 @@ export default function TribologyLabPage() {
             top: conveyorWidth,
             width: gridWidth + panelPadding * 2,
             height: gridHeight + panelPadding * 2,
-            background: 'linear-gradient(145deg, #12122a 0%, #0a0a1a 100%)',
-            boxShadow: 'inset 0 3px 20px rgba(0,0,0,0.8)',
-            border: '2px solid #2a2a4a',
+            background: 'linear-gradient(145deg, #0a0f15 0%, #0d1218 100%)',
+            boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9), 0 0 0 2px #1a2530',
           }}
         >
           {/* Сетка 4x3 */}
@@ -515,8 +580,8 @@ export default function TribologyLabPage() {
                     style={{
                       width: cellSize,
                       height: cellSize,
-                      background: 'linear-gradient(145deg, #0a0a18 0%, #151528 100%)',
-                      boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.8), inset 0 -1px 0 rgba(255,255,255,0.03)',
+                      background: 'linear-gradient(145deg, #080c10 0%, #0f1318 100%)',
+                      boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.9), inset 0 -1px 0 rgba(255,255,255,0.02)',
                     }}
                   >
                     {module && !isDraggingThis && (
@@ -538,11 +603,11 @@ export default function TribologyLabPage() {
 
       {/* Нижняя панель магазина */}
       <div
-        className="w-full max-w-3xl rounded-xl p-5 mt-10"
+        className="w-full max-w-3xl rounded-xl p-5 mt-6"
         style={{
-          background: 'linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%)',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
-          border: '2px solid #2a2a4a',
+          background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
+          border: '2px solid #21262d',
         }}
       >
         <div className="flex items-center justify-between mb-4">
@@ -569,7 +634,7 @@ export default function TribologyLabPage() {
             const gradient = MODULE_GRADIENTS[moduleType];
             const canAfford = gold >= config.basePrice;
             const isDraggingThis = dragState?.type === 'shop' && dragState.shopIndex === index;
-            const shopCardSize = 85;
+            const shopCardSize = 80;
 
             return (
               <div
@@ -581,7 +646,7 @@ export default function TribologyLabPage() {
                 `}
                 style={{
                   width: shopCardSize,
-                  height: shopCardSize + 16,
+                  height: shopCardSize + 14,
                   background: gradient.bg,
                   border: `3px solid ${gradient.border}`,
                   boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 15px ${config.color}30`,
@@ -589,9 +654,9 @@ export default function TribologyLabPage() {
                 onMouseDown={(e) => canAfford && handleShopDragStart(e, index)}
                 onTouchStart={(e) => canAfford && handleShopDragStart(e, index)}
               >
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                  <span className="text-4xl drop-shadow-lg">{config.icon}</span>
-                  <div className="flex items-center gap-1 text-sm bg-black/30 px-3 py-1 rounded-full">
+                <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                  <span className="text-3xl drop-shadow-lg">{config.icon}</span>
+                  <div className="flex items-center gap-1 text-xs bg-black/30 px-2 py-0.5 rounded-full">
                     <span className="text-yellow-400">🪙</span>
                     <span className={canAfford ? 'text-white font-medium' : 'text-red-400 font-medium'}>{config.basePrice}</span>
                   </div>
@@ -627,7 +692,7 @@ export default function TribologyLabPage() {
       )}
 
       {/* Подсказка */}
-      <p className="text-gray-500 text-base text-center max-w-lg mt-2">
+      <p className="text-gray-500 text-sm text-center max-w-lg mt-2">
         Перетащи модуль из магазина на поле. Два одинаковых модуля одного уровня можно объединить.
       </p>
     </div>
