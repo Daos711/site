@@ -303,10 +303,11 @@ export default function TribologyLabPage() {
       >
         {/* Фон поля */}
         <div
-          className="absolute inset-0 rounded-2xl"
+          className="absolute inset-0"
           style={{
             background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
+            borderRadius: `${cornerRadius}px ${cornerRadius}px 0 0`,
           }}
         />
 
