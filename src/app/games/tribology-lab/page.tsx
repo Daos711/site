@@ -382,10 +382,10 @@ export default function TribologyLabPage() {
                   A ${outerR} ${outerR} 0 0 1 ${totalWidth} ${outerR}
                   L ${totalWidth} ${totalHeight}
                   L ${totalWidth - innerOffset} ${totalHeight}
-                  L ${totalWidth - innerOffset} ${outerR}
-                  A ${innerR} ${innerR} 0 0 0 ${totalWidth - outerR} ${innerOffset}
-                  L ${outerR} ${innerOffset}
-                  A ${innerR} ${innerR} 0 0 0 ${innerOffset} ${outerR}
+                  L ${totalWidth - innerOffset} ${innerOffset + innerR}
+                  A ${innerR} ${innerR} 0 0 0 ${totalWidth - innerOffset - innerR} ${innerOffset}
+                  L ${innerOffset + innerR} ${innerOffset}
+                  A ${innerR} ${innerR} 0 0 0 ${innerOffset} ${innerOffset + innerR}
                   L ${innerOffset} ${totalHeight}
                   Z
                 `}
@@ -397,16 +397,15 @@ export default function TribologyLabPage() {
           {/* Масляный канал - точно внутри бортика */}
           {(() => {
             const innerCornerRadius = cornerRadius * 0.4;
-            const outerR = cornerRadius;
             const innerR = cornerRadius - innerOffset;
             return (
               <path
                 d={`
                   M ${innerOffset} ${totalHeight}
-                  L ${innerOffset} ${outerR}
-                  A ${innerR} ${innerR} 0 0 1 ${outerR} ${innerOffset}
-                  L ${totalWidth - outerR} ${innerOffset}
-                  A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${outerR}
+                  L ${innerOffset} ${innerOffset + innerR}
+                  A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
+                  L ${totalWidth - innerOffset - innerR} ${innerOffset}
+                  A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
                   L ${totalWidth - innerOffset} ${totalHeight}
                   L ${totalWidth - conveyorWidth} ${totalHeight}
                   L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
