@@ -170,6 +170,53 @@ export function findAllOnLine(
 // ==================== РАСЧЁТ УРОНА ====================
 
 /**
+ * Рассчитывает коэффициент эффективности по расстоянию
+ * Чем ближе враг к модулю — тем сильнее урон
+ */
+export function getDistanceEfficiency(distance: number, moduleType: ModuleType): number {
+  const config = MODULES[moduleType];
+  const maxRange = config.range;
+
+  // Если за пределами range — минимальная эффективность
+  if (distance > maxRange) {
+    return 0.1;
+  }
+
+  // Нормализованное расстояние (0 = вплотную, 1 = на границе range)
+  const normalized = distance / maxRange;
+
+  // Разные кривые затухания для разных модулей
+  switch (moduleType) {
+    case 'magnet':
+      // Магнит: быстрое затухание (квадратичное)
+      return Math.max(0.1, 1 - normalized * normalized);
+
+    case 'ultrasonic':
+      // Ультразвук: быстрое затухание
+      return Math.max(0.15, 1 - Math.pow(normalized, 1.5));
+
+    case 'cooler':
+      // Охладитель: среднее затухание
+      return Math.max(0.2, 1 - normalized * 0.8);
+
+    case 'filter':
+      // Фильтр: среднее затухание
+      return Math.max(0.25, 1 - normalized * 0.75);
+
+    case 'lubricant':
+      // Смазка: слабое затухание
+      return Math.max(0.3, 1 - normalized * 0.7);
+
+    case 'laser':
+      // Лазер: почти нет затухания (дальнобойный)
+      return Math.max(0.7, 1 - normalized * 0.3);
+
+    default:
+      return 1;
+  }
+}
+
+/**
  * Проверяет, есть ли соседний модуль смазки
  */
 export function getLubricantBonus(module: Module, allModules: Module[]): number {
@@ -223,6 +270,13 @@ export function calculateDamage(
 
   // Базовый урон
   let damage = getDamage(moduleConfig.baseDamage, module.level);
+
+  // Коэффициент по расстоянию (ближе = сильнее)
+  const modulePos = getModulePosition(module);
+  const targetPos = getPositionOnPath(path, target.progress, targetConfig.oscillation);
+  const distance = getDistance(modulePos.x, modulePos.y, targetPos.x, targetPos.y);
+  const distanceEfficiency = getDistanceEfficiency(distance, module.type);
+  damage *= distanceEfficiency;
 
   // Бонусы по тегам врага
   if (moduleConfig.tagBonuses) {
@@ -373,7 +427,9 @@ export function processModuleAttack(
     const index = updatedEnemies.findIndex(e => e.id === target.id);
     if (index >= 0) {
       // Наносим урон
+      const oldHp = updatedEnemies[index].hp;
       updatedEnemies[index] = damageEnemy(updatedEnemies[index], damage);
+      console.log(`[COMBAT] ${module.type} → ${target.type}: ${damage} dmg (${oldHp} → ${updatedEnemies[index].hp} HP)`);
 
       // Применяем эффект модуля
       if (config.effectType && config.effectDuration && config.effectStrength) {
