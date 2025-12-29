@@ -487,6 +487,7 @@ export default function TribologyLabPage() {
             {/* Анимированный блик поверх масла */}
             {(() => {
               const innerR = cornerRadius - innerOffset;
+              const innerCornerRadius = 21;
               return (
                 <path
                   d={`
@@ -497,8 +498,10 @@ export default function TribologyLabPage() {
                     A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
                     L ${totalWidth - innerOffset} ${totalHeight}
                     L ${totalWidth - conveyorWidth} ${totalHeight}
-                    L ${totalWidth - conveyorWidth} ${conveyorWidth}
-                    L ${conveyorWidth} ${conveyorWidth}
+                    L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                    A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                    L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                    A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
                     L ${conveyorWidth} ${totalHeight}
                     Z
                   `}
