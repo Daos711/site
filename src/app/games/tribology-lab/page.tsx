@@ -208,7 +208,7 @@ export default function TribologyLabPage() {
         style={{
           background: gradient.bg,
           border: `3px solid ${gradient.border}`,
-          boxShadow: `0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px ${config.color}40`,
+          boxShadow: `0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px ${config.color}40, 0 2px 0 ${config.color}, 0 4px 15px ${config.color}50`,
         }}
       >
         <span style={{ fontSize: size * 0.4 }} className="drop-shadow-lg">{config.icon}</span>
@@ -252,7 +252,13 @@ export default function TribologyLabPage() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 py-4">
+    <div
+      className="flex flex-col items-center gap-3 py-4"
+      style={{
+        background: 'radial-gradient(ellipse at center, #0d1117 0%, #050608 70%, #000000 100%)',
+        minHeight: '100vh',
+      }}
+    >
       <style jsx>{`
         @keyframes oilFlow {
           0% { transform: translateY(0); }
@@ -385,6 +391,27 @@ export default function TribologyLabPage() {
                 </clipPath>
               );
             })()}
+
+            {/* Анимированный блик масла */}
+            <linearGradient id="oilSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="45%" stopColor="transparent" />
+              <stop offset="50%" stopColor="rgba(100, 150, 200, 0.08)" />
+              <stop offset="55%" stopColor="transparent" />
+              <stop offset="100%" stopColor="transparent" />
+              <animate
+                attributeName="x1"
+                values="-100%;200%"
+                dur="12s"
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="x2"
+                values="0%;300%"
+                dur="12s"
+                repeatCount="indefinite"
+              />
+            </linearGradient>
           </defs>
 
           {/* Металлический бортик - с дугами для одинаковой ширины */}
@@ -456,6 +483,30 @@ export default function TribologyLabPage() {
             {/* Правый участок */}
             <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
             <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
+
+            {/* Анимированный блик поверх масла */}
+            {(() => {
+              const innerR = cornerRadius - innerOffset;
+              return (
+                <path
+                  d={`
+                    M ${innerOffset} ${totalHeight}
+                    L ${innerOffset} ${innerOffset + innerR}
+                    A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
+                    L ${totalWidth - innerOffset - innerR} ${innerOffset}
+                    A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
+                    L ${totalWidth - innerOffset} ${totalHeight}
+                    L ${totalWidth - conveyorWidth} ${totalHeight}
+                    L ${totalWidth - conveyorWidth} ${conveyorWidth}
+                    L ${conveyorWidth} ${conveyorWidth}
+                    L ${conveyorWidth} ${totalHeight}
+                    Z
+                  `}
+                  fill="url(#oilSheen)"
+                  style={{ pointerEvents: 'none' }}
+                />
+              );
+            })()}
           </g>
 
           {/* Болты/заклёпки - по центру ширины бортика */}
@@ -533,7 +584,16 @@ export default function TribologyLabPage() {
             width: gridWidth + panelPadding * 2,
             height: gridHeight + panelPadding * 2,
             background: 'linear-gradient(145deg, #0a0f15 0%, #0d1218 100%)',
-            boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9)',
+            backgroundImage: `
+              repeating-linear-gradient(
+                135deg,
+                transparent,
+                transparent 1px,
+                rgba(255,255,255,0.015) 1px,
+                rgba(255,255,255,0.015) 2px
+              )
+            `,
+            boxShadow: 'inset 0 8px 40px rgba(0,0,0,0.95), inset 0 -4px 20px rgba(0,0,0,0.5), inset 4px 0 20px rgba(0,0,0,0.3), inset -4px 0 20px rgba(0,0,0,0.3)',
             borderRadius: '21px 21px 0 0',
             borderTop: '2px solid #1a2530',
             borderLeft: '2px solid #1a2530',
@@ -598,10 +658,10 @@ export default function TribologyLabPage() {
 
       {/* Нижняя панель магазина */}
       <div
-        className="w-full max-w-3xl rounded-xl p-5 mt-6"
+        className="w-full max-w-3xl rounded-xl p-5 mt-3"
         style={{
           background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
           border: '2px solid #21262d',
         }}
       >
