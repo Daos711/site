@@ -305,18 +305,20 @@ export default function TribologyLabPage() {
       <div
         ref={fieldRef}
         className="relative select-none"
-        style={{ width: totalWidth, height: totalHeight }}
+        style={{ width: totalWidth, height: totalHeight + 130 }}
       >
         {/* Фон поля */}
         <div
-          className="absolute inset-0"
+          className="absolute"
           style={{
+            top: 0,
+            left: 0,
+            width: totalWidth,
+            height: totalHeight + 130,
             background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
-            borderRadius: `${cornerRadius}px ${cornerRadius}px 0 0`,
-            borderTop: '2px solid #21262d',
-            borderLeft: '2px solid #21262d',
-            borderRight: '2px solid #21262d',
+            borderRadius: `${cornerRadius}px ${cornerRadius}px 16px 16px`,
+            border: '2px solid #21262d',
           }}
         />
 
@@ -324,7 +326,7 @@ export default function TribologyLabPage() {
         <svg
           className="absolute inset-0 pointer-events-none"
           width={totalWidth}
-          height={totalHeight}
+          height={totalHeight + 130}
           style={{ overflow: 'visible' }}
         >
           <defs>
@@ -590,6 +592,32 @@ export default function TribologyLabPage() {
               strokeLinecap="round"
             />
           </g>
+
+          {/* Карман магазина */}
+          <rect
+            x={20}
+            y={totalHeight + 5}
+            width={totalWidth - 40}
+            height={100}
+            rx={12}
+            fill="rgba(0,0,0,0.3)"
+            stroke="rgba(255,255,255,0.05)"
+            strokeWidth={1}
+          />
+
+          {/* Винты крепления кармана */}
+          <circle cx={35} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={totalWidth - 35} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={35} cy={totalHeight + 90} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+          <circle cx={totalWidth - 35} cy={totalHeight + 90} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+
+          {/* LED индикаторы */}
+          <circle cx={45} cy={totalHeight + 55} r={4} fill="#0ea5e9" opacity={0.6}>
+            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
+          </circle>
+          <circle cx={totalWidth - 45} cy={totalHeight + 55} r={4} fill="#f59e0b" opacity={0.6}>
+            <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
+          </circle>
         </svg>
 
         {/* Внутренняя панель с сеткой */}
@@ -671,22 +699,16 @@ export default function TribologyLabPage() {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Нижняя панель магазина — визуально связана с полем */}
-      <div
-        className="rounded-b-xl p-5"
-        style={{
-          width: totalWidth,
-          marginTop: 0,
-          background: 'linear-gradient(180deg, #161b22 0%, #0d1117 100%)',
-          boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.6)',
-          borderLeft: '2px solid #21262d',
-          borderRight: '2px solid #21262d',
-          borderBottom: '2px solid #21262d',
-        }}
-      >
-        <div className="flex items-center gap-4 justify-center">
+        {/* Магазин — внутри контейнера поля */}
+        <div
+          className="absolute flex justify-center gap-4"
+          style={{
+            left: 20,
+            right: 20,
+            top: totalHeight + 15,
+          }}
+        >
           {shop.map((moduleType, index) => {
             const config = MODULES[moduleType];
             const gradient = MODULE_GRADIENTS[moduleType];
@@ -707,7 +729,7 @@ export default function TribologyLabPage() {
                   height: shopCardSize + 14,
                   background: gradient.bg,
                   border: `3px solid ${gradient.border}`,
-                  boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 15px ${config.color}30`,
+                  boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 15px ${config.color}30, 0 8px 16px rgba(0,0,0,0.5)`,
                 }}
                 onMouseDown={(e) => canAfford && handleShopDragStart(e, index)}
                 onTouchStart={(e) => canAfford && handleShopDragStart(e, index)}
