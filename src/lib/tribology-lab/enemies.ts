@@ -363,6 +363,7 @@ export function isDead(enemy: Enemy): boolean {
 /**
  * Предотвращает визуальное наложение врагов
  * Отодвигает слишком близких врагов назад по пути
+ * Учитывает телепорт статики (второй проход)
  */
 export function separateEnemies(enemies: Enemy[]): Enemy[] {
   if (enemies.length < 2) return enemies;
@@ -372,16 +373,31 @@ export function separateEnemies(enemies: Enemy[]): Enemy[] {
 
   const minGap = 0.025; // минимальный отступ (2.5% пути)
 
-  // Отодвигаем тех, кто слишком близко к впереди идущему
+  // Проход 1: отодвигаем тех, кто слишком близко СЗАДИ
   for (let i = 1; i < sorted.length; i++) {
     const ahead = sorted[i - 1];
     const behind = sorted[i];
 
-    // Если слишком близко — отодвигаем назад
     if (ahead.progress - behind.progress < minGap) {
       sorted[i] = {
         ...behind,
         progress: Math.max(0, ahead.progress - minGap),
+      };
+    }
+  }
+
+  // Проход 2: если кто-то телепортировался ВПЕРЁД и влез в другого
+  // (проверяем с конца к началу)
+  for (let i = sorted.length - 2; i >= 0; i--) {
+    const current = sorted[i];
+    const behind = sorted[i + 1];
+
+    // Если разница меньше minGap — текущий слишком близко к заднему
+    // Это значит кто-то "влез" — отодвигаем текущего ВПЕРЁД
+    if (current.progress - behind.progress < minGap) {
+      sorted[i] = {
+        ...current,
+        progress: Math.min(1, behind.progress + minGap),
       };
     }
   }
