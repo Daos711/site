@@ -1,15 +1,28 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   MODULES,
+  ENEMIES,
   GRID_COLS,
   GRID_ROWS,
   INITIAL_LIVES,
   INITIAL_GOLD,
   type ModuleType,
   type Module,
+  type Enemy,
 } from "@/lib/tribology-lab/types";
+import {
+  generatePath,
+  getPathLength,
+  getPositionOnPath,
+  createEnemy,
+  getWaveConfig,
+  updateEnemy,
+  hasReachedFinish,
+  isDead,
+  type WaveEnemy,
+} from "@/lib/tribology-lab/enemies";
 
 // Начальные модули в магазине
 const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'magnet', 'cooler', 'filter'];
@@ -35,15 +48,25 @@ interface DragState {
   currentY: number;
 }
 
+type GamePhase = 'preparing' | 'wave' | 'victory' | 'defeat';
+
 export default function TribologyLabPage() {
-  const [wave] = useState(1);
-  const [lives] = useState(INITIAL_LIVES);
+  const [wave, setWave] = useState(1);
+  const [lives, setLives] = useState(INITIAL_LIVES);
   const [gold, setGold] = useState(99999); // Для тестирования
   const [modules, setModules] = useState<Module[]>([]);
   const [shop, setShop] = useState<ModuleType[]>(INITIAL_SHOP);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
+
+  // Игровое состояние
+  const [gamePhase, setGamePhase] = useState<GamePhase>('preparing');
+  const [enemies, setEnemies] = useState<Enemy[]>([]);
+  const [spawnQueue, setSpawnQueue] = useState<{ type: string; spawnAt: number }[]>([]);
+  const [waveStartTime, setWaveStartTime] = useState(0);
+  const lastUpdateRef = useRef(0);
+  const gameLoopRef = useRef<number>(0);
 
   // Размеры
   const cellSize = 110;
@@ -56,6 +79,126 @@ export default function TribologyLabPage() {
 
   const totalWidth = gridWidth + panelPadding * 2 + conveyorWidth * 2;
   const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth;
+
+  // Путь для врагов
+  const innerOffset = 8;
+  const enemyPath = generatePath(totalWidth, totalHeight, conveyorWidth, innerOffset, cornerRadius);
+  const pathLength = getPathLength(enemyPath);
+
+  // Начало волны
+  const startWave = useCallback(() => {
+    if (gamePhase !== 'preparing') return;
+
+    const config = getWaveConfig(wave);
+    const queue: { type: string; spawnAt: number }[] = [];
+    let currentTime = 0;
+
+    for (const group of config.enemies) {
+      if (group.delay) {
+        currentTime += group.delay;
+      }
+      for (let i = 0; i < group.count; i++) {
+        queue.push({ type: group.type, spawnAt: currentTime });
+        currentTime += config.spawnInterval;
+      }
+    }
+
+    setSpawnQueue(queue);
+    setWaveStartTime(performance.now());
+    setGamePhase('wave');
+    lastUpdateRef.current = performance.now();
+  }, [gamePhase, wave]);
+
+  // Конец волны
+  const endWave = useCallback(() => {
+    const config = getWaveConfig(wave);
+    setGold(prev => prev + config.reward);
+    setWave(prev => prev + 1);
+    setGamePhase('preparing');
+    setEnemies([]);
+    setSpawnQueue([]);
+  }, [wave]);
+
+  // Игровой цикл
+  useEffect(() => {
+    if (gamePhase !== 'wave') return;
+
+    const gameLoop = (timestamp: number) => {
+      const deltaTime = timestamp - lastUpdateRef.current;
+      lastUpdateRef.current = timestamp;
+      const elapsedSinceStart = timestamp - waveStartTime;
+
+      // Спавн врагов из очереди
+      setSpawnQueue(prev => {
+        const ready = prev.filter(s => s.spawnAt <= elapsedSinceStart);
+        const remaining = prev.filter(s => s.spawnAt > elapsedSinceStart);
+
+        if (ready.length > 0) {
+          const newEnemies = ready.map(s => createEnemy(s.type as any, wave));
+          setEnemies(prevEnemies => [...prevEnemies, ...newEnemies]);
+        }
+
+        return remaining;
+      });
+
+      // Обновление врагов
+      setEnemies(prev => {
+        let livesLost = 0;
+        let goldEarned = 0;
+
+        const updated = prev
+          .map(enemy => updateEnemy(enemy, deltaTime, pathLength))
+          .filter(enemy => {
+            if (hasReachedFinish(enemy)) {
+              livesLost++;
+              return false;
+            }
+            if (isDead(enemy)) {
+              goldEarned += enemy.reward;
+              return false;
+            }
+            return true;
+          });
+
+        if (livesLost > 0) {
+          setLives(l => {
+            const newLives = l - livesLost;
+            if (newLives <= 0) {
+              setGamePhase('defeat');
+            }
+            return Math.max(0, newLives);
+          });
+        }
+
+        if (goldEarned > 0) {
+          setGold(g => g + goldEarned);
+        }
+
+        return updated;
+      });
+
+      // Проверка окончания волны
+      setEnemies(prev => {
+        setSpawnQueue(queue => {
+          if (prev.length === 0 && queue.length === 0 && gamePhase === 'wave') {
+            setTimeout(() => endWave(), 500);
+          }
+          return queue;
+        });
+        return prev;
+      });
+
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [gamePhase, waveStartTime, wave, pathLength, endWave]);
 
   // Получить модуль в ячейке
   const getModuleAt = (x: number, y: number): Module | undefined => {
@@ -235,7 +378,6 @@ export default function TribologyLabPage() {
   };
 
   // Координаты для SVG пути
-  const innerOffset = 8; // Толщина бортика
   const pathOuter = {
     startX: 0,
     startY: totalHeight,
@@ -459,6 +601,44 @@ export default function TribologyLabPage() {
                 repeatCount="indefinite"
               />
             </linearGradient>
+
+            {/* Градиенты для врагов */}
+            <radialGradient id="enemy-gradient-dust" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#9ca3af" />
+              <stop offset="100%" stopColor="#4b5563" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-abrasive" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#78716c" />
+              <stop offset="100%" stopColor="#44403c" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-heat" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#fb923c" />
+              <stop offset="100%" stopColor="#c2410c" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-metal" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#a1a1aa" />
+              <stop offset="100%" stopColor="#52525b" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-corrosion" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#84cc16" />
+              <stop offset="100%" stopColor="#3f6212" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-moisture" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#38bdf8" />
+              <stop offset="100%" stopColor="#0369a1" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-static" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="100%" stopColor="#b45309" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-boss_wear" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#f87171" />
+              <stop offset="100%" stopColor="#991b1b" />
+            </radialGradient>
+            <radialGradient id="enemy-gradient-boss_pitting" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#a855f7" />
+              <stop offset="100%" stopColor="#581c87" />
+            </radialGradient>
           </defs>
 
           {/* Металлический бортик - с дугами для одинаковой ширины */}
@@ -632,6 +812,52 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset - 25} cy={totalHeight + 60} r={4} fill="#f59e0b" opacity={0.6}>
             <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
           </circle>
+
+          {/* Враги */}
+          {enemies.map(enemy => {
+            const pos = getPositionOnPath(enemyPath, enemy.progress);
+            const config = ENEMIES[enemy.type];
+            const hpPercent = enemy.hp / enemy.maxHp;
+
+            return (
+              <g key={enemy.id} transform={`translate(${pos.x}, ${pos.y})`}>
+                {/* Тень */}
+                <ellipse cx={0} cy={5} rx={12} ry={4} fill="rgba(0,0,0,0.3)" />
+
+                {/* Тело врага */}
+                <circle
+                  cx={0}
+                  cy={0}
+                  r={14}
+                  fill={`url(#enemy-gradient-${enemy.type})`}
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth={1}
+                />
+
+                {/* Иконка */}
+                <text
+                  x={0}
+                  y={5}
+                  textAnchor="middle"
+                  fontSize="16"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {config.icon}
+                </text>
+
+                {/* HP бар */}
+                <rect x={-15} y={-22} width={30} height={4} rx={2} fill="rgba(0,0,0,0.5)" />
+                <rect
+                  x={-15}
+                  y={-22}
+                  width={30 * hpPercent}
+                  height={4}
+                  rx={2}
+                  fill={hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#f59e0b' : '#ef4444'}
+                />
+              </g>
+            );
+          })}
         </svg>
 
         {/* Внутренняя панель с сеткой */}
@@ -760,6 +986,61 @@ export default function TribologyLabPage() {
             );
           })}
         </div>
+
+        {/* Кнопка Начать волну */}
+        {gamePhase === 'preparing' && (
+          <button
+            onClick={startWave}
+            className="absolute left-1/2 -translate-x-1/2 px-6 py-2 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95"
+            style={{
+              bottom: -50,
+              background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
+              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), 0 2px 0 #15803d',
+            }}
+          >
+            ▶ Волна {wave}
+          </button>
+        )}
+
+        {/* Индикатор волны в процессе */}
+        {gamePhase === 'wave' && (
+          <div
+            className="absolute left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-white font-medium"
+            style={{
+              bottom: -50,
+              background: 'rgba(239, 68, 68, 0.8)',
+              boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
+            }}
+          >
+            🔥 Волна {wave} — осталось врагов: {enemies.length + spawnQueue.length}
+          </div>
+        )}
+
+        {/* Game Over */}
+        {gamePhase === 'defeat' && (
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/70 rounded-3xl"
+            style={{ zIndex: 100 }}
+          >
+            <div className="text-center">
+              <h2 className="text-4xl font-bold text-red-500 mb-4">💀 ПОРАЖЕНИЕ</h2>
+              <p className="text-xl text-gray-300 mb-6">Волна: {wave}</p>
+              <button
+                onClick={() => {
+                  setWave(1);
+                  setLives(INITIAL_LIVES);
+                  setGold(99999);
+                  setModules([]);
+                  setEnemies([]);
+                  setGamePhase('preparing');
+                }}
+                className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
+              >
+                Начать заново
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Перетаскиваемый модуль */}
