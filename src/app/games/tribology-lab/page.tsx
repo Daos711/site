@@ -458,42 +458,42 @@ export default function TribologyLabPage() {
             <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
           </g>
 
-          {/* Болты/заклёпки - приглушённые */}
+          {/* Болты/заклёпки - по центру ширины бортика */}
           {/* Левая сторона */}
-          <circle cx={innerOffset / 2 + 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
-          <circle cx={innerOffset / 2 + 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={innerOffset / 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           {/* Верхняя сторона */}
-          <circle cx={conveyorWidth + 60} cy={innerOffset / 2 + 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
-          <circle cx={totalWidth / 2} cy={innerOffset / 2 + 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
-          <circle cx={totalWidth - conveyorWidth - 60} cy={innerOffset / 2 + 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={conveyorWidth + 60} cy={innerOffset / 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth / 2} cy={innerOffset / 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth - conveyorWidth - 60} cy={innerOffset / 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           {/* Правая сторона */}
-          <circle cx={totalWidth - innerOffset / 2 - 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
-          <circle cx={totalWidth - innerOffset / 2 - 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth - innerOffset / 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth - innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
 
-          {/* СТАРТ - бирюзовый патрубок */}
+          {/* СТАРТ - бирюзовый патрубок на всю ширину канала */}
           <g>
             {/* Свечение */}
-            <ellipse cx={conveyorWidth / 2 + innerOffset / 2} cy={totalHeight + 3} rx={conveyorWidth * 0.35} ry={12} fill="url(#startGlow)" />
+            <ellipse cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset) * 0.45} ry={12} fill="url(#startGlow)" />
             {/* Патрубок */}
-            <rect x={innerOffset + 12} y={totalHeight - 6} width={conveyorWidth - 24 - innerOffset} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
+            <rect x={innerOffset} y={totalHeight - 6} width={conveyorWidth - innerOffset} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
             {/* Щель */}
-            <rect x={innerOffset + 20} y={totalHeight - 2} width={conveyorWidth - 40 - innerOffset} height={4} rx={2} fill="#051515" />
+            <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 16} height={4} rx={2} fill="#051515" />
             {/* Мелкие частицы */}
-            <circle cx={conveyorWidth / 2 - 5} cy={totalHeight - 18} r={2} fill="rgba(20, 184, 166, 0.4)" />
-            <circle cx={conveyorWidth / 2 + 12} cy={totalHeight - 30} r={1.5} fill="rgba(20, 184, 166, 0.3)" />
+            <circle cx={(innerOffset + conveyorWidth) / 2 - 15} cy={totalHeight - 18} r={2} fill="rgba(20, 184, 166, 0.4)" />
+            <circle cx={(innerOffset + conveyorWidth) / 2 + 20} cy={totalHeight - 30} r={1.5} fill="rgba(20, 184, 166, 0.3)" />
           </g>
 
-          {/* ФИНИШ - красно-янтарная горловина с глубоким затемнением */}
+          {/* ФИНИШ - красно-янтарная горловина на всю ширину канала */}
           {/* Свечение - статичное, без анимации */}
-          <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 3} rx={conveyorWidth * 0.35} ry={12} fill="url(#finishGlow)" opacity={0.7} />
+          <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset) * 0.45} ry={12} fill="url(#finishGlow)" opacity={0.7} />
           <g>
             {/* Горловина */}
             <path
               d={`
-                M ${totalWidth - conveyorWidth + 15} ${totalHeight - 4}
-                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 8} ${totalWidth - innerOffset - 15} ${totalHeight - 4}
-                L ${totalWidth - innerOffset - 18} ${totalHeight + 6}
-                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 18} ${totalWidth - conveyorWidth + 18} ${totalHeight + 6}
+                M ${totalWidth - conveyorWidth} ${totalHeight - 4}
+                Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 8} ${totalWidth - innerOffset} ${totalHeight - 4}
+                L ${totalWidth - innerOffset - 3} ${totalHeight + 6}
+                Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 18} ${totalWidth - conveyorWidth + 3} ${totalHeight + 6}
                 Z
               `}
               fill="#1a0f0a"
@@ -501,12 +501,12 @@ export default function TribologyLabPage() {
               strokeWidth={1.5}
             />
             {/* Глубокое затемнение внутри */}
-            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 6} rx={conveyorWidth * 0.22} ry={6} fill="url(#finishInnerDark)" />
+            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 6} rx={(conveyorWidth - innerOffset) * 0.35} ry={6} fill="url(#finishInnerDark)" />
             {/* Тонкая окантовка риска вместо полосок */}
             <path
               d={`
-                M ${totalWidth - conveyorWidth + 20} ${totalHeight - 15}
-                L ${totalWidth - conveyorWidth + 20} ${totalHeight - 4}
+                M ${totalWidth - conveyorWidth + 8} ${totalHeight - 15}
+                L ${totalWidth - conveyorWidth + 8} ${totalHeight - 4}
               `}
               stroke="rgba(180, 100, 50, 0.4)"
               strokeWidth={2}
@@ -514,8 +514,8 @@ export default function TribologyLabPage() {
             />
             <path
               d={`
-                M ${totalWidth - innerOffset - 20} ${totalHeight - 15}
-                L ${totalWidth - innerOffset - 20} ${totalHeight - 4}
+                M ${totalWidth - innerOffset - 8} ${totalHeight - 15}
+                L ${totalWidth - innerOffset - 8} ${totalHeight - 4}
               `}
               stroke="rgba(180, 100, 50, 0.4)"
               strokeWidth={2}
