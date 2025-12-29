@@ -334,14 +334,6 @@ export default function TribologyLabPage() {
               <stop offset="100%" stopColor="#1a1e22" />
             </linearGradient>
 
-            {/* Виньетка для канала (усиленная) */}
-            <linearGradient id="channelEdgeDark" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="rgba(0, 0, 0, 0.4)" />
-              <stop offset="15%" stopColor="rgba(0, 0, 0, 0)" />
-              <stop offset="85%" stopColor="rgba(0, 0, 0, 0)" />
-              <stop offset="100%" stopColor="rgba(0, 0, 0, 0.4)" />
-            </linearGradient>
-
             {/* Градиент для старта (бирюзовый) */}
             <radialGradient id="startGlow" cx="50%" cy="50%" r="60%">
               <stop offset="0%" stopColor="rgba(20, 184, 166, 0.5)" />
@@ -361,52 +353,72 @@ export default function TribologyLabPage() {
               <stop offset="60%" stopColor="rgba(0, 0, 0, 0.6)" />
               <stop offset="100%" stopColor="rgba(20, 10, 5, 0.3)" />
             </radialGradient>
+
+            {/* ClipPath для обрезки по внешнему контуру - без "ушек" */}
+            <clipPath id="outerClip">
+              <path d={`
+                M 0 ${totalHeight}
+                L 0 ${cornerRadius}
+                Q 0 0 ${cornerRadius} 0
+                L ${totalWidth - cornerRadius} 0
+                Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
+                L ${totalWidth} ${totalHeight}
+                Z
+              `} />
+            </clipPath>
           </defs>
 
-          {/* Внешний контур канала (металлический бортик) - скруглённые углы */}
-          <path
-            d={`
-              M 0 ${totalHeight}
-              L 0 ${cornerRadius}
-              Q 0 0 ${cornerRadius} 0
-              L ${totalWidth - cornerRadius} 0
-              Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
-              L ${totalWidth} ${totalHeight}
-              L ${totalWidth - innerOffset} ${totalHeight}
-              L ${totalWidth - innerOffset} ${cornerRadius}
-              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius} ${innerOffset}
-              L ${cornerRadius} ${innerOffset}
-              Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius}
-              L ${innerOffset} ${totalHeight}
-              Z
-            `}
-            fill="url(#metalBorderGradient)"
-          />
+          {/* Всё содержимое канала обрезается по внешнему контуру */}
+          <g clipPath="url(#outerClip)">
+            {/* Внешний контур канала (металлический бортик) */}
+            <path
+              d={`
+                M 0 ${totalHeight}
+                L 0 ${cornerRadius}
+                Q 0 0 ${cornerRadius} 0
+                L ${totalWidth - cornerRadius} 0
+                Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
+                L ${totalWidth} ${totalHeight}
+                L ${totalWidth - innerOffset} ${totalHeight}
+                L ${totalWidth - innerOffset} ${cornerRadius - innerOffset}
+                Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius + innerOffset} ${innerOffset}
+                L ${cornerRadius - innerOffset} ${innerOffset}
+                Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius - innerOffset}
+                L ${innerOffset} ${totalHeight}
+                Z
+              `}
+              fill="url(#metalBorderGradient)"
+            />
 
-          {/* Масляный канал (основа) - скруглённые внешние и внутренние углы */}
-          {(() => {
-            const innerCornerRadius = cornerRadius * 0.35;
-            return (
-              <path
-                d={`
-                  M ${innerOffset} ${totalHeight}
-                  L ${innerOffset} ${cornerRadius}
-                  Q ${innerOffset} ${innerOffset} ${cornerRadius} ${innerOffset}
-                  L ${totalWidth - cornerRadius} ${innerOffset}
-                  Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius}
-                  L ${totalWidth - innerOffset} ${totalHeight}
-                  L ${totalWidth - conveyorWidth} ${totalHeight}
-                  L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
-                  L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
-                  Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  L ${conveyorWidth} ${totalHeight}
-                  Z
-                `}
-                fill="url(#oilGradientMain)"
-              />
-            );
-          })()}
+            {/* Масляный канал (основа) - скруглённые внешние и внутренние углы */}
+            {(() => {
+              const innerCornerRadius = cornerRadius * 0.35;
+              const bottomCornerRadius = 12; // Скругление внизу у START и FINISH
+              const outerInnerRadius = cornerRadius - innerOffset; // Радиус внутренней границы бортика
+              return (
+                <path
+                  d={`
+                    M ${innerOffset} ${totalHeight}
+                    L ${innerOffset} ${outerInnerRadius + innerOffset}
+                    Q ${innerOffset} ${innerOffset} ${outerInnerRadius + innerOffset} ${innerOffset}
+                    L ${totalWidth - outerInnerRadius - innerOffset} ${innerOffset}
+                    Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${outerInnerRadius + innerOffset}
+                    L ${totalWidth - innerOffset} ${totalHeight}
+                    L ${totalWidth - conveyorWidth + bottomCornerRadius} ${totalHeight}
+                    Q ${totalWidth - conveyorWidth} ${totalHeight} ${totalWidth - conveyorWidth} ${totalHeight - bottomCornerRadius}
+                    L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                    Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                    L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                    Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                    L ${conveyorWidth} ${totalHeight - bottomCornerRadius}
+                    Q ${conveyorWidth} ${totalHeight} ${conveyorWidth - bottomCornerRadius} ${totalHeight}
+                    Z
+                  `}
+                  fill="url(#oilGradientMain)"
+                />
+              );
+            })()}
+          </g>
 
 {/* Убраны проблемные элементы затемнения */}
 
@@ -427,18 +439,21 @@ export default function TribologyLabPage() {
           <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
           <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
 
-          {/* Внутренний бортик (разделитель) - скруглённые углы */}
+          {/* Внутренний бортик (разделитель) - скруглённые углы везде */}
           {(() => {
             const innerCornerRadius = cornerRadius * 0.35;
+            const bottomCornerRadius = 12;
             return (
               <path
                 d={`
-                  M ${conveyorWidth} ${totalHeight}
+                  M ${conveyorWidth - bottomCornerRadius} ${totalHeight}
+                  Q ${conveyorWidth} ${totalHeight} ${conveyorWidth} ${totalHeight - bottomCornerRadius}
                   L ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
                   Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
                   L ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
                   Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  L ${totalWidth - conveyorWidth} ${totalHeight}
+                  L ${totalWidth - conveyorWidth} ${totalHeight - bottomCornerRadius}
+                  Q ${totalWidth - conveyorWidth} ${totalHeight} ${totalWidth - conveyorWidth + bottomCornerRadius} ${totalHeight}
                 `}
                 fill="none"
                 stroke="#2a2f35"
