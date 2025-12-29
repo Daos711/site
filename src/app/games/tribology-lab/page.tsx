@@ -314,6 +314,9 @@ export default function TribologyLabPage() {
             background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
             boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
             borderRadius: `${cornerRadius}px ${cornerRadius}px 0 0`,
+            borderTop: '2px solid #21262d',
+            borderLeft: '2px solid #21262d',
+            borderRight: '2px solid #21262d',
           }}
         />
 
@@ -374,20 +377,31 @@ export default function TribologyLabPage() {
               `} />
             </clipPath>
 
-            {/* ClipPath для масла - по внутреннему контуру бортика */}
+            {/* ClipPath для масла - рамка с вырезанной панелью карточек */}
             {(() => {
               const innerR = cornerRadius - innerOffset;
+              const innerCornerRadius = 21;
               return (
                 <clipPath id="oilClip">
-                  <path d={`
-                    M ${innerOffset} ${totalHeight}
-                    L ${innerOffset} ${innerOffset + innerR}
-                    A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
-                    L ${totalWidth - innerOffset - innerR} ${innerOffset}
-                    A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
-                    L ${totalWidth - innerOffset} ${totalHeight}
-                    Z
-                  `} />
+                  <path
+                    fillRule="evenodd"
+                    d={`
+                      M ${innerOffset} ${totalHeight}
+                      L ${innerOffset} ${innerOffset + innerR}
+                      A ${innerR} ${innerR} 0 0 1 ${innerOffset + innerR} ${innerOffset}
+                      L ${totalWidth - innerOffset - innerR} ${innerOffset}
+                      A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
+                      L ${totalWidth - innerOffset} ${totalHeight}
+                      Z
+                      M ${conveyorWidth} ${totalHeight}
+                      L ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                      A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                      L ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                      A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                      L ${totalWidth - conveyorWidth} ${totalHeight}
+                      Z
+                    `}
+                  />
                 </clipPath>
               );
             })()}
@@ -659,13 +673,17 @@ export default function TribologyLabPage() {
         </div>
       </div>
 
-      {/* Нижняя панель магазина */}
+      {/* Нижняя панель магазина — визуально связана с полем */}
       <div
-        className="w-full max-w-3xl rounded-xl p-5 mt-3"
+        className="rounded-b-xl p-5"
         style={{
-          background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
-          border: '2px solid #21262d',
+          width: totalWidth,
+          marginTop: -2,
+          background: 'linear-gradient(180deg, #161b22 0%, #0d1117 100%)',
+          boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.6)',
+          borderLeft: '2px solid #21262d',
+          borderRight: '2px solid #21262d',
+          borderBottom: '2px solid #21262d',
         }}
       >
         <div className="flex items-center justify-between mb-4">
