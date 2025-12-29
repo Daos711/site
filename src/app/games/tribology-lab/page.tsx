@@ -1257,9 +1257,9 @@ export default function TribologyLabPage() {
                     <ellipse cx={0} cy={size*0.6} rx={size*0.9} ry={size*0.35} fill="url(#contactShadow)" opacity={0.7} />
 
                     {/* Ореол опасности */}
-                    <circle cx={0} cy={0} r={size * 1.35} fill="none" stroke="#dc2626" strokeWidth={3} opacity={0.4}>
+                    <circle cx={0} cy={0} r={size * 0.9} fill="none" stroke="#dc2626" strokeWidth={3} opacity={0.4}>
                       <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite" />
-                      <animate attributeName="r" values={`${size*1.3};${size*1.4};${size*1.3}`} dur="2s" repeatCount="indefinite" />
+                      <animate attributeName="r" values={`${size*0.85};${size*0.95};${size*0.85}`} dur="2s" repeatCount="indefinite" />
                     </circle>
 
                     {/* Металлическая основа */}
@@ -1318,7 +1318,7 @@ export default function TribologyLabPage() {
                     <ellipse cx={0} cy={size*0.65} rx={size*0.95} ry={size*0.35} fill="url(#contactShadow)" opacity={0.75} />
 
                     {/* Реген-ореол */}
-                    <circle cx={0} cy={0} r={size * 1.25} fill="none" stroke="#22c55e" strokeWidth={3} opacity={0.35}>
+                    <circle cx={0} cy={0} r={size * 0.9} fill="none" stroke="#22c55e" strokeWidth={3} opacity={0.35}>
                       <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" />
                     </circle>
 
