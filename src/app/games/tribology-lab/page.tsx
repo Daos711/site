@@ -368,49 +368,52 @@ export default function TribologyLabPage() {
             </clipPath>
           </defs>
 
-          {/* Металлический бортик - единый контур */}
-          <path
-            d={`
-              M 0 ${totalHeight}
-              L 0 ${cornerRadius}
-              Q 0 0 ${cornerRadius} 0
-              L ${totalWidth - cornerRadius} 0
-              Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
-              L ${totalWidth} ${totalHeight}
-              L ${totalWidth - innerOffset} ${totalHeight}
-              L ${totalWidth - innerOffset} ${cornerRadius - innerOffset}
-              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius + innerOffset} ${innerOffset}
-              L ${cornerRadius - innerOffset} ${innerOffset}
-              Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius - innerOffset}
-              L ${innerOffset} ${totalHeight}
-              Z
-            `}
-            fill="url(#metalBorderGradient)"
-          />
+          {/* Металлический бортик - с дугами для одинаковой ширины */}
+          {(() => {
+            const outerR = cornerRadius;
+            const innerR = cornerRadius - innerOffset;
+            return (
+              <path
+                d={`
+                  M 0 ${totalHeight}
+                  L 0 ${outerR}
+                  A ${outerR} ${outerR} 0 0 1 ${outerR} 0
+                  L ${totalWidth - outerR} 0
+                  A ${outerR} ${outerR} 0 0 1 ${totalWidth} ${outerR}
+                  L ${totalWidth} ${totalHeight}
+                  L ${totalWidth - innerOffset} ${totalHeight}
+                  L ${totalWidth - innerOffset} ${outerR}
+                  A ${innerR} ${innerR} 0 0 0 ${totalWidth - outerR} ${innerOffset}
+                  L ${outerR} ${innerOffset}
+                  A ${innerR} ${innerR} 0 0 0 ${innerOffset} ${outerR}
+                  L ${innerOffset} ${totalHeight}
+                  Z
+                `}
+                fill="url(#metalBorderGradient)"
+              />
+            );
+          })()}
 
           {/* Масляный канал - точно внутри бортика */}
           {(() => {
-            const innerCornerRadius = cornerRadius * 0.35;
-            const bottomCornerRadius = 15;
-            // Внутренняя граница бортика
-            const borderInnerRadius = cornerRadius - innerOffset;
+            const innerCornerRadius = cornerRadius * 0.4;
+            const outerR = cornerRadius;
+            const innerR = cornerRadius - innerOffset;
             return (
               <path
                 d={`
                   M ${innerOffset} ${totalHeight}
-                  L ${innerOffset} ${borderInnerRadius}
-                  Q ${innerOffset} ${innerOffset} ${borderInnerRadius} ${innerOffset}
-                  L ${totalWidth - borderInnerRadius} ${innerOffset}
-                  Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${borderInnerRadius}
+                  L ${innerOffset} ${outerR}
+                  A ${innerR} ${innerR} 0 0 1 ${outerR} ${innerOffset}
+                  L ${totalWidth - outerR} ${innerOffset}
+                  A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${outerR}
                   L ${totalWidth - innerOffset} ${totalHeight}
-                  L ${totalWidth - conveyorWidth + bottomCornerRadius} ${totalHeight}
-                  Q ${totalWidth - conveyorWidth} ${totalHeight} ${totalWidth - conveyorWidth} ${totalHeight - bottomCornerRadius}
+                  L ${totalWidth - conveyorWidth} ${totalHeight}
                   L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
                   L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
-                  Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  L ${conveyorWidth} ${totalHeight - bottomCornerRadius}
-                  Q ${conveyorWidth} ${totalHeight} ${conveyorWidth - bottomCornerRadius} ${totalHeight}
+                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                  L ${conveyorWidth} ${totalHeight}
                   Z
                 `}
                 fill="url(#oilGradientMain)"
@@ -437,21 +440,18 @@ export default function TribologyLabPage() {
           <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
           <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
 
-          {/* Внутренний бортик (разделитель) - скруглённые углы везде */}
+          {/* Внутренний бортик - только верхние углы, без линии к старту/финишу */}
           {(() => {
-            const innerCornerRadius = cornerRadius * 0.35;
-            const bottomCornerRadius = 15;
+            const innerCornerRadius = cornerRadius * 0.4;
             return (
               <path
                 d={`
-                  M ${conveyorWidth - bottomCornerRadius} ${totalHeight}
-                  Q ${conveyorWidth} ${totalHeight} ${conveyorWidth} ${totalHeight - bottomCornerRadius}
+                  M ${conveyorWidth} ${conveyorWidth + innerCornerRadius + 50}
                   L ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
                   L ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
-                  Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                  L ${totalWidth - conveyorWidth} ${totalHeight - bottomCornerRadius}
-                  Q ${totalWidth - conveyorWidth} ${totalHeight} ${totalWidth - conveyorWidth + bottomCornerRadius} ${totalHeight}
+                  A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                  L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius + 50}
                 `}
                 fill="none"
                 stroke="#2a2f35"
