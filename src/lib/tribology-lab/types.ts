@@ -62,7 +62,7 @@ export interface EnemyConfig {
   size: number;           // радиус в пикселях
   color: string;          // основной цвет
   oscillation: number;    // амплитуда колебания (0-10)
-  shape: 'circle' | 'crystal' | 'gear' | 'drop' | 'spark';
+  shape: 'dust' | 'shard' | 'shavings' | 'drop' | 'blob' | 'spark' | 'scarred' | 'pitted';
 }
 
 // ==================== ИГРОВОЕ СОСТОЯНИЕ ====================
@@ -203,59 +203,59 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     size: 10,
     color: '#9ca3af',
     oscillation: 5,
-    shape: 'circle',
+    shape: 'dust',  // облачко частиц
   },
   abrasive: {
     id: 'abrasive',
     name: 'Абразив',
-    icon: '💎',
+    icon: '🪨',
     baseHp: 70,
     speed: 30,
     reward: 10,
     description: 'Медленный, крепкий',
     size: 14,
-    color: '#a16207',
+    color: '#b8860b',  // песочно-коричневый
     oscillation: 1,
-    shape: 'crystal',
+    shape: 'shard',  // осколок
   },
   heat: {
     id: 'heat',
     name: 'Перегрев',
-    icon: '🔥',
+    icon: '🌡️',
     baseHp: 50,
     speed: 42,
     reward: 12,
     description: 'Иммунитет к ожогу',
     size: 12,
-    color: '#f97316',
+    color: '#ff6b35',  // оранжево-красный
     oscillation: 3,
-    shape: 'circle',
+    shape: 'drop',  // горячая зона
   },
   metal: {
     id: 'metal',
     name: 'Стружка',
-    icon: '⚙️',
+    icon: '🔩',
     baseHp: 100,
     speed: 25,
     reward: 15,
     description: 'Магнит x1.5 урона',
     size: 16,
-    color: '#6b7280',
+    color: '#a8a8a8',  // серебристый
     oscillation: 2,
-    shape: 'gear',
+    shape: 'shavings',  // завитки стружки
   },
   corrosion: {
     id: 'corrosion',
     name: 'Коррозия',
-    icon: '☣️',
+    icon: '🦠',
     baseHp: 80,
     speed: 35,
     reward: 18,
     description: '-20% урон модулей рядом',
     size: 14,
-    color: '#22c55e',
+    color: '#4a7c59',  // зелёно-бурый
     oscillation: 4,
-    shape: 'drop',
+    shape: 'blob',  // амёбообразное пятно
   },
   moisture: {
     id: 'moisture',
@@ -286,28 +286,28 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
   boss_wear: {
     id: 'boss_wear',
     name: 'Задир',
-    icon: '🩸',
+    icon: '🔴',
     baseHp: 300,
     speed: 20,
     reward: 50,
     description: 'Мини-босс',
     size: 24,
-    color: '#991b1b',
+    color: '#4a4a4a',  // тёмный металл
     oscillation: 1,
-    shape: 'circle',
+    shape: 'scarred',  // царапины
   },
   boss_pitting: {
     id: 'boss_pitting',
     name: 'Питтинг',
-    icon: '💀',
+    icon: '⚫',
     baseHp: 800,
     speed: 15,
     reward: 150,
     description: 'Регенерация 10 HP/с',
     size: 32,
-    color: '#1f2937',
+    color: '#374151',  // тёмно-серый
     oscillation: 0,
-    shape: 'circle',
+    shape: 'pitted',  // кратеры
   },
 };
 
