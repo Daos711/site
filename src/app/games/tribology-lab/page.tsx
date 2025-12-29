@@ -163,9 +163,10 @@ export default function TribologyLabPage() {
         if (livesLost > 0) {
           setLives(l => {
             const newLives = l - livesLost;
-            if (newLives <= 0) {
-              setGamePhase('defeat');
-            }
+            // TODO: раскомментировать для включения поражения
+            // if (newLives <= 0) {
+            //   setGamePhase('defeat');
+            // }
             return Math.max(0, newLives);
           });
         }
