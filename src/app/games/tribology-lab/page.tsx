@@ -383,36 +383,35 @@ export default function TribologyLabPage() {
             fill="url(#metalBorderGradient)"
           />
 
-          {/* Масляный канал (основа) - исправлены углы */}
-          <path
-            d={`
-              M ${innerOffset} ${totalHeight}
-              L ${innerOffset} ${cornerRadius}
-              Q ${innerOffset} ${innerOffset} ${cornerRadius} ${innerOffset}
-              L ${totalWidth - cornerRadius} ${innerOffset}
-              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius}
-              L ${totalWidth - innerOffset} ${totalHeight}
-              L ${conveyorWidth} ${totalHeight}
-              L ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
-              Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3} ${conveyorWidth}
-              L ${totalWidth - conveyorWidth - cornerRadius * 0.3} ${conveyorWidth}
-              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
-              L ${totalWidth - conveyorWidth} ${totalHeight}
-              Z
-            `}
-            fill="url(#oilGradientMain)"
-          />
+          {/* Масляный канал (основа) - с clipPath для чётких углов */}
+          <defs>
+            <clipPath id="channelClip">
+              <path d={`
+                M 0 ${totalHeight}
+                L 0 ${cornerRadius}
+                Q 0 0 ${cornerRadius} 0
+                L ${totalWidth - cornerRadius} 0
+                Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
+                L ${totalWidth} ${totalHeight}
+                L ${totalWidth - conveyorWidth} ${totalHeight}
+                L ${totalWidth - conveyorWidth} ${conveyorWidth}
+                L ${conveyorWidth} ${conveyorWidth}
+                L ${conveyorWidth} ${totalHeight}
+                Z
+              `} />
+            </clipPath>
+          </defs>
+          <g clipPath="url(#channelClip)">
+            <rect
+              x={innerOffset}
+              y={innerOffset}
+              width={totalWidth - innerOffset * 2}
+              height={totalHeight}
+              fill="url(#oilGradientMain)"
+            />
+          </g>
 
-          {/* Затемнение по краям канала (глубина) */}
-          <rect
-            x={innerOffset}
-            y={innerOffset}
-            width={conveyorWidth - innerOffset - 5}
-            height={totalHeight - innerOffset}
-            fill="url(#channelEdgeDark)"
-            style={{ transform: 'rotate(90deg)', transformOrigin: `${innerOffset + (conveyorWidth - innerOffset) / 2}px ${totalHeight / 2}px` }}
-            opacity={0.5}
-          />
+{/* Убраны проблемные элементы затемнения */}
 
           {/* Мелкие органичные пятна масла (у краёв и в углах) */}
           {/* Левый участок - у внутреннего края */}
@@ -431,14 +430,12 @@ export default function TribologyLabPage() {
           <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
           <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
 
-          {/* Внутренний бортик (разделитель) */}
+          {/* Внутренний бортик (разделитель) - простая П-образная линия */}
           <path
             d={`
               M ${conveyorWidth} ${totalHeight}
-              L ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
-              Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3} ${conveyorWidth}
-              L ${totalWidth - conveyorWidth - cornerRadius * 0.3} ${conveyorWidth}
-              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
+              L ${conveyorWidth} ${conveyorWidth}
+              L ${totalWidth - conveyorWidth} ${conveyorWidth}
               L ${totalWidth - conveyorWidth} ${totalHeight}
             `}
             fill="none"
@@ -472,10 +469,8 @@ export default function TribologyLabPage() {
           </g>
 
           {/* ФИНИШ - красно-янтарная горловина с глубоким затемнением */}
-          <g style={{ animation: 'pulseFinish 3s ease-in-out infinite' }}>
-            {/* Свечение всасывания - мягче */}
-            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 3} rx={conveyorWidth * 0.35} ry={15} fill="url(#finishGlow)" />
-          </g>
+          {/* Свечение - статичное, без анимации */}
+          <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 3} rx={conveyorWidth * 0.35} ry={12} fill="url(#finishGlow)" opacity={0.7} />
           <g>
             {/* Горловина */}
             <path
