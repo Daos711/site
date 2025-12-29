@@ -244,10 +244,10 @@ export default function TribologyLabPage() {
   const pathInner = {
     startX: conveyorWidth,
     startY: totalHeight,
-    leftTopY: conveyorWidth + cornerRadius * 0.4,
-    topLeftX: conveyorWidth + cornerRadius * 0.4,
-    topRightX: totalWidth - conveyorWidth - cornerRadius * 0.4,
-    rightTopY: conveyorWidth + cornerRadius * 0.4,
+    leftTopY: conveyorWidth + 21,
+    topLeftX: conveyorWidth + 21,
+    topRightX: totalWidth - conveyorWidth - 21,
+    rightTopY: conveyorWidth + 21,
     rightBottomY: totalHeight,
   };
 
@@ -417,7 +417,7 @@ export default function TribologyLabPage() {
           <g clipPath="url(#oilClip)">
             {(() => {
               const innerR = cornerRadius - innerOffset;
-              const innerCornerRadius = cornerRadius * 0.4;
+              const innerCornerRadius = 21; // Фиксированный радиус для соответствия панели карточек
               return (
                 <path
                   d={`
@@ -534,7 +534,7 @@ export default function TribologyLabPage() {
             height: gridHeight + panelPadding * 2,
             background: 'linear-gradient(145deg, #0a0f15 0%, #0d1218 100%)',
             boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9)',
-            borderRadius: `${cornerRadius * 0.4}px ${cornerRadius * 0.4}px 0 0`,
+            borderRadius: '21px 21px 0 0',
             borderTop: '2px solid #1a2530',
             borderLeft: '2px solid #1a2530',
             borderRight: '2px solid #1a2530',
