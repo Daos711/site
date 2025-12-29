@@ -214,7 +214,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     reward: 10,
     description: 'Медленный, крепкий',
     size: 14,
-    color: '#b8860b',  // песочно-коричневый
+    color: '#a67c52',  // песочно-серый/охра
     oscillation: 1,
     shape: 'shard',  // осколок
   },

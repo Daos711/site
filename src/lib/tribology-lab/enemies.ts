@@ -8,8 +8,31 @@ export interface PathPoint {
 }
 
 /**
+ * Генерирует точки дуги для плавного поворота
+ */
+function generateArcPoints(
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  segments: number = 8
+): PathPoint[] {
+  const points: PathPoint[] = [];
+  for (let i = 0; i <= segments; i++) {
+    const angle = startAngle + (endAngle - startAngle) * (i / segments);
+    points.push({
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+    });
+  }
+  return points;
+}
+
+/**
  * Генерирует путь для врагов на основе размеров поля
  * Путь: СТАРТ (низ-лево) → вверх → вправо → вниз → ФИНИШ (низ-право)
+ * Теперь с плавными дугами на поворотах
  */
 export function generatePath(
   totalWidth: number,
@@ -23,21 +46,49 @@ export function generatePath(
   const channelCenterTop = innerOffset + (conveyorWidth - innerOffset) / 2;
   const channelCenterRight = totalWidth - innerOffset - (conveyorWidth - innerOffset) / 2;
 
-  // Путь идёт по центру канала
-  return [
-    // Старт - внизу слева (внутри патрубка)
-    { x: channelCenterLeft, y: totalHeight - 5 },
-    // Вверх по левому каналу до начала поворота
-    { x: channelCenterLeft, y: cornerRadius },
-    // Центр верхнего левого угла (поворот)
-    { x: cornerRadius, y: channelCenterTop },
-    // Вправо по верхнему каналу
-    { x: totalWidth - cornerRadius, y: channelCenterTop },
-    // Центр верхнего правого угла (поворот)
-    { x: channelCenterRight, y: cornerRadius },
-    // Финиш - внизу справа (внутри горловины)
-    { x: channelCenterRight, y: totalHeight - 5 },
-  ];
+  // Радиус поворота (по центру канала)
+  const turnRadius = channelCenterLeft;
+
+  const path: PathPoint[] = [];
+
+  // 1. Старт - внизу слева
+  path.push({ x: channelCenterLeft, y: totalHeight - 5 });
+
+  // 2. Вверх по левому каналу до начала поворота
+  path.push({ x: channelCenterLeft, y: turnRadius + channelCenterTop });
+
+  // 3. Левый верхний поворот (дуга 180° → 270°)
+  const leftArc = generateArcPoints(
+    turnRadius + channelCenterTop,  // cx
+    turnRadius + channelCenterTop,  // cy
+    turnRadius,
+    Math.PI,        // 180° (идём снизу)
+    Math.PI * 1.5,  // 270° (уходим вправо)
+    6
+  );
+  path.push(...leftArc.slice(1)); // slice(1) чтобы не дублировать точку
+
+  // 4. Вправо по верхнему каналу
+  path.push({ x: totalWidth - turnRadius - channelCenterTop, y: channelCenterTop });
+
+  // 5. Правый верхний поворот (дуга 270° → 360°)
+  const rightArc = generateArcPoints(
+    totalWidth - turnRadius - channelCenterTop,  // cx
+    turnRadius + channelCenterTop,                // cy
+    turnRadius,
+    Math.PI * 1.5,  // 270° (идём слева)
+    Math.PI * 2,    // 360° (уходим вниз)
+    6
+  );
+  path.push(...rightArc.slice(1));
+
+  // 6. Вниз по правому каналу
+  path.push({ x: channelCenterRight, y: turnRadius + channelCenterTop });
+
+  // 7. Финиш - внизу справа
+  path.push({ x: channelCenterRight, y: totalHeight - 5 });
+
+  return path;
 }
 
 /**

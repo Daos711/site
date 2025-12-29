@@ -890,12 +890,25 @@ export default function TribologyLabPage() {
 
                 {/* ========== АБРАЗИВ — песочный осколок ========== */}
                 {config.shape === 'shard' && (
-                  <polygon
-                    points={`0,${-size} ${size * 0.8},${-size * 0.2} ${size * 0.6},${size * 0.8} ${-size * 0.3},${size * 0.6} ${-size * 0.9},${size * 0.1}`}
-                    fill={config.color}
-                    stroke="#8b7355"
-                    strokeWidth={1}
-                  />
+                  <g>
+                    <polygon
+                      points={`
+                        0,${-size}
+                        ${size * 0.7},${-size * 0.3}
+                        ${size * 0.8},${size * 0.4}
+                        ${size * 0.2},${size * 0.9}
+                        ${-size * 0.5},${size * 0.6}
+                        ${-size * 0.9},${size * 0.1}
+                        ${-size * 0.6},${-size * 0.5}
+                      `}
+                      fill={config.color}
+                      stroke="#8b7355"
+                      strokeWidth={1}
+                    />
+                    {/* Матовая текстура — тёмные пятна */}
+                    <circle cx={-size * 0.2} cy={0} r={size * 0.15} fill="#8b6914" opacity={0.4} />
+                    <circle cx={size * 0.3} cy={size * 0.2} r={size * 0.1} fill="#7a5c10" opacity={0.3} />
+                  </g>
                 )}
 
                 {/* ========== СТРУЖКА — металлические завитки ========== */}
@@ -903,70 +916,92 @@ export default function TribologyLabPage() {
                   <g>
                     {/* Основной завиток */}
                     <path
-                      d={`M ${-size * 0.8} ${-size * 0.3} Q ${-size * 0.2} ${-size} ${size * 0.5} ${-size * 0.5} Q ${size} ${0} ${size * 0.3} ${size * 0.7}`}
+                      d={`M ${-size * 0.8} ${-size * 0.4}
+                          Q ${-size * 0.3} ${-size * 0.9} ${size * 0.4} ${-size * 0.5}
+                          Q ${size * 0.9} ${-size * 0.1} ${size * 0.5} ${size * 0.6}`}
                       fill="none"
-                      stroke="#a8a8a8"
-                      strokeWidth={3}
+                      stroke="#c0c0c0"
+                      strokeWidth={size * 0.2}
                       strokeLinecap="round"
                     />
                     {/* Второй завиток */}
                     <path
-                      d={`M ${-size * 0.5} ${size * 0.2} Q ${0} ${size * 0.8} ${size * 0.6} ${size * 0.3}`}
+                      d={`M ${-size * 0.5} ${size * 0.1}
+                          Q ${-size * 0.1} ${size * 0.7} ${size * 0.4} ${size * 0.4}`}
                       fill="none"
-                      stroke="#c0c0c0"
-                      strokeWidth={2}
+                      stroke="#a8a8a8"
+                      strokeWidth={size * 0.15}
                       strokeLinecap="round"
                     />
                     {/* Металлический блик */}
                     <path
-                      d={`M ${-size * 0.6} ${-size * 0.2} Q ${-size * 0.1} ${-size * 0.8} ${size * 0.4} ${-size * 0.4}`}
+                      d={`M ${-size * 0.7} ${-size * 0.5}
+                          Q ${-size * 0.2} ${-size * 1.0} ${size * 0.3} ${-size * 0.6}`}
                       fill="none"
                       stroke="#e8e8e8"
-                      strokeWidth={1}
-                      opacity={0.6}
+                      strokeWidth={size * 0.08}
+                      strokeLinecap="round"
+                      opacity={0.7}
                     />
                   </g>
                 )}
 
-                {/* ========== КАПЛЯ (влага, перегрев) ========== */}
-                {config.shape === 'drop' && (
+                {/* ========== ПЕРЕГРЕВ — горячая капля с маревом ========== */}
+                {enemy.type === 'heat' && (
                   <g>
-                    {/* Тепловой ореол для перегрева */}
-                    {enemy.type === 'heat' && (
-                      <circle cx={0} cy={0} r={size * 1.6} fill="none" stroke="#ff6b35" strokeWidth={2} opacity={0.3}>
-                        <animate attributeName="r" values={`${size * 1.3};${size * 1.8};${size * 1.3}`} dur="1.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />
-                      </circle>
-                    )}
-                    {/* Капля */}
-                    <path
-                      d={`M 0 ${-size} Q ${size} 0 0 ${size} Q ${-size} 0 0 ${-size}`}
-                      fill={enemy.type === 'heat' ? 'url(#heatGradient)' : config.color}
-                      stroke="rgba(255,255,255,0.2)"
-                      strokeWidth={1}
-                    />
-                    {/* Пузырьки кавитации для перегрева */}
-                    {enemy.type === 'heat' && (
-                      <circle cx={size * 0.4} cy={-size * 0.3} r={2} fill="#ffaa00" opacity={0.6}>
-                        <animate attributeName="cy" values={`${-size * 0.3};${-size * 0.7};${-size * 0.3}`} dur="2s" repeatCount="indefinite" />
-                      </circle>
-                    )}
+                    {/* Тепловое марево — пульсирующий ореол */}
+                    <circle cx={0} cy={0} r={size * 1.5} fill="none" stroke="#ff6b35" strokeWidth={2} opacity={0.3}>
+                      <animate attributeName="r" values={`${size * 1.3};${size * 1.7};${size * 1.3}`} dur="1.5s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                    {/* Горячая капля/зона */}
+                    <ellipse cx={0} cy={size * 0.1} rx={size * 0.8} ry={size} fill="url(#heatGradient)" />
+                    {/* Микро-пузырьки (кавитация) */}
+                    <circle cx={size * 0.4} cy={-size * 0.3} r={size * 0.12} fill="#ffcc00" opacity={0.6}>
+                      <animate attributeName="cy" values={`${-size * 0.3};${-size * 0.7};${-size * 0.3}`} dur="1.8s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.8s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx={-size * 0.3} cy={-size * 0.1} r={size * 0.08} fill="#ffaa00" opacity={0.5}>
+                      <animate attributeName="cy" values={`${-size * 0.1};${-size * 0.5};${-size * 0.1}`} dur="2.2s" repeatCount="indefinite" />
+                    </circle>
                   </g>
                 )}
 
-                {/* ========== КОРРОЗИЯ — амёбообразное пятно ========== */}
-                {config.shape === 'blob' && (
+                {/* ========== ВЛАГА — обычная капля ========== */}
+                {enemy.type !== 'heat' && config.shape === 'drop' && (
                   <path
-                    d={`M 0 ${-size}
-                        Q ${size * 0.8} ${-size * 0.6} ${size} ${0}
-                        Q ${size * 0.7} ${size * 0.8} ${0} ${size}
-                        Q ${-size * 0.6} ${size * 0.7} ${-size} ${0}
-                        Q ${-size * 0.8} ${-size * 0.5} 0 ${-size}`}
+                    d={`M 0 ${-size} Q ${size} 0 0 ${size} Q ${-size} 0 0 ${-size}`}
                     fill={config.color}
-                    stroke="#3d5c45"
+                    stroke="rgba(255,255,255,0.3)"
                     strokeWidth={1}
-                    opacity={0.85}
                   />
+                )}
+
+                {/* ========== КОРРОЗИЯ — рваные края + язвы ========== */}
+                {config.shape === 'blob' && (
+                  <g>
+                    {/* Основное пятно с рваными краями */}
+                    <path
+                      d={`M 0 ${-size}
+                          Q ${size * 0.6} ${-size * 0.8} ${size * 0.9} ${-size * 0.2}
+                          Q ${size} ${size * 0.3} ${size * 0.6} ${size * 0.7}
+                          Q ${size * 0.2} ${size * 1.1} ${-size * 0.3} ${size * 0.8}
+                          Q ${-size * 0.8} ${size * 0.5} ${-size * 0.9} ${0}
+                          Q ${-size} ${-size * 0.6} ${-size * 0.5} ${-size * 0.9}
+                          Q ${-size * 0.2} ${-size * 1.1} 0 ${-size}`}
+                      fill={config.color}
+                      stroke="#3d5c45"
+                      strokeWidth={1}
+                      opacity={0.9}
+                    />
+                    {/* Тёмные язвы внутри */}
+                    <ellipse cx={-size * 0.2} cy={-size * 0.2} rx={size * 0.15} ry={size * 0.1} fill="#2a4a35" />
+                    <ellipse cx={size * 0.3} cy={size * 0.1} rx={size * 0.12} ry={size * 0.08} fill="#1a3a25" />
+                    <ellipse cx={-size * 0.1} cy={size * 0.4} rx={size * 0.1} ry={size * 0.07} fill="#2a4a35" />
+                    {/* Токсичные пузырьки */}
+                    <circle cx={size * 0.5} cy={-size * 0.4} r={size * 0.08} fill="#5a9c69" opacity={0.6} />
+                    <circle cx={-size * 0.4} cy={size * 0.3} r={size * 0.06} fill="#6aac79" opacity={0.5} />
+                  </g>
                 )}
 
                 {/* ========== СТАТИКА — искры с разрядами ========== */}
@@ -986,39 +1021,40 @@ export default function TribologyLabPage() {
                 {/* ========== ЗАДИР (босс) — металл с царапинами ========== */}
                 {config.shape === 'scarred' && (
                   <g>
-                    {/* Красная аура опасности */}
-                    <circle cx={0} cy={0} r={size * 1.3} fill="none" stroke="#dc2626" strokeWidth={3} opacity={0.5}>
-                      <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
+                    {/* Красная аура */}
+                    <circle cx={0} cy={0} r={size * 1.2} fill="none" stroke="#dc2626" strokeWidth={2} opacity={0.4}>
+                      <animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.5s" repeatCount="indefinite" />
                     </circle>
-                    {/* Металлический диск */}
+                    {/* Металлическая основа */}
                     <circle cx={0} cy={0} r={size} fill="url(#metalGradient)" stroke="#666" strokeWidth={2} />
-                    {/* Царапины */}
-                    <line x1={-size * 0.6} y1={-size * 0.5} x2={size * 0.4} y2={size * 0.3} stroke="#222" strokeWidth={2} />
-                    <line x1={-size * 0.3} y1={-size * 0.7} x2={size * 0.5} y2={size * 0.5} stroke="#333" strokeWidth={1.5} />
-                    <line x1={size * 0.2} y1={-size * 0.6} x2={size * 0.7} y2={size * 0.2} stroke="#222" strokeWidth={1} />
-                    {/* Красный заусенец */}
-                    <circle cx={size * 0.4} cy={size * 0.3} r={3} fill="#991b1b" />
+                    {/* Царапины/борозды */}
+                    <line x1={-size * 0.7} y1={-size * 0.5} x2={size * 0.5} y2={size * 0.4} stroke="#222" strokeWidth={2} strokeLinecap="round" />
+                    <line x1={-size * 0.4} y1={-size * 0.7} x2={size * 0.6} y2={size * 0.5} stroke="#333" strokeWidth={1.5} strokeLinecap="round" />
+                    <line x1={size * 0.2} y1={-size * 0.6} x2={size * 0.7} y2={size * 0.1} stroke="#222" strokeWidth={1} strokeLinecap="round" />
+                    {/* Красные заусенцы на концах царапин */}
+                    <circle cx={size * 0.5} cy={size * 0.4} r={size * 0.08} fill="#991b1b" />
+                    <circle cx={size * 0.6} cy={size * 0.5} r={size * 0.06} fill="#b91c1c" />
                   </g>
                 )}
 
                 {/* ========== ПИТТИНГ (босс) — диск с кратерами ========== */}
                 {config.shape === 'pitted' && (
                   <g>
-                    {/* Зелёное свечение регенерации */}
+                    {/* Зелёный реген-ореол */}
                     <circle cx={0} cy={0} r={size * 1.2} fill="none" stroke="#22c55e" strokeWidth={2} opacity={0.4}>
-                      <animate attributeName="opacity" values="0.4;0.7;0.4" dur="3s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite" />
                     </circle>
-                    {/* Основной диск */}
+                    {/* Основа */}
                     <circle cx={0} cy={0} r={size} fill="url(#pittingGradient)" stroke="#555" strokeWidth={2} />
-                    {/* Кратеры */}
-                    <ellipse cx={-size * 0.4} cy={-size * 0.3} rx={6} ry={5} fill="#1a1a1a" />
-                    <ellipse cx={size * 0.3} cy={-size * 0.5} rx={5} ry={4} fill="#222" />
-                    <ellipse cx={size * 0.5} cy={size * 0.2} rx={7} ry={5} fill="#1a1a1a" />
-                    <ellipse cx={-size * 0.2} cy={size * 0.4} rx={4} ry={3} fill="#222" />
-                    <ellipse cx={0} cy={0} rx={5} ry={4} fill="#111" />
-                    {/* Светлые края кратеров */}
-                    <ellipse cx={-size * 0.4} cy={-size * 0.35} rx={6} ry={2} fill="#666" opacity={0.5} />
-                    <ellipse cx={size * 0.5} cy={size * 0.15} rx={7} ry={2} fill="#666" opacity={0.5} />
+                    {/* Кратеры (питтинг) — пропорциональные размеру */}
+                    <ellipse cx={-size * 0.4} cy={-size * 0.3} rx={size * 0.2} ry={size * 0.15} fill="#1a1a1a" />
+                    <ellipse cx={size * 0.3} cy={-size * 0.5} rx={size * 0.15} ry={size * 0.12} fill="#222" />
+                    <ellipse cx={size * 0.5} cy={size * 0.2} rx={size * 0.22} ry={size * 0.15} fill="#1a1a1a" />
+                    <ellipse cx={-size * 0.2} cy={size * 0.4} rx={size * 0.12} ry={size * 0.1} fill="#222" />
+                    <ellipse cx={0} cy={0} rx={size * 0.15} ry={size * 0.12} fill="#111" />
+                    {/* Светлые края кратеров (3D эффект) */}
+                    <ellipse cx={-size * 0.4} cy={-size * 0.35} rx={size * 0.2} ry={size * 0.05} fill="#666" opacity={0.4} />
+                    <ellipse cx={size * 0.5} cy={size * 0.15} rx={size * 0.22} ry={size * 0.05} fill="#666" opacity={0.4} />
                   </g>
                 )}
 
