@@ -48,7 +48,7 @@ export default function TribologyLabPage() {
   const cellSize = 110;
   const cellGap = 14;
   const conveyorWidth = Math.round(cellSize * 0.95); // Увеличенная ширина канала (~1.0 ячейки)
-  const cornerRadius = conveyorWidth * 0.5;
+  const cornerRadius = conveyorWidth * 1.0; // Увеличен для равномерной ширины канала на поворотах
   const gridWidth = GRID_COLS * cellSize + (GRID_COLS - 1) * cellGap;
   const gridHeight = GRID_ROWS * cellSize + (GRID_ROWS - 1) * cellGap;
   const panelPadding = 16;
