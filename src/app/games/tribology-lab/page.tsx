@@ -75,6 +75,7 @@ export default function TribologyLabPage() {
   // Игровое состояние
   const [gamePhase, setGamePhase] = useState<GamePhase>('preparing');
   const [enemies, setEnemies] = useState<Enemy[]>([]);
+  const enemiesRef = useRef<Enemy[]>([]); // ГЛАВНЫЙ источник истины для врагов в game loop
   const [spawnQueue, setSpawnQueue] = useState<{ id: string; type: string; spawnAt: number }[]>([]);
   const [waveStartTime, setWaveStartTime] = useState(0);
   const [attackEffects, setAttackEffects] = useState<AttackEffect[]>([]);
@@ -136,6 +137,7 @@ export default function TribologyLabPage() {
     setGold(prev => prev + config.reward);
     setWave(prev => prev + 1);
     setGamePhase('preparing');
+    enemiesRef.current = [];
     setEnemies([]);
     setSpawnQueue([]);
   }, [wave]);
@@ -162,78 +164,79 @@ export default function TribologyLabPage() {
       const ready = currentQueue.filter(s => s.spawnAt <= elapsedSinceStart);
       const toSpawn = ready.find(s => !spawnedIdsRef.current.has(s.id));
 
-      // ЕДИНСТВЕННЫЙ setEnemies — всё в одном месте!
-      setEnemies(prev => {
-        let updated = [...prev];
+      // ======= ИСПОЛЬЗУЕМ REF КАК ИСТОЧНИК ИСТИНЫ =======
+      // Это решает проблему когда setEnemies(prev => ...) получает stale state
+      let updated = [...enemiesRef.current];
 
-        // 1. Спавн нового врага (если есть место)
-        if (toSpawn && !updated.some(e => e.progress < 0.03)) {
-          spawnedIdsRef.current.add(toSpawn.id);
-          const newEnemy = createEnemy(toSpawn.type as any, wave);
-          updated.push(newEnemy);
+      // 1. Спавн нового врага (если есть место)
+      if (toSpawn && !updated.some(e => e.progress < 0.03)) {
+        spawnedIdsRef.current.add(toSpawn.id);
+        const newEnemy = createEnemy(toSpawn.type as any, wave);
+        updated.push(newEnemy);
+      }
+
+      // 2. Движение врагов
+      updated = updated.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
+
+      // 3. Регенерация босса Питтинг
+      updated = processBossRegeneration(updated, deltaTime);
+
+      // 4. Боевая система — атаки модулей
+      const currentModules = modulesRef.current;
+      if (currentModules.length > 0 && updated.length > 0) {
+        const attackResult = processAllAttacks(
+          currentModules,
+          updated,
+          enemyPath,
+          timestamp
+        );
+
+        updated = attackResult.updatedEnemies;
+
+        // Обновляем модули (lastAttack)
+        if (attackResult.newAttackEffects.length > 0) {
+          modulesRef.current = attackResult.updatedModules;
+          setModules(attackResult.updatedModules);
+          setAttackEffects(prevEffects => [...prevEffects, ...attackResult.newAttackEffects]);
         }
+      }
 
-        // 2. Движение врагов
-        updated = updated.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
+      // 5. Урон от горения (burn)
+      updated = processBurnDamage(updated, deltaTime);
 
-        // 3. Регенерация босса Питтинг
-        updated = processBossRegeneration(updated, deltaTime);
+      // 6. Фильтрация: враги дошли до финиша или погибли
+      let livesLost = 0;
+      let goldEarned = 0;
 
-        // 4. Боевая система — атаки модулей
-        const currentModules = modulesRef.current;
-        if (currentModules.length > 0 && updated.length > 0) {
-          const attackResult = processAllAttacks(
-            currentModules,
-            updated,
-            enemyPath,
-            timestamp
-          );
-
-          updated = attackResult.updatedEnemies;
-
-          // Обновляем модули (lastAttack)
-          if (attackResult.newAttackEffects.length > 0) {
-            modulesRef.current = attackResult.updatedModules;
-            setModules(attackResult.updatedModules);
-            setAttackEffects(prevEffects => [...prevEffects, ...attackResult.newAttackEffects]);
-          }
+      updated = updated.filter(enemy => {
+        if (hasReachedFinish(enemy)) {
+          livesLost++;
+          return false;
         }
-
-        // 5. Урон от горения (burn)
-        updated = processBurnDamage(updated, deltaTime);
-
-        // 6. Фильтрация: враги дошли до финиша или погибли
-        let livesLost = 0;
-        let goldEarned = 0;
-
-        updated = updated.filter(enemy => {
-          if (hasReachedFinish(enemy)) {
-            livesLost++;
-            return false;
-          }
-          if (isDead(enemy)) {
-            goldEarned += enemy.reward;
-            return false;
-          }
-          return true;
-        });
-
-        if (livesLost > 0) {
-          setLives(l => Math.max(0, l - livesLost));
+        if (isDead(enemy)) {
+          goldEarned += enemy.reward;
+          return false;
         }
-
-        if (goldEarned > 0) {
-          setGold(g => g + goldEarned);
-        }
-
-        // 7. Проверка окончания волны
-        if (updated.length === 0 && spawnQueueRef.current.every(s => spawnedIdsRef.current.has(s.id)) && !waveEndingRef.current) {
-          waveEndingRef.current = true;
-          setTimeout(() => endWave(), 500);
-        }
-
-        return updated;
+        return true;
       });
+
+      if (livesLost > 0) {
+        setLives(l => Math.max(0, l - livesLost));
+      }
+
+      if (goldEarned > 0) {
+        setGold(g => g + goldEarned);
+      }
+
+      // 7. Проверка окончания волны
+      if (updated.length === 0 && spawnQueueRef.current.every(s => spawnedIdsRef.current.has(s.id)) && !waveEndingRef.current) {
+        waveEndingRef.current = true;
+        setTimeout(() => endWave(), 500);
+      }
+
+      // ======= ОБНОВЛЯЕМ REF И STATE =======
+      enemiesRef.current = updated;
+      setEnemies(updated);
 
       // Обновляем очередь спавна (отдельно, не влияет на enemies)
       if (toSpawn && spawnedIdsRef.current.has(toSpawn.id)) {

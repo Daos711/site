@@ -427,9 +427,7 @@ export function processModuleAttack(
     const index = updatedEnemies.findIndex(e => e.id === target.id);
     if (index >= 0) {
       // Наносим урон
-      const oldHp = updatedEnemies[index].hp;
       updatedEnemies[index] = damageEnemy(updatedEnemies[index], damage);
-      console.log(`[COMBAT] ${module.type} → ${target.type}: ${damage} dmg (${oldHp} → ${updatedEnemies[index].hp} HP)`);
 
       // Применяем эффект модуля
       if (config.effectType && config.effectDuration && config.effectStrength) {
