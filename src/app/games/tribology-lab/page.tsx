@@ -368,57 +368,55 @@ export default function TribologyLabPage() {
             </clipPath>
           </defs>
 
-          {/* Всё содержимое канала обрезается по внешнему контуру */}
-          <g clipPath="url(#outerClip)">
-            {/* Внешний контур канала (металлический бортик) */}
-            <path
-              d={`
-                M 0 ${totalHeight}
-                L 0 ${cornerRadius}
-                Q 0 0 ${cornerRadius} 0
-                L ${totalWidth - cornerRadius} 0
-                Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
-                L ${totalWidth} ${totalHeight}
-                L ${totalWidth - innerOffset} ${totalHeight}
-                L ${totalWidth - innerOffset} ${cornerRadius - innerOffset}
-                Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius + innerOffset} ${innerOffset}
-                L ${cornerRadius - innerOffset} ${innerOffset}
-                Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius - innerOffset}
-                L ${innerOffset} ${totalHeight}
-                Z
-              `}
-              fill="url(#metalBorderGradient)"
-            />
+          {/* Металлический бортик - единый контур */}
+          <path
+            d={`
+              M 0 ${totalHeight}
+              L 0 ${cornerRadius}
+              Q 0 0 ${cornerRadius} 0
+              L ${totalWidth - cornerRadius} 0
+              Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
+              L ${totalWidth} ${totalHeight}
+              L ${totalWidth - innerOffset} ${totalHeight}
+              L ${totalWidth - innerOffset} ${cornerRadius - innerOffset}
+              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius + innerOffset} ${innerOffset}
+              L ${cornerRadius - innerOffset} ${innerOffset}
+              Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius - innerOffset}
+              L ${innerOffset} ${totalHeight}
+              Z
+            `}
+            fill="url(#metalBorderGradient)"
+          />
 
-            {/* Масляный канал (основа) - скруглённые внешние и внутренние углы */}
-            {(() => {
-              const innerCornerRadius = cornerRadius * 0.35;
-              const bottomCornerRadius = 12; // Скругление внизу у START и FINISH
-              const outerInnerRadius = cornerRadius - innerOffset; // Радиус внутренней границы бортика
-              return (
-                <path
-                  d={`
-                    M ${innerOffset} ${totalHeight}
-                    L ${innerOffset} ${outerInnerRadius + innerOffset}
-                    Q ${innerOffset} ${innerOffset} ${outerInnerRadius + innerOffset} ${innerOffset}
-                    L ${totalWidth - outerInnerRadius - innerOffset} ${innerOffset}
-                    Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${outerInnerRadius + innerOffset}
-                    L ${totalWidth - innerOffset} ${totalHeight}
-                    L ${totalWidth - conveyorWidth + bottomCornerRadius} ${totalHeight}
-                    Q ${totalWidth - conveyorWidth} ${totalHeight} ${totalWidth - conveyorWidth} ${totalHeight - bottomCornerRadius}
-                    L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                    Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
-                    L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
-                    Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                    L ${conveyorWidth} ${totalHeight - bottomCornerRadius}
-                    Q ${conveyorWidth} ${totalHeight} ${conveyorWidth - bottomCornerRadius} ${totalHeight}
-                    Z
-                  `}
-                  fill="url(#oilGradientMain)"
-                />
-              );
-            })()}
-          </g>
+          {/* Масляный канал - точно внутри бортика */}
+          {(() => {
+            const innerCornerRadius = cornerRadius * 0.35;
+            const bottomCornerRadius = 15;
+            // Внутренняя граница бортика
+            const borderInnerRadius = cornerRadius - innerOffset;
+            return (
+              <path
+                d={`
+                  M ${innerOffset} ${totalHeight}
+                  L ${innerOffset} ${borderInnerRadius}
+                  Q ${innerOffset} ${innerOffset} ${borderInnerRadius} ${innerOffset}
+                  L ${totalWidth - borderInnerRadius} ${innerOffset}
+                  Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${borderInnerRadius}
+                  L ${totalWidth - innerOffset} ${totalHeight}
+                  L ${totalWidth - conveyorWidth + bottomCornerRadius} ${totalHeight}
+                  Q ${totalWidth - conveyorWidth} ${totalHeight} ${totalWidth - conveyorWidth} ${totalHeight - bottomCornerRadius}
+                  L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                  Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                  L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                  Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                  L ${conveyorWidth} ${totalHeight - bottomCornerRadius}
+                  Q ${conveyorWidth} ${totalHeight} ${conveyorWidth - bottomCornerRadius} ${totalHeight}
+                  Z
+                `}
+                fill="url(#oilGradientMain)"
+              />
+            );
+          })()}
 
 {/* Убраны проблемные элементы затемнения */}
 
@@ -442,7 +440,7 @@ export default function TribologyLabPage() {
           {/* Внутренний бортик (разделитель) - скруглённые углы везде */}
           {(() => {
             const innerCornerRadius = cornerRadius * 0.35;
-            const bottomCornerRadius = 12;
+            const bottomCornerRadius = 15;
             return (
               <path
                 d={`
