@@ -550,8 +550,8 @@ export default function TribologyLabPage() {
             width: gridWidth + panelPadding * 2,
             height: gridHeight + panelPadding * 2,
             background: 'linear-gradient(145deg, #0a0f15 0%, #0d1218 100%)',
-            boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9), 0 0 0 2px #1a2530',
-            borderRadius: '12px 12px 0 0',
+            boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9)',
+            borderRadius: `${cornerRadius * 0.4}px ${cornerRadius * 0.4}px 0 0`,
           }}
         >
           {/* Сетка 4x3 */}
