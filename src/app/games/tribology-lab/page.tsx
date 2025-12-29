@@ -69,6 +69,9 @@ export default function TribologyLabPage() {
   const gameLoopRef = useRef<number>(0);
   const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
 
+  // DEBUG: Скорость игры (1 = нормальная, 5 = быстрая)
+  const [gameSpeed, setGameSpeed] = useState(1);
+
   // Размеры
   const cellSize = 110;
   const cellGap = 14;
@@ -126,9 +129,9 @@ export default function TribologyLabPage() {
     if (gamePhase !== 'wave') return;
 
     const gameLoop = (timestamp: number) => {
-      const deltaTime = timestamp - lastUpdateRef.current;
+      const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed; // Умножаем на скорость
       lastUpdateRef.current = timestamp;
-      const elapsedSinceStart = timestamp - waveStartTime;
+      const elapsedSinceStart = (timestamp - waveStartTime) * gameSpeed;
 
       // Спавн врагов из очереди
       setSpawnQueue(prev => {
@@ -202,7 +205,7 @@ export default function TribologyLabPage() {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gamePhase, waveStartTime, wave, pathLength, endWave]);
+  }, [gamePhase, waveStartTime, wave, pathLength, endWave, gameSpeed]);
 
   // Получить модуль в ячейке
   const getModuleAt = (x: number, y: number): Module | undefined => {
@@ -503,6 +506,52 @@ export default function TribologyLabPage() {
             🔥 Осталось: {enemies.length + spawnQueue.length}
           </div>
         )}
+      </div>
+
+      {/* DEBUG: Панель отладки */}
+      <div className="flex items-center gap-3 text-sm mb-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
+        <span className="text-gray-400">⚡ Скорость:</span>
+        {[1, 3, 5, 10].map(speed => (
+          <button
+            key={speed}
+            onClick={() => setGameSpeed(speed)}
+            className={`px-2 py-0.5 rounded ${gameSpeed === speed ? 'bg-amber-500 text-black' : 'bg-gray-700 text-white'}`}
+          >
+            {speed}x
+          </button>
+        ))}
+        <span className="text-gray-500 mx-2">|</span>
+        <span className="text-gray-400">Волна:</span>
+        <button
+          onClick={() => setWave(w => Math.max(1, w - 1))}
+          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          -
+        </button>
+        <button
+          onClick={() => setWave(w => w + 1)}
+          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          +
+        </button>
+        <button
+          onClick={() => setWave(5)}
+          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          →5
+        </button>
+        <button
+          onClick={() => setWave(10)}
+          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          →10
+        </button>
+        <button
+          onClick={() => setWave(15)}
+          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+        >
+          →15
+        </button>
       </div>
 
       {/* Игровое поле */}
