@@ -63,11 +63,12 @@ export default function TribologyLabPage() {
   // Игровое состояние
   const [gamePhase, setGamePhase] = useState<GamePhase>('preparing');
   const [enemies, setEnemies] = useState<Enemy[]>([]);
-  const [spawnQueue, setSpawnQueue] = useState<{ type: string; spawnAt: number }[]>([]);
+  const [spawnQueue, setSpawnQueue] = useState<{ id: string; type: string; spawnAt: number }[]>([]);
   const [waveStartTime, setWaveStartTime] = useState(0);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
   const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
+  const spawnedIdsRef = useRef<Set<string>>(new Set()); // Отслеживание заспавненных врагов
 
   // DEBUG: Скорость игры (1 = нормальная, 5 = быстрая)
   const [gameSpeed, setGameSpeed] = useState(1);
@@ -94,19 +95,21 @@ export default function TribologyLabPage() {
     if (gamePhase !== 'preparing') return;
 
     const config = getWaveConfig(wave);
-    const queue: { type: string; spawnAt: number }[] = [];
+    const queue: { id: string; type: string; spawnAt: number }[] = [];
     let currentTime = 0;
+    let spawnIndex = 0;
 
     for (const group of config.enemies) {
       if (group.delay) {
         currentTime += group.delay;
       }
       for (let i = 0; i < group.count; i++) {
-        queue.push({ type: group.type, spawnAt: currentTime });
+        queue.push({ id: `wave${wave}-spawn${spawnIndex++}`, type: group.type, spawnAt: currentTime });
         currentTime += config.spawnInterval;
       }
     }
 
+    spawnedIdsRef.current.clear(); // Сбрасываем отслеживание
     setSpawnQueue(queue);
     setWaveStartTime(performance.now());
     setGamePhase('wave');
@@ -139,8 +142,13 @@ export default function TribologyLabPage() {
         const remaining = prev.filter(s => s.spawnAt > elapsedSinceStart);
 
         if (ready.length > 0) {
-          const newEnemies = ready.map(s => createEnemy(s.type as any, wave));
-          setEnemies(prevEnemies => [...prevEnemies, ...newEnemies]);
+          // Фильтруем уже заспавненных (защита от двойного вызова в StrictMode)
+          const toSpawn = ready.filter(s => !spawnedIdsRef.current.has(s.id));
+          if (toSpawn.length > 0) {
+            toSpawn.forEach(s => spawnedIdsRef.current.add(s.id));
+            const newEnemies = toSpawn.map(s => createEnemy(s.type as any, wave));
+            setEnemies(prevEnemies => [...prevEnemies, ...newEnemies]);
+          }
         }
 
         return remaining;
@@ -1089,6 +1097,9 @@ export default function TribologyLabPage() {
                   setGold(99999);
                   setModules([]);
                   setEnemies([]);
+                  setSpawnQueue([]);
+                  spawnedIdsRef.current.clear();
+                  waveEndingRef.current = false;
                   setGamePhase('preparing');
                 }}
                 className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
