@@ -8,6 +8,23 @@ export type EffectType = 'slow' | 'burn' | 'marked';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 
+// Теги врагов для бонусов/штрафов урона
+export type EnemyTag = 'metal' | 'wet' | 'hot' | 'dusty' | 'organic';
+
+// Эффект атаки (для визуализации)
+export interface AttackEffect {
+  id: string;
+  type: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain';
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  color: string;
+  startTime: number;
+  duration: number;  // мс
+  progress: number;  // 0-1 для анимации
+}
+
 // ==================== МОДУЛИ ====================
 
 export interface Module {
@@ -29,6 +46,15 @@ export interface ModuleConfig {
   attackSpeed: number;  // атак в секунду
   color: string;        // цвет подсветки
   description: string;
+  // Боевые параметры
+  attackType: 'beam' | 'projectile' | 'wave' | 'aoe';  // тип визуала
+  effectType?: EffectType;  // какой эффект накладывает (slow, burn, marked)
+  effectDuration?: number;  // длительность эффекта мс
+  effectStrength?: number;  // сила эффекта
+  tagBonuses?: Partial<Record<EnemyTag, number>>;  // бонусы по тегам (1.3 = +30%)
+  tagPenalties?: Partial<Record<EnemyTag, number>>; // штрафы по тегам (0.8 = -20%)
+  piercing?: boolean;  // пробивает насквозь
+  aoeRadius?: number;  // радиус AOE
 }
 
 // ==================== ВРАГИ ====================
@@ -64,6 +90,8 @@ export interface EnemyConfig {
   color: string;          // основной цвет
   oscillation: number;    // амплитуда колебания (0-10)
   shape: 'dust' | 'shard' | 'shavings' | 'drop' | 'blob' | 'spark' | 'scarred' | 'pitted';
+  // Боевые параметры
+  tags: EnemyTag[];       // теги для бонусов/штрафов урона
 }
 
 // ==================== ИГРОВОЕ СОСТОЯНИЕ ====================
@@ -132,6 +160,9 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
     description: 'x1.5 урона по металлу',
+    attackType: 'beam',
+    tagBonuses: { metal: 1.5 },  // +50% по металлу
+    // Особенность: дополнительно замедляет metal на 20%
   },
   cooler: {
     id: 'cooler',
@@ -143,6 +174,12 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackSpeed: 0.8,
     color: '#38bdf8',  // голубой
     description: 'Замедляет на 40%',
+    attackType: 'projectile',
+    effectType: 'slow',
+    effectDuration: 2000,
+    effectStrength: 40,  // 40% замедление
+    tagBonuses: { hot: 1.3 },  // +30% по горячим
+    tagPenalties: { dusty: 0.8 },  // -20% по пыльным
   },
   filter: {
     id: 'filter',
@@ -154,6 +191,8 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackSpeed: 1.2,
     color: '#fbbf24',  // золотой
     description: 'Чистый урон',
+    attackType: 'wave',
+    // Особенность: игнорирует дебафф от коррозии
   },
   lubricant: {
     id: 'lubricant',
@@ -165,6 +204,8 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackSpeed: 0.6,
     color: '#a855f7',  // пурпурный
     description: '+25% урон соседним модулям',
+    attackType: 'projectile',
+    // Особенность: +25% урон соседним модулям (реализуется в combat.ts)
   },
   ultrasonic: {
     id: 'ultrasonic',
@@ -176,6 +217,10 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackSpeed: 0.4,
     color: '#2dd4bf',  // бирюзовый
     description: 'AOE урон',
+    attackType: 'aoe',
+    aoeRadius: 60,  // пиксели
+    tagBonuses: { dusty: 1.2 },  // +20% по пыльным
+    // Особенность: урон растёт от количества врагов
   },
   laser: {
     id: 'laser',
@@ -187,6 +232,13 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackSpeed: 0.3,
     color: '#ef4444',  // красный
     description: 'Пробивает насквозь',
+    attackType: 'beam',
+    effectType: 'burn',
+    effectDuration: 3000,
+    effectStrength: 5,  // 5 HP/сек
+    tagBonuses: { metal: 1.3 },  // +30% по металлу
+    tagPenalties: { wet: 0.8 },  // -20% по мокрым
+    piercing: true,  // пробивает насквозь
   },
 };
 
@@ -205,6 +257,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#9ca3af',
     oscillation: 5,
     shape: 'dust',  // облачко частиц
+    tags: ['dusty'],
   },
   abrasive: {
     id: 'abrasive',
@@ -218,6 +271,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#a67c52',  // песочно-серый/охра
     oscillation: 1,
     shape: 'shard',  // осколок
+    tags: ['dusty', 'metal'],  // частично металлический
   },
   heat: {
     id: 'heat',
@@ -231,6 +285,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#ff6b35',  // оранжево-красный
     oscillation: 3,
     shape: 'drop',  // горячая зона
+    tags: ['hot'],
   },
   metal: {
     id: 'metal',
@@ -244,6 +299,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#a8a8a8',  // серебристый
     oscillation: 2,
     shape: 'shavings',  // завитки стружки
+    tags: ['metal'],
   },
   corrosion: {
     id: 'corrosion',
@@ -257,6 +313,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#4a7c59',  // зелёно-бурый
     oscillation: 4,
     shape: 'blob',  // амёбообразное пятно
+    tags: ['organic', 'wet'],
   },
   moisture: {
     id: 'moisture',
@@ -270,6 +327,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#38bdf8',
     oscillation: 0,
     shape: 'drop',
+    tags: ['wet'],
   },
   static: {
     id: 'static',
@@ -283,6 +341,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#facc15',
     oscillation: 8,
     shape: 'spark',
+    tags: [],  // диэлектрик, нейтральный
   },
   boss_wear: {
     id: 'boss_wear',
@@ -296,6 +355,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#4a4a4a',  // тёмный металл
     oscillation: 1,
     shape: 'scarred',  // царапины
+    tags: ['metal'],
   },
   boss_pitting: {
     id: 'boss_pitting',
@@ -309,6 +369,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     color: '#374151',  // тёмно-серый
     oscillation: 0,
     shape: 'pitted',  // кратеры
+    tags: ['metal'],
   },
 };
 

@@ -11,6 +11,7 @@ import {
   type ModuleType,
   type Module,
   type Enemy,
+  type AttackEffect,
 } from "@/lib/tribology-lab/types";
 import {
   generatePath,
@@ -23,6 +24,11 @@ import {
   isDead,
   type WaveEnemy,
 } from "@/lib/tribology-lab/enemies";
+import {
+  processAllAttacks,
+  processBurnDamage,
+  processBossRegeneration,
+} from "@/lib/tribology-lab/combat";
 
 // Начальные модули в магазине
 const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'magnet', 'cooler', 'filter'];
@@ -65,6 +71,7 @@ export default function TribologyLabPage() {
   const [enemies, setEnemies] = useState<Enemy[]>([]);
   const [spawnQueue, setSpawnQueue] = useState<{ id: string; type: string; spawnAt: number }[]>([]);
   const [waveStartTime, setWaveStartTime] = useState(0);
+  const [attackEffects, setAttackEffects] = useState<AttackEffect[]>([]);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
   const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
@@ -162,24 +169,54 @@ export default function TribologyLabPage() {
         return [...ready.filter(s => !spawnedIdsRef.current.has(s.id)), ...notReady];
       });
 
-      // Обновление врагов
+      // Обновление врагов (движение, эффекты)
       setEnemies(prev => {
+        // 1. Движение врагов
+        let updated = prev.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
+
+        // 2. Регенерация босса Питтинг
+        updated = processBossRegeneration(updated, deltaTime);
+
+        // 3. Боевая система — атаки модулей
+        if (modules.length > 0 && updated.length > 0) {
+          const attackResult = processAllAttacks(
+            modules,
+            updated,
+            enemyPath,
+            timestamp
+          );
+
+          updated = attackResult.updatedEnemies;
+
+          // Обновляем модули (lastAttack)
+          if (attackResult.updatedModules.some((m, i) => m.lastAttack !== modules[i]?.lastAttack)) {
+            setModules(attackResult.updatedModules);
+          }
+
+          // Добавляем эффекты атак
+          if (attackResult.newAttackEffects.length > 0) {
+            setAttackEffects(prevEffects => [...prevEffects, ...attackResult.newAttackEffects]);
+          }
+        }
+
+        // 4. Урон от горения (burn)
+        updated = processBurnDamage(updated, deltaTime);
+
+        // 5. Фильтрация: враги дошли до финиша или погибли
         let livesLost = 0;
         let goldEarned = 0;
 
-        const updated = prev
-          .map(enemy => updateEnemy(enemy, deltaTime, pathLength))
-          .filter(enemy => {
-            if (hasReachedFinish(enemy)) {
-              livesLost++;
-              return false;
-            }
-            if (isDead(enemy)) {
-              goldEarned += enemy.reward;
-              return false;
-            }
-            return true;
-          });
+        updated = updated.filter(enemy => {
+          if (hasReachedFinish(enemy)) {
+            livesLost++;
+            return false;
+          }
+          if (isDead(enemy)) {
+            goldEarned += enemy.reward;
+            return false;
+          }
+          return true;
+        });
 
         if (livesLost > 0) {
           setLives(l => {
@@ -198,6 +235,15 @@ export default function TribologyLabPage() {
 
         return updated;
       });
+
+      // Обновление анимации эффектов атак
+      setAttackEffects(prev => prev
+        .map(effect => ({
+          ...effect,
+          progress: Math.min(1, (timestamp - effect.startTime) / effect.duration),
+        }))
+        .filter(effect => effect.progress < 1)
+      );
 
       // Проверка окончания волны (с защитой от многократного вызова)
       setEnemies(prev => {
@@ -1413,6 +1459,158 @@ export default function TribologyLabPage() {
 
               </g>
             );
+          })}
+
+          {/* ═══════════════════════════════════════════════════════════════
+              ЭФФЕКТЫ АТАК
+              ═══════════════════════════════════════════════════════════════ */}
+          {attackEffects.map(effect => {
+            const progress = effect.progress;
+
+            if (effect.type === 'beam') {
+              // Луч — линия от модуля к врагу
+              const endX = effect.fromX + (effect.toX - effect.fromX) * Math.min(1, progress * 2);
+              const endY = effect.fromY + (effect.toY - effect.fromY) * Math.min(1, progress * 2);
+              return (
+                <g key={effect.id}>
+                  {/* Свечение луча */}
+                  <line
+                    x1={effect.fromX}
+                    y1={effect.fromY}
+                    x2={endX}
+                    y2={endY}
+                    stroke={effect.color}
+                    strokeWidth={8}
+                    opacity={(1 - progress) * 0.3}
+                    strokeLinecap="round"
+                  />
+                  {/* Основной луч */}
+                  <line
+                    x1={effect.fromX}
+                    y1={effect.fromY}
+                    x2={endX}
+                    y2={endY}
+                    stroke={effect.color}
+                    strokeWidth={3}
+                    opacity={1 - progress * 0.5}
+                    strokeLinecap="round"
+                  />
+                  {/* Яркий центр */}
+                  <line
+                    x1={effect.fromX}
+                    y1={effect.fromY}
+                    x2={endX}
+                    y2={endY}
+                    stroke="white"
+                    strokeWidth={1}
+                    opacity={(1 - progress) * 0.8}
+                    strokeLinecap="round"
+                  />
+                </g>
+              );
+            }
+
+            if (effect.type === 'projectile') {
+              // Снаряд — круг, летящий к цели
+              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
+              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
+              return (
+                <g key={effect.id}>
+                  {/* След снаряда */}
+                  <line
+                    x1={effect.fromX + (effect.toX - effect.fromX) * Math.max(0, progress - 0.3)}
+                    y1={effect.fromY + (effect.toY - effect.fromY) * Math.max(0, progress - 0.3)}
+                    x2={x}
+                    y2={y}
+                    stroke={effect.color}
+                    strokeWidth={4}
+                    opacity={(1 - progress) * 0.4}
+                    strokeLinecap="round"
+                  />
+                  {/* Основной снаряд */}
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={6}
+                    fill={effect.color}
+                    opacity={1 - progress * 0.3}
+                  />
+                  {/* Яркий центр */}
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={3}
+                    fill="white"
+                    opacity={(1 - progress) * 0.8}
+                  />
+                </g>
+              );
+            }
+
+            if (effect.type === 'wave') {
+              // Волна — расширяющееся кольцо от модуля
+              const radius = 20 + progress * 80;
+              return (
+                <g key={effect.id}>
+                  {/* Внешнее свечение */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={radius + 5}
+                    fill="none"
+                    stroke={effect.color}
+                    strokeWidth={8}
+                    opacity={(1 - progress) * 0.2}
+                  />
+                  {/* Основное кольцо */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={radius}
+                    fill="none"
+                    stroke={effect.color}
+                    strokeWidth={3 - progress * 2}
+                    opacity={1 - progress}
+                  />
+                </g>
+              );
+            }
+
+            if (effect.type === 'aoe') {
+              // AOE — круг вокруг модуля с пульсацией
+              return (
+                <g key={effect.id}>
+                  {/* Внешний круг */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={70 * (0.8 + progress * 0.2)}
+                    fill={effect.color}
+                    opacity={(1 - progress) * 0.15}
+                  />
+                  {/* Внутренний круг */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={50 * (0.8 + progress * 0.2)}
+                    fill={effect.color}
+                    opacity={(1 - progress) * 0.25}
+                  />
+                  {/* Кольцо */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={60}
+                    fill="none"
+                    stroke={effect.color}
+                    strokeWidth={2}
+                    opacity={(1 - progress) * 0.6}
+                  />
+                </g>
+              );
+            }
+
+            return null;
           })}
 
           {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
