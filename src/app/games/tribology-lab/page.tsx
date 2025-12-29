@@ -140,50 +140,46 @@ export default function TribologyLabPage() {
     setSpawnQueue([]);
   }, [wave]);
 
+  // Ref для отслеживания что нужно заспавнить
+  const spawnQueueRef = useRef<{ id: string; type: string; spawnAt: number }[]>([]);
+
+  // Синхронизируем ref с state
+  useEffect(() => {
+    spawnQueueRef.current = spawnQueue;
+  }, [spawnQueue]);
+
   // Игровой цикл
   useEffect(() => {
     if (gamePhase !== 'wave') return;
 
     const gameLoop = (timestamp: number) => {
-      const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed; // Умножаем на скорость
+      const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed;
       lastUpdateRef.current = timestamp;
       const elapsedSinceStart = (timestamp - waveStartTime) * gameSpeed;
 
-      // Спавн врагов из очереди (по одному за раз, если место свободно)
-      setSpawnQueue(prev => {
-        const ready = prev.filter(s => s.spawnAt <= elapsedSinceStart);
-        const notReady = prev.filter(s => s.spawnAt > elapsedSinceStart);
+      // Получаем текущую очередь спавна
+      const currentQueue = spawnQueueRef.current;
+      const ready = currentQueue.filter(s => s.spawnAt <= elapsedSinceStart);
+      const toSpawn = ready.find(s => !spawnedIdsRef.current.has(s.id));
 
-        if (ready.length > 0) {
-          // Берём только первого готового врага
-          const toSpawn = ready.find(s => !spawnedIdsRef.current.has(s.id));
-          if (toSpawn) {
-            setEnemies(prevEnemies => {
-              // Проверяем есть ли место для спавна (никого на старте)
-              const canSpawn = !prevEnemies.some(e => e.progress < 0.03);
-              if (canSpawn) {
-                spawnedIdsRef.current.add(toSpawn.id);
-                const newEnemy = createEnemy(toSpawn.type as any, wave);
-                return [...prevEnemies, newEnemy];
-              }
-              return prevEnemies;
-            });
-          }
+      // ЕДИНСТВЕННЫЙ setEnemies — всё в одном месте!
+      setEnemies(prev => {
+        let updated = [...prev];
+
+        // 1. Спавн нового врага (если есть место)
+        if (toSpawn && !updated.some(e => e.progress < 0.03)) {
+          spawnedIdsRef.current.add(toSpawn.id);
+          const newEnemy = createEnemy(toSpawn.type as any, wave);
+          updated.push(newEnemy);
         }
 
-        // Оставляем в очереди тех кто ещё не заспавнился
-        return [...ready.filter(s => !spawnedIdsRef.current.has(s.id)), ...notReady];
-      });
+        // 2. Движение врагов
+        updated = updated.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
 
-      // Обновление врагов (движение, эффекты)
-      setEnemies(prev => {
-        // 1. Движение врагов
-        let updated = prev.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
-
-        // 2. Регенерация босса Питтинг
+        // 3. Регенерация босса Питтинг
         updated = processBossRegeneration(updated, deltaTime);
 
-        // 3. Боевая система — атаки модулей
+        // 4. Боевая система — атаки модулей
         const currentModules = modulesRef.current;
         if (currentModules.length > 0 && updated.length > 0) {
           const attackResult = processAllAttacks(
@@ -195,7 +191,7 @@ export default function TribologyLabPage() {
 
           updated = attackResult.updatedEnemies;
 
-          // Обновляем модули (lastAttack) — сразу в ref и в state
+          // Обновляем модули (lastAttack)
           if (attackResult.newAttackEffects.length > 0) {
             modulesRef.current = attackResult.updatedModules;
             setModules(attackResult.updatedModules);
@@ -203,10 +199,10 @@ export default function TribologyLabPage() {
           }
         }
 
-        // 4. Урон от горения (burn)
+        // 5. Урон от горения (burn)
         updated = processBurnDamage(updated, deltaTime);
 
-        // 5. Фильтрация: враги дошли до финиша или погибли
+        // 6. Фильтрация: враги дошли до финиша или погибли
         let livesLost = 0;
         let goldEarned = 0;
 
@@ -223,22 +219,26 @@ export default function TribologyLabPage() {
         });
 
         if (livesLost > 0) {
-          setLives(l => {
-            const newLives = l - livesLost;
-            // TODO: раскомментировать для включения поражения
-            // if (newLives <= 0) {
-            //   setGamePhase('defeat');
-            // }
-            return Math.max(0, newLives);
-          });
+          setLives(l => Math.max(0, l - livesLost));
         }
 
         if (goldEarned > 0) {
           setGold(g => g + goldEarned);
         }
 
+        // 7. Проверка окончания волны
+        if (updated.length === 0 && spawnQueueRef.current.every(s => spawnedIdsRef.current.has(s.id)) && !waveEndingRef.current) {
+          waveEndingRef.current = true;
+          setTimeout(() => endWave(), 500);
+        }
+
         return updated;
       });
+
+      // Обновляем очередь спавна (отдельно, не влияет на enemies)
+      if (toSpawn && spawnedIdsRef.current.has(toSpawn.id)) {
+        setSpawnQueue(prev => prev.filter(s => !spawnedIdsRef.current.has(s.id)));
+      }
 
       // Обновление анимации эффектов атак
       setAttackEffects(prev => prev
@@ -248,18 +248,6 @@ export default function TribologyLabPage() {
         }))
         .filter(effect => effect.progress < 1)
       );
-
-      // Проверка окончания волны (с защитой от многократного вызова)
-      setEnemies(prev => {
-        setSpawnQueue(queue => {
-          if (prev.length === 0 && queue.length === 0 && gamePhase === 'wave' && !waveEndingRef.current) {
-            waveEndingRef.current = true; // Помечаем что волна завершается
-            setTimeout(() => endWave(), 500);
-          }
-          return queue;
-        });
-        return prev;
-      });
 
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
