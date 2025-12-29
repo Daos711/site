@@ -394,18 +394,19 @@ export default function TribologyLabPage() {
             );
           })()}
 
-          {/* Масляный канал - sweep-flag=0 для внешних углов (к центру cornerRadius,cornerRadius) */}
+          {/* Масляный канал - точно внутри бортика */}
           {(() => {
             const innerCornerRadius = cornerRadius * 0.4;
+            const outerR = cornerRadius;
             const innerR = cornerRadius - innerOffset;
             return (
               <path
                 d={`
                   M ${innerOffset} ${totalHeight}
-                  L ${innerOffset} ${cornerRadius}
-                  A ${innerR} ${innerR} 0 0 0 ${cornerRadius} ${innerOffset}
-                  L ${totalWidth - cornerRadius} ${innerOffset}
-                  A ${innerR} ${innerR} 0 0 0 ${totalWidth - innerOffset} ${cornerRadius}
+                  L ${innerOffset} ${outerR}
+                  A ${innerR} ${innerR} 0 0 1 ${outerR} ${innerOffset}
+                  L ${totalWidth - outerR} ${innerOffset}
+                  A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${outerR}
                   L ${totalWidth - innerOffset} ${totalHeight}
                   L ${totalWidth - conveyorWidth} ${totalHeight}
                   L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
