@@ -394,11 +394,11 @@ export default function TribologyLabPage() {
                       L ${totalWidth - innerOffset} ${totalHeight}
                       Z
                       M ${conveyorWidth} ${totalHeight}
-                      L ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
-                      A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
-                      L ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
-                      A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
                       L ${totalWidth - conveyorWidth} ${totalHeight}
+                      L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                      A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                      L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                      A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
                       Z
                     `}
                   />
@@ -678,7 +678,7 @@ export default function TribologyLabPage() {
         className="rounded-b-xl p-5"
         style={{
           width: totalWidth,
-          marginTop: -2,
+          marginTop: 0,
           background: 'linear-gradient(180deg, #161b22 0%, #0d1117 100%)',
           boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.6)',
           borderLeft: '2px solid #21262d',
@@ -686,24 +686,6 @@ export default function TribologyLabPage() {
           borderBottom: '2px solid #21262d',
         }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-gray-400 text-base font-medium">Магазин модулей</span>
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-base bg-slate-700 hover:bg-slate-600 transition-colors"
-            onClick={() => {
-              if (gold >= 10) {
-                setGold(gold - 10);
-                const types: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'ultrasonic', 'laser'];
-                const available = types.filter((_, i) => i < 3 + Math.floor(wave / 5));
-                setShop(Array(6).fill(null).map(() => available[Math.floor(Math.random() * available.length)]));
-              }
-            }}
-          >
-            <span>🔄</span>
-            <span className="text-yellow-400">10</span>
-          </button>
-        </div>
-
         <div className="flex items-center gap-4 justify-center">
           {shop.map((moduleType, index) => {
             const config = MODULES[moduleType];
