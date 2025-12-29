@@ -44,17 +44,18 @@ export default function TribologyLabPage() {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
 
-  // Увеличенные размеры (x2)
+  // Размеры
   const cellSize = 120;
-  const cellGap = 10;
-  const conveyorWidth = Math.round(cellSize * 0.7); // 70% от стороны карточки
+  const cellGap = 16; // Увеличенный зазор между ячейками
+  const conveyorWidth = Math.round(cellSize * 0.7);
+  const cornerRadius = conveyorWidth * 0.6; // Радиус скругления углов
   const gridWidth = GRID_COLS * cellSize + (GRID_COLS - 1) * cellGap;
   const gridHeight = GRID_ROWS * cellSize + (GRID_ROWS - 1) * cellGap;
   const panelPadding = 20;
 
-  // Размеры всего поля (без нижней дорожки!)
+  // Размеры всего поля (без нижней дорожки)
   const totalWidth = gridWidth + panelPadding * 2 + conveyorWidth * 2;
-  const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth; // только верхний конвейер
+  const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth;
 
   // Получить модуль в ячейке
   const getModuleAt = (x: number, y: number): Module | undefined => {
@@ -229,6 +230,49 @@ export default function TribologyLabPage() {
     );
   };
 
+  // Координаты для SVG пути (масляный канал)
+  const pathOuter = {
+    // Внешний край канала
+    startX: 0,
+    startY: totalHeight,
+    // Левая сторона (вверх)
+    leftTopX: 0,
+    leftTopY: cornerRadius,
+    // Левый верхний угол
+    topLeftX: cornerRadius,
+    topLeftY: 0,
+    // Верхняя сторона (вправо)
+    topRightX: totalWidth - cornerRadius,
+    topRightY: 0,
+    // Правый верхний угол
+    rightTopX: totalWidth,
+    rightTopY: cornerRadius,
+    // Правая сторона (вниз)
+    rightBottomX: totalWidth,
+    rightBottomY: totalHeight,
+  };
+
+  const pathInner = {
+    // Внутренний край канала
+    startX: conveyorWidth,
+    startY: totalHeight,
+    // Левая сторона (вверх)
+    leftTopX: conveyorWidth,
+    leftTopY: conveyorWidth + cornerRadius * 0.5,
+    // Левый верхний угол (скруглённый)
+    topLeftX: conveyorWidth + cornerRadius * 0.5,
+    topLeftY: conveyorWidth,
+    // Верхняя сторона (вправо)
+    topRightX: totalWidth - conveyorWidth - cornerRadius * 0.5,
+    topRightY: conveyorWidth,
+    // Правый верхний угол (скруглённый)
+    rightTopX: totalWidth - conveyorWidth,
+    rightTopY: conveyorWidth + cornerRadius * 0.5,
+    // Правая сторона (вниз)
+    rightBottomX: totalWidth - conveyorWidth,
+    rightBottomY: totalHeight,
+  };
+
   return (
     <div className="flex flex-col items-center gap-3 py-4">
       <h1 className="text-3xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
@@ -255,89 +299,144 @@ export default function TribologyLabPage() {
         className="relative select-none"
         style={{ width: totalWidth, height: totalHeight }}
       >
-        {/* Внешняя рамка (металл) */}
+        {/* Фон поля (без оранжевой рамки) */}
         <div
           className="absolute inset-0 rounded-2xl"
           style={{
-            background: 'linear-gradient(145deg, #4a4a4a 0%, #2a2a2a 50%, #3a3a3a 100%)',
-            boxShadow: '0 6px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
-            border: '4px solid #f59e0b',
+            background: 'linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%)',
+            boxShadow: '0 6px 30px rgba(0,0,0,0.6)',
           }}
         />
 
-        {/* SVG для скруглённого пути конвейера */}
+        {/* SVG для масляного канала */}
         <svg
           className="absolute inset-0 pointer-events-none"
           width={totalWidth}
           height={totalHeight}
         >
-          {/* Путь конвейера: старт внизу слева → вверх → вправо → вниз до финиша */}
+          <defs>
+            {/* Градиент для масляной плёнки */}
+            <linearGradient id="oilGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1e3a5f" />
+              <stop offset="30%" stopColor="#2d4a6f" />
+              <stop offset="50%" stopColor="#1e3a5f" />
+              <stop offset="70%" stopColor="#3d5a7f" />
+              <stop offset="100%" stopColor="#1e3a5f" />
+            </linearGradient>
+            {/* Градиент для металлических бортиков */}
+            <linearGradient id="metalBorder" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#6b7280" />
+              <stop offset="50%" stopColor="#4b5563" />
+              <stop offset="100%" stopColor="#374151" />
+            </linearGradient>
+          </defs>
+
+          {/* Внешний контур канала (металлический бортик) */}
           <path
             d={`
-              M ${conveyorWidth / 2} ${totalHeight}
-              L ${conveyorWidth / 2} ${conveyorWidth}
-              Q ${conveyorWidth / 2} ${conveyorWidth / 2} ${conveyorWidth} ${conveyorWidth / 2}
-              L ${totalWidth - conveyorWidth} ${conveyorWidth / 2}
-              Q ${totalWidth - conveyorWidth / 2} ${conveyorWidth / 2} ${totalWidth - conveyorWidth / 2} ${conveyorWidth}
-              L ${totalWidth - conveyorWidth / 2} ${totalHeight}
+              M ${pathOuter.startX} ${pathOuter.startY}
+              L ${pathOuter.leftTopX} ${pathOuter.leftTopY}
+              Q ${pathOuter.leftTopX} 0 ${pathOuter.topLeftX} ${pathOuter.topLeftY}
+              L ${pathOuter.topRightX} ${pathOuter.topRightY}
+              Q ${totalWidth} 0 ${pathOuter.rightTopX} ${pathOuter.rightTopY}
+              L ${pathOuter.rightBottomX} ${pathOuter.rightBottomY}
+              L ${pathInner.rightBottomX} ${pathInner.rightBottomY}
+              L ${pathInner.rightTopX} ${pathInner.rightTopY}
+              Q ${pathInner.rightTopX} ${conveyorWidth} ${pathInner.topRightX} ${pathInner.topRightY}
+              L ${pathInner.topLeftX} ${pathInner.topLeftY}
+              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.leftTopX} ${pathInner.leftTopY}
+              L ${pathInner.startX} ${pathInner.startY}
+              Z
             `}
-            fill="none"
-            stroke="#4b5563"
-            strokeWidth={conveyorWidth - 8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            fill="url(#oilGradient)"
+            stroke="url(#metalBorder)"
+            strokeWidth={3}
           />
-          {/* Внутренняя линия (разметка) */}
+
+          {/* Блики на масле */}
           <path
             d={`
-              M ${conveyorWidth / 2} ${totalHeight}
-              L ${conveyorWidth / 2} ${conveyorWidth}
-              Q ${conveyorWidth / 2} ${conveyorWidth / 2} ${conveyorWidth} ${conveyorWidth / 2}
-              L ${totalWidth - conveyorWidth} ${conveyorWidth / 2}
-              Q ${totalWidth - conveyorWidth / 2} ${conveyorWidth / 2} ${totalWidth - conveyorWidth / 2} ${conveyorWidth}
-              L ${totalWidth - conveyorWidth / 2} ${totalHeight}
+              M ${conveyorWidth / 2} ${totalHeight - 50}
+              L ${conveyorWidth / 2} ${conveyorWidth + 30}
             `}
             fill="none"
-            stroke="#374151"
-            strokeWidth={conveyorWidth - 20}
+            stroke="rgba(100, 180, 255, 0.15)"
+            strokeWidth={conveyorWidth * 0.3}
             strokeLinecap="round"
-            strokeLinejoin="round"
           />
-          {/* Центральная линия-разметка */}
           <path
             d={`
-              M ${conveyorWidth / 2} ${totalHeight}
-              L ${conveyorWidth / 2} ${conveyorWidth}
-              Q ${conveyorWidth / 2} ${conveyorWidth / 2} ${conveyorWidth} ${conveyorWidth / 2}
-              L ${totalWidth - conveyorWidth} ${conveyorWidth / 2}
-              Q ${totalWidth - conveyorWidth / 2} ${conveyorWidth / 2} ${totalWidth - conveyorWidth / 2} ${conveyorWidth}
-              L ${totalWidth - conveyorWidth / 2} ${totalHeight}
+              M ${conveyorWidth + 30} ${conveyorWidth / 2}
+              L ${totalWidth - conveyorWidth - 30} ${conveyorWidth / 2}
             `}
             fill="none"
-            stroke="#6b7280"
-            strokeWidth={2}
-            strokeDasharray="10 10"
+            stroke="rgba(100, 180, 255, 0.15)"
+            strokeWidth={conveyorWidth * 0.3}
             strokeLinecap="round"
-            strokeLinejoin="round"
           />
+          <path
+            d={`
+              M ${totalWidth - conveyorWidth / 2} ${conveyorWidth + 30}
+              L ${totalWidth - conveyorWidth / 2} ${totalHeight - 50}
+            `}
+            fill="none"
+            stroke="rgba(100, 180, 255, 0.15)"
+            strokeWidth={conveyorWidth * 0.3}
+            strokeLinecap="round"
+          />
+
+          {/* Сегменты/рифление на канале */}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <line
+              key={`left-${i}`}
+              x1={conveyorWidth * 0.2}
+              y1={conveyorWidth + 40 + i * 45}
+              x2={conveyorWidth * 0.8}
+              y2={conveyorWidth + 40 + i * 45}
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth={2}
+            />
+          ))}
+          {Array.from({ length: 10 }).map((_, i) => (
+            <line
+              key={`top-${i}`}
+              x1={conveyorWidth + 40 + i * 52}
+              y1={conveyorWidth * 0.2}
+              x2={conveyorWidth + 40 + i * 52}
+              y2={conveyorWidth * 0.8}
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth={2}
+            />
+          ))}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <line
+              key={`right-${i}`}
+              x1={totalWidth - conveyorWidth * 0.8}
+              y1={conveyorWidth + 40 + i * 45}
+              x2={totalWidth - conveyorWidth * 0.2}
+              y2={conveyorWidth + 40 + i * 45}
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth={2}
+            />
+          ))}
         </svg>
 
         {/* Стрелки направления */}
         <div
-          className="absolute text-gray-400 text-2xl font-bold"
-          style={{ left: conveyorWidth / 2 - 10, top: totalHeight / 2 }}
+          className="absolute text-cyan-400/60 text-xl font-bold"
+          style={{ left: conveyorWidth / 2 - 8, top: totalHeight / 2 }}
         >
           ↑
         </div>
         <div
-          className="absolute text-gray-400 text-2xl font-bold"
-          style={{ left: totalWidth / 2 - 10, top: conveyorWidth / 2 - 12 }}
+          className="absolute text-cyan-400/60 text-xl font-bold"
+          style={{ left: totalWidth / 2 - 8, top: conveyorWidth / 2 - 10 }}
         >
           →
         </div>
         <div
-          className="absolute text-gray-400 text-2xl font-bold"
-          style={{ right: conveyorWidth / 2 - 10, top: totalHeight / 2 }}
+          className="absolute text-cyan-400/60 text-xl font-bold"
+          style={{ right: conveyorWidth / 2 - 8, top: totalHeight / 2 }}
         >
           ↓
         </div>
@@ -347,12 +446,12 @@ export default function TribologyLabPage() {
           className="absolute flex items-center justify-center"
           style={{
             left: 0,
-            bottom: -30,
+            bottom: -32,
             width: conveyorWidth,
             height: 30,
           }}
         >
-          <span className="text-green-400 text-lg font-bold">▶ СТАРТ</span>
+          <span className="text-green-400 text-base font-bold">▶ СТАРТ</span>
         </div>
 
         {/* Финиш */}
@@ -360,12 +459,12 @@ export default function TribologyLabPage() {
           className="absolute flex items-center justify-center"
           style={{
             right: 0,
-            bottom: -30,
+            bottom: -32,
             width: conveyorWidth,
             height: 30,
           }}
         >
-          <span className="text-red-400 text-lg font-bold">🏁 ФИНИШ</span>
+          <span className="text-red-400 text-base font-bold">🏁 ФИНИШ</span>
         </div>
 
         {/* Внутренняя панель с сеткой */}
@@ -376,8 +475,9 @@ export default function TribologyLabPage() {
             top: conveyorWidth,
             width: gridWidth + panelPadding * 2,
             height: gridHeight + panelPadding * 2,
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #16162a 100%)',
-            boxShadow: 'inset 0 3px 20px rgba(0,0,0,0.6)',
+            background: 'linear-gradient(145deg, #12122a 0%, #0a0a1a 100%)',
+            boxShadow: 'inset 0 3px 20px rgba(0,0,0,0.8)',
+            border: '2px solid #2a2a4a',
           }}
         >
           {/* Сетка 4x3 */}
@@ -415,8 +515,8 @@ export default function TribologyLabPage() {
                     style={{
                       width: cellSize,
                       height: cellSize,
-                      background: 'linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 100%)',
-                      boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.05)',
+                      background: 'linear-gradient(145deg, #0a0a18 0%, #151528 100%)',
+                      boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.8), inset 0 -1px 0 rgba(255,255,255,0.03)',
                     }}
                   >
                     {module && !isDraggingThis && (
@@ -438,11 +538,11 @@ export default function TribologyLabPage() {
 
       {/* Нижняя панель магазина */}
       <div
-        className="w-full max-w-3xl rounded-xl p-5 mt-8"
+        className="w-full max-w-3xl rounded-xl p-5 mt-10"
         style={{
-          background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
-          border: '2px solid #3a3a3a',
+          background: 'linear-gradient(145deg, #1a1a2e 0%, #0f0f1a 100%)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
+          border: '2px solid #2a2a4a',
         }}
       >
         <div className="flex items-center justify-between mb-4">
@@ -469,7 +569,7 @@ export default function TribologyLabPage() {
             const gradient = MODULE_GRADIENTS[moduleType];
             const canAfford = gold >= config.basePrice;
             const isDraggingThis = dragState?.type === 'shop' && dragState.shopIndex === index;
-            const shopCardSize = 90;
+            const shopCardSize = 85;
 
             return (
               <div
@@ -481,7 +581,7 @@ export default function TribologyLabPage() {
                 `}
                 style={{
                   width: shopCardSize,
-                  height: shopCardSize + 20,
+                  height: shopCardSize + 16,
                   background: gradient.bg,
                   border: `3px solid ${gradient.border}`,
                   boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 15px ${config.color}30`,
