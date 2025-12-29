@@ -25,8 +25,8 @@ export function generatePath(
 
   // Путь идёт по центру канала
   return [
-    // Старт - внизу слева (вход)
-    { x: channelCenterLeft, y: totalHeight + 20 },
+    // Старт - внизу слева (внутри патрубка)
+    { x: channelCenterLeft, y: totalHeight - 5 },
     // Вверх по левому каналу до начала поворота
     { x: channelCenterLeft, y: cornerRadius },
     // Центр верхнего левого угла (поворот)
@@ -35,8 +35,8 @@ export function generatePath(
     { x: totalWidth - cornerRadius, y: channelCenterTop },
     // Центр верхнего правого угла (поворот)
     { x: channelCenterRight, y: cornerRadius },
-    // Вниз по правому каналу
-    { x: channelCenterRight, y: totalHeight + 20 },
+    // Финиш - внизу справа (внутри горловины)
+    { x: channelCenterRight, y: totalHeight - 5 },
   ];
 }
 
@@ -55,43 +55,71 @@ export function getPathLength(path: PathPoint[]): number {
 
 /**
  * Получает позицию на пути по прогрессу (0-1)
+ * Добавляет небольшую осцилляцию для "живого" движения
  */
-export function getPositionOnPath(path: PathPoint[], progress: number): { x: number; y: number; angle: number } {
+export function getPositionOnPath(path: PathPoint[], progress: number, enemyId?: string): { x: number; y: number; angle: number } {
+  // Базовая позиция
+  let baseX: number;
+  let baseY: number;
+  let angle: number;
+
   if (progress <= 0) {
     const dx = path[1].x - path[0].x;
     const dy = path[1].y - path[0].y;
-    return { x: path[0].x, y: path[0].y, angle: Math.atan2(dy, dx) };
-  }
-  if (progress >= 1) {
+    baseX = path[0].x;
+    baseY = path[0].y;
+    angle = Math.atan2(dy, dx);
+  } else if (progress >= 1) {
     const last = path[path.length - 1];
     const prev = path[path.length - 2];
     const dx = last.x - prev.x;
     const dy = last.y - prev.y;
-    return { x: last.x, y: last.y, angle: Math.atan2(dy, dx) };
-  }
+    baseX = last.x;
+    baseY = last.y;
+    angle = Math.atan2(dy, dx);
+  } else {
+    const totalLength = getPathLength(path);
+    const targetLength = progress * totalLength;
 
-  const totalLength = getPathLength(path);
-  const targetLength = progress * totalLength;
+    let currentLength = 0;
+    let found = false;
+    baseX = path[path.length - 1].x;
+    baseY = path[path.length - 1].y;
+    angle = 0;
 
-  let currentLength = 0;
-  for (let i = 1; i < path.length; i++) {
-    const dx = path[i].x - path[i - 1].x;
-    const dy = path[i].y - path[i - 1].y;
-    const segmentLength = Math.sqrt(dx * dx + dy * dy);
+    for (let i = 1; i < path.length; i++) {
+      const dx = path[i].x - path[i - 1].x;
+      const dy = path[i].y - path[i - 1].y;
+      const segmentLength = Math.sqrt(dx * dx + dy * dy);
 
-    if (currentLength + segmentLength >= targetLength) {
-      const t = (targetLength - currentLength) / segmentLength;
-      return {
-        x: path[i - 1].x + dx * t,
-        y: path[i - 1].y + dy * t,
-        angle: Math.atan2(dy, dx),
-      };
+      if (currentLength + segmentLength >= targetLength) {
+        const t = (targetLength - currentLength) / segmentLength;
+        baseX = path[i - 1].x + dx * t;
+        baseY = path[i - 1].y + dy * t;
+        angle = Math.atan2(dy, dx);
+        found = true;
+        break;
+      }
+      currentLength += segmentLength;
     }
-    currentLength += segmentLength;
+
+    if (!found) {
+      const last = path[path.length - 1];
+      baseX = last.x;
+      baseY = last.y;
+    }
   }
 
-  const last = path[path.length - 1];
-  return { x: last.x, y: last.y, angle: 0 };
+  // Добавляем осцилляцию (колебание ±3px перпендикулярно направлению)
+  const oscillation = Math.sin(progress * Math.PI * 12) * 3;
+  const perpX = -Math.sin(angle) * oscillation;
+  const perpY = Math.cos(angle) * oscillation;
+
+  return {
+    x: baseX + perpX,
+    y: baseY + perpY,
+    angle,
+  };
 }
 
 // ==================== СОЗДАНИЕ ВРАГОВ ====================

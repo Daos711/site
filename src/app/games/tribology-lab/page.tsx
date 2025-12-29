@@ -459,7 +459,7 @@ export default function TribologyLabPage() {
       <h1 className="text-3xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
 
       {/* Статус-бар */}
-      <div className="flex items-center gap-10 text-xl mb-2">
+      <div className="flex items-center gap-6 text-xl mb-2">
         <div className="flex items-center gap-2">
           <span className="text-gray-400">Волна:</span>
           <span className="font-bold text-white">{wave}</span>
@@ -472,6 +472,33 @@ export default function TribologyLabPage() {
           <span className="text-yellow-400">🪙</span>
           <span className="font-bold text-white">{gold}</span>
         </div>
+
+        {/* Кнопка Начать волну */}
+        {gamePhase === 'preparing' && (
+          <button
+            onClick={startWave}
+            className="px-4 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-base"
+            style={{
+              background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
+              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), 0 2px 0 #15803d',
+            }}
+          >
+            ▶ Старт
+          </button>
+        )}
+
+        {/* Индикатор волны в процессе */}
+        {gamePhase === 'wave' && (
+          <div
+            className="px-3 py-1.5 rounded-lg text-white font-medium text-sm"
+            style={{
+              background: 'rgba(239, 68, 68, 0.8)',
+              boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
+            }}
+          >
+            🔥 Осталось: {enemies.length + spawnQueue.length}
+          </div>
+        )}
       </div>
 
       {/* Игровое поле */}
@@ -751,6 +778,58 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset / 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           <circle cx={totalWidth - innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
 
+          {/* Враги — рисуются ПОД патрубками старта/финиша */}
+          {enemies.map(enemy => {
+            const pos = getPositionOnPath(enemyPath, enemy.progress);
+            const config = ENEMIES[enemy.type];
+            const hpPercent = enemy.hp / enemy.maxHp;
+            // Fade in/out для появления и исчезновения
+            const opacity = enemy.progress < 0.03
+              ? enemy.progress / 0.03
+              : enemy.progress > 0.97
+                ? (1 - enemy.progress) / 0.03
+                : 1;
+
+            return (
+              <g key={enemy.id} transform={`translate(${pos.x}, ${pos.y})`} opacity={opacity}>
+                {/* Тень */}
+                <ellipse cx={0} cy={5} rx={12} ry={4} fill="rgba(0,0,0,0.3)" />
+
+                {/* Тело врага */}
+                <circle
+                  cx={0}
+                  cy={0}
+                  r={14}
+                  fill={`url(#enemy-gradient-${enemy.type})`}
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth={1}
+                />
+
+                {/* Иконка */}
+                <text
+                  x={0}
+                  y={5}
+                  textAnchor="middle"
+                  fontSize="16"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {config.icon}
+                </text>
+
+                {/* HP бар */}
+                <rect x={-15} y={-22} width={30} height={4} rx={2} fill="rgba(0,0,0,0.5)" />
+                <rect
+                  x={-15}
+                  y={-22}
+                  width={30 * hpPercent}
+                  height={4}
+                  rx={2}
+                  fill={hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#f59e0b' : '#ef4444'}
+                />
+              </g>
+            );
+          })}
+
           {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
           <g>
             {/* Свечение */}
@@ -812,52 +891,6 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset - 25} cy={totalHeight + 60} r={4} fill="#f59e0b" opacity={0.6}>
             <animate attributeName="opacity" values="0.4;0.8;0.4" dur="3s" repeatCount="indefinite" />
           </circle>
-
-          {/* Враги */}
-          {enemies.map(enemy => {
-            const pos = getPositionOnPath(enemyPath, enemy.progress);
-            const config = ENEMIES[enemy.type];
-            const hpPercent = enemy.hp / enemy.maxHp;
-
-            return (
-              <g key={enemy.id} transform={`translate(${pos.x}, ${pos.y})`}>
-                {/* Тень */}
-                <ellipse cx={0} cy={5} rx={12} ry={4} fill="rgba(0,0,0,0.3)" />
-
-                {/* Тело врага */}
-                <circle
-                  cx={0}
-                  cy={0}
-                  r={14}
-                  fill={`url(#enemy-gradient-${enemy.type})`}
-                  stroke="rgba(255,255,255,0.2)"
-                  strokeWidth={1}
-                />
-
-                {/* Иконка */}
-                <text
-                  x={0}
-                  y={5}
-                  textAnchor="middle"
-                  fontSize="16"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  {config.icon}
-                </text>
-
-                {/* HP бар */}
-                <rect x={-15} y={-22} width={30} height={4} rx={2} fill="rgba(0,0,0,0.5)" />
-                <rect
-                  x={-15}
-                  y={-22}
-                  width={30 * hpPercent}
-                  height={4}
-                  rx={2}
-                  fill={hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#f59e0b' : '#ef4444'}
-                />
-              </g>
-            );
-          })}
         </svg>
 
         {/* Внутренняя панель с сеткой */}
@@ -986,35 +1019,6 @@ export default function TribologyLabPage() {
             );
           })}
         </div>
-
-        {/* Кнопка Начать волну */}
-        {gamePhase === 'preparing' && (
-          <button
-            onClick={startWave}
-            className="absolute left-1/2 -translate-x-1/2 px-6 py-2 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95"
-            style={{
-              bottom: -50,
-              background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
-              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), 0 2px 0 #15803d',
-            }}
-          >
-            ▶ Волна {wave}
-          </button>
-        )}
-
-        {/* Индикатор волны в процессе */}
-        {gamePhase === 'wave' && (
-          <div
-            className="absolute left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-white font-medium"
-            style={{
-              bottom: -50,
-              background: 'rgba(239, 68, 68, 0.8)',
-              boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
-            }}
-          >
-            🔥 Волна {wave} — осталось врагов: {enemies.length + spawnQueue.length}
-          </div>
-        )}
 
         {/* Game Over */}
         {gamePhase === 'defeat' && (
