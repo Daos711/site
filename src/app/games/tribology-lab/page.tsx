@@ -417,6 +417,7 @@ export default function TribologyLabPage() {
           <g clipPath="url(#oilClip)">
             {(() => {
               const innerR = cornerRadius - innerOffset;
+              const innerCornerRadius = cornerRadius * 0.4;
               return (
                 <path
                   d={`
@@ -427,8 +428,10 @@ export default function TribologyLabPage() {
                     A ${innerR} ${innerR} 0 0 1 ${totalWidth - innerOffset} ${innerOffset + innerR}
                     L ${totalWidth - innerOffset} ${totalHeight}
                     L ${totalWidth - conveyorWidth} ${totalHeight}
-                    L ${totalWidth - conveyorWidth} ${conveyorWidth}
-                    L ${conveyorWidth} ${conveyorWidth}
+                    L ${totalWidth - conveyorWidth} ${conveyorWidth + innerCornerRadius}
+                    A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${totalWidth - conveyorWidth - innerCornerRadius} ${conveyorWidth}
+                    L ${conveyorWidth + innerCornerRadius} ${conveyorWidth}
+                    A ${innerCornerRadius} ${innerCornerRadius} 0 0 0 ${conveyorWidth} ${conveyorWidth + innerCornerRadius}
                     L ${conveyorWidth} ${totalHeight}
                     Z
                   `}
@@ -552,6 +555,9 @@ export default function TribologyLabPage() {
             background: 'linear-gradient(145deg, #0a0f15 0%, #0d1218 100%)',
             boxShadow: 'inset 0 4px 25px rgba(0,0,0,0.9)',
             borderRadius: `${cornerRadius * 0.4}px ${cornerRadius * 0.4}px 0 0`,
+            borderTop: '2px solid #1a2530',
+            borderLeft: '2px solid #1a2530',
+            borderRight: '2px solid #1a2530',
           }}
         >
           {/* Сетка 4x3 */}
