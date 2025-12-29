@@ -546,16 +546,18 @@ export default function TribologyLabPage() {
             <ellipse cx={(innerOffset + conveyorWidth - 2) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#startGlow)" />
             {/* Патрубок */}
             <rect x={innerOffset} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
-            {/* Щель */}
-            <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" />
+            {/* Щель с тенью */}
+            <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
             {/* Мелкие частицы */}
             <circle cx={(innerOffset + conveyorWidth - 2) / 2 - 15} cy={totalHeight - 18} r={2} fill="rgba(20, 184, 166, 0.4)" />
             <circle cx={(innerOffset + conveyorWidth - 2) / 2 + 20} cy={totalHeight - 30} r={1.5} fill="rgba(20, 184, 166, 0.3)" />
           </g>
 
           {/* ФИНИШ - красно-янтарная горловина (касается обводки панели) */}
-          {/* Свечение - статичное, без анимации */}
-          <ellipse cx={totalWidth - (conveyorWidth + innerOffset + 2) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)" opacity={0.7} />
+          {/* Свечение с пульсацией */}
+          <ellipse cx={totalWidth - (conveyorWidth + innerOffset + 2) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
+            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite" />
+          </ellipse>
           <g>
             {/* Горловина */}
             <path
@@ -572,25 +574,6 @@ export default function TribologyLabPage() {
             />
             {/* Глубокое затемнение внутри */}
             <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 6} rx={(conveyorWidth - innerOffset - 2) * 0.35} ry={6} fill="url(#finishInnerDark)" />
-            {/* Тонкая окантовка риска вместо полосок */}
-            <path
-              d={`
-                M ${totalWidth - conveyorWidth + 10} ${totalHeight - 15}
-                L ${totalWidth - conveyorWidth + 10} ${totalHeight - 4}
-              `}
-              stroke="rgba(180, 100, 50, 0.4)"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-            <path
-              d={`
-                M ${totalWidth - innerOffset - 8} ${totalHeight - 15}
-                L ${totalWidth - innerOffset - 8} ${totalHeight - 4}
-              `}
-              stroke="rgba(180, 100, 50, 0.4)"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
           </g>
 
           {/* Карман магазина — расширен до бортиков */}
