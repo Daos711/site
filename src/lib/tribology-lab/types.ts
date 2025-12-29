@@ -101,8 +101,8 @@ export const GRID_ROWS = 3;
 export const INITIAL_LIVES = 10;
 export const INITIAL_GOLD = 100;
 
-export const CELL_SIZE = 80;        // размер ячейки в пикселях
-export const CONVEYOR_WIDTH = 48;   // ширина конвейера
+export const CELL_SIZE = 100;       // размер ячейки в пикселях (+25%)
+export const CONVEYOR_WIDTH = 60;   // ширина конвейера (+25%)
 
 // Формула урона: baseDamage * 1.5^(level-1)
 export function getDamage(baseDamage: number, level: number): number {
@@ -128,7 +128,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🧲',
     basePrice: 25,
     baseDamage: 12,
-    range: 70,
+    range: 88,        // +25%
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
     description: 'x1.5 урона по металлу',
@@ -139,7 +139,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '❄️',
     basePrice: 35,
     baseDamage: 8,
-    range: 90,
+    range: 113,       // +25%
     attackSpeed: 0.8,
     color: '#38bdf8',  // голубой
     description: 'Замедляет на 40%',
@@ -150,7 +150,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🛡️',
     basePrice: 50,
     baseDamage: 18,
-    range: 80,
+    range: 100,       // +25%
     attackSpeed: 1.2,
     color: '#fbbf24',  // золотой
     description: 'Чистый урон',
@@ -161,7 +161,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '💧',
     basePrice: 45,
     baseDamage: 6,
-    range: 60,
+    range: 75,        // +25%
     attackSpeed: 0.6,
     color: '#a855f7',  // пурпурный
     description: '+25% урон соседним модулям',
@@ -172,7 +172,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '📡',
     basePrice: 65,
     baseDamage: 10,
-    range: 100,
+    range: 125,       // +25%
     attackSpeed: 0.4,
     color: '#2dd4bf',  // бирюзовый
     description: 'AOE урон',
@@ -183,7 +183,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🔬',
     basePrice: 80,
     baseDamage: 15,
-    range: 120,
+    range: 150,       // +25%
     attackSpeed: 0.3,
     color: '#ef4444',  // красный
     description: 'Пробивает насквозь',
@@ -201,7 +201,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 55,
     reward: 5,
     description: 'Базовый враг',
-    size: 10,
+    size: 12,       // +25%
     color: '#9ca3af',
     oscillation: 5,
     shape: 'dust',  // облачко частиц
@@ -214,7 +214,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 30,
     reward: 10,
     description: 'Медленный, крепкий',
-    size: 14,
+    size: 18,       // +25%
     color: '#a67c52',  // песочно-серый/охра
     oscillation: 1,
     shape: 'shard',  // осколок
@@ -227,7 +227,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 42,
     reward: 12,
     description: 'Иммунитет к ожогу',
-    size: 12,
+    size: 15,       // +25%
     color: '#ff6b35',  // оранжево-красный
     oscillation: 3,
     shape: 'drop',  // горячая зона
@@ -240,7 +240,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 25,
     reward: 15,
     description: 'Магнит x1.5 урона',
-    size: 16,
+    size: 20,       // +25%
     color: '#a8a8a8',  // серебристый
     oscillation: 2,
     shape: 'shavings',  // завитки стружки
@@ -253,7 +253,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 35,
     reward: 18,
     description: '-20% урон модулей рядом',
-    size: 14,
+    size: 18,       // +25%
     color: '#4a7c59',  // зелёно-бурый
     oscillation: 4,
     shape: 'blob',  // амёбообразное пятно
@@ -266,7 +266,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 48,
     reward: 10,
     description: 'Иммунитет к замедлению',
-    size: 10,
+    size: 12,       // +25%
     color: '#38bdf8',
     oscillation: 0,
     shape: 'drop',
@@ -279,7 +279,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 60,
     reward: 12,
     description: 'Телепорт +10% каждые 3с',
-    size: 8,
+    size: 10,       // +25%
     color: '#facc15',
     oscillation: 8,
     shape: 'spark',
@@ -292,7 +292,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 20,
     reward: 50,
     description: 'Мини-босс',
-    size: 24,
+    size: 30,       // +25%
     color: '#4a4a4a',  // тёмный металл
     oscillation: 1,
     shape: 'scarred',  // царапины
@@ -305,7 +305,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 15,
     reward: 150,
     description: 'Регенерация 10 HP/с',
-    size: 32,
+    size: 40,       // +25%
     color: '#374151',  // тёмно-серый
     oscillation: 0,
     shape: 'pitted',  // кратеры

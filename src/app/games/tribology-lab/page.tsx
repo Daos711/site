@@ -21,7 +21,6 @@ import {
   updateEnemy,
   hasReachedFinish,
   isDead,
-  separateEnemies,
   type WaveEnemy,
 } from "@/lib/tribology-lab/enemies";
 
@@ -137,22 +136,30 @@ export default function TribologyLabPage() {
       lastUpdateRef.current = timestamp;
       const elapsedSinceStart = (timestamp - waveStartTime) * gameSpeed;
 
-      // Спавн врагов из очереди
+      // Спавн врагов из очереди (по одному за раз, если место свободно)
       setSpawnQueue(prev => {
         const ready = prev.filter(s => s.spawnAt <= elapsedSinceStart);
-        const remaining = prev.filter(s => s.spawnAt > elapsedSinceStart);
+        const notReady = prev.filter(s => s.spawnAt > elapsedSinceStart);
 
         if (ready.length > 0) {
-          // Фильтруем уже заспавненных (защита от двойного вызова в StrictMode)
-          const toSpawn = ready.filter(s => !spawnedIdsRef.current.has(s.id));
-          if (toSpawn.length > 0) {
-            toSpawn.forEach(s => spawnedIdsRef.current.add(s.id));
-            const newEnemies = toSpawn.map(s => createEnemy(s.type as any, wave));
-            setEnemies(prevEnemies => [...prevEnemies, ...newEnemies]);
+          // Берём только первого готового врага
+          const toSpawn = ready.find(s => !spawnedIdsRef.current.has(s.id));
+          if (toSpawn) {
+            setEnemies(prevEnemies => {
+              // Проверяем есть ли место для спавна (никого на старте)
+              const canSpawn = !prevEnemies.some(e => e.progress < 0.03);
+              if (canSpawn) {
+                spawnedIdsRef.current.add(toSpawn.id);
+                const newEnemy = createEnemy(toSpawn.type as any, wave);
+                return [...prevEnemies, newEnemy];
+              }
+              return prevEnemies;
+            });
           }
         }
 
-        return remaining;
+        // Оставляем в очереди тех кто ещё не заспавнился
+        return [...ready.filter(s => !spawnedIdsRef.current.has(s.id)), ...notReady];
       });
 
       // Обновление врагов
@@ -189,8 +196,7 @@ export default function TribologyLabPage() {
           setGold(g => g + goldEarned);
         }
 
-        // Предотвращаем визуальное наложение врагов
-        return separateEnemies(updated);
+        return updated;
       });
 
       // Проверка окончания волны (с защитой от многократного вызова)
