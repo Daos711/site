@@ -38,10 +38,11 @@ interface DragState {
 export default function TribologyLabPage() {
   const [wave] = useState(1);
   const [lives] = useState(INITIAL_LIVES);
-  const [gold, setGold] = useState(INITIAL_GOLD);
+  const [gold, setGold] = useState(99999); // Для тестирования
   const [modules, setModules] = useState<Module[]>([]);
   const [shop, setShop] = useState<ModuleType[]>(INITIAL_SHOP);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
 
   // Размеры
@@ -169,6 +170,10 @@ export default function TribologyLabPage() {
               existingModule.level === draggedModule.level &&
               existingModule.level < 5
             ) {
+              // Анимация слияния
+              setMergingCell({ x: targetCell.x, y: targetCell.y });
+              setTimeout(() => setMergingCell(null), 400);
+
               setModules(prev => prev
                 .filter(m => m.id !== dragState.moduleId)
                 .map(m => m.id === existingModule.id ? { ...m, level: m.level + 1 } : m)
@@ -280,6 +285,32 @@ export default function TribologyLabPage() {
         }
         .pulse-finish {
           animation: pulseFinish 2s ease-in-out infinite;
+        }
+        @keyframes merge {
+          0% {
+            transform: scale(1);
+            filter: brightness(1);
+          }
+          30% {
+            transform: scale(1.15);
+            filter: brightness(1.5) saturate(1.3);
+          }
+          60% {
+            transform: scale(0.95);
+            filter: brightness(1.2);
+          }
+          100% {
+            transform: scale(1);
+            filter: brightness(1);
+          }
+        }
+        @keyframes mergeGlow {
+          0% { box-shadow: 0 0 0 rgba(255,255,100,0); }
+          50% { box-shadow: 0 0 30px rgba(255,255,100,0.8), 0 0 60px rgba(255,200,50,0.4); }
+          100% { box-shadow: 0 0 0 rgba(255,255,100,0); }
+        }
+        .animate-merge {
+          animation: merge 0.4s ease-out, mergeGlow 0.4s ease-out;
         }
       `}</style>
 
@@ -651,6 +682,7 @@ export default function TribologyLabPage() {
                   }
                   return dragState.moduleType === module.type && module.level === 1 && module.level < 5;
                 })();
+                const isMerging = mergingCell?.x === x && mergingCell?.y === y;
 
                 return (
                   <div
@@ -669,7 +701,7 @@ export default function TribologyLabPage() {
                   >
                     {module && !isDraggingThis && (
                       <div
-                        className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                        className={`absolute inset-0 cursor-grab active:cursor-grabbing ${isMerging ? 'animate-merge' : ''}`}
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
