@@ -56,8 +56,9 @@ export function getPathLength(path: PathPoint[]): number {
 /**
  * Получает позицию на пути по прогрессу (0-1)
  * Добавляет небольшую осцилляцию для "живого" движения
+ * @param oscillationAmount - амплитуда колебания в пикселях (из конфига врага)
  */
-export function getPositionOnPath(path: PathPoint[], progress: number, enemyId?: string): { x: number; y: number; angle: number } {
+export function getPositionOnPath(path: PathPoint[], progress: number, oscillationAmount: number = 3): { x: number; y: number; angle: number } {
   // Базовая позиция
   let baseX: number;
   let baseY: number;
@@ -110,8 +111,8 @@ export function getPositionOnPath(path: PathPoint[], progress: number, enemyId?:
     }
   }
 
-  // Добавляем осцилляцию (колебание ±3px перпендикулярно направлению)
-  const oscillation = Math.sin(progress * Math.PI * 12) * 3;
+  // Добавляем осцилляцию (колебание перпендикулярно направлению)
+  const oscillation = Math.sin(progress * Math.PI * 12) * oscillationAmount;
   const perpX = -Math.sin(angle) * oscillation;
   const perpY = Math.cos(angle) * oscillation;
 
@@ -263,9 +264,21 @@ export function updateEnemy(
   const progressPerSecond = speedPerSecond / pathLength;
   const deltaProgress = progressPerSecond * (deltaTime / 1000);
 
+  let newProgress = enemy.progress + deltaProgress;
+
+  // Телепорт для Static: каждые 10% прогресса прыгает ещё на +10%
+  if (enemy.type === 'static') {
+    const prevBoundary = Math.floor(enemy.progress * 10);
+    const newBoundary = Math.floor(newProgress * 10);
+    if (newBoundary > prevBoundary && newProgress < 0.9) {
+      // Телепорт +10%
+      newProgress = Math.min(1, newProgress + 0.1);
+    }
+  }
+
   return {
     ...enemy,
-    progress: Math.min(1, enemy.progress + deltaProgress),
+    progress: Math.min(1, newProgress),
     effects: updatedEffects,
   };
 }

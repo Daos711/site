@@ -841,9 +841,10 @@ export default function TribologyLabPage() {
 
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
           {enemies.map(enemy => {
-            const pos = getPositionOnPath(enemyPath, enemy.progress);
             const config = ENEMIES[enemy.type];
+            const pos = getPositionOnPath(enemyPath, enemy.progress, config.oscillation);
             const hpPercent = enemy.hp / enemy.maxHp;
+            const size = config.size;
             // Fade in/out для появления и исчезновения
             const opacity = enemy.progress < 0.03
               ? enemy.progress / 0.03
@@ -853,40 +854,108 @@ export default function TribologyLabPage() {
 
             return (
               <g key={enemy.id} transform={`translate(${pos.x}, ${pos.y})`} opacity={opacity}>
-                {/* Тень */}
-                <ellipse cx={0} cy={5} rx={12} ry={4} fill="rgba(0,0,0,0.3)" />
+                {/* Тень - пропорциональная размеру */}
+                <ellipse cx={0} cy={size * 0.4} rx={size * 0.9} ry={size * 0.3} fill="rgba(0,0,0,0.3)" />
 
-                {/* Тело врага */}
-                <circle
-                  cx={0}
-                  cy={0}
-                  r={14}
-                  fill={`url(#enemy-gradient-${enemy.type})`}
-                  stroke="rgba(255,255,255,0.2)"
-                  strokeWidth={1}
-                />
+                {/* Специальный эффект для Heat - пульсирующее свечение */}
+                {enemy.type === 'heat' && (
+                  <circle cx={0} cy={0} r={size * 1.5} fill="none" stroke="#f97316" strokeWidth={2} opacity={0.3}>
+                    <animate attributeName="r" values={`${size};${size * 1.8};${size}`} dur="1s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.3;0.1;0.3" dur="1s" repeatCount="indefinite" />
+                  </circle>
+                )}
 
-                {/* Иконка */}
+                {/* Специальный эффект для босса - аура */}
+                {enemy.type.startsWith('boss') && (
+                  <circle cx={0} cy={0} r={size * 1.3} fill="none" stroke="#ef4444" strokeWidth={3} opacity={0.5}>
+                    <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
+                {/* Тело врага по форме */}
+                {config.shape === 'circle' && (
+                  <circle cx={0} cy={0} r={size} fill={config.color} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+                )}
+
+                {config.shape === 'crystal' && (
+                  <polygon
+                    points={`0,${-size} ${size * 0.7},${-size * 0.3} ${size * 0.5},${size * 0.7} ${-size * 0.5},${size * 0.7} ${-size * 0.7},${-size * 0.3}`}
+                    fill={config.color}
+                    stroke="rgba(255,255,255,0.3)"
+                    strokeWidth={1}
+                  />
+                )}
+
+                {config.shape === 'gear' && (
+                  <g>
+                    <circle cx={0} cy={0} r={size * 0.7} fill={config.color} />
+                    {/* Зубцы шестерёнки */}
+                    {[0, 60, 120, 180, 240, 300].map(angle => (
+                      <rect
+                        key={angle}
+                        x={-size * 0.15}
+                        y={-size}
+                        width={size * 0.3}
+                        height={size * 0.4}
+                        fill={config.color}
+                        transform={`rotate(${angle})`}
+                      />
+                    ))}
+                  </g>
+                )}
+
+                {config.shape === 'drop' && (
+                  <path
+                    d={`M 0 ${-size} Q ${size} 0 0 ${size} Q ${-size} 0 0 ${-size}`}
+                    fill={config.color}
+                    stroke="rgba(255,255,255,0.2)"
+                    strokeWidth={1}
+                  />
+                )}
+
+                {config.shape === 'spark' && (
+                  <g>
+                    {[0, 45, 90, 135].map(angle => (
+                      <line
+                        key={angle}
+                        x1={0} y1={-size}
+                        x2={0} y2={size}
+                        stroke={config.color}
+                        strokeWidth={2}
+                        transform={`rotate(${angle})`}
+                      />
+                    ))}
+                    {/* Мерцание для Static */}
+                    <animate attributeName="opacity" values="0.8;0.3;1;0.5;0.8" dur="0.5s" repeatCount="indefinite" />
+                  </g>
+                )}
+
+                {/* Иконка - масштабируется с размером */}
                 <text
                   x={0}
-                  y={5}
+                  y={size * 0.35}
                   textAnchor="middle"
-                  fontSize="16"
+                  fontSize={size * 1.2}
                   style={{ pointerEvents: 'none' }}
                 >
                   {config.icon}
                 </text>
 
-                {/* HP бар */}
-                <rect x={-15} y={-22} width={30} height={4} rx={2} fill="rgba(0,0,0,0.5)" />
+                {/* HP бар - масштабируется */}
+                <rect x={-size} y={-size - 8} width={size * 2} height={4} rx={2} fill="rgba(0,0,0,0.5)" />
                 <rect
-                  x={-15}
-                  y={-22}
-                  width={30 * hpPercent}
+                  x={-size}
+                  y={-size - 8}
+                  width={size * 2 * hpPercent}
                   height={4}
                   rx={2}
                   fill={hpPercent > 0.5 ? '#22c55e' : hpPercent > 0.25 ? '#f59e0b' : '#ef4444'}
                 />
+
+                {/* Эффекты статуса */}
+                {enemy.effects.some(e => e.type === 'slow') && (
+                  <text x={size + 5} y={0} fontSize={10}>❄️</text>
+                )}
               </g>
             );
           })}

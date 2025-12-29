@@ -58,6 +58,11 @@ export interface EnemyConfig {
   speed: number;
   reward: number;
   description: string;
+  // Визуальные параметры
+  size: number;           // радиус в пикселях
+  color: string;          // основной цвет
+  oscillation: number;    // амплитуда колебания (0-10)
+  shape: 'circle' | 'crystal' | 'gear' | 'drop' | 'spark';
 }
 
 // ==================== ИГРОВОЕ СОСТОЯНИЕ ====================
@@ -195,15 +200,23 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 55,
     reward: 5,
     description: 'Базовый враг',
+    size: 10,
+    color: '#9ca3af',
+    oscillation: 5,
+    shape: 'circle',
   },
   abrasive: {
     id: 'abrasive',
     name: 'Абразив',
-    icon: 'ite',
+    icon: '💎',
     baseHp: 70,
     speed: 30,
     reward: 10,
     description: 'Медленный, крепкий',
+    size: 14,
+    color: '#a16207',
+    oscillation: 1,
+    shape: 'crystal',
   },
   heat: {
     id: 'heat',
@@ -213,6 +226,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 42,
     reward: 12,
     description: 'Иммунитет к ожогу',
+    size: 12,
+    color: '#f97316',
+    oscillation: 3,
+    shape: 'circle',
   },
   metal: {
     id: 'metal',
@@ -222,6 +239,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 25,
     reward: 15,
     description: 'Магнит x1.5 урона',
+    size: 16,
+    color: '#6b7280',
+    oscillation: 2,
+    shape: 'gear',
   },
   corrosion: {
     id: 'corrosion',
@@ -231,6 +252,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 35,
     reward: 18,
     description: '-20% урон модулей рядом',
+    size: 14,
+    color: '#22c55e',
+    oscillation: 4,
+    shape: 'drop',
   },
   moisture: {
     id: 'moisture',
@@ -240,6 +265,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 48,
     reward: 10,
     description: 'Иммунитет к замедлению',
+    size: 10,
+    color: '#38bdf8',
+    oscillation: 0,
+    shape: 'drop',
   },
   static: {
     id: 'static',
@@ -249,6 +278,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 60,
     reward: 12,
     description: 'Телепорт +10% каждые 3с',
+    size: 8,
+    color: '#facc15',
+    oscillation: 8,
+    shape: 'spark',
   },
   boss_wear: {
     id: 'boss_wear',
@@ -258,6 +291,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 20,
     reward: 50,
     description: 'Мини-босс',
+    size: 24,
+    color: '#991b1b',
+    oscillation: 1,
+    shape: 'circle',
   },
   boss_pitting: {
     id: 'boss_pitting',
@@ -267,6 +304,10 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 15,
     reward: 150,
     description: 'Регенерация 10 HP/с',
+    size: 32,
+    color: '#1f2937',
+    oscillation: 0,
+    shape: 'circle',
   },
 };
 
