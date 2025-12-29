@@ -67,6 +67,7 @@ export default function TribologyLabPage() {
   const [waveStartTime, setWaveStartTime] = useState(0);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
+  const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
 
   // Размеры
   const cellSize = 110;
@@ -107,6 +108,7 @@ export default function TribologyLabPage() {
     setWaveStartTime(performance.now());
     setGamePhase('wave');
     lastUpdateRef.current = performance.now();
+    waveEndingRef.current = false; // Сбрасываем флаг
   }, [gamePhase, wave]);
 
   // Конец волны
@@ -178,10 +180,11 @@ export default function TribologyLabPage() {
         return updated;
       });
 
-      // Проверка окончания волны
+      // Проверка окончания волны (с защитой от многократного вызова)
       setEnemies(prev => {
         setSpawnQueue(queue => {
-          if (prev.length === 0 && queue.length === 0 && gamePhase === 'wave') {
+          if (prev.length === 0 && queue.length === 0 && gamePhase === 'wave' && !waveEndingRef.current) {
+            waveEndingRef.current = true; // Помечаем что волна завершается
             setTimeout(() => endWave(), 500);
           }
           return queue;
