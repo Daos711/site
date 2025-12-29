@@ -312,61 +312,58 @@ export default function TribologyLabPage() {
 
         {/* SVG для масляного канала */}
         <svg
-          className="absolute inset-0 pointer-events-none overflow-visible"
+          className="absolute inset-0 pointer-events-none"
           width={totalWidth}
           height={totalHeight}
+          style={{ overflow: 'visible' }}
         >
           <defs>
-            {/* Градиент для масляной плёнки */}
+            {/* Градиент для масляной плёнки с "живостью" */}
             <linearGradient id="oilGradientMain" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0c1929" />
-              <stop offset="40%" stopColor="#152238" />
-              <stop offset="60%" stopColor="#1a2d4a" />
-              <stop offset="100%" stopColor="#0c1929" />
+              <stop offset="0%" stopColor="#0a1520" />
+              <stop offset="25%" stopColor="#0f1f30" />
+              <stop offset="50%" stopColor="#132740" />
+              <stop offset="75%" stopColor="#0f1f30" />
+              <stop offset="100%" stopColor="#0a1520" />
             </linearGradient>
 
-            {/* Градиент для металлических бортиков */}
+            {/* Градиент для металлических бортиков (приглушённый) */}
             <linearGradient id="metalBorderGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#5a6270" />
-              <stop offset="30%" stopColor="#3d4550" />
-              <stop offset="70%" stopColor="#2a3038" />
-              <stop offset="100%" stopColor="#1a1f25" />
+              <stop offset="0%" stopColor="#454a52" />
+              <stop offset="50%" stopColor="#2d3138" />
+              <stop offset="100%" stopColor="#1a1e22" />
             </linearGradient>
 
-            {/* Specular highlight */}
-            <linearGradient id="specularHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="transparent" />
-              <stop offset="50%" stopColor="rgba(150, 200, 255, 0.15)" />
-              <stop offset="100%" stopColor="transparent" />
+            {/* Виньетка для канала (усиленная) */}
+            <linearGradient id="channelEdgeDark" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(0, 0, 0, 0.4)" />
+              <stop offset="15%" stopColor="rgba(0, 0, 0, 0)" />
+              <stop offset="85%" stopColor="rgba(0, 0, 0, 0)" />
+              <stop offset="100%" stopColor="rgba(0, 0, 0, 0.4)" />
             </linearGradient>
-
-            {/* Виньетка для канала */}
-            <radialGradient id="channelVignette" cx="50%" cy="50%" r="70%">
-              <stop offset="0%" stopColor="rgba(30, 60, 100, 0.3)" />
-              <stop offset="100%" stopColor="rgba(0, 0, 0, 0.5)" />
-            </radialGradient>
 
             {/* Градиент для старта (бирюзовый) */}
-            <radialGradient id="startGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(20, 184, 166, 0.6)" />
+            <radialGradient id="startGlow" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stopColor="rgba(20, 184, 166, 0.5)" />
               <stop offset="100%" stopColor="rgba(20, 184, 166, 0)" />
             </radialGradient>
 
-            {/* Градиент для финиша (красно-янтарный) */}
-            <radialGradient id="finishGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(239, 68, 68, 0.7)" />
-              <stop offset="60%" stopColor="rgba(245, 158, 11, 0.4)" />
-              <stop offset="100%" stopColor="rgba(239, 68, 68, 0)" />
+            {/* Градиент для финиша - глубокое затемнение */}
+            <radialGradient id="finishGlow" cx="50%" cy="30%" r="60%">
+              <stop offset="0%" stopColor="rgba(180, 50, 30, 0.5)" />
+              <stop offset="50%" stopColor="rgba(120, 40, 20, 0.3)" />
+              <stop offset="100%" stopColor="rgba(80, 20, 10, 0)" />
             </radialGradient>
 
-            {/* Фильтр для масляного блеска */}
-            <filter id="oilSheen" x="-20%" y="-20%" width="140%" height="140%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" />
-              <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
-            </filter>
+            {/* Глубокое затемнение внутри финиша */}
+            <radialGradient id="finishInnerDark" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(0, 0, 0, 0.9)" />
+              <stop offset="60%" stopColor="rgba(0, 0, 0, 0.6)" />
+              <stop offset="100%" stopColor="rgba(20, 10, 5, 0.3)" />
+            </radialGradient>
           </defs>
 
-          {/* Внешний контур канала (металлический бортик) */}
+          {/* Внешний контур канала (металлический бортик) - исправлены углы */}
           <path
             d={`
               M 0 ${totalHeight}
@@ -376,160 +373,144 @@ export default function TribologyLabPage() {
               Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
               L ${totalWidth} ${totalHeight}
               L ${totalWidth - innerOffset} ${totalHeight}
-              L ${totalWidth - innerOffset} ${cornerRadius + innerOffset}
-              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius - innerOffset} ${innerOffset}
-              L ${cornerRadius + innerOffset} ${innerOffset}
-              Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius + innerOffset}
+              L ${totalWidth - innerOffset} ${cornerRadius}
+              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - cornerRadius} ${innerOffset}
+              L ${cornerRadius} ${innerOffset}
+              Q ${innerOffset} ${innerOffset} ${innerOffset} ${cornerRadius}
               L ${innerOffset} ${totalHeight}
               Z
             `}
             fill="url(#metalBorderGradient)"
           />
 
-          {/* Масляный канал (основа) */}
+          {/* Масляный канал (основа) - исправлены углы */}
           <path
             d={`
               M ${innerOffset} ${totalHeight}
-              L ${innerOffset} ${cornerRadius + innerOffset}
-              Q ${innerOffset} ${innerOffset} ${cornerRadius + innerOffset} ${innerOffset}
-              L ${totalWidth - cornerRadius - innerOffset} ${innerOffset}
-              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius + innerOffset}
+              L ${innerOffset} ${cornerRadius}
+              Q ${innerOffset} ${innerOffset} ${cornerRadius} ${innerOffset}
+              L ${totalWidth - cornerRadius} ${innerOffset}
+              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius}
               L ${totalWidth - innerOffset} ${totalHeight}
               L ${conveyorWidth} ${totalHeight}
-              L ${conveyorWidth} ${pathInner.leftTopY}
-              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.topLeftX} ${conveyorWidth}
-              L ${pathInner.topRightX} ${conveyorWidth}
-              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${pathInner.rightTopY}
+              L ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
+              Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3} ${conveyorWidth}
+              L ${totalWidth - conveyorWidth - cornerRadius * 0.3} ${conveyorWidth}
+              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
               L ${totalWidth - conveyorWidth} ${totalHeight}
               Z
             `}
             fill="url(#oilGradientMain)"
           />
 
-          {/* Виньетка поверх канала */}
-          <path
-            d={`
-              M ${innerOffset} ${totalHeight}
-              L ${innerOffset} ${cornerRadius + innerOffset}
-              Q ${innerOffset} ${innerOffset} ${cornerRadius + innerOffset} ${innerOffset}
-              L ${totalWidth - cornerRadius - innerOffset} ${innerOffset}
-              Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius + innerOffset}
-              L ${totalWidth - innerOffset} ${totalHeight}
-              L ${conveyorWidth} ${totalHeight}
-              L ${conveyorWidth} ${pathInner.leftTopY}
-              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.topLeftX} ${conveyorWidth}
-              L ${pathInner.topRightX} ${conveyorWidth}
-              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${pathInner.rightTopY}
-              L ${totalWidth - conveyorWidth} ${totalHeight}
-              Z
-            `}
-            fill="url(#channelVignette)"
+          {/* Затемнение по краям канала (глубина) */}
+          <rect
+            x={innerOffset}
+            y={innerOffset}
+            width={conveyorWidth - innerOffset - 5}
+            height={totalHeight - innerOffset}
+            fill="url(#channelEdgeDark)"
+            style={{ transform: 'rotate(90deg)', transformOrigin: `${innerOffset + (conveyorWidth - innerOffset) / 2}px ${totalHeight / 2}px` }}
+            opacity={0.5}
           />
 
-          {/* Specular highlight (блик вдоль канала) */}
-          <path
-            d={`
-              M ${innerOffset + 15} ${totalHeight - 30}
-              L ${innerOffset + 15} ${cornerRadius + 30}
-            `}
-            stroke="rgba(100, 160, 220, 0.2)"
-            strokeWidth={4}
-            strokeLinecap="round"
-            fill="none"
-          />
-          <path
-            d={`
-              M ${cornerRadius + 30} ${innerOffset + 15}
-              L ${totalWidth - cornerRadius - 30} ${innerOffset + 15}
-            `}
-            stroke="rgba(100, 160, 220, 0.2)"
-            strokeWidth={4}
-            strokeLinecap="round"
-            fill="none"
-          />
-          <path
-            d={`
-              M ${totalWidth - innerOffset - 15} ${cornerRadius + 30}
-              L ${totalWidth - innerOffset - 15} ${totalHeight - 30}
-            `}
-            stroke="rgba(100, 160, 220, 0.2)"
-            strokeWidth={4}
-            strokeLinecap="round"
-            fill="none"
-          />
-
-          {/* Масляные разводы/пятна */}
-          <ellipse cx={conveyorWidth / 2 + innerOffset} cy={totalHeight * 0.4} rx={15} ry={25} fill="rgba(40, 80, 120, 0.3)" />
-          <ellipse cx={conveyorWidth / 2 + innerOffset} cy={totalHeight * 0.7} rx={12} ry={20} fill="rgba(50, 90, 130, 0.25)" />
-          <ellipse cx={totalWidth / 2} cy={conveyorWidth / 2 + innerOffset} rx={30} ry={12} fill="rgba(40, 80, 120, 0.3)" />
-          <ellipse cx={totalWidth * 0.7} cy={conveyorWidth / 2 + innerOffset} rx={20} ry={10} fill="rgba(50, 90, 130, 0.25)" />
-          <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset} cy={totalHeight * 0.5} rx={15} ry={22} fill="rgba(40, 80, 120, 0.3)" />
+          {/* Мелкие органичные пятна масла (у краёв и в углах) */}
+          {/* Левый участок - у внутреннего края */}
+          <ellipse cx={conveyorWidth - 15} cy={totalHeight * 0.35} rx={6} ry={10} fill="rgba(25, 50, 80, 0.35)" transform="rotate(-5)" />
+          <ellipse cx={conveyorWidth - 20} cy={totalHeight * 0.55} rx={4} ry={7} fill="rgba(30, 55, 85, 0.3)" />
+          <ellipse cx={conveyorWidth - 12} cy={totalHeight * 0.75} rx={5} ry={8} fill="rgba(25, 50, 80, 0.25)" transform="rotate(10)" />
+          {/* В левом верхнем углу */}
+          <ellipse cx={conveyorWidth * 0.7} cy={conveyorWidth * 0.7} rx={8} ry={6} fill="rgba(30, 55, 85, 0.3)" transform="rotate(-30)" />
+          {/* Верхний участок */}
+          <ellipse cx={totalWidth * 0.3} cy={conveyorWidth - 15} rx={7} ry={4} fill="rgba(25, 50, 80, 0.3)" />
+          <ellipse cx={totalWidth * 0.5} cy={conveyorWidth - 18} rx={5} ry={3} fill="rgba(30, 55, 85, 0.25)" transform="rotate(5)" />
+          <ellipse cx={totalWidth * 0.7} cy={conveyorWidth - 12} rx={6} ry={4} fill="rgba(25, 50, 80, 0.3)" transform="rotate(-8)" />
+          {/* В правом верхнем углу */}
+          <ellipse cx={totalWidth - conveyorWidth * 0.7} cy={conveyorWidth * 0.7} rx={7} ry={5} fill="rgba(30, 55, 85, 0.3)" transform="rotate(25)" />
+          {/* Правый участок */}
+          <ellipse cx={totalWidth - conveyorWidth + 15} cy={totalHeight * 0.4} rx={5} ry={9} fill="rgba(25, 50, 80, 0.3)" transform="rotate(8)" />
+          <ellipse cx={totalWidth - conveyorWidth + 18} cy={totalHeight * 0.6} rx={4} ry={6} fill="rgba(30, 55, 85, 0.25)" />
 
           {/* Внутренний бортик (разделитель) */}
           <path
             d={`
               M ${conveyorWidth} ${totalHeight}
-              L ${conveyorWidth} ${pathInner.leftTopY}
-              Q ${conveyorWidth} ${conveyorWidth} ${pathInner.topLeftX} ${conveyorWidth}
-              L ${pathInner.topRightX} ${conveyorWidth}
-              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${pathInner.rightTopY}
+              L ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
+              Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + cornerRadius * 0.3} ${conveyorWidth}
+              L ${totalWidth - conveyorWidth - cornerRadius * 0.3} ${conveyorWidth}
+              Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + cornerRadius * 0.3}
               L ${totalWidth - conveyorWidth} ${totalHeight}
             `}
             fill="none"
-            stroke="#3d4550"
-            strokeWidth={3}
+            stroke="#2a2f35"
+            strokeWidth={2}
           />
 
-          {/* Болты/заклёпки на внешнем бортике */}
+          {/* Болты/заклёпки - приглушённые */}
           {/* Левая сторона */}
-          <circle cx={innerOffset / 2 + 2} cy={conveyorWidth + 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
-          <circle cx={innerOffset / 2 + 2} cy={totalHeight - 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={innerOffset / 2 + 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={innerOffset / 2 + 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           {/* Верхняя сторона */}
-          <circle cx={conveyorWidth + 50} cy={innerOffset / 2 + 2} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
-          <circle cx={totalWidth / 2} cy={innerOffset / 2 + 2} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
-          <circle cx={totalWidth - conveyorWidth - 50} cy={innerOffset / 2 + 2} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={conveyorWidth + 60} cy={innerOffset / 2 + 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth / 2} cy={innerOffset / 2 + 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth - conveyorWidth - 60} cy={innerOffset / 2 + 2} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           {/* Правая сторона */}
-          <circle cx={totalWidth - innerOffset / 2 - 2} cy={conveyorWidth + 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
-          <circle cx={totalWidth - innerOffset / 2 - 2} cy={totalHeight - 50} r={4} fill="#2a3038" stroke="#4a5060" strokeWidth={1} />
+          <circle cx={totalWidth - innerOffset / 2 - 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
+          <circle cx={totalWidth - innerOffset / 2 - 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
 
           {/* СТАРТ - бирюзовый патрубок */}
           <g>
             {/* Свечение */}
-            <ellipse cx={conveyorWidth / 2 + innerOffset / 2} cy={totalHeight + 5} rx={conveyorWidth * 0.4} ry={15} fill="url(#startGlow)" />
+            <ellipse cx={conveyorWidth / 2 + innerOffset / 2} cy={totalHeight + 3} rx={conveyorWidth * 0.35} ry={12} fill="url(#startGlow)" />
             {/* Патрубок */}
-            <rect x={innerOffset + 10} y={totalHeight - 8} width={conveyorWidth - 20 - innerOffset} height={16} rx={4} fill="#0d3d38" stroke="#14b8a6" strokeWidth={2} />
+            <rect x={innerOffset + 12} y={totalHeight - 6} width={conveyorWidth - 24 - innerOffset} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
             {/* Щель */}
-            <rect x={innerOffset + 20} y={totalHeight - 3} width={conveyorWidth - 40 - innerOffset} height={6} rx={2} fill="#0a2a28" />
-            {/* Пузырьки/частицы */}
-            <circle cx={conveyorWidth / 2} cy={totalHeight - 20} r={3} fill="rgba(20, 184, 166, 0.5)" />
-            <circle cx={conveyorWidth / 2 + 15} cy={totalHeight - 35} r={2} fill="rgba(20, 184, 166, 0.4)" />
-            <circle cx={conveyorWidth / 2 - 10} cy={totalHeight - 45} r={2.5} fill="rgba(20, 184, 166, 0.3)" />
+            <rect x={innerOffset + 20} y={totalHeight - 2} width={conveyorWidth - 40 - innerOffset} height={4} rx={2} fill="#051515" />
+            {/* Мелкие частицы */}
+            <circle cx={conveyorWidth / 2 - 5} cy={totalHeight - 18} r={2} fill="rgba(20, 184, 166, 0.4)" />
+            <circle cx={conveyorWidth / 2 + 12} cy={totalHeight - 30} r={1.5} fill="rgba(20, 184, 166, 0.3)" />
           </g>
 
-          {/* ФИНИШ - красно-янтарная горловина */}
-          <g className="pulse-finish">
-            {/* Свечение всасывания */}
-            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 5} rx={conveyorWidth * 0.4} ry={20} fill="url(#finishGlow)" />
+          {/* ФИНИШ - красно-янтарная горловина с глубоким затемнением */}
+          <g style={{ animation: 'pulseFinish 3s ease-in-out infinite' }}>
+            {/* Свечение всасывания - мягче */}
+            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 3} rx={conveyorWidth * 0.35} ry={15} fill="url(#finishGlow)" />
           </g>
           <g>
             {/* Горловина */}
             <path
               d={`
-                M ${totalWidth - conveyorWidth + 10} ${totalHeight - 5}
-                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 10} ${totalWidth - innerOffset - 10} ${totalHeight - 5}
-                L ${totalWidth - innerOffset - 15} ${totalHeight + 8}
-                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 25} ${totalWidth - conveyorWidth + 15} ${totalHeight + 8}
+                M ${totalWidth - conveyorWidth + 15} ${totalHeight - 4}
+                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 8} ${totalWidth - innerOffset - 15} ${totalHeight - 4}
+                L ${totalWidth - innerOffset - 18} ${totalHeight + 6}
+                Q ${totalWidth - conveyorWidth / 2 - innerOffset / 2} ${totalHeight + 18} ${totalWidth - conveyorWidth + 18} ${totalHeight + 6}
                 Z
               `}
-              fill="#2a1a15"
-              stroke="#ef4444"
-              strokeWidth={2}
+              fill="#1a0f0a"
+              stroke="#8b3a2a"
+              strokeWidth={1.5}
             />
-            {/* Внутренняя тень */}
-            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 8} rx={conveyorWidth * 0.25} ry={8} fill="rgba(0,0,0,0.6)" />
-            {/* Предупреждающие полоски */}
-            <line x1={totalWidth - conveyorWidth + 25} y1={totalHeight - 20} x2={totalWidth - conveyorWidth + 25} y2={totalHeight - 5} stroke="#f59e0b" strokeWidth={3} strokeLinecap="round" />
-            <line x1={totalWidth - innerOffset - 25} y1={totalHeight - 20} x2={totalWidth - innerOffset - 25} y2={totalHeight - 5} stroke="#f59e0b" strokeWidth={3} strokeLinecap="round" />
+            {/* Глубокое затемнение внутри */}
+            <ellipse cx={totalWidth - conveyorWidth / 2 - innerOffset / 2} cy={totalHeight + 6} rx={conveyorWidth * 0.22} ry={6} fill="url(#finishInnerDark)" />
+            {/* Тонкая окантовка риска вместо полосок */}
+            <path
+              d={`
+                M ${totalWidth - conveyorWidth + 20} ${totalHeight - 15}
+                L ${totalWidth - conveyorWidth + 20} ${totalHeight - 4}
+              `}
+              stroke="rgba(180, 100, 50, 0.4)"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+            <path
+              d={`
+                M ${totalWidth - innerOffset - 20} ${totalHeight - 15}
+                L ${totalWidth - innerOffset - 20} ${totalHeight - 4}
+              `}
+              stroke="rgba(180, 100, 50, 0.4)"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
           </g>
         </svg>
 
