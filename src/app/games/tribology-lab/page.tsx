@@ -89,6 +89,8 @@ export default function TribologyLabPage() {
 
   // DEBUG: Скорость игры (1 = нормальная, 5 = быстрая)
   const [gameSpeed, setGameSpeed] = useState(1);
+  const [isPaused, setIsPaused] = useState(false);
+  const pauseTimeRef = useRef(0);  // Время, проведённое на паузе
 
   // Размеры
   const cellSize = 110;
@@ -144,6 +146,8 @@ export default function TribologyLabPage() {
     }
 
     spawnedIdsRef.current.clear(); // Сбрасываем отслеживание
+    pauseTimeRef.current = 0;      // Сбрасываем время паузы
+    setIsPaused(false);            // Снимаем паузу
     setSpawnQueue(queue);
     setWaveStartTime(performance.now());
     setGamePhase('wave');
@@ -188,9 +192,17 @@ export default function TribologyLabPage() {
     if (gamePhase !== 'wave') return;
 
     const gameLoop = (timestamp: number) => {
+      // Если на паузе — только обновляем timestamp и ждём
+      if (isPaused) {
+        lastUpdateRef.current = timestamp;
+        pauseTimeRef.current += 16;  // ~1 кадр
+        gameLoopRef.current = requestAnimationFrame(gameLoop);
+        return;
+      }
+
       const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed;
       lastUpdateRef.current = timestamp;
-      const elapsedSinceStart = (timestamp - waveStartTime) * gameSpeed;
+      const elapsedSinceStart = ((timestamp - waveStartTime) - pauseTimeRef.current) * gameSpeed;
 
       // Получаем текущую очередь спавна
       const currentQueue = spawnQueueRef.current;
@@ -302,7 +314,7 @@ export default function TribologyLabPage() {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gamePhase, waveStartTime, wave, pathLength, endWave, gameSpeed]);
+  }, [gamePhase, waveStartTime, wave, pathLength, endWave, gameSpeed, isPaused]);
 
   // Получить модуль в ячейке
   const getModuleAt = (x: number, y: number): Module | undefined => {
@@ -591,17 +603,33 @@ export default function TribologyLabPage() {
           </button>
         )}
 
-        {/* Индикатор волны в процессе */}
+        {/* Индикатор волны в процессе + кнопка паузы */}
         {gamePhase === 'wave' && (
-          <div
-            className="px-3 py-1.5 rounded-lg text-white font-medium text-sm"
-            style={{
-              background: 'rgba(239, 68, 68, 0.8)',
-              boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)',
-            }}
-          >
-            🔥 Осталось: {enemies.length + spawnQueue.length}
-          </div>
+          <>
+            <div
+              className="px-3 py-1.5 rounded-lg text-white font-medium text-sm"
+              style={{
+                background: isPaused ? 'rgba(59, 130, 246, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                boxShadow: isPaused ? '0 0 15px rgba(59, 130, 246, 0.4)' : '0 0 15px rgba(239, 68, 68, 0.4)',
+              }}
+            >
+              {isPaused ? '⏸️ ПАУЗА' : `🔥 Осталось: ${enemies.length + spawnQueue.length}`}
+            </div>
+            <button
+              onClick={() => setIsPaused(p => !p)}
+              className="px-3 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-sm"
+              style={{
+                background: isPaused
+                  ? 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)'
+                  : 'linear-gradient(145deg, #3b82f6 0%, #2563eb 100%)',
+                boxShadow: isPaused
+                  ? '0 4px 15px rgba(34, 197, 94, 0.4)'
+                  : '0 4px 15px rgba(59, 130, 246, 0.4)',
+              }}
+            >
+              {isPaused ? '▶ Продолжить' : '⏸ Пауза'}
+            </button>
+          </>
         )}
       </div>
 
