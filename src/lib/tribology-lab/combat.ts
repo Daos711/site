@@ -492,16 +492,6 @@ export function processModuleAttack(
         };
         updatedEnemies[index] = applyEffect(updatedEnemies[index], effect);
       }
-
-      // Сепаратор дополнительно замедляет металл
-      if (module.type === 'magnet' && ENEMIES[target.type].tags.includes('metal')) {
-        const slowEffect: Effect = {
-          type: 'slow',
-          duration: 1500,
-          strength: 20,  // дополнительные 20% замедления
-        };
-        updatedEnemies[index] = applyEffect(updatedEnemies[index], slowEffect);
-      }
     }
   }
 

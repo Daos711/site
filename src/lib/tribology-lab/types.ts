@@ -177,7 +177,6 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     description: 'x1.5 урона по металлу',
     attackType: 'beam',
     tagBonuses: { metal: 1.5 },  // +50% по металлу
-    // Особенность: дополнительно замедляет metal на 20%
   },
   cooler: {
     id: 'cooler',
