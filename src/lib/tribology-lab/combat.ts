@@ -459,6 +459,7 @@ export function processModuleAttack(
   const attackEffect: AttackEffect = {
     id: `attack-${module.id}-${currentTime}`,
     type: config.attackType || 'beam',
+    moduleType: module.type,
     fromX: modulePos.x,
     fromY: modulePos.y,
     toX: targetPos.x,

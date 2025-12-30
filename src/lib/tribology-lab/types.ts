@@ -15,6 +15,7 @@ export type EnemyTag = 'metal' | 'wet' | 'hot' | 'dusty' | 'organic';
 export interface AttackEffect {
   id: string;
   type: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain';
+  moduleType: ModuleType;  // тип модуля для уникального визуала
   fromX: number;
   fromY: number;
   toX: number;
