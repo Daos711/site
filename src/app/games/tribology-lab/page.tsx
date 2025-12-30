@@ -30,7 +30,7 @@ import {
   processBossRegeneration,
   generateShopSlots,
 } from "@/lib/tribology-lab/combat";
-import { ShopCard } from "@/lib/tribology-lab/components";
+import { ShopCard, FieldTile } from "@/lib/tribology-lab/components";
 
 // Начальные модули в магазине
 const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'magnet', 'cooler', 'filter'];
@@ -1747,7 +1747,7 @@ export default function TribologyLabPage() {
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
-                        <ModuleTile module={module} size={cellSize} />
+                        <FieldTile type={module.type} level={module.level} size={cellSize} />
                       </div>
                     )}
                   </div>
@@ -1759,11 +1759,11 @@ export default function TribologyLabPage() {
 
         {/* Магазин — внутри контейнера поля */}
         <div
-          className="absolute flex justify-center gap-4"
+          className="absolute flex justify-center gap-3"
           style={{
-            left: 20,
-            right: 20,
-            top: totalHeight + 15,
+            left: 10,
+            right: 10,
+            top: totalHeight + 10,
           }}
         >
           {shop.map((moduleType, index) => {
@@ -1777,7 +1777,7 @@ export default function TribologyLabPage() {
                 type={moduleType}
                 canAfford={canAfford}
                 isDragging={isDraggingThis}
-                size={80}
+                size={100}
                 onMouseDown={(e) => handleShopDragStart(e, index)}
                 onTouchStart={(e) => handleShopDragStart(e, index)}
               />
@@ -1826,13 +1826,12 @@ export default function TribologyLabPage() {
             height: cellSize,
           }}
         >
-          <ModuleTile
-            module={{
-              type: dragState.moduleType,
-              level: dragState.type === 'field'
-                ? modules.find(m => m.id === dragState.moduleId)?.level || 1
-                : 1
-            }}
+          <FieldTile
+            type={dragState.moduleType}
+            level={dragState.type === 'field'
+              ? modules.find(m => m.id === dragState.moduleId)?.level || 1
+              : 1
+            }
             isDragging
             size={cellSize}
           />
