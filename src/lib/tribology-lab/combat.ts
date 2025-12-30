@@ -1,6 +1,6 @@
 import {
-  Module, ModuleConfig, MODULES, getDamage,
-  Enemy, EnemyConfig, ENEMIES, EnemyTag,
+  Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength,
+  Enemy, EnemyConfig, ENEMIES, EnemyTag, EnemyType,
   Effect, EffectType, AttackEffect,
   CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH,
   MODULE_UNLOCK_WAVES, ModuleType
@@ -196,18 +196,36 @@ export function getDistanceEfficiency(distance: number, moduleType: ModuleType):
 }
 
 /**
- * Проверяет, есть ли соседний модуль смазки
+ * Проверяет бонус от соседних смазок
+ * Ортогональные соседи: 100% баффа
+ * Диагональные соседи: 65% баффа
  */
 export function getLubricantBonus(module: Module, allModules: Module[]): number {
-  const neighbors = allModules.filter(m => {
+  const lubricants = allModules.filter(m => {
     if (m.id === module.id) return false;
     if (m.type !== 'lubricant') return false;
-    // Соседи = разница по x и y не больше 1
     return Math.abs(m.x - module.x) <= 1 && Math.abs(m.y - module.y) <= 1;
   });
 
-  // Каждая смазка даёт +25%
-  return neighbors.length * 0.25;
+  let totalBonus = 0;
+  const BASE_BUFF = 0.25;  // 25% базовый бафф
+
+  for (const lub of lubricants) {
+    const dx = Math.abs(lub.x - module.x);
+    const dy = Math.abs(lub.y - module.y);
+    const isDiagonal = dx === 1 && dy === 1;
+
+    // Бонус от уровня: +8% за уровень (Lv5 = +32%)
+    const levelBonus = 1 + (lub.level - 1) * 0.08;
+
+    if (isDiagonal) {
+      totalBonus += BASE_BUFF * 0.65 * levelBonus;  // 65% для диагонали
+    } else {
+      totalBonus += BASE_BUFF * levelBonus;          // 100% для ортогонали
+    }
+  }
+
+  return totalBonus;
 }
 
 /**
@@ -315,7 +333,30 @@ export function damageEnemy(enemy: Enemy, damage: number): Enemy {
 }
 
 /**
- * Применяет эффект к врагу
+ * Получает cap для эффекта в зависимости от типа врага
+ */
+function getEffectCap(effectType: EffectType, enemyType: EnemyType): number {
+  const isBoss = enemyType.startsWith('boss_');
+  const isElite = ['metal', 'corrosion', 'abrasive'].includes(enemyType);
+
+  switch (effectType) {
+    case 'slow':
+      if (isBoss) return 50;      // Боссы: max 50% slow
+      if (isElite) return 60;     // Элиты: max 60% slow
+      return 75;                   // Обычные: max 75% slow
+    case 'coated':
+      if (isBoss) return 25;      // Боссы: max +25% урона
+      if (isElite) return 35;     // Элиты: max +35% урона
+      return 45;                   // Обычные: max +45% урона
+    case 'burn':
+      return 20;                   // Max 20 HP/сек для всех
+    default:
+      return 100;
+  }
+}
+
+/**
+ * Применяет эффект к врагу с diminishing returns
  */
 export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
   // Проверяем иммунитеты
@@ -326,20 +367,35 @@ export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
     return enemy;  // перегрев иммунен к ожогу
   }
 
-  // Проверяем, есть ли уже такой эффект
+  const cap = getEffectCap(effect.type, enemy.type);
   const existingIndex = enemy.effects.findIndex(e => e.type === effect.type);
 
   if (existingIndex >= 0) {
-    // Обновляем существующий эффект (берём максимальную силу и сбрасываем длительность)
+    const existing = enemy.effects[existingIndex];
+
+    // Diminishing returns: новый эффект добавляет 50% от разницы до капа
+    const currentStrength = existing.strength;
+    const remainingToCap = cap - currentStrength;
+    const addedStrength = Math.min(effect.strength, remainingToCap) * 0.5;
+    const newStrength = Math.min(cap, currentStrength + addedStrength);
+
+    // Длительность: берём максимум (refresh)
+    const newDuration = Math.max(existing.duration, effect.duration);
+
     const updated = [...enemy.effects];
     updated[existingIndex] = {
-      ...effect,
-      strength: Math.max(enemy.effects[existingIndex].strength, effect.strength),
+      type: effect.type,
+      strength: Math.floor(newStrength),
+      duration: newDuration,
     };
     return { ...enemy, effects: updated };
   } else {
-    // Добавляем новый эффект
-    return { ...enemy, effects: [...enemy.effects, effect] };
+    // Первый эффект: применяем как есть, но с учётом капа
+    const cappedStrength = Math.min(effect.strength, cap);
+    return {
+      ...enemy,
+      effects: [...enemy.effects, { ...effect, strength: cappedStrength }],
+    };
   }
 }
 
@@ -414,12 +470,12 @@ export function processModuleAttack(
       // Наносим урон
       updatedEnemies[index] = damageEnemy(updatedEnemies[index], damage);
 
-      // Применяем эффект модуля
+      // Применяем эффект модуля с учётом уровня
       if (config.effectType && config.effectDuration && config.effectStrength) {
         const effect: Effect = {
           type: config.effectType,
-          duration: config.effectDuration,
-          strength: config.effectStrength,
+          duration: getEffectDuration(config.effectDuration, module.level),
+          strength: getEffectStrength(config.effectStrength, module.level),
         };
         updatedEnemies[index] = applyEffect(updatedEnemies[index], effect);
       }

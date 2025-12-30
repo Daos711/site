@@ -141,6 +141,17 @@ export function getDamage(baseDamage: number, level: number): number {
   return Math.floor(baseDamage * Math.pow(1.5, level - 1));
 }
 
+// Формула длительности эффекта: +10% за уровень
+export function getEffectDuration(baseDuration: number, level: number): number {
+  return Math.floor(baseDuration * (1 + (level - 1) * 0.1));
+}
+
+// Формула силы эффекта: +2% абсолютных за уровень
+// Например: 40% slow → 42% → 44% → 46% → 48%
+export function getEffectStrength(baseStrength: number, level: number): number {
+  return baseStrength + (level - 1) * 2;
+}
+
 // Формула HP врагов: baseHp * 1.08^wave
 export function getEnemyHp(baseHp: number, wave: number): number {
   return Math.floor(baseHp * Math.pow(1.08, wave));

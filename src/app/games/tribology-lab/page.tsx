@@ -1455,22 +1455,43 @@ export default function TribologyLabPage() {
 
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    ИНДИКАТОРЫ ЭФФЕКТОВ
+                    ИНДИКАТОРЫ ЭФФЕКТОВ С СИЛОЙ
                     ═══════════════════════════════════════════════════════════════ */}
                 {enemy.effects.length > 0 && (
                   <g>
-                    {enemy.effects.some(e => e.type === 'slow') && (
-                      <g transform={`translate(${size + 5}, ${-size + 5})`}>
-                        <circle r={8} fill="rgba(56,189,248,0.3)" />
-                        <text textAnchor="middle" dy={4} fontSize={10}>❄️</text>
-                      </g>
-                    )}
-                    {enemy.effects.some(e => e.type === 'burn') && (
-                      <g transform={`translate(${size + 5}, ${-size + 20})`}>
-                        <circle r={8} fill="rgba(239,68,68,0.3)" />
-                        <text textAnchor="middle" dy={4} fontSize={10}>🔥</text>
-                      </g>
-                    )}
+                    {(() => {
+                      const slowEffect = enemy.effects.find(e => e.type === 'slow');
+                      return slowEffect && (
+                        <g transform={`translate(${size + 8}, ${-size + 5})`}>
+                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(56,189,248,0.25)" />
+                          <text textAnchor="middle" dy={4} fontSize={9} fill="#38bdf8" fontWeight="bold">
+                            ❄️{slowEffect.strength}%
+                          </text>
+                        </g>
+                      );
+                    })()}
+                    {(() => {
+                      const burnEffect = enemy.effects.find(e => e.type === 'burn');
+                      return burnEffect && (
+                        <g transform={`translate(${size + 8}, ${-size + 22})`}>
+                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(239,68,68,0.25)" />
+                          <text textAnchor="middle" dy={4} fontSize={9} fill="#f87171" fontWeight="bold">
+                            🔥{burnEffect.strength}
+                          </text>
+                        </g>
+                      );
+                    })()}
+                    {(() => {
+                      const coatedEffect = enemy.effects.find(e => e.type === 'coated');
+                      return coatedEffect && (
+                        <g transform={`translate(${size + 8}, ${-size + 39})`}>
+                          <rect x={-16} y={-7} width={32} height={14} rx={4} fill="rgba(168,85,247,0.25)" />
+                          <text textAnchor="middle" dy={4} fontSize={9} fill="#a855f7" fontWeight="bold">
+                            💧+{coatedEffect.strength}%
+                          </text>
+                        </g>
+                      );
+                    })()}
                   </g>
                 )}
 
