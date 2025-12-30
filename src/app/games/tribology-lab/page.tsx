@@ -1461,204 +1461,6 @@ export default function TribologyLabPage() {
             );
           })}
 
-          {/* ═══════════════════════════════════════════════════════════════
-              ЭФФЕКТЫ АТАК
-              ═══════════════════════════════════════════════════════════════ */}
-          {attackEffects.map(effect => {
-            const progress = effect.progress;
-            const midX = (effect.fromX + effect.toX) / 2;
-            const midY = (effect.fromY + effect.toY) / 2;
-
-            // МАГНИТ — силовые линии (дуги)
-            if (effect.moduleType === 'magnet') {
-              return (
-                <g key={effect.id} opacity={1 - progress * 0.7}>
-                  {/* Главная дуга */}
-                  <path
-                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY - 30} ${effect.toX} ${effect.toY}`}
-                    fill="none"
-                    stroke="#6B4CD6"
-                    strokeWidth={2}
-                    strokeDasharray="8,4"
-                  />
-                  {/* Вторая дуга (снизу) */}
-                  <path
-                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY + 25} ${effect.toX} ${effect.toY}`}
-                    fill="none"
-                    stroke="#6B4CD6"
-                    strokeWidth={1.5}
-                    strokeDasharray="4,4"
-                    opacity={0.5}
-                  />
-                  {/* Точка на цели */}
-                  <circle cx={effect.toX} cy={effect.toY} r={5} fill="#6B4CD6" opacity={0.6} />
-                </g>
-              );
-            }
-
-            // ОХЛАДИТЕЛЬ — холодный снаряд
-            if (effect.moduleType === 'cooler') {
-              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
-              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
-              return (
-                <g key={effect.id}>
-                  {/* Ледяной след */}
-                  <line
-                    x1={effect.fromX}
-                    y1={effect.fromY}
-                    x2={x}
-                    y2={y}
-                    stroke="#2A9AC8"
-                    strokeWidth={2}
-                    opacity={0.3}
-                  />
-                  {/* Свечение */}
-                  <circle cx={x} cy={y} r={10} fill="#2A9AC8" opacity={0.25} />
-                  {/* Снаряд */}
-                  <circle cx={x} cy={y} r={6} fill="#2A9AC8" />
-                  {/* Ядро */}
-                  <circle cx={x} cy={y} r={3} fill="#FFFFFF" opacity={0.8} />
-                </g>
-              );
-            }
-
-            // ФИЛЬТР — расширяющаяся волна
-            if (effect.moduleType === 'filter') {
-              const radius = 20 + progress * 80;
-              return (
-                <g key={effect.id}>
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={radius}
-                    fill="none"
-                    stroke="#C09A1E"
-                    strokeWidth={3 - progress * 2}
-                    opacity={1 - progress}
-                  />
-                  {/* Внутреннее кольцо */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={radius * 0.6}
-                    fill="none"
-                    stroke="#C09A1E"
-                    strokeWidth={1.5}
-                    opacity={(1 - progress) * 0.5}
-                  />
-                </g>
-              );
-            }
-
-            // СМАЗКА — масляная капля
-            if (effect.moduleType === 'lubricant') {
-              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
-              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
-              return (
-                <g key={effect.id}>
-                  {/* Капля (эллипс) */}
-                  <ellipse
-                    cx={x}
-                    cy={y}
-                    rx={5}
-                    ry={7}
-                    fill="#8845C7"
-                    opacity={0.85}
-                  />
-                  {/* Блик */}
-                  <ellipse
-                    cx={x - 1}
-                    cy={y - 2}
-                    rx={2}
-                    ry={2.5}
-                    fill="#FFFFFF"
-                    opacity={0.4}
-                  />
-                </g>
-              );
-            }
-
-            // УЛЬТРАЗВУК — кавитация (концентрические кольца + пузырьки)
-            if (effect.moduleType === 'ultrasonic') {
-              return (
-                <g key={effect.id} opacity={1 - progress * 0.8}>
-                  {/* Внешнее кольцо */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={progress * 80}
-                    fill="none"
-                    stroke="#24A899"
-                    strokeWidth={2}
-                  />
-                  {/* Среднее кольцо */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={progress * 50}
-                    fill="none"
-                    stroke="#24A899"
-                    strokeWidth={1.5}
-                    opacity={0.7}
-                  />
-                  {/* Внутреннее кольцо */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={progress * 25}
-                    fill="none"
-                    stroke="#24A899"
-                    strokeWidth={1}
-                    opacity={0.5}
-                  />
-                  {/* Пузырьки */}
-                  {[0, 60, 120, 180, 240, 300].map((angle, i) => (
-                    <circle
-                      key={i}
-                      cx={effect.fromX + Math.cos(angle * Math.PI / 180) * progress * 40}
-                      cy={effect.fromY + Math.sin(angle * Math.PI / 180) * progress * 40}
-                      r={2}
-                      fill="#24A899"
-                      opacity={1 - progress}
-                    />
-                  ))}
-                </g>
-              );
-            }
-
-            // ЛАЗЕР — тонкий луч с фокусом
-            if (effect.moduleType === 'laser') {
-              return (
-                <g key={effect.id} opacity={1 - progress * 0.5}>
-                  {/* Свечение луча */}
-                  <line
-                    x1={effect.fromX}
-                    y1={effect.fromY}
-                    x2={effect.toX}
-                    y2={effect.toY}
-                    stroke="#FF6666"
-                    strokeWidth={5}
-                    opacity={0.3}
-                  />
-                  {/* Основной луч */}
-                  <line
-                    x1={effect.fromX}
-                    y1={effect.fromY}
-                    x2={effect.toX}
-                    y2={effect.toY}
-                    stroke="#BF3636"
-                    strokeWidth={2}
-                  />
-                  {/* Точка фокуса (на цели) */}
-                  <circle cx={effect.toX} cy={effect.toY} r={8} fill="#FF4444" opacity={0.5} />
-                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#FFFFFF" opacity={0.8} />
-                </g>
-              );
-            }
-
-            return null;
-          })}
-
           {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
           <g>
             {/* Свечение */}
@@ -1802,6 +1604,244 @@ export default function TribologyLabPage() {
             )}
           </div>
         </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ЭФФЕКТЫ АТАК (отдельный SVG-слой поверх сетки)
+            ═══════════════════════════════════════════════════════════════ */}
+        <svg
+          className="absolute inset-0 pointer-events-none"
+          width={totalWidth}
+          height={totalHeight + 130}
+          style={{ overflow: 'visible', zIndex: 50 }}
+        >
+          {attackEffects.map(effect => {
+            const progress = effect.progress;
+            const midX = (effect.fromX + effect.toX) / 2;
+
+            // МАГНИТ — силовые линии (дуги)
+            if (effect.moduleType === 'magnet') {
+              return (
+                <g key={effect.id} opacity={1 - progress * 0.7}>
+                  {/* Главная дуга */}
+                  <path
+                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY - 30} ${effect.toX} ${effect.toY}`}
+                    fill="none"
+                    stroke="#6B4CD6"
+                    strokeWidth={2}
+                    strokeDasharray="8,4"
+                  />
+                  {/* Вторая дуга (снизу) */}
+                  <path
+                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY + 25} ${effect.toX} ${effect.toY}`}
+                    fill="none"
+                    stroke="#6B4CD6"
+                    strokeWidth={1.5}
+                    strokeDasharray="4,4"
+                    opacity={0.5}
+                  />
+                  {/* Точка на цели */}
+                  <circle cx={effect.toX} cy={effect.toY} r={5} fill="#6B4CD6" opacity={0.6} />
+                </g>
+              );
+            }
+
+            // ОХЛАДИТЕЛЬ — холодный снаряд
+            if (effect.moduleType === 'cooler') {
+              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
+              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
+              return (
+                <g key={effect.id}>
+                  {/* Ледяной след */}
+                  <line
+                    x1={effect.fromX}
+                    y1={effect.fromY}
+                    x2={x}
+                    y2={y}
+                    stroke="#2A9AC8"
+                    strokeWidth={2}
+                    opacity={0.3}
+                  />
+                  {/* Свечение */}
+                  <circle cx={x} cy={y} r={10} fill="#2A9AC8" opacity={0.25} />
+                  {/* Снаряд */}
+                  <circle cx={x} cy={y} r={6} fill="#2A9AC8" />
+                  {/* Ядро */}
+                  <circle cx={x} cy={y} r={3} fill="#FFFFFF" opacity={0.8} />
+                </g>
+              );
+            }
+
+            // ФИЛЬТР — расширяющаяся волна + импакт на враге
+            if (effect.moduleType === 'filter') {
+              const radius = 20 + progress * 100;
+              return (
+                <g key={effect.id} opacity={1 - progress}>
+                  {/* Расширяющаяся волна от модуля */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={radius}
+                    fill="none"
+                    stroke="#C09A1E"
+                    strokeWidth={3 - progress * 2}
+                  />
+                  {/* Внутреннее кольцо */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={radius * 0.6}
+                    fill="none"
+                    stroke="#C09A1E"
+                    strokeWidth={1.5}
+                    opacity={0.5}
+                  />
+                  {/* Импакт на враге (появляется когда волна достигла) */}
+                  {progress > 0.3 && (
+                    <>
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={15 * (1 - progress)}
+                        fill="#C09A1E"
+                        opacity={0.5 * (1 - progress)}
+                      />
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={8}
+                        fill="none"
+                        stroke="#C09A1E"
+                        strokeWidth={2}
+                        opacity={1 - progress}
+                      />
+                    </>
+                  )}
+                </g>
+              );
+            }
+
+            // СМАЗКА — масляная капля
+            if (effect.moduleType === 'lubricant') {
+              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
+              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
+              return (
+                <g key={effect.id}>
+                  {/* Капля (эллипс) */}
+                  <ellipse
+                    cx={x}
+                    cy={y}
+                    rx={5}
+                    ry={7}
+                    fill="#8845C7"
+                    opacity={0.85}
+                  />
+                  {/* Блик */}
+                  <ellipse
+                    cx={x - 1}
+                    cy={y - 2}
+                    rx={2}
+                    ry={2.5}
+                    fill="#FFFFFF"
+                    opacity={0.4}
+                  />
+                </g>
+              );
+            }
+
+            // УЛЬТРАЗВУК — волны от модуля + кавитация на враге
+            if (effect.moduleType === 'ultrasonic') {
+              return (
+                <g key={effect.id} opacity={1 - progress * 0.8}>
+                  {/* Волны от модуля */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={progress * 80}
+                    fill="none"
+                    stroke="#24A899"
+                    strokeWidth={2}
+                  />
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={progress * 50}
+                    fill="none"
+                    stroke="#24A899"
+                    strokeWidth={1.5}
+                    opacity={0.7}
+                  />
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={progress * 25}
+                    fill="none"
+                    stroke="#24A899"
+                    strokeWidth={1}
+                    opacity={0.5}
+                  />
+                  {/* Кавитация на враге (пузырьки) */}
+                  {progress > 0.2 && (
+                    <g>
+                      {/* Центральный импакт */}
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={12}
+                        fill="none"
+                        stroke="#24A899"
+                        strokeWidth={2}
+                        opacity={1 - progress}
+                      />
+                      {/* Пузырьки вокруг врага */}
+                      {[0, 72, 144, 216, 288].map((angle, i) => (
+                        <circle
+                          key={i}
+                          cx={effect.toX + Math.cos(angle * Math.PI / 180) * 10}
+                          cy={effect.toY + Math.sin(angle * Math.PI / 180) * 10}
+                          r={2 + (i % 2)}
+                          fill="#24A899"
+                          opacity={(1 - progress) * 0.7}
+                        />
+                      ))}
+                    </g>
+                  )}
+                </g>
+              );
+            }
+
+            // ЛАЗЕР — тонкий луч с фокусом
+            if (effect.moduleType === 'laser') {
+              return (
+                <g key={effect.id} opacity={1 - progress * 0.5}>
+                  {/* Свечение луча */}
+                  <line
+                    x1={effect.fromX}
+                    y1={effect.fromY}
+                    x2={effect.toX}
+                    y2={effect.toY}
+                    stroke="#FF6666"
+                    strokeWidth={5}
+                    opacity={0.3}
+                  />
+                  {/* Основной луч */}
+                  <line
+                    x1={effect.fromX}
+                    y1={effect.fromY}
+                    x2={effect.toX}
+                    y2={effect.toY}
+                    stroke="#BF3636"
+                    strokeWidth={2}
+                  />
+                  {/* Точка фокуса (на цели) */}
+                  <circle cx={effect.toX} cy={effect.toY} r={8} fill="#FF4444" opacity={0.5} />
+                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#FFFFFF" opacity={0.8} />
+                </g>
+              );
+            }
+
+            return null;
+          })}
+        </svg>
 
         {/* Магазин — внутри контейнера поля */}
         <div
