@@ -275,9 +275,15 @@ export function calculateDamage(
     }
   }
 
-  // Бонус от смазки
+  // Бонус от смазки (соседний модуль смазки)
   const lubricantBonus = getLubricantBonus(module, allModules);
   damage *= (1 + lubricantBonus);
+
+  // Бонус от coated дебаффа на враге (смазка накладывает +15% получаемого урона)
+  const coatedEffect = target.effects.find(e => e.type === 'coated');
+  if (coatedEffect) {
+    damage *= (1 + coatedEffect.strength / 100);  // +15% урон
+  }
 
   // Штраф от коррозии (кроме фильтра — он игнорирует)
   if (module.type !== 'filter') {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   MODULES,
   ENEMIES,
@@ -105,6 +105,23 @@ export default function TribologyLabPage() {
   const innerOffset = 8;
   const enemyPath = generatePath(totalWidth, totalHeight, conveyorWidth, innerOffset, cornerRadius);
   const pathLength = getPathLength(enemyPath);
+
+  // Вычисляем какие модули получают бафф от Смазки
+  const lubricatedModuleIds = useMemo(() => {
+    const lubricants = modules.filter(m => m.type === 'lubricant');
+    const buffedIds = new Set<string>();
+
+    for (const lub of lubricants) {
+      for (const mod of modules) {
+        if (mod.id === lub.id) continue;
+        if (Math.abs(mod.x - lub.x) <= 1 && Math.abs(mod.y - lub.y) <= 1) {
+          buffedIds.add(mod.id);
+        }
+      }
+    }
+
+    return buffedIds;
+  }, [modules]);
 
   // Начало волны
   const startWave = useCallback(() => {
@@ -1574,6 +1591,24 @@ export default function TribologyLabPage() {
                 })();
                 const isMerging = mergingCell?.x === x && mergingCell?.y === y;
 
+                // Подсветка зоны баффа при перетаскивании смазки
+                const isInLubricantBuffZone = dragState?.moduleType === 'lubricant' && (() => {
+                  // Вычисляем ячейку под курсором
+                  const fieldRect = fieldRef.current?.getBoundingClientRect();
+                  if (!fieldRect) return false;
+                  const gridStartX = conveyorWidth + panelPadding;
+                  const gridStartY = conveyorWidth + panelPadding;
+                  const relX = dragState.currentX - fieldRect.left - gridStartX;
+                  const relY = dragState.currentY - fieldRect.top - gridStartY;
+                  const hoverX = Math.floor(relX / (cellSize + cellGap));
+                  const hoverY = Math.floor(relY / (cellSize + cellGap));
+                  // Эта ячейка в зоне баффа, если в пределах ±1 от hover и не сама hover
+                  if (hoverX < 0 || hoverX >= GRID_COLS || hoverY < 0 || hoverY >= GRID_ROWS) return false;
+                  const dx = Math.abs(x - hoverX);
+                  const dy = Math.abs(y - hoverY);
+                  return dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
+                })();
+
                 return (
                   <div
                     key={`${x}-${y}`}
@@ -1581,6 +1616,7 @@ export default function TribologyLabPage() {
                       rounded-xl transition-all duration-150 relative overflow-hidden
                       ${isDropTarget ? 'ring-4 ring-green-500 ring-opacity-70' : ''}
                       ${canMerge ? 'ring-4 ring-yellow-400 ring-opacity-70' : ''}
+                      ${isInLubricantBuffZone ? 'ring-2 ring-purple-400 ring-opacity-50' : ''}
                     `}
                     style={{
                       width: cellSize,
@@ -1595,7 +1631,12 @@ export default function TribologyLabPage() {
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
-                        <FieldTile type={module.type} level={module.level} size={cellSize} />
+                        <FieldTile
+                          type={module.type}
+                          level={module.level}
+                          size={cellSize}
+                          isLubricated={lubricatedModuleIds.has(module.id)}
+                        />
                       </div>
                     )}
                   </div>
@@ -1671,138 +1712,212 @@ export default function TribologyLabPage() {
               );
             }
 
-            // ФИЛЬТР — расширяющаяся волна + импакт на враге
+            // ФИЛЬТР — пульс на модуле → импакт НА ВРАГЕ
             if (effect.moduleType === 'filter') {
-              const radius = 20 + progress * 100;
-              return (
-                <g key={effect.id} opacity={1 - progress}>
-                  {/* Расширяющаяся волна от модуля */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={radius}
-                    fill="none"
-                    stroke="#C09A1E"
-                    strokeWidth={3 - progress * 2}
-                  />
-                  {/* Внутреннее кольцо */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={radius * 0.6}
-                    fill="none"
-                    stroke="#C09A1E"
-                    strokeWidth={1.5}
-                    opacity={0.5}
-                  />
-                  {/* Импакт на враге (появляется когда волна достигла) */}
-                  {progress > 0.3 && (
-                    <>
-                      <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
-                        r={15 * (1 - progress)}
-                        fill="#C09A1E"
-                        opacity={0.5 * (1 - progress)}
-                      />
-                      <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
-                        r={8}
-                        fill="none"
-                        stroke="#C09A1E"
-                        strokeWidth={2}
-                        opacity={1 - progress}
-                      />
-                    </>
-                  )}
-                </g>
-              );
-            }
-
-            // СМАЗКА — масляная капля
-            if (effect.moduleType === 'lubricant') {
-              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
-              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
               return (
                 <g key={effect.id}>
-                  {/* Капля (эллипс) */}
-                  <ellipse
-                    cx={x}
-                    cy={y}
-                    rx={5}
-                    ry={7}
-                    fill="#8845C7"
-                    opacity={0.85}
-                  />
-                  {/* Блик */}
-                  <ellipse
-                    cx={x - 1}
-                    cy={y - 2}
-                    rx={2}
-                    ry={2.5}
-                    fill="#FFFFFF"
-                    opacity={0.4}
-                  />
-                </g>
-              );
-            }
+                  {/* ФАЗА 1: Источник — пульс на модуле (progress 0–0.3) */}
+                  {progress < 0.3 && (
+                    <circle
+                      cx={effect.fromX}
+                      cy={effect.fromY}
+                      r={15 + progress * 50}
+                      fill="none"
+                      stroke="#C09A1E"
+                      strokeWidth={2}
+                      opacity={1 - progress * 3}
+                    />
+                  )}
 
-            // УЛЬТРАЗВУК — волны от модуля + кавитация на враге
-            if (effect.moduleType === 'ultrasonic') {
-              return (
-                <g key={effect.id} opacity={1 - progress * 0.8}>
-                  {/* Волны от модуля */}
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={progress * 80}
-                    fill="none"
-                    stroke="#24A899"
-                    strokeWidth={2}
-                  />
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={progress * 50}
-                    fill="none"
-                    stroke="#24A899"
-                    strokeWidth={1.5}
-                    opacity={0.7}
-                  />
-                  <circle
-                    cx={effect.fromX}
-                    cy={effect.fromY}
-                    r={progress * 25}
-                    fill="none"
-                    stroke="#24A899"
-                    strokeWidth={1}
-                    opacity={0.5}
-                  />
-                  {/* Кавитация на враге (пузырьки) */}
-                  {progress > 0.2 && (
-                    <g>
-                      {/* Центральный импакт */}
+                  {/* ФАЗА 2: Импакт — кольца ОТ ВРАГА (progress 0.2–1.0) */}
+                  {progress >= 0.2 && (
+                    <g opacity={1 - (progress - 0.2) * 1.2}>
+                      {/* Внешнее кольцо */}
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={5 + (progress - 0.2) * 40}
+                        fill="none"
+                        stroke="#C09A1E"
+                        strokeWidth={2.5}
+                      />
+                      {/* Внутреннее кольцо */}
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={3 + (progress - 0.2) * 25}
+                        fill="none"
+                        stroke="#C09A1E"
+                        strokeWidth={1.5}
+                        opacity={0.6}
+                      />
+                      {/* Микросетка (фильтрация) */}
                       <circle
                         cx={effect.toX}
                         cy={effect.toY}
                         r={12}
                         fill="none"
+                        stroke="#C09A1E"
+                        strokeWidth={1}
+                        strokeDasharray="3,3"
+                        opacity={0.5}
+                      />
+                      {/* Частицы "грязи" втягиваются к центру */}
+                      {[0, 60, 120, 180, 240, 300].map((angle, i) => {
+                        const dist = 20 * (1 - (progress - 0.2) * 1.2);
+                        return (
+                          <circle
+                            key={i}
+                            cx={effect.toX + Math.cos(angle * Math.PI / 180) * Math.max(0, dist)}
+                            cy={effect.toY + Math.sin(angle * Math.PI / 180) * Math.max(0, dist)}
+                            r={2}
+                            fill="#8B7355"
+                            opacity={Math.max(0, 1 - (progress - 0.2) * 1.2)}
+                          />
+                        );
+                      })}
+                    </g>
+                  )}
+                </g>
+              );
+            }
+
+            // СМАЗКА — капля летит → плёнка растекается на враге
+            if (effect.moduleType === 'lubricant') {
+              return (
+                <g key={effect.id}>
+                  {/* ФАЗА 1: Капля летит к каналу (progress 0–0.5) */}
+                  {progress < 0.5 && (
+                    <g>
+                      <ellipse
+                        cx={effect.fromX + (effect.toX - effect.fromX) * progress * 2}
+                        cy={effect.fromY + (effect.toY - effect.fromY) * progress * 2}
+                        rx={4}
+                        ry={6}
+                        fill="#8845C7"
+                        opacity={0.8}
+                      />
+                      {/* Блик */}
+                      <ellipse
+                        cx={effect.fromX + (effect.toX - effect.fromX) * progress * 2 - 1}
+                        cy={effect.fromY + (effect.toY - effect.fromY) * progress * 2 - 2}
+                        rx={1.5}
+                        ry={2}
+                        fill="#FFFFFF"
+                        opacity={0.4}
+                      />
+                    </g>
+                  )}
+
+                  {/* ФАЗА 2: Плёнка растекается на враге (progress 0.4–1.0) */}
+                  {progress >= 0.4 && (
+                    <g opacity={Math.max(0, 1 - (progress - 0.4) * 1.5)}>
+                      {/* Масляное пятно */}
+                      <ellipse
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        rx={8 + (progress - 0.4) * 35}
+                        ry={5 + (progress - 0.4) * 18}
+                        fill="rgba(136, 69, 199, 0.35)"
+                      />
+                      {/* Глянцевый блик */}
+                      <ellipse
+                        cx={effect.toX - 5}
+                        cy={effect.toY - 3}
+                        rx={4 + (progress - 0.4) * 12}
+                        ry={2 + (progress - 0.4) * 6}
+                        fill="rgba(255, 255, 255, 0.3)"
+                      />
+                      {/* Контур пятна */}
+                      <ellipse
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        rx={8 + (progress - 0.4) * 35}
+                        ry={5 + (progress - 0.4) * 18}
+                        fill="none"
+                        stroke="#8845C7"
+                        strokeWidth={1}
+                        opacity={0.5}
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            }
+
+            // УЛЬТРАЗВУК — мини-пинг на модуле → кавитация НА ВРАГЕ
+            if (effect.moduleType === 'ultrasonic') {
+              return (
+                <g key={effect.id}>
+                  {/* ФАЗА 1: Источник — мини-пинги на модуле (progress 0–0.3) */}
+                  {progress < 0.3 && (
+                    <g opacity={1 - progress * 3}>
+                      <circle
+                        cx={effect.fromX}
+                        cy={effect.fromY}
+                        r={10 + progress * 30}
+                        fill="none"
+                        stroke="#24A899"
+                        strokeWidth={1.5}
+                      />
+                      <circle
+                        cx={effect.fromX}
+                        cy={effect.fromY}
+                        r={5 + progress * 15}
+                        fill="none"
+                        stroke="#24A899"
+                        strokeWidth={1}
+                        opacity={0.6}
+                      />
+                    </g>
+                  )}
+
+                  {/* ФАЗА 2: Импакт — кавитация НА ВРАГЕ (progress 0.2–1.0) */}
+                  {progress >= 0.2 && (
+                    <g opacity={Math.max(0, 1 - (progress - 0.2) * 1.1)}>
+                      {/* Концентрические кольца ОТ ВРАГА */}
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={10 + (progress - 0.2) * 60}
+                        fill="none"
                         stroke="#24A899"
                         strokeWidth={2}
-                        opacity={1 - progress}
                       />
-                      {/* Пузырьки вокруг врага */}
-                      {[0, 72, 144, 216, 288].map((angle, i) => (
-                        <circle
-                          key={i}
-                          cx={effect.toX + Math.cos(angle * Math.PI / 180) * 10}
-                          cy={effect.toY + Math.sin(angle * Math.PI / 180) * 10}
-                          r={2 + (i % 2)}
-                          fill="#24A899"
-                          opacity={(1 - progress) * 0.7}
-                        />
-                      ))}
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={5 + (progress - 0.2) * 40}
+                        fill="none"
+                        stroke="#24A899"
+                        strokeWidth={1.5}
+                        opacity={0.7}
+                      />
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={3 + (progress - 0.2) * 20}
+                        fill="none"
+                        stroke="#24A899"
+                        strokeWidth={1}
+                        opacity={0.4}
+                      />
+
+                      {/* Пузырьки кавитации вокруг врага */}
+                      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => {
+                        const dist = 15 + Math.sin(progress * Math.PI * 2 + i) * 8;
+                        const size = 2 + (i % 3);
+                        return (
+                          <circle
+                            key={i}
+                            cx={effect.toX + Math.cos(angle * Math.PI / 180) * dist}
+                            cy={effect.toY + Math.sin(angle * Math.PI / 180) * dist}
+                            r={size * Math.max(0, 1 - (progress - 0.2))}
+                            fill="#24A899"
+                            opacity={0.6 * Math.max(0, 1 - (progress - 0.2))}
+                          />
+                        );
+                      })}
                     </g>
                   )}
                 </g>

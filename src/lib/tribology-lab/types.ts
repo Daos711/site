@@ -4,7 +4,7 @@ export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultraso
 
 export type EnemyType = 'dust' | 'abrasive' | 'heat' | 'metal' | 'corrosion' | 'moisture' | 'static' | 'boss_wear' | 'boss_pitting';
 
-export type EffectType = 'slow' | 'burn' | 'marked';
+export type EffectType = 'slow' | 'burn' | 'marked' | 'coated';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 
@@ -203,12 +203,15 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Смазка',
     icon: '💧',
     basePrice: 45,
-    baseDamage: 6,
+    baseDamage: 4,    // Пониженный урон, зато дебафф
     range: 140,       // ближний бой, но достаёт до края
     attackSpeed: 0.6,
     color: '#a855f7',  // пурпурный
-    description: '+25% урон соседним модулям',
+    description: '+25% урон соседним модулям, дебафф врагов',
     attackType: 'projectile',
+    effectType: 'coated',
+    effectDuration: 3000,  // 3 секунды
+    effectStrength: 15,    // +15% получаемого урона
     // Особенность: +25% урон соседним модулям (реализуется в combat.ts)
   },
   ultrasonic: {

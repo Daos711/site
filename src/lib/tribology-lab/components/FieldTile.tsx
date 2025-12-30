@@ -7,6 +7,7 @@ interface FieldTileProps {
   level: number;
   size?: number;
   isDragging?: boolean;
+  isLubricated?: boolean;  // Есть ли бафф от смазки рядом
 }
 
 export function FieldTile({
@@ -14,6 +15,7 @@ export function FieldTile({
   level,
   size = 110,
   isDragging = false,
+  isLubricated = false,
 }: FieldTileProps) {
   const config = MODULES[type];
   const code = MODULE_CODES[type];
@@ -56,6 +58,14 @@ export function FieldTile({
 
       {/* Название */}
       <div className="module-name">{config.name}</div>
+
+      {/* Глянец от смазки */}
+      {isLubricated && (
+        <>
+          <div className="lubricant-sheen" />
+          <div className="lubed-badge">💧</div>
+        </>
+      )}
 
       <style jsx>{`
         .field-tile {
@@ -180,6 +190,39 @@ export function FieldTile({
           font-size: 11px;
           font-weight: 500;
           color: #9DB0C6;
+        }
+
+        .lubricant-sheen {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            135deg,
+            transparent 30%,
+            rgba(136, 69, 199, 0.15) 45%,
+            rgba(136, 69, 199, 0.25) 50%,
+            rgba(136, 69, 199, 0.15) 55%,
+            transparent 70%
+          );
+          pointer-events: none;
+          border-radius: 12px;
+          animation: sheen-move 3s ease-in-out infinite;
+          z-index: 10;
+        }
+
+        @keyframes sheen-move {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+
+        .lubed-badge {
+          position: absolute;
+          bottom: 22px;
+          right: 6px;
+          font-size: 10px;
+          background: rgba(136, 69, 199, 0.3);
+          border-radius: 4px;
+          padding: 1px 3px;
+          z-index: 11;
         }
       `}</style>
     </div>
