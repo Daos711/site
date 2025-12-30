@@ -28,6 +28,7 @@ import {
   processAllAttacks,
   processBurnDamage,
   processBossRegeneration,
+  generateShopSlots,
 } from "@/lib/tribology-lab/combat";
 
 // Начальные модули в магазине
@@ -134,12 +135,15 @@ export default function TribologyLabPage() {
   // Конец волны
   const endWave = useCallback(() => {
     const config = getWaveConfig(wave);
+    const nextWave = wave + 1;
     setGold(prev => prev + config.reward);
-    setWave(prev => prev + 1);
+    setWave(nextWave);
     setGamePhase('preparing');
     enemiesRef.current = [];
     setEnemies([]);
     setSpawnQueue([]);
+    // Обновляем магазин — новые модули разблокируются с волнами
+    setShop(generateShopSlots(nextWave));
   }, [wave]);
 
   // Ref для отслеживания что нужно заспавнить

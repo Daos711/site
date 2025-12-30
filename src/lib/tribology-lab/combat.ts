@@ -564,9 +564,9 @@ export function generateShopSlots(wave: number): ModuleType[] {
 
   if (available.length === 0) return [];
 
-  // Выбираем 3 случайных модуля
+  // Выбираем 6 случайных модулей
   const slots: ModuleType[] = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 6; i++) {
     const randomIndex = Math.floor(Math.random() * available.length);
     slots.push(available[randomIndex]);
   }
