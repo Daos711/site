@@ -465,13 +465,11 @@ export default function TribologyLabPage() {
             setGold(prev => prev - config.basePrice);
           }
         } else if (dragState.type === 'field' && dragState.moduleId) {
+          // ХАРДКОР: модули с поля НЕЛЬЗЯ перемещать, только merge!
           const draggedModule = modules.find(m => m.id === dragState.moduleId);
-          if (draggedModule) {
-            if (!existingModule) {
-              setModules(prev => prev.map(m =>
-                m.id === dragState.moduleId ? { ...m, x: targetCell.x, y: targetCell.y } : m
-              ));
-            } else if (
+          if (draggedModule && existingModule) {
+            // Merge: только на такой же модуль того же уровня
+            if (
               existingModule.id !== dragState.moduleId &&
               existingModule.type === draggedModule.type &&
               existingModule.level === draggedModule.level &&
@@ -486,7 +484,9 @@ export default function TribologyLabPage() {
                 .map(m => m.id === existingModule.id ? { ...m, level: m.level + 1 } : m)
               );
             }
+            // Иначе (другой тип/уровень) — модуль просто вернётся на место
           }
+          // Если !existingModule (пустая ячейка) — модуль вернётся на место
         }
       }
 
