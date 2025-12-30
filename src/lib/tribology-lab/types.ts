@@ -152,9 +152,18 @@ export function getEffectStrength(baseStrength: number, level: number): number {
   return baseStrength + (level - 1) * 2;
 }
 
-// Формула HP врагов: baseHp * 1.12^wave (более агрессивный рост)
+// Формула HP врагов:
+// До волны 20: HP = baseHp × 1.12^(wave-1)
+// После волны 20: HP = baseHp × 1.12^19 × 1.09^(wave-20)
 export function getEnemyHp(baseHp: number, wave: number): number {
-  return Math.floor(baseHp * Math.pow(1.12, wave));
+  if (wave <= 20) {
+    return Math.floor(baseHp * Math.pow(1.12, wave - 1));
+  } else {
+    // После 20: замедляем рост экспоненты
+    const base20 = Math.pow(1.12, 19);
+    const extra = Math.pow(1.09, wave - 20);
+    return Math.floor(baseHp * base20 * extra);
+  }
 }
 
 // Цена модуля с учётом уровня

@@ -227,77 +227,252 @@ export interface WaveConfig {
  * Генерирует конфигурацию волны
  */
 export function getWaveConfig(waveNumber: number): WaveConfig {
-  // Базовые параметры
-  const baseInterval = 2000;
-  const intervalReduction = Math.min(waveNumber * 50, 1200); // уменьшается до 800мс
-  const spawnInterval = baseInterval - intervalReduction;
-
   const enemies: WaveEnemy[] = [];
+  let spawnInterval: number;
+  let isBurst = false;
 
-  if (waveNumber === 1) {
-    // Первая волна - только пыль
-    enemies.push({ type: 'dust', count: 5 });
-  } else if (waveNumber === 2) {
-    enemies.push({ type: 'dust', count: 8 });
-  } else if (waveNumber === 3) {
-    enemies.push({ type: 'dust', count: 6 });
-    enemies.push({ type: 'abrasive', count: 2, delay: 3000 });
-  } else if (waveNumber === 4) {
-    enemies.push({ type: 'dust', count: 8 });
-    enemies.push({ type: 'abrasive', count: 3, delay: 2000 });
-  } else if (waveNumber === 5) {
-    // Первый мини-босс
-    enemies.push({ type: 'dust', count: 5 });
-    enemies.push({ type: 'abrasive', count: 4 });
-    enemies.push({ type: 'boss_wear', count: 1, delay: 5000 });
-  } else if (waveNumber <= 9) {
-    // Вводим heat и metal
-    enemies.push({ type: 'dust', count: 6 + waveNumber });
-    enemies.push({ type: 'abrasive', count: 2 + Math.floor(waveNumber / 2) });
-    if (waveNumber >= 6) {
-      enemies.push({ type: 'heat', count: 2 + (waveNumber - 5) });
-    }
-    if (waveNumber >= 7) {
-      enemies.push({ type: 'metal', count: 1 + (waveNumber - 6) });
-    }
-  } else if (waveNumber === 10) {
-    // Второй босс
-    enemies.push({ type: 'dust', count: 10 });
-    enemies.push({ type: 'heat', count: 5 });
-    enemies.push({ type: 'metal', count: 3 });
-    enemies.push({ type: 'boss_pitting', count: 1, delay: 8000 });
-  } else {
-    // Бесконечная генерация с увеличением сложности
-    const scale = Math.floor((waveNumber - 10) / 5) + 1;
-    enemies.push({ type: 'dust', count: 10 + scale * 2 });
-    enemies.push({ type: 'abrasive', count: 4 + scale });
-    enemies.push({ type: 'heat', count: 5 + scale });
-    enemies.push({ type: 'metal', count: 3 + scale });
+  // ══════════════════════════════════════════════════════════════════════
+  // ВОЛНЫ 1-20: Ручная настройка
+  // ══════════════════════════════════════════════════════════════════════
 
-    if (waveNumber >= 12) {
-      enemies.push({ type: 'corrosion', count: 2 + Math.floor((waveNumber - 10) / 2) });
-    }
-    if (waveNumber >= 14) {
-      enemies.push({ type: 'moisture', count: 2 + Math.floor((waveNumber - 12) / 2) });
-    }
-    if (waveNumber >= 16) {
-      enemies.push({ type: 'static', count: 1 + Math.floor((waveNumber - 14) / 3) });
-    }
+  switch (waveNumber) {
+    case 1:
+      enemies.push({ type: 'dust', count: 6 });
+      spawnInterval = 1500;
+      break;
 
-    // Босс каждые 5 волн
-    if (waveNumber % 5 === 0) {
-      enemies.push({ type: 'boss_pitting', count: Math.floor(waveNumber / 10), delay: 10000 });
-    }
+    case 2:
+      enemies.push({ type: 'dust', count: 10 });
+      spawnInterval = 1400;
+      break;
+
+    case 3:
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'abrasive', count: 2, delay: 3000 });
+      spawnInterval = 1300;
+      break;
+
+    case 4:
+      enemies.push({ type: 'dust', count: 12 });
+      enemies.push({ type: 'abrasive', count: 4, delay: 2000 });
+      enemies.push({ type: 'heat', count: 2, delay: 4000 });
+      spawnInterval = 1200;
+      break;
+
+    case 5: // ★ БОСС
+      enemies.push({ type: 'dust', count: 8 });
+      enemies.push({ type: 'abrasive', count: 4 });
+      enemies.push({ type: 'heat', count: 2, delay: 3000 });
+      enemies.push({ type: 'boss_wear', count: 1, delay: 6000 });
+      spawnInterval = 1100;
+      break;
+
+    case 6:
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'abrasive', count: 4 });
+      enemies.push({ type: 'heat', count: 3, delay: 2000 });
+      enemies.push({ type: 'metal', count: 3, delay: 4000 });
+      spawnInterval = 1050;
+      break;
+
+    case 7: // ⚡ BURST
+      enemies.push({ type: 'dust', count: 14 });
+      enemies.push({ type: 'abrasive', count: 6 });
+      enemies.push({ type: 'metal', count: 4, delay: 3000 });
+      spawnInterval = 950;
+      isBurst = true;
+      break;
+
+    case 8: // Тизер коррозии
+      enemies.push({ type: 'dust', count: 12 });
+      enemies.push({ type: 'abrasive', count: 5 });
+      enemies.push({ type: 'heat', count: 4, delay: 2000 });
+      enemies.push({ type: 'metal', count: 5, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 1, delay: 5000 }); // ТИЗЕР
+      spawnInterval = 900;
+      break;
+
+    case 9: // Тизер влаги
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'abrasive', count: 5 });
+      enemies.push({ type: 'heat', count: 5, delay: 2000 });
+      enemies.push({ type: 'metal', count: 6, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 2, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 1, delay: 6000 }); // ТИЗЕР
+      spawnInterval = 850;
+      break;
+
+    case 10: // ★ БОСС
+      enemies.push({ type: 'dust', count: 8 });
+      enemies.push({ type: 'heat', count: 5 });
+      enemies.push({ type: 'metal', count: 7, delay: 2000 });
+      enemies.push({ type: 'moisture', count: 2, delay: 4000 });
+      enemies.push({ type: 'boss_pitting', count: 1, delay: 8000 });
+      spawnInterval = 850;
+      break;
+
+    case 11:
+      enemies.push({ type: 'dust', count: 12 });
+      enemies.push({ type: 'abrasive', count: 6 });
+      enemies.push({ type: 'heat', count: 5, delay: 2000 });
+      enemies.push({ type: 'metal', count: 7, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 3, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 2, delay: 5000 });
+      spawnInterval = 800;
+      break;
+
+    case 12: // ⚡ BURST
+      enemies.push({ type: 'dust', count: 12 });
+      enemies.push({ type: 'abrasive', count: 6 });
+      enemies.push({ type: 'heat', count: 6, delay: 2000 });
+      enemies.push({ type: 'metal', count: 8, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 3, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 3, delay: 5000 });
+      spawnInterval = 800;
+      isBurst = true;
+      break;
+
+    case 13: // Тизер статики
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'abrasive', count: 5 });
+      enemies.push({ type: 'heat', count: 6, delay: 2000 });
+      enemies.push({ type: 'metal', count: 9, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 4, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 3, delay: 5000 });
+      enemies.push({ type: 'static', count: 1, delay: 6000 }); // ТИЗЕР
+      spawnInterval = 760;
+      break;
+
+    case 14:
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'heat', count: 6, delay: 2000 });
+      enemies.push({ type: 'metal', count: 10, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 4, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 4, delay: 5000 });
+      enemies.push({ type: 'static', count: 2, delay: 6000 });
+      spawnInterval = 730;
+      break;
+
+    case 15: // ★ БОСС
+      enemies.push({ type: 'dust', count: 8 });
+      enemies.push({ type: 'abrasive', count: 4 });
+      enemies.push({ type: 'heat', count: 6, delay: 2000 });
+      enemies.push({ type: 'metal', count: 12, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 5, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 4, delay: 5000 });
+      enemies.push({ type: 'boss_wear', count: 1, delay: 8000 });
+      spawnInterval = 700;
+      break;
+
+    case 16:
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'abrasive', count: 4 });
+      enemies.push({ type: 'heat', count: 7, delay: 2000 });
+      enemies.push({ type: 'metal', count: 12, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 5, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 5, delay: 5000 });
+      enemies.push({ type: 'static', count: 3, delay: 6000 });
+      spawnInterval = 680;
+      break;
+
+    case 17: // ⚡ BURST
+      enemies.push({ type: 'dust', count: 12 });
+      enemies.push({ type: 'heat', count: 7, delay: 2000 });
+      enemies.push({ type: 'metal', count: 13, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 6, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 6, delay: 5000 });
+      enemies.push({ type: 'static', count: 4, delay: 6000 });
+      spawnInterval = 680;
+      isBurst = true;
+      break;
+
+    case 18:
+      enemies.push({ type: 'dust', count: 10 });
+      enemies.push({ type: 'heat', count: 8, delay: 2000 });
+      enemies.push({ type: 'metal', count: 14, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 6, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 6, delay: 5000 });
+      enemies.push({ type: 'static', count: 5, delay: 6000 });
+      spawnInterval = 650;
+      break;
+
+    case 19:
+      enemies.push({ type: 'dust', count: 8 });
+      enemies.push({ type: 'heat', count: 8, delay: 2000 });
+      enemies.push({ type: 'metal', count: 16, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 7, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 7, delay: 5000 });
+      enemies.push({ type: 'static', count: 6, delay: 6000 });
+      spawnInterval = 650;
+      break;
+
+    case 20: // ★ БОСС
+      enemies.push({ type: 'dust', count: 6 });
+      enemies.push({ type: 'heat', count: 8, delay: 2000 });
+      enemies.push({ type: 'metal', count: 18, delay: 3000 });
+      enemies.push({ type: 'corrosion', count: 8, delay: 4000 });
+      enemies.push({ type: 'moisture', count: 8, delay: 5000 });
+      enemies.push({ type: 'static', count: 6, delay: 6000 });
+      enemies.push({ type: 'boss_pitting', count: 1, delay: 10000 });
+      spawnInterval = 650;
+      break;
+
+    default:
+      // ══════════════════════════════════════════════════════════════════
+      // БЕСКОНЕЧНЫЙ РЕЖИМ (21+)
+      // ══════════════════════════════════════════════════════════════════
+      return getInfiniteWaveConfig(waveNumber);
   }
 
-  // Уменьшена награда: волна 1 = 20, волна 5 = 65, волна 10 = 90
-  const reward = 15 + waveNumber * 5 + (waveNumber % 5 === 0 ? 25 : 0);
+  // Burst-волны: интервал ×0.75
+  if (isBurst) {
+    spawnInterval = Math.floor(spawnInterval * 0.75);
+  }
 
-  return {
-    enemies,
-    spawnInterval,
-    reward,
-  };
+  // Награда: 15 + wave×5 + (босс-волна ? 25 : 0)
+  const isBossWave = waveNumber % 5 === 0;
+  const reward = 15 + waveNumber * 5 + (isBossWave ? 25 : 0);
+
+  return { enemies, spawnInterval, reward };
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// БЕСКОНЕЧНЫЙ РЕЖИМ (21+)
+// ══════════════════════════════════════════════════════════════════════════
+
+function getInfiniteWaveConfig(waveNumber: number): WaveConfig {
+  const enemies: WaveEnemy[] = [];
+
+  // Scale растёт каждые 3 волны (не 5)
+  const s = Math.floor((waveNumber - 21) / 3);
+
+  // Базовые количества от 20-й волны + scale
+  enemies.push({ type: 'dust', count: 6 + s * 2 });
+  enemies.push({ type: 'heat', count: 8 + s, delay: 2000 });
+  enemies.push({ type: 'metal', count: 18 + s * 2, delay: 3000 });
+  enemies.push({ type: 'corrosion', count: 8 + Math.floor(s / 2), delay: 4000 });
+  enemies.push({ type: 'moisture', count: 8 + Math.floor(s / 2), delay: 5000 });
+  enemies.push({ type: 'static', count: 6 + Math.floor(s / 3), delay: 6000 });
+
+  // Босс каждые 5 волн (25, 30, 35...)
+  const isBossWave = waveNumber % 5 === 0;
+  if (isBossWave) {
+    enemies.push({ type: 'boss_pitting', count: Math.floor(waveNumber / 15), delay: 10000 });
+  }
+
+  // Burst на волнах boss-3 (22, 27, 32, 37...)
+  const isBurst = (waveNumber + 3) % 5 === 0;
+
+  // Интервал: не ниже 650мс
+  let spawnInterval = Math.max(650, 900 - 10 * (waveNumber - 21));
+  if (isBurst) {
+    spawnInterval = Math.floor(spawnInterval * 0.75);
+  }
+
+  const reward = 15 + waveNumber * 5 + (isBossWave ? 25 : 0);
+
+  return { enemies, spawnInterval, reward };
 }
 
 // ==================== ОБНОВЛЕНИЕ ВРАГОВ ====================
