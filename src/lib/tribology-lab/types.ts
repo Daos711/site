@@ -183,9 +183,9 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Охладитель',
     icon: '❄️',
     basePrice: 50,
-    baseDamage: 8,
+    baseDamage: 5,    // было 8, нерф DPS
     range: 180,       // большой радиус для замедления
-    attackSpeed: 0.8,
+    attackSpeed: 0.7, // было 0.8, нерф скорости
     color: '#38bdf8',  // голубой
     description: 'Замедляет на 40%',
     attackType: 'projectile',
