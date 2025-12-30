@@ -492,6 +492,19 @@ export function processModuleAttack(
         };
         updatedEnemies[index] = applyEffect(updatedEnemies[index], effect);
       }
+
+      // Сепаратор замедляет металл (физика: магнит притягивает)
+      if (module.type === 'magnet') {
+        const enemyConfig = ENEMIES[target.type];
+        if (enemyConfig.tags.includes('metal')) {
+          const slowEffect: Effect = {
+            type: 'slow',
+            duration: 2000,  // 2 секунды
+            strength: 20,    // 20% замедление
+          };
+          updatedEnemies[index] = applyEffect(updatedEnemies[index], slowEffect);
+        }
+      }
     }
   }
 

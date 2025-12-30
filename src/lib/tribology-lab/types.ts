@@ -174,7 +174,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 150,       // достаёт до канала из центра
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
-    description: 'x1.5 урона по металлу',
+    description: 'x1.5 урона, замедляет металл',
     attackType: 'beam',
     tagBonuses: { metal: 1.5 },  // +50% по металлу
   },
