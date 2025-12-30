@@ -59,11 +59,8 @@ export type TargetingMode = 'first' | 'closest' | 'strongest' | 'weakest';
 
 /**
  * Находит цель для модуля
- * @param mode - режим выбора цели:
- *   'first' - враг ближе всего к финишу (макс progress)
- *   'closest' - враг ближе всего к модулю
- *   'strongest' - враг с наибольшим HP
- *   'weakest' - враг с наименьшим HP
+ * ВАЖНО: Модули атакуют ВСЕХ врагов, не только в range!
+ * Эффективность урона зависит от расстояния (см. getDistanceEfficiency)
  */
 export function findTarget(
   module: Module,
@@ -71,23 +68,21 @@ export function findTarget(
   path: PathPoint[],
   mode: TargetingMode = 'first'
 ): Enemy | null {
-  // Фильтруем врагов в радиусе
-  const inRange = enemies.filter(enemy => isInRange(module, enemy, path));
-
-  if (inRange.length === 0) return null;
+  // НЕ фильтруем по range! Выбираем из ВСЕХ врагов
+  if (enemies.length === 0) return null;
 
   const modulePos = getModulePosition(module);
 
   switch (mode) {
     case 'first':
       // Враг с максимальным progress (ближе к финишу)
-      return inRange.reduce((best, enemy) =>
+      return enemies.reduce((best, enemy) =>
         enemy.progress > best.progress ? enemy : best
       );
 
     case 'closest':
       // Враг ближе всего к модулю
-      return inRange.reduce((best, enemy) => {
+      return enemies.reduce((best, enemy) => {
         const bestConfig = ENEMIES[best.type];
         const enemyConfig = ENEMIES[enemy.type];
         const bestPos = getPositionOnPath(path, best.progress, bestConfig.oscillation);
@@ -98,33 +93,36 @@ export function findTarget(
       });
 
     case 'strongest':
-      return inRange.reduce((best, enemy) =>
+      return enemies.reduce((best, enemy) =>
         enemy.hp > best.hp ? enemy : best
       );
 
     case 'weakest':
-      return inRange.reduce((best, enemy) =>
+      return enemies.reduce((best, enemy) =>
         enemy.hp < best.hp ? enemy : best
       );
 
     default:
-      return inRange[0];
+      return enemies[0];
   }
 }
 
 /**
- * Находит всех врагов в радиусе (для AOE)
+ * Находит всех врагов для AOE
+ * ВАЖНО: Возвращаем ВСЕХ врагов — урон зависит от расстояния
  */
 export function findAllInRange(
   module: Module,
   enemies: Enemy[],
   path: PathPoint[]
 ): Enemy[] {
-  return enemies.filter(enemy => isInRange(module, enemy, path));
+  // Возвращаем ВСЕХ врагов — без фильтра по range
+  return enemies;
 }
 
 /**
  * Находит всех врагов на линии (для pierce)
+ * ВАЖНО: Нет ограничения по range — лазер бьёт через всю карту
  */
 export function findAllOnLine(
   module: Module,
@@ -133,7 +131,6 @@ export function findAllOnLine(
   path: PathPoint[]
 ): Enemy[] {
   const modulePos = getModulePosition(module);
-  const config = MODULES[module.type];
   const targetConfig = ENEMIES[target.type];
   const targetPos = getPositionOnPath(path, target.progress, targetConfig.oscillation);
 
@@ -144,14 +141,10 @@ export function findAllOnLine(
   const dirX = dx / length;
   const dirY = dy / length;
 
-  // Проверяем каждого врага
+  // Проверяем каждого врага — БЕЗ ограничения по range
   return enemies.filter(enemy => {
     const enemyConfig = ENEMIES[enemy.type];
     const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
-
-    // Расстояние от модуля
-    const dist = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
-    if (dist > config.range) return false;
 
     // Расстояние от линии луча
     const toEnemyX = enemyPos.x - modulePos.x;
@@ -171,48 +164,34 @@ export function findAllOnLine(
 
 /**
  * Рассчитывает коэффициент эффективности по расстоянию
- * Чем ближе враг к модулю — тем сильнее урон
+ * ВАЖНО: Затухание ТОЛЬКО у магнита и ультразвука!
+ * Все остальные модули бьют на 100% с любого расстояния
  */
 export function getDistanceEfficiency(distance: number, moduleType: ModuleType): number {
   const config = MODULES[moduleType];
   const maxRange = config.range;
 
-  // Если за пределами range — минимальная эффективность
-  if (distance > maxRange) {
-    return 0.1;
-  }
-
   // Нормализованное расстояние (0 = вплотную, 1 = на границе range)
-  const normalized = distance / maxRange;
+  const normalized = Math.min(distance / maxRange, 3);  // cap at 3x range
 
-  // Разные кривые затухания для разных модулей
   switch (moduleType) {
     case 'magnet':
-      // Магнит: быстрое затухание (квадратичное)
-      return Math.max(0.1, 1 - normalized * normalized);
+      // Магнитное поле — быстрое затухание (квадратичное)
+      // Минимум 15%, степень 2.5
+      return Math.max(0.15, 1 - Math.pow(normalized, 2.5) * 0.85);
 
     case 'ultrasonic':
-      // Ультразвук: быстрое затухание
-      return Math.max(0.15, 1 - Math.pow(normalized, 1.5));
+      // Звуковые волны — умеренное затухание
+      // Минимум 50%, степень 1.5
+      return Math.max(0.50, 1 - Math.pow(normalized, 1.5) * 0.5);
 
-    case 'cooler':
-      // Охладитель: среднее затухание
-      return Math.max(0.2, 1 - normalized * 0.8);
-
-    case 'filter':
-      // Фильтр: среднее затухание
-      return Math.max(0.25, 1 - normalized * 0.75);
-
-    case 'lubricant':
-      // Смазка: слабое затухание
-      return Math.max(0.3, 1 - normalized * 0.7);
-
+    // ВСЕ ОСТАЛЬНЫЕ — БЕЗ ЗАТУХАНИЯ (всегда 100%)
     case 'laser':
-      // Лазер: почти нет затухания (дальнобойный)
-      return Math.max(0.7, 1 - normalized * 0.3);
-
+    case 'cooler':
+    case 'lubricant':
+    case 'filter':
     default:
-      return 1;
+      return 1.0;
   }
 }
 
