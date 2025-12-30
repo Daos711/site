@@ -61,10 +61,11 @@ type GamePhase = 'preparing' | 'wave' | 'victory' | 'defeat';
 export default function TribologyLabPage() {
   const [wave, setWave] = useState(1);
   const [lives, setLives] = useState(INITIAL_LIVES);
-  const [gold, setGold] = useState(99999); // Для тестирования
+  const [gold, setGold] = useState(INITIAL_GOLD);
   const [modules, setModules] = useState<Module[]>([]);
   const modulesRef = useRef<Module[]>([]); // Ref для актуальных модулей в game loop
   const [shop, setShop] = useState<ModuleType[]>(INITIAL_SHOP);
+  const [shopRefreshCost, setShopRefreshCost] = useState(10);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -162,7 +163,17 @@ export default function TribologyLabPage() {
     setSpawnQueue([]);
     // Обновляем магазин — новые модули разблокируются с волнами
     setShop(generateShopSlots(nextWave));
+    setShopRefreshCost(10);  // Сброс цены рефреша
   }, [wave]);
+
+  // Рефреш магазина за золото
+  const refreshShop = useCallback(() => {
+    if (gold < shopRefreshCost || gamePhase !== 'preparing') return;
+
+    setGold(prev => prev - shopRefreshCost);
+    setShop(generateShopSlots(wave));
+    setShopRefreshCost(prev => Math.floor(prev * 1.5));  // Каждый рефреш дороже
+  }, [gold, shopRefreshCost, wave, gamePhase]);
 
   // Ref для отслеживания что нужно заспавнить
   const spawnQueueRef = useRef<{ id: string; type: string; spawnAt: number }[]>([]);
@@ -232,7 +243,14 @@ export default function TribologyLabPage() {
 
       updated = updated.filter(enemy => {
         if (hasReachedFinish(enemy)) {
-          livesLost++;
+          // Боссы снимают больше жизней
+          if (enemy.type === 'boss_pitting') {
+            livesLost += 5;
+          } else if (enemy.type === 'boss_wear') {
+            livesLost += 3;
+          } else {
+            livesLost += 1;
+          }
           return false;
         }
         if (isDead(enemy)) {
@@ -2005,6 +2023,33 @@ export default function TribologyLabPage() {
               />
             );
           })}
+          {/* Кнопка обновления магазина */}
+          <button
+            onClick={refreshShop}
+            disabled={gold < shopRefreshCost || gamePhase !== 'preparing'}
+            className="flex flex-col items-center justify-center px-4 py-2 rounded-lg transition-all"
+            style={{
+              background: gold >= shopRefreshCost && gamePhase === 'preparing'
+                ? 'linear-gradient(135deg, #2D3748 0%, #1A202C 100%)'
+                : 'linear-gradient(135deg, #1A1A1A 0%, #0D0D0D 100%)',
+              border: gold >= shopRefreshCost && gamePhase === 'preparing'
+                ? '1px solid rgba(251, 191, 36, 0.5)'
+                : '1px solid rgba(100, 100, 100, 0.3)',
+              opacity: gold >= shopRefreshCost && gamePhase === 'preparing' ? 1 : 0.5,
+              cursor: gold >= shopRefreshCost && gamePhase === 'preparing' ? 'pointer' : 'not-allowed',
+              minWidth: 70,
+              height: 80,
+            }}
+          >
+            <span style={{ fontSize: 24 }}>🔄</span>
+            <span style={{
+              fontSize: 12,
+              color: gold >= shopRefreshCost ? '#FBBF24' : '#666',
+              fontWeight: 600,
+            }}>
+              {shopRefreshCost}💰
+            </span>
+          </button>
         </div>
 
         {/* Game Over */}
@@ -2020,10 +2065,12 @@ export default function TribologyLabPage() {
                 onClick={() => {
                   setWave(1);
                   setLives(INITIAL_LIVES);
-                  setGold(99999);
+                  setGold(INITIAL_GOLD);
                   setModules([]);
                   setEnemies([]);
                   setSpawnQueue([]);
+                  setShop(INITIAL_SHOP);
+                  setShopRefreshCost(10);
                   spawnedIdsRef.current.clear();
                   waveEndingRef.current = false;
                   setGamePhase('preparing');

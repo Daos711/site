@@ -597,6 +597,8 @@ export function processBossRegeneration(enemies: Enemy[], deltaTime: number): En
 
 /**
  * Генерирует случайный набор модулей для магазина
+ * - Только разблокированные модули для текущей волны
+ * - Максимум 2 одинаковых модуля в магазине
  */
 export function generateShopSlots(wave: number): ModuleType[] {
   // Получаем доступные модули для текущей волны
@@ -606,11 +608,32 @@ export function generateShopSlots(wave: number): ModuleType[] {
 
   if (available.length === 0) return [];
 
-  // Выбираем 6 случайных модулей
+  // Перемешиваем массив (Fisher-Yates shuffle)
+  const shuffled = [...available];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
   const slots: ModuleType[] = [];
-  for (let i = 0; i < 6; i++) {
-    const randomIndex = Math.floor(Math.random() * available.length);
-    slots.push(available[randomIndex]);
+  const count: Partial<Record<ModuleType, number>> = {};
+
+  // Заполняем 6 слотов
+  let shuffleIndex = 0;
+  while (slots.length < 6) {
+    const type = shuffled[shuffleIndex % shuffled.length];
+    const currentCount = count[type] || 0;
+
+    // Максимум 2 одинаковых модуля
+    if (currentCount < 2) {
+      slots.push(type);
+      count[type] = currentCount + 1;
+    }
+
+    shuffleIndex++;
+
+    // Защита от бесконечного цикла
+    if (shuffleIndex > 100) break;
   }
 
   return slots;
