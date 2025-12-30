@@ -290,7 +290,8 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
     }
   }
 
-  const reward = 30 + waveNumber * 10 + (waveNumber % 5 === 0 ? 50 : 0);
+  // Уменьшена награда: волна 1 = 20, волна 5 = 65, волна 10 = 90
+  const reward = 15 + waveNumber * 5 + (waveNumber % 5 === 0 ? 25 : 0);
 
   return {
     enemies,

@@ -196,36 +196,47 @@ export function getDistanceEfficiency(distance: number, moduleType: ModuleType):
 }
 
 /**
- * Проверяет бонус от соседних смазок
- * Ортогональные соседи: 100% баффа
- * Диагональные соседи: 65% баффа
+ * Проверяет бонус от соседней смазки
+ * ОГРАНИЧЕНИЯ:
+ * - Смазка НЕ может получать бафф от другой смазки
+ * - Модуль получает бафф только от ОДНОЙ смазки (лучшей по уровню)
+ * - Диагональные соседи дают 65% от бонуса
  */
 export function getLubricantBonus(module: Module, allModules: Module[]): number {
+  // Смазка НЕ может получать бафф от другой смазки
+  if (module.type === 'lubricant') {
+    return 0;
+  }
+
+  // Находим все соседние смазки
   const lubricants = allModules.filter(m => {
     if (m.id === module.id) return false;
     if (m.type !== 'lubricant') return false;
     return Math.abs(m.x - module.x) <= 1 && Math.abs(m.y - module.y) <= 1;
   });
 
-  let totalBonus = 0;
+  if (lubricants.length === 0) return 0;
+
+  // Берём только ОДНУ лучшую смазку (по уровню)
+  const bestLubricant = lubricants.reduce((best, lub) =>
+    lub.level > best.level ? lub : best
+  );
+
   const BASE_BUFF = 0.25;  // 25% базовый бафф
 
-  for (const lub of lubricants) {
-    const dx = Math.abs(lub.x - module.x);
-    const dy = Math.abs(lub.y - module.y);
-    const isDiagonal = dx === 1 && dy === 1;
+  // Проверяем: ортогональный или диагональный сосед
+  const dx = Math.abs(bestLubricant.x - module.x);
+  const dy = Math.abs(bestLubricant.y - module.y);
+  const isDiagonal = dx === 1 && dy === 1;
 
-    // Бонус от уровня: +8% за уровень (Lv5 = +32%)
-    const levelBonus = 1 + (lub.level - 1) * 0.08;
+  // Бонус от уровня смазки: +8% за уровень
+  const levelBonus = 1 + (bestLubricant.level - 1) * 0.08;
 
-    if (isDiagonal) {
-      totalBonus += BASE_BUFF * 0.65 * levelBonus;  // 65% для диагонали
-    } else {
-      totalBonus += BASE_BUFF * levelBonus;          // 100% для ортогонали
-    }
+  if (isDiagonal) {
+    return BASE_BUFF * 0.65 * levelBonus;  // 65% для диагонали
+  } else {
+    return BASE_BUFF * levelBonus;          // 100% для ортогонали
   }
-
-  return totalBonus;
 }
 
 /**

@@ -90,7 +90,8 @@ export default function TribologyLabPage() {
   // DEBUG: Скорость игры (1 = нормальная, 5 = быстрая)
   const [gameSpeed, setGameSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
-  const pauseTimeRef = useRef(0);  // Время, проведённое на паузе
+  const pauseTimeRef = useRef(0);      // Накопленное время на паузе
+  const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
   const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
 
@@ -149,6 +150,7 @@ export default function TribologyLabPage() {
 
     spawnedIdsRef.current.clear(); // Сбрасываем отслеживание
     pauseTimeRef.current = 0;      // Сбрасываем время паузы
+    pauseStartRef.current = 0;     // Сбрасываем начало паузы
     setIsPaused(false);            // Снимаем паузу
     setNextWaveCountdown(0);       // Сбрасываем обратный отсчёт
     setGameStarted(true);          // Игра началась
@@ -213,12 +215,20 @@ export default function TribologyLabPage() {
     if (gamePhase !== 'wave') return;
 
     const gameLoop = (timestamp: number) => {
-      // Если на паузе — только обновляем timestamp и ждём
+      // Если на паузе — запоминаем начало паузы и ждём
       if (isPaused) {
+        if (pauseStartRef.current === 0) {
+          pauseStartRef.current = timestamp;  // Запоминаем момент начала паузы
+        }
         lastUpdateRef.current = timestamp;
-        pauseTimeRef.current += 16;  // ~1 кадр
         gameLoopRef.current = requestAnimationFrame(gameLoop);
         return;
+      }
+
+      // Если только что вышли из паузы — добавляем время паузы
+      if (pauseStartRef.current > 0) {
+        pauseTimeRef.current += timestamp - pauseStartRef.current;
+        pauseStartRef.current = 0;  // Сбрасываем
       }
 
       const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed;

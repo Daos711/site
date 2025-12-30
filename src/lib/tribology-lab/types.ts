@@ -128,7 +128,7 @@ export const GRID_COLS = 4;
 export const GRID_ROWS = 3;
 
 export const INITIAL_LIVES = 10;
-export const INITIAL_GOLD = 100;
+export const INITIAL_GOLD = 120;
 
 // Layout константы (должны совпадать с page.tsx)
 export const CELL_SIZE = 110;           // размер ячейки в пикселях
@@ -152,9 +152,9 @@ export function getEffectStrength(baseStrength: number, level: number): number {
   return baseStrength + (level - 1) * 2;
 }
 
-// Формула HP врагов: baseHp * 1.08^wave
+// Формула HP врагов: baseHp * 1.12^wave (более агрессивный рост)
 export function getEnemyHp(baseHp: number, wave: number): number {
-  return Math.floor(baseHp * Math.pow(1.08, wave));
+  return Math.floor(baseHp * Math.pow(1.12, wave));
 }
 
 // Цена модуля с учётом уровня
@@ -169,7 +169,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'magnet',
     name: 'Сепаратор',
     icon: '🧲',
-    basePrice: 25,
+    basePrice: 40,
     baseDamage: 12,
     range: 150,       // достаёт до канала из центра
     attackSpeed: 1.0,
@@ -183,7 +183,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'cooler',
     name: 'Охладитель',
     icon: '❄️',
-    basePrice: 35,
+    basePrice: 50,
     baseDamage: 8,
     range: 180,       // большой радиус для замедления
     attackSpeed: 0.8,
@@ -200,7 +200,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'filter',
     name: 'Фильтр',
     icon: '🛡️',
-    basePrice: 50,
+    basePrice: 75,
     baseDamage: 18,
     range: 170,       // средний радиус
     attackSpeed: 1.2,
@@ -213,7 +213,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'lubricant',
     name: 'Смазка',
     icon: '💧',
-    basePrice: 45,
+    basePrice: 65,
     baseDamage: 4,    // Пониженный урон, зато дебафф
     range: 140,       // ближний бой, но достаёт до края
     attackSpeed: 0.6,
@@ -229,7 +229,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'ultrasonic',
     name: 'Ультразвук',
     icon: '📡',
-    basePrice: 65,
+    basePrice: 100,
     baseDamage: 10,
     range: 200,       // большой радиус для AOE
     attackSpeed: 0.4,
@@ -244,7 +244,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'laser',
     name: 'Лазер',
     icon: '🔬',
-    basePrice: 80,
+    basePrice: 120,
     baseDamage: 15,
     range: 250,       // максимальный радиус для снайпера
     attackSpeed: 0.3,
@@ -269,7 +269,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '💨',
     baseHp: 25,
     speed: 55,
-    reward: 5,
+    reward: 2,
     description: 'Базовый враг',
     size: 12,       // +25%
     color: '#9ca3af',
@@ -283,7 +283,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '🪨',
     baseHp: 70,
     speed: 30,
-    reward: 10,
+    reward: 4,
     description: 'Медленный, крепкий',
     size: 18,       // +25%
     color: '#a67c52',  // песочно-серый/охра
@@ -297,7 +297,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '🌡️',
     baseHp: 50,
     speed: 42,
-    reward: 12,
+    reward: 5,
     description: 'Иммунитет к ожогу',
     size: 15,       // +25%
     color: '#ff6b35',  // оранжево-красный
@@ -311,7 +311,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '🔩',
     baseHp: 100,
     speed: 25,
-    reward: 15,
+    reward: 6,
     description: 'Магнит x1.5 урона',
     size: 20,       // +25%
     color: '#a8a8a8',  // серебристый
@@ -325,7 +325,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '🦠',
     baseHp: 80,
     speed: 35,
-    reward: 18,
+    reward: 7,
     description: '-20% урон модулей рядом',
     size: 18,       // +25%
     color: '#4a7c59',  // зелёно-бурый
@@ -339,7 +339,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '💧',
     baseHp: 45,
     speed: 48,
-    reward: 10,
+    reward: 4,
     description: 'Иммунитет к замедлению',
     size: 12,       // +25%
     color: '#38bdf8',
@@ -353,7 +353,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '⚡',
     baseHp: 35,
     speed: 60,
-    reward: 12,
+    reward: 5,
     description: 'Телепорт +10% каждые 3с',
     size: 10,       // +25%
     color: '#facc15',
@@ -367,7 +367,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '🔴',
     baseHp: 300,
     speed: 20,
-    reward: 50,
+    reward: 25,
     description: 'Мини-босс',
     size: 30,       // +25%
     color: '#4a4a4a',  // тёмный металл
@@ -381,7 +381,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     icon: '⚫',
     baseHp: 800,
     speed: 15,
-    reward: 150,
+    reward: 75,
     description: 'Регенерация 10 HP/с',
     size: 40,       // +25%
     color: '#374151',  // тёмно-серый
