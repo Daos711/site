@@ -1759,11 +1759,11 @@ export default function TribologyLabPage() {
 
         {/* Магазин — внутри контейнера поля */}
         <div
-          className="absolute flex justify-center gap-3"
+          className="absolute flex justify-center gap-4"
           style={{
-            left: 10,
-            right: 10,
-            top: totalHeight + 10,
+            left: 20,
+            right: 20,
+            top: totalHeight + 15,
           }}
         >
           {shop.map((moduleType, index) => {
@@ -1777,7 +1777,7 @@ export default function TribologyLabPage() {
                 type={moduleType}
                 canAfford={canAfford}
                 isDragging={isDraggingThis}
-                size={100}
+                size={80}
                 onMouseDown={(e) => handleShopDragStart(e, index)}
                 onTouchStart={(e) => handleShopDragStart(e, index)}
               />
