@@ -91,6 +91,8 @@ export default function TribologyLabPage() {
   const [gameSpeed, setGameSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const pauseTimeRef = useRef(0);  // Время, проведённое на паузе
+  const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
+  const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
 
   // Размеры
   const cellSize = 110;
@@ -148,6 +150,8 @@ export default function TribologyLabPage() {
     spawnedIdsRef.current.clear(); // Сбрасываем отслеживание
     pauseTimeRef.current = 0;      // Сбрасываем время паузы
     setIsPaused(false);            // Снимаем паузу
+    setNextWaveCountdown(0);       // Сбрасываем обратный отсчёт
+    setGameStarted(true);          // Игра началась
     setSpawnQueue(queue);
     setWaveStartTime(performance.now());
     setGamePhase('wave');
@@ -168,7 +172,24 @@ export default function TribologyLabPage() {
     // Обновляем магазин — новые модули разблокируются с волнами
     setShop(generateShopSlots(nextWave));
     setShopRefreshCost(10);  // Сброс цены рефреша
+    // Запускаем обратный отсчёт до следующей волны (10 сек)
+    setNextWaveCountdown(10);
   }, [wave]);
+
+  // Автостарт следующей волны
+  useEffect(() => {
+    if (gamePhase !== 'preparing' || !gameStarted || nextWaveCountdown <= 0) return;
+
+    const timer = setTimeout(() => {
+      if (nextWaveCountdown === 1) {
+        startWave();
+      } else {
+        setNextWaveCountdown(prev => prev - 1);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [gamePhase, gameStarted, nextWaveCountdown, startWave]);
 
   // Рефреш магазина за золото
   const refreshShop = useCallback(() => {
@@ -233,7 +254,8 @@ export default function TribologyLabPage() {
           currentModules,
           updated,
           enemyPath,
-          timestamp
+          timestamp,
+          gameSpeed
         );
 
         updated = attackResult.updatedEnemies;
@@ -401,8 +423,10 @@ export default function TribologyLabPage() {
         const existingModule = getModuleAt(targetCell.x, targetCell.y);
 
         if (dragState.type === 'shop') {
+          const config = MODULES[dragState.moduleType];
+
           if (!existingModule) {
-            const config = MODULES[dragState.moduleType];
+            // Пустая ячейка — размещаем новый модуль
             if (gold >= config.basePrice) {
               const newModule: Module = {
                 id: `${dragState.moduleType}-${Date.now()}`,
@@ -415,6 +439,20 @@ export default function TribologyLabPage() {
               setModules(prev => [...prev, newModule]);
               setGold(prev => prev - config.basePrice);
             }
+          } else if (
+            existingModule.type === dragState.moduleType &&
+            existingModule.level < 5 &&
+            gold >= config.basePrice
+          ) {
+            // Такой же тип на поле — мерж из магазина!
+            // Анимация слияния
+            setMergingCell({ x: targetCell.x, y: targetCell.y });
+            setTimeout(() => setMergingCell(null), 400);
+
+            setModules(prev => prev.map(m =>
+              m.id === existingModule.id ? { ...m, level: m.level + 1 } : m
+            ));
+            setGold(prev => prev - config.basePrice);
           }
         } else if (dragState.type === 'field' && dragState.moduleId) {
           const draggedModule = modules.find(m => m.id === dragState.moduleId);
@@ -589,18 +627,36 @@ export default function TribologyLabPage() {
           <span className="font-bold text-white">{gold}</span>
         </div>
 
-        {/* Кнопка Начать волну */}
+        {/* Кнопка Начать волну / Обратный отсчёт */}
         {gamePhase === 'preparing' && (
-          <button
-            onClick={startWave}
-            className="px-4 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-base"
-            style={{
-              background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
-              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), 0 2px 0 #15803d',
-            }}
-          >
-            ▶ Старт
-          </button>
+          gameStarted && nextWaveCountdown > 0 ? (
+            <div
+              className="px-4 py-1.5 rounded-lg font-bold text-white text-base flex items-center gap-2"
+              style={{
+                background: 'linear-gradient(145deg, #3b82f6 0%, #2563eb 100%)',
+                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
+              }}
+            >
+              <span>⏱️ {nextWaveCountdown}</span>
+              <button
+                onClick={startWave}
+                className="px-2 py-0.5 rounded bg-green-500 hover:bg-green-400 text-sm transition-colors"
+              >
+                Сейчас!
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={startWave}
+              className="px-4 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-base"
+              style={{
+                background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
+                boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), 0 2px 0 #15803d',
+              }}
+            >
+              ▶ Старт
+            </button>
+          )
         )}
 
         {/* Индикатор волны в процессе + кнопка паузы */}
@@ -2099,6 +2155,8 @@ export default function TribologyLabPage() {
                   setSpawnQueue([]);
                   setShop(INITIAL_SHOP);
                   setShopRefreshCost(10);
+                  setGameStarted(false);
+                  setNextWaveCountdown(0);
                   spawnedIdsRef.current.clear();
                   waveEndingRef.current = false;
                   setGamePhase('preparing');

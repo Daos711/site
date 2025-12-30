@@ -403,10 +403,11 @@ export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
 
 /**
  * Проверяет, может ли модуль атаковать (прошло достаточно времени)
+ * @param gameSpeed - множитель скорости (1 = нормальная, 3 = 3x быстрее)
  */
-export function canAttack(module: Module, currentTime: number): boolean {
+export function canAttack(module: Module, currentTime: number, gameSpeed: number = 1): boolean {
   const config = MODULES[module.type];
-  const attackInterval = 1000 / config.attackSpeed;  // мс между атаками
+  const attackInterval = 1000 / config.attackSpeed / gameSpeed;  // мс между атаками (ускоряется с gameSpeed)
   return currentTime - module.lastAttack >= attackInterval;
 }
 
@@ -419,14 +420,15 @@ export function processModuleAttack(
   enemies: Enemy[],
   allModules: Module[],
   path: PathPoint[],
-  currentTime: number
+  currentTime: number,
+  gameSpeed: number = 1
 ): {
   updatedEnemies: Enemy[];
   updatedModule: Module;
   attackEffect: AttackEffect | null;
 } {
-  // Проверяем cooldown
-  if (!canAttack(module, currentTime)) {
+  // Проверяем cooldown (с учётом gameSpeed)
+  if (!canAttack(module, currentTime, gameSpeed)) {
     return { updatedEnemies: enemies, updatedModule: module, attackEffect: null };
   }
 
@@ -522,12 +524,14 @@ export function processModuleAttack(
 
 /**
  * Обрабатывает атаки всех модулей
+ * @param gameSpeed - множитель скорости геймплея
  */
 export function processAllAttacks(
   modules: Module[],
   enemies: Enemy[],
   path: PathPoint[],
-  currentTime: number
+  currentTime: number,
+  gameSpeed: number = 1
 ): {
   updatedEnemies: Enemy[];
   updatedModules: Module[];
@@ -543,7 +547,8 @@ export function processAllAttacks(
       updatedEnemies,
       updatedModules,
       path,
-      currentTime
+      currentTime,
+      gameSpeed
     );
 
     updatedEnemies = result.updatedEnemies;
