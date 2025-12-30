@@ -396,41 +396,41 @@ export const MODULE_CODES: Record<ModuleType, string> = {
   laser: 'LAS-OP3',
 };
 
-// Инженерная палитра модулей
+// Инженерная палитра модулей (приглушённые цвета)
 export const MODULE_PALETTE: Record<ModuleType, {
   dark: string;
   light: string;
   glow: string;
 }> = {
   magnet: {
-    dark: '#3A2B6D',
-    light: '#6A4CFF',
-    glow: 'rgba(106, 76, 255, 0.3)',
+    dark: '#2E2255',
+    light: '#6B4CD6',
+    glow: 'rgba(107, 76, 214, 0.15)',
   },
   cooler: {
-    dark: '#1E6C86',
-    light: '#4CB6D6',
-    glow: 'rgba(76, 182, 214, 0.3)',
+    dark: '#185568',
+    light: '#2A9AC8',
+    glow: 'rgba(42, 154, 200, 0.15)',
   },
   filter: {
-    dark: '#7A4B12',
-    light: '#C08A2A',
-    glow: 'rgba(192, 138, 42, 0.3)',
+    dark: '#5C3A0E',
+    light: '#C09A1E',
+    glow: 'rgba(192, 154, 30, 0.15)',
   },
   lubricant: {
-    dark: '#4A2A57',
-    light: '#9C6AD6',
-    glow: 'rgba(156, 106, 214, 0.3)',
+    dark: '#3A2145',
+    light: '#8845C7',
+    glow: 'rgba(136, 69, 199, 0.15)',
   },
   ultrasonic: {
-    dark: '#0F6A62',
-    light: '#3CC7B5',
-    glow: 'rgba(60, 199, 181, 0.3)',
+    dark: '#0B524C',
+    light: '#24A899',
+    glow: 'rgba(36, 168, 153, 0.15)',
   },
   laser: {
-    dark: '#5A1B1B',
-    light: '#FF4D4D',
-    glow: 'rgba(255, 77, 77, 0.3)',
+    dark: '#4A1616',
+    light: '#BF3636',
+    glow: 'rgba(191, 54, 54, 0.15)',
   },
 };
 
