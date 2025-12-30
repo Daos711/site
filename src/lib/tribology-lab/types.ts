@@ -386,6 +386,54 @@ export const MODULE_UNLOCK_WAVES: Record<ModuleType, number> = {
   laser: 15,
 };
 
+// Серийные коды модулей (инженерный стиль)
+export const MODULE_CODES: Record<ModuleType, string> = {
+  magnet: 'MAG-SEP',
+  cooler: 'CRY-01',
+  filter: 'FLT-ISO',
+  lubricant: 'LUB-D4',
+  ultrasonic: 'USN-K7',
+  laser: 'LAS-OP3',
+};
+
+// Инженерная палитра модулей
+export const MODULE_PALETTE: Record<ModuleType, {
+  dark: string;
+  light: string;
+  glow: string;
+}> = {
+  magnet: {
+    dark: '#3A2B6D',
+    light: '#6A4CFF',
+    glow: 'rgba(106, 76, 255, 0.3)',
+  },
+  cooler: {
+    dark: '#1E6C86',
+    light: '#4CB6D6',
+    glow: 'rgba(76, 182, 214, 0.3)',
+  },
+  filter: {
+    dark: '#7A4B12',
+    light: '#C08A2A',
+    glow: 'rgba(192, 138, 42, 0.3)',
+  },
+  lubricant: {
+    dark: '#4A2A57',
+    light: '#9C6AD6',
+    glow: 'rgba(156, 106, 214, 0.3)',
+  },
+  ultrasonic: {
+    dark: '#0F6A62',
+    light: '#3CC7B5',
+    glow: 'rgba(60, 199, 181, 0.3)',
+  },
+  laser: {
+    dark: '#5A1B1B',
+    light: '#FF4D4D',
+    glow: 'rgba(255, 77, 77, 0.3)',
+  },
+};
+
 // Порядок разблокировки врагов
 export const ENEMY_UNLOCK_WAVES: Record<EnemyType, number> = {
   dust: 1,

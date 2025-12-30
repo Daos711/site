@@ -30,6 +30,7 @@ import {
   processBossRegeneration,
   generateShopSlots,
 } from "@/lib/tribology-lab/combat";
+import { ShopCard } from "@/lib/tribology-lab/components";
 
 // Начальные модули в магазине
 const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'magnet', 'cooler', 'filter'];
@@ -1767,37 +1768,19 @@ export default function TribologyLabPage() {
         >
           {shop.map((moduleType, index) => {
             const config = MODULES[moduleType];
-            const gradient = MODULE_GRADIENTS[moduleType];
             const canAfford = gold >= config.basePrice;
             const isDraggingThis = dragState?.type === 'shop' && dragState.shopIndex === index;
-            const shopCardSize = 80;
 
             return (
-              <div
+              <ShopCard
                 key={index}
-                className={`
-                  relative rounded-xl transition-all duration-150
-                  ${!canAfford ? 'opacity-50 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing hover:scale-105'}
-                  ${isDraggingThis ? 'opacity-30' : ''}
-                `}
-                style={{
-                  width: shopCardSize,
-                  height: shopCardSize + 14,
-                  background: gradient.bg,
-                  border: `3px solid ${gradient.border}`,
-                  boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 15px ${config.color}30, 0 8px 16px rgba(0,0,0,0.5)`,
-                }}
-                onMouseDown={(e) => canAfford && handleShopDragStart(e, index)}
-                onTouchStart={(e) => canAfford && handleShopDragStart(e, index)}
-              >
-                <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                  <span className="text-3xl drop-shadow-lg">{config.icon}</span>
-                  <div className="flex items-center gap-1 text-xs bg-black/30 px-2 py-0.5 rounded-full">
-                    <span className="text-yellow-400">🪙</span>
-                    <span className={canAfford ? 'text-white font-medium' : 'text-red-400 font-medium'}>{config.basePrice}</span>
-                  </div>
-                </div>
-              </div>
+                type={moduleType}
+                canAfford={canAfford}
+                isDragging={isDraggingThis}
+                size={80}
+                onMouseDown={(e) => handleShopDragStart(e, index)}
+                onTouchStart={(e) => handleShopDragStart(e, index)}
+              />
             );
           })}
         </div>
