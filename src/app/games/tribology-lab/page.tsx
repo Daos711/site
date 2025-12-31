@@ -32,7 +32,7 @@ import {
   getModulePosition,
   getDistance,
 } from "@/lib/tribology-lab/combat";
-import { ShopCard, FieldTile } from "@/lib/tribology-lab/components";
+import { ModuleCard, FieldTile } from "@/lib/tribology-lab/components";
 
 // Начальные модули в магазине
 const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet', 'cooler'];
@@ -2233,12 +2233,12 @@ export default function TribologyLabPage() {
             const isDraggingThis = dragState?.type === 'shop' && dragState.shopIndex === index;
 
             return (
-              <ShopCard
+              <ModuleCard
                 key={index}
                 type={moduleType}
+                compact={true}
                 canAfford={canAfford}
                 isDragging={isDraggingThis}
-                size={80}
                 onMouseDown={(e) => handleShopDragStart(e, index)}
                 onTouchStart={(e) => handleShopDragStart(e, index)}
               />

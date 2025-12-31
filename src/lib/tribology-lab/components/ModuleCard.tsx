@@ -7,6 +7,7 @@ interface ModuleCardProps {
   level?: number;
   selected?: boolean;
   showDetails?: boolean;
+  compact?: boolean;  // Компактный режим для магазина
   onClick?: () => void;
   className?: string;
   // Для магазина
@@ -21,6 +22,7 @@ export function ModuleCard({
   level = 1,
   selected = false,
   showDetails = true,
+  compact = false,
   onClick,
   className = '',
   canAfford = true,
@@ -35,7 +37,7 @@ export function ModuleCard({
 
   return (
     <div
-      className={`module-card ${selected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''} ${isDragging ? 'dragging' : ''} ${className}`}
+      className={`module-card ${selected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''} ${isDragging ? 'dragging' : ''} ${compact ? 'compact' : ''} ${className}`}
       onClick={onClick}
       onMouseDown={canAfford ? onMouseDown : undefined}
       onTouchStart={canAfford ? onTouchStart : undefined}
@@ -51,21 +53,27 @@ export function ModuleCard({
       {/* Заклёпки по углам */}
       <div className="rivet top-left" />
       <div className="rivet top-right" />
-      <div className="rivet bottom-left" />
-      <div className="rivet bottom-right" />
+      {!compact && <div className="rivet bottom-left" />}
+      {!compact && <div className="rivet bottom-right" />}
 
-      {/* Шапка */}
-      <div className="card-header">
-        <div className="card-title">
-          <span className="module-name">{config.name}</span>
-          <span className="module-code">{code}</span>
-        </div>
-        {unlockWave > 1 && (
-          <span className="wave-badge">Волна {unlockWave}+</span>
-        )}
-      </div>
+      {/* Шапка — только в полном режиме */}
+      {!compact && (
+        <>
+          <div className="card-header">
+            <div className="card-title">
+              <span className="module-name">{config.name}</span>
+              <span className="module-code">{code}</span>
+            </div>
+            {unlockWave > 1 && (
+              <span className="wave-badge">Волна {unlockWave}+</span>
+            )}
+          </div>
+          <p className="card-description">{config.description}</p>
+        </>
+      )}
 
-      <p className="card-description">{config.description}</p>
+      {/* Код модуля — только в compact */}
+      {compact && <div className="compact-code">{code}</div>}
 
       {/* Ниша с иконкой */}
       <div className="icon-niche">
@@ -80,7 +88,7 @@ export function ModuleCard({
       </div>
 
       {/* Цена */}
-      <div className="price-badge" style={{ borderColor: palette.light }}>
+      <div className="price-badge" style={{ borderColor: canAfford ? palette.light : '#5A6A7A' }}>
         <span className="coin-icon">●</span>
         <span className="price-value">{config.basePrice}</span>
       </div>
@@ -174,6 +182,44 @@ export function ModuleCard({
           transform: scale(1.05);
           cursor: grabbing;
           z-index: 100;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           Компактный режим для магазина
+           ═══════════════════════════════════════════════════════════════ */
+        .module-card.compact {
+          width: 90px;
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .module-card.compact .icon-niche {
+          width: 56px;
+          height: 56px;
+          margin: 4px 0 8px;
+        }
+
+        .module-card.compact .icon-container {
+          width: 36px;
+          height: 36px;
+        }
+
+        .module-card.compact .price-badge {
+          padding: 4px 10px;
+          margin-bottom: 0;
+        }
+
+        .module-card.compact .price-value {
+          font-size: 14px;
+        }
+
+        .compact-code {
+          font-size: 8px;
+          color: #5A6A7A;
+          font-family: monospace;
+          margin-bottom: 2px;
         }
 
         .card-texture {
