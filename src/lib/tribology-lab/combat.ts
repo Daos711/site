@@ -299,7 +299,7 @@ export function getCorrosionPenalty(
   path: PathPoint[]
 ): number {
   const modulePos = getModulePosition(module);
-  const corrosionRadius = 80;  // радиус дебаффа коррозии
+  const corrosionRadius = 140;  // радиус дебаффа коррозии
 
   const nearbyCorrosion = enemies.filter(enemy => {
     if (enemy.type !== 'corrosion') return false;

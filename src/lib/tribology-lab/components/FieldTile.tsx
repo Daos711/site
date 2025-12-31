@@ -429,8 +429,12 @@ function ModuleIcon({ type }: { type: ModuleType }) {
           strokeLinecap="round"
           fill="none"
         />
-        <rect x="6" y="3" width="8" height="6" rx="1.5" fill="#dc2626" />
-        <rect x="26" y="3" width="8" height="6" rx="1.5" fill="#3b82f6" />
+        {/* Красный полюс с обводкой */}
+        <rect x="6" y="3" width="8" height="6" rx="1.5" fill="#dc2626"
+              stroke={palette.light} strokeWidth="1" opacity="0.9" />
+        {/* Синий полюс с обводкой */}
+        <rect x="26" y="3" width="8" height="6" rx="1.5" fill="#3b82f6"
+              stroke={palette.light} strokeWidth="1" opacity="0.9" />
       </svg>
     ),
     cooler: (
@@ -450,10 +454,10 @@ function ModuleIcon({ type }: { type: ModuleType }) {
           stroke={palette.light}
           strokeWidth="2"
         />
-        <line x1="12" y1="14" x2="28" y2="14" stroke={palette.light} strokeWidth="1.5" opacity="0.6" />
-        <line x1="11" y1="19" x2="29" y2="19" stroke={palette.light} strokeWidth="1.5" opacity="0.6" />
-        <line x1="12" y1="24" x2="28" y2="24" stroke={palette.light} strokeWidth="1.5" opacity="0.6" />
-        <line x1="14" y1="29" x2="26" y2="29" stroke={palette.light} strokeWidth="1.5" opacity="0.6" />
+        <line x1="12" y1="14" x2="28" y2="14" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="11" y1="19" x2="29" y2="19" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="12" y1="24" x2="28" y2="24" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="14" y1="29" x2="26" y2="29" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
       </svg>
     ),
     lubricant: (
@@ -562,46 +566,78 @@ function ModuleIcon({ type }: { type: ModuleType }) {
     ),
     centrifuge: (
       <svg viewBox="0 0 40 40" fill="none">
+        {/* Камера */}
         <circle cx="20" cy="20" r="14" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        {/* Ступица */}
         <circle cx="20" cy="20" r="4" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
-        <path d="M20 10 L24.5 18 L20 17 L15.5 18 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
-        <path d="M29 24 L21.5 23 L23 27.5 L26 29 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
-        <path d="M11 24 L14 29 L17 27.5 L18.5 23 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        {/* Лопасть 1 (вверх) */}
         <path
-          d="M28 13 A10 10 0 0 1 30 20"
+          d="M20 10 Q26 13 25 19 Q24.5 21 22.5 20 Q21 19.2 20 18 Q19 19.2 17.5 20 Q15.5 21 15 19 Q14 13 20 10 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        {/* Лопасть 2 (120°) */}
+        <g transform="rotate(120 20 20)">
+          <path
+            d="M20 10 Q26 13 25 19 Q24.5 21 22.5 20 Q21 19.2 20 18 Q19 19.2 17.5 20 Q15.5 21 15 19 Q14 13 20 10 Z"
+            fill={palette.dark}
+            stroke={palette.light}
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </g>
+        {/* Лопасть 3 (240°) */}
+        <g transform="rotate(240 20 20)">
+          <path
+            d="M20 10 Q26 13 25 19 Q24.5 21 22.5 20 Q21 19.2 20 18 Q19 19.2 17.5 20 Q15.5 21 15 19 Q14 13 20 10 Z"
+            fill={palette.dark}
+            stroke={palette.light}
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </g>
+        {/* Дуга вращения */}
+        <path
+          d="M29 14 A11 11 0 0 1 30 22"
           stroke={palette.light}
           strokeWidth="1.5"
           strokeLinecap="round"
           opacity="0.6"
         />
         <path
-          d="M30 20 L29 18.5 M30 20 L28.5 19.2"
+          d="M30 22 L28.8 20.9 M30 22 L28.5 21.7"
           stroke={palette.light}
           strokeWidth="1.5"
           strokeLinecap="round"
           opacity="0.6"
         />
-        <line x1="26" y1="31" x2="14" y2="31" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M14 31 L16.6 29.6 M14 31 L16.6 32.4" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+        {/* Стрелка отката */}
+        <line x1="25" y1="28" x2="15" y2="28" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
+        <path d="M15 28 L17.2 26.8 M15 28 L17.2 29.2" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" opacity="0.6" />
       </svg>
     ),
     electrostatic: (
       <svg viewBox="0 0 40 40" fill="none">
+        {/* Центральная молния — более выраженная */}
         <path
-          d="M20 6 L15 18 H20 L17 34 L25 20 H20 Z"
+          d="M22 4 L16 17 H21 L14 36 L26 19 H21 L26 4 Z"
           fill={palette.dark}
           stroke={palette.light}
           strokeWidth="2"
           strokeLinejoin="round"
         />
-        <circle cx="10" cy="12" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
-        <circle cx="30" cy="12" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
-        <circle cx="10" cy="28" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
-        <circle cx="30" cy="28" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
-        <line x1="18" y1="18" x2="12" y2="13.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-        <line x1="22" y1="18" x2="28" y2="13.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-        <line x1="18" y1="24" x2="12" y2="26.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
-        <line x1="22" y1="24" x2="28" y2="26.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+        {/* 4 узла-цели по углам */}
+        <circle cx="6" cy="8" r="3" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="34" cy="8" r="3" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="6" cy="32" r="3" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="34" cy="32" r="3" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        {/* Связи от молнии к узлам */}
+        <line x1="16" y1="10" x2="9" y2="8" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+        <line x1="24" y1="10" x2="31" y2="8" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+        <line x1="16" y1="28" x2="9" y2="32" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+        <line x1="22" y1="28" x2="31" y2="32" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
       </svg>
     ),
     barrier: (

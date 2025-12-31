@@ -140,7 +140,7 @@ export default function TribologyLabPage() {
   // Функция для вычисления стеков коррозии на модуле
   const getCorrosionStacks = useCallback((module: Module): number => {
     const modulePos = getModulePosition(module);
-    const corrosionRadius = 80;
+    const corrosionRadius = 140;
 
     let stacks = 0;
     for (const enemy of enemies) {
@@ -590,7 +590,23 @@ export default function TribologyLabPage() {
     <div
       className="flex flex-col items-center gap-3 py-4"
       style={{
-        background: 'radial-gradient(ellipse at center, #0d1117 0%, #050608 70%, #000000 100%)',
+        background: `
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 39px,
+            rgba(255, 255, 255, 0.03) 39px,
+            rgba(255, 255, 255, 0.03) 40px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 39px,
+            rgba(255, 255, 255, 0.03) 39px,
+            rgba(255, 255, 255, 0.03) 40px
+          ),
+          radial-gradient(ellipse at center, #0d1117 0%, #050608 70%, #020304 100%)
+        `,
         minHeight: '100vh',
       }}
     >
@@ -1103,6 +1119,113 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset / 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           <circle cx={totalWidth - innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
 
+          {/* ═══════════════════════════════════════════════════════════════
+              СТРЕЛКИ НАПРАВЛЕНИЯ ПОТОКА
+              ═══════════════════════════════════════════════════════════════ */}
+          {/* Левый вертикальный участок — стрелка ВВЕРХ */}
+          <g opacity="0.35">
+            <line
+              x1={conveyorWidth / 2}
+              y1={totalHeight * 0.55}
+              x2={conveyorWidth / 2}
+              y2={totalHeight * 0.45}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${conveyorWidth / 2 - 5} ${totalHeight * 0.47} L ${conveyorWidth / 2} ${totalHeight * 0.43} L ${conveyorWidth / 2 + 5} ${totalHeight * 0.47}`}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </g>
+
+          {/* Верхний горизонтальный участок — стрелки ВПРАВО */}
+          <g opacity="0.35">
+            {/* Стрелка 1 */}
+            <line
+              x1={totalWidth * 0.28}
+              y1={conveyorWidth / 2}
+              x2={totalWidth * 0.36}
+              y2={conveyorWidth / 2}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${totalWidth * 0.34} ${conveyorWidth / 2 - 5} L ${totalWidth * 0.38} ${conveyorWidth / 2} L ${totalWidth * 0.34} ${conveyorWidth / 2 + 5}`}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+            {/* Стрелка 2 */}
+            <line
+              x1={totalWidth * 0.58}
+              y1={conveyorWidth / 2}
+              x2={totalWidth * 0.66}
+              y2={conveyorWidth / 2}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${totalWidth * 0.64} ${conveyorWidth / 2 - 5} L ${totalWidth * 0.68} ${conveyorWidth / 2} L ${totalWidth * 0.64} ${conveyorWidth / 2 + 5}`}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </g>
+
+          {/* Правый вертикальный участок — стрелка ВНИЗ */}
+          <g opacity="0.35">
+            <line
+              x1={totalWidth - conveyorWidth / 2}
+              y1={totalHeight * 0.45}
+              x2={totalWidth - conveyorWidth / 2}
+              y2={totalHeight * 0.55}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${totalWidth - conveyorWidth / 2 - 5} ${totalHeight * 0.53} L ${totalWidth - conveyorWidth / 2} ${totalHeight * 0.57} L ${totalWidth - conveyorWidth / 2 + 5} ${totalHeight * 0.53}`}
+              stroke="rgba(255, 255, 255, 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </g>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              МЕТКИ INLET / OUTLET
+              ═══════════════════════════════════════════════════════════════ */}
+          <text
+            x={conveyorWidth / 2}
+            y={totalHeight + 25}
+            textAnchor="middle"
+            fill="rgba(255, 255, 255, 0.4)"
+            fontSize="10"
+            fontFamily="monospace"
+            fontWeight="bold"
+          >
+            IN-01
+          </text>
+          <text
+            x={totalWidth - conveyorWidth / 2}
+            y={totalHeight + 25}
+            textAnchor="middle"
+            fill="rgba(255, 255, 255, 0.4)"
+            fontSize="10"
+            fontFamily="monospace"
+            fontWeight="bold"
+          >
+            OUT-01
+          </text>
+
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
           {enemies.map(enemy => {
             const config = ENEMIES[enemy.type];
@@ -1330,11 +1453,11 @@ export default function TribologyLabPage() {
                     ═══════════════════════════════════════════════════════════════ */}
                 {config.shape === 'blob' && (
                   <g>
-                    {/* Аура коррозии 80px */}
+                    {/* Аура коррозии 140px */}
                     <circle
                       cx={0}
                       cy={0}
-                      r={80}
+                      r={140}
                       fill="url(#corrosionAura)"
                       opacity={0.5}
                     />
