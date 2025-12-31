@@ -73,7 +73,6 @@ export default function TribologyLabPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const modulesRef = useRef<Module[]>([]); // Ref для актуальных модулей в game loop
   const [shop, setShop] = useState<ModuleType[]>(INITIAL_SHOP);
-  const [shopRefreshCost, setShopRefreshCost] = useState(10);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -197,7 +196,6 @@ export default function TribologyLabPage() {
     setSpawnQueue([]);
     // Обновляем магазин — новые модули разблокируются с волнами
     setShop(generateShopSlots(nextWave));
-    setShopRefreshCost(10);  // Сброс цены рефреша
     // Запускаем обратный отсчёт до следующей волны (10 сек)
     setNextWaveCountdown(10);
   }, [wave]);
@@ -216,15 +214,6 @@ export default function TribologyLabPage() {
 
     return () => clearTimeout(timer);
   }, [gamePhase, gameStarted, nextWaveCountdown, startWave]);
-
-  // Рефреш магазина за золото
-  const refreshShop = useCallback(() => {
-    if (gold < shopRefreshCost || gamePhase !== 'preparing') return;
-
-    setGold(prev => prev - shopRefreshCost);
-    setShop(generateShopSlots(wave));
-    setShopRefreshCost(prev => Math.floor(prev * 1.5));  // Каждый рефреш дороже
-  }, [gold, shopRefreshCost, wave, gamePhase]);
 
   // Ref для отслеживания что нужно заспавнить
   const spawnQueueRef = useRef<{ id: string; type: string; spawnAt: number }[]>([]);
@@ -1199,32 +1188,6 @@ export default function TribologyLabPage() {
               fill="none"
             />
           </g>
-
-          {/* ═══════════════════════════════════════════════════════════════
-              МЕТКИ INLET / OUTLET
-              ═══════════════════════════════════════════════════════════════ */}
-          <text
-            x={conveyorWidth / 2}
-            y={totalHeight + 25}
-            textAnchor="middle"
-            fill="rgba(255, 255, 255, 0.4)"
-            fontSize="10"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            IN-01
-          </text>
-          <text
-            x={totalWidth - conveyorWidth / 2}
-            y={totalHeight + 25}
-            textAnchor="middle"
-            fill="rgba(255, 255, 255, 0.4)"
-            fontSize="10"
-            fontFamily="monospace"
-            fontWeight="bold"
-          >
-            OUT-01
-          </text>
 
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
           {enemies.map(enemy => {
@@ -2281,33 +2244,6 @@ export default function TribologyLabPage() {
               />
             );
           })}
-          {/* Кнопка обновления магазина */}
-          <button
-            onClick={refreshShop}
-            disabled={gold < shopRefreshCost || gamePhase !== 'preparing'}
-            className="flex flex-col items-center justify-center px-4 py-2 rounded-lg transition-all"
-            style={{
-              background: gold >= shopRefreshCost && gamePhase === 'preparing'
-                ? 'linear-gradient(135deg, #2D3748 0%, #1A202C 100%)'
-                : 'linear-gradient(135deg, #1A1A1A 0%, #0D0D0D 100%)',
-              border: gold >= shopRefreshCost && gamePhase === 'preparing'
-                ? '1px solid rgba(251, 191, 36, 0.5)'
-                : '1px solid rgba(100, 100, 100, 0.3)',
-              opacity: gold >= shopRefreshCost && gamePhase === 'preparing' ? 1 : 0.5,
-              cursor: gold >= shopRefreshCost && gamePhase === 'preparing' ? 'pointer' : 'not-allowed',
-              minWidth: 70,
-              height: 80,
-            }}
-          >
-            <span style={{ fontSize: 24 }}>🔄</span>
-            <span style={{
-              fontSize: 12,
-              color: gold >= shopRefreshCost ? '#FBBF24' : '#666',
-              fontWeight: 600,
-            }}>
-              {shopRefreshCost}💰
-            </span>
-          </button>
         </div>
 
         {/* Game Over */}
@@ -2328,7 +2264,6 @@ export default function TribologyLabPage() {
                   setEnemies([]);
                   setSpawnQueue([]);
                   setShop(INITIAL_SHOP);
-                  setShopRefreshCost(10);
                   setGameStarted(false);
                   setNextWaveCountdown(0);
                   spawnedIdsRef.current.clear();
