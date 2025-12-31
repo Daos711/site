@@ -1924,7 +1924,11 @@ export default function TribologyLabPage() {
                   // Ограничиваем смещение чтобы статусы не вылезали на поле карточек
                   const maxAnchorX = 38;
                   const anchorX = Math.min(size + 6, maxAnchorX);
-                  const anchorY = -size / 2;
+
+                  // Центрируем столбец статусов по вертикали относительно центра врага
+                  const totalBadges = visibleStatuses.length + (hiddenCount > 0 ? 1 : 0);
+                  const totalHeight = totalBadges * badgeSize + (totalBadges - 1) * gap;
+                  const anchorY = -totalHeight / 2 + badgeSize / 2;
 
                   return (
                     <g>
