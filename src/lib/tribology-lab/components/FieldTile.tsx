@@ -43,10 +43,10 @@ export function FieldTile({
       <div className="rivet bottom-left" />
       <div className="rivet bottom-right" />
 
-      {/* Код модуля */}
+      {/* Код модуля (TL) */}
       <div className="module-code">{code}</div>
 
-      {/* Уровень */}
+      {/* Уровень (TR) */}
       <div className="level-badge">Lv.{level}</div>
 
       {/* Иконка */}
@@ -62,36 +62,31 @@ export function FieldTile({
       <div className="module-name">{config.name}</div>
 
       {/* Глянец от смазки */}
-      {isLubricated && (
-        <>
-          <div className="lubricant-sheen" />
-          <div className="lubed-badge">💧</div>
-        </>
-      )}
+      {isLubricated && <div className="lubricant-sheen" />}
 
-      {/* Рамка коррозии */}
+      {/* Рамка коррозии (тонкая) */}
       {corrosionStacks > 0 && type !== 'filter' && (
         <div className="corrosion-border" />
       )}
 
-      {/* Overlay коррозии */}
-      {corrosionStacks > 0 && type !== 'filter' && (
-        <div
-          className="corrosion-overlay"
-          style={{ opacity: 0.1 + corrosionStacks * 0.08 }}
-        />
-      )}
+      {/* Стек статусов (BL) */}
+      <div className="status-stack">
+        {corrosionStacks > 0 && type !== 'filter' && (
+          <div className="status-badge corrosion">
+            <span className="status-icon">🦠</span>
+            <span className="status-count">{corrosionStacks}</span>
+          </div>
+        )}
+        {corrosionStacks > 0 && type === 'filter' && (
+          <div className="status-badge immune">
+            <span className="status-icon">🛡️</span>
+          </div>
+        )}
+      </div>
 
-      {/* Бейдж коррозии */}
-      {corrosionStacks > 0 && type !== 'filter' && (
-        <div className="corrosion-badge">
-          🦠 {corrosionStacks}
-        </div>
-      )}
-
-      {/* Иммунитет фильтра */}
-      {corrosionStacks > 0 && type === 'filter' && (
-        <div className="immune-badge">🛡️</div>
+      {/* Бафф смазки (BR) */}
+      {isLubricated && (
+        <div className="lubed-badge">💧</div>
       )}
 
       <style jsx>{`
@@ -152,17 +147,17 @@ export function FieldTile({
         .module-code {
           position: absolute;
           top: 6px;
-          left: 50%;
-          transform: translateX(-50%);
+          left: 8px;
           font-size: 9px;
           color: #5A6A7A;
           font-family: monospace;
+          z-index: 15;
         }
 
         .level-badge {
           position: absolute;
           top: 6px;
-          right: 16px;
+          right: 8px;
           font-size: 10px;
           font-weight: 600;
           padding: 2px 6px;
@@ -170,6 +165,7 @@ export function FieldTile({
           border: 1px solid var(--module-accent);
           border-radius: 4px;
           color: var(--module-accent);
+          z-index: 15;
         }
 
         .icon-niche {
@@ -243,62 +239,66 @@ export function FieldTile({
 
         .lubed-badge {
           position: absolute;
-          bottom: 22px;
-          right: 6px;
-          font-size: 10px;
+          bottom: 24px;
+          right: 8px;
+          width: 22px;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
           background: rgba(136, 69, 199, 0.3);
+          border: 1px solid rgba(136, 69, 199, 0.5);
           border-radius: 4px;
-          padding: 1px 3px;
-          z-index: 11;
+          z-index: 15;
         }
 
         .corrosion-border {
           position: absolute;
           inset: 0;
-          border: 2px solid #4a7c59;
+          border: 1px solid rgba(74, 124, 89, 0.3);
           border-radius: 12px;
-          box-shadow:
-            0 0 10px rgba(74, 124, 89, 0.3),
-            inset 0 0 15px rgba(74, 124, 89, 0.15);
           pointer-events: none;
-          z-index: 12;
+          z-index: 5;
         }
 
-        .corrosion-overlay {
+        .status-stack {
           position: absolute;
-          inset: 0;
-          background: radial-gradient(
-            ellipse at 30% 70%,
-            rgba(74, 124, 89, 0.3) 0%,
-            transparent 70%
-          );
-          pointer-events: none;
-          border-radius: 12px;
-          z-index: 10;
+          bottom: 24px;
+          left: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          z-index: 15;
         }
 
-        .corrosion-badge {
-          position: absolute;
-          bottom: 22px;
-          left: 6px;
-          font-size: 10px;
-          background: rgba(74, 124, 89, 0.4);
-          border: 1px solid #4a7c59;
+        .status-badge {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          padding: 2px 6px;
           border-radius: 4px;
-          padding: 1px 4px;
+          font-size: 10px;
+          background: rgba(0, 0, 0, 0.5);
+        }
+
+        .status-badge.corrosion {
+          border: 1px solid rgba(74, 124, 89, 0.6);
           color: #a7e8c2;
-          z-index: 13;
         }
 
-        .immune-badge {
-          position: absolute;
-          bottom: 22px;
-          left: 6px;
-          font-size: 10px;
-          background: rgba(251, 191, 36, 0.3);
-          border-radius: 4px;
-          padding: 1px 3px;
-          z-index: 13;
+        .status-badge.immune {
+          border: 1px solid rgba(251, 191, 36, 0.6);
+          color: #fbbf24;
+        }
+
+        .status-icon {
+          font-size: 12px;
+        }
+
+        .status-count {
+          font-weight: 600;
+          font-size: 11px;
         }
       `}</style>
     </div>
