@@ -1109,44 +1109,44 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
 
           {/* ═══════════════════════════════════════════════════════════════
-              СТРЕЛКИ НАПРАВЛЕНИЯ ПОТОКА
+              СТРЕЛКИ НАПРАВЛЕНИЯ ПОТОКА (рисуются ПОД врагами)
               ═══════════════════════════════════════════════════════════════ */}
           {/* Левый вертикальный участок — стрелка ВВЕРХ */}
-          <g opacity="0.35">
+          <g opacity="0.2" style={{ pointerEvents: 'none' }}>
             <line
               x1={conveyorWidth / 2}
               y1={totalHeight * 0.55}
               x2={conveyorWidth / 2}
               y2={totalHeight * 0.45}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
             <path
-              d={`M ${conveyorWidth / 2 - 5} ${totalHeight * 0.47} L ${conveyorWidth / 2} ${totalHeight * 0.43} L ${conveyorWidth / 2 + 5} ${totalHeight * 0.47}`}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              d={`M ${conveyorWidth / 2 - 4} ${totalHeight * 0.47} L ${conveyorWidth / 2} ${totalHeight * 0.43} L ${conveyorWidth / 2 + 4} ${totalHeight * 0.47}`}
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
             />
           </g>
 
           {/* Верхний горизонтальный участок — стрелки ВПРАВО */}
-          <g opacity="0.35">
+          <g opacity="0.2" style={{ pointerEvents: 'none' }}>
             {/* Стрелка 1 */}
             <line
               x1={totalWidth * 0.28}
               y1={conveyorWidth / 2}
               x2={totalWidth * 0.36}
               y2={conveyorWidth / 2}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
             <path
-              d={`M ${totalWidth * 0.34} ${conveyorWidth / 2 - 5} L ${totalWidth * 0.38} ${conveyorWidth / 2} L ${totalWidth * 0.34} ${conveyorWidth / 2 + 5}`}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              d={`M ${totalWidth * 0.34} ${conveyorWidth / 2 - 4} L ${totalWidth * 0.38} ${conveyorWidth / 2} L ${totalWidth * 0.34} ${conveyorWidth / 2 + 4}`}
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
             />
@@ -1156,34 +1156,34 @@ export default function TribologyLabPage() {
               y1={conveyorWidth / 2}
               x2={totalWidth * 0.66}
               y2={conveyorWidth / 2}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
             <path
-              d={`M ${totalWidth * 0.64} ${conveyorWidth / 2 - 5} L ${totalWidth * 0.68} ${conveyorWidth / 2} L ${totalWidth * 0.64} ${conveyorWidth / 2 + 5}`}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              d={`M ${totalWidth * 0.64} ${conveyorWidth / 2 - 4} L ${totalWidth * 0.68} ${conveyorWidth / 2} L ${totalWidth * 0.64} ${conveyorWidth / 2 + 4}`}
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
             />
           </g>
 
           {/* Правый вертикальный участок — стрелка ВНИЗ */}
-          <g opacity="0.35">
+          <g opacity="0.2" style={{ pointerEvents: 'none' }}>
             <line
               x1={totalWidth - conveyorWidth / 2}
               y1={totalHeight * 0.45}
               x2={totalWidth - conveyorWidth / 2}
               y2={totalHeight * 0.55}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
             />
             <path
-              d={`M ${totalWidth - conveyorWidth / 2 - 5} ${totalHeight * 0.53} L ${totalWidth - conveyorWidth / 2} ${totalHeight * 0.57} L ${totalWidth - conveyorWidth / 2 + 5} ${totalHeight * 0.53}`}
-              stroke="rgba(255, 255, 255, 0.3)"
-              strokeWidth="2"
+              d={`M ${totalWidth - conveyorWidth / 2 - 4} ${totalHeight * 0.53} L ${totalWidth - conveyorWidth / 2} ${totalHeight * 0.57} L ${totalWidth - conveyorWidth / 2 + 4} ${totalHeight * 0.53}`}
+              stroke="rgba(255, 255, 255, 0.4)"
+              strokeWidth="1.5"
               strokeLinecap="round"
               fill="none"
             />
