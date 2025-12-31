@@ -93,7 +93,7 @@ export function ModuleCard({
         <span className="price-value">{config.basePrice}</span>
       </div>
 
-      {showDetails && (
+      {showDetails && !compact && (
         <>
           {/* Характеристики */}
           <div className="stats-row">
