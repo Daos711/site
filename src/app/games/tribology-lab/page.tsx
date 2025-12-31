@@ -196,6 +196,18 @@ export default function TribologyLabPage() {
     return Math.min(stacks, 3);
   }, [enemies, enemyPath]);
 
+  // Проверяет, есть ли коррозия рядом с модулем (для показа иммунитета)
+  const hasNearbyCorrosion = useCallback((module: Module): boolean => {
+    const modulePos = getModulePosition(module);
+    const corrosionRadius = 140;
+    return enemies.some(enemy => {
+      if (enemy.type !== 'corrosion') return false;
+      const enemyConfig = ENEMIES[enemy.type];
+      const enemyPos = getPositionOnPath(enemyPath, enemy.progress, enemyConfig.oscillation);
+      return getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y) <= corrosionRadius;
+    });
+  }, [enemies, enemyPath]);
+
   // Начало волны
   const startWave = useCallback(() => {
     if (gamePhase !== 'preparing') return;
@@ -387,7 +399,24 @@ export default function TribologyLabPage() {
         if (attackResult.newAttackEffects.length > 0) {
           modulesRef.current = attackResult.updatedModules;
           setModules(attackResult.updatedModules);
-          setAttackEffects(prevEffects => [...prevEffects, ...attackResult.newAttackEffects]);
+
+          // Для анализатора: убираем старые прицелы на ту же цель (избегаем "следа")
+          const newAnalyzerTargets = new Set(
+            attackResult.newAttackEffects
+              .filter(e => e.moduleType === 'analyzer' && e.targetId)
+              .map(e => e.targetId)
+          );
+
+          setAttackEffects(prevEffects => {
+            // Удаляем старые эффекты анализатора для целей, которые получают новый прицел
+            const filtered = prevEffects.filter(eff => {
+              if (eff.moduleType === 'analyzer' && eff.targetId && newAnalyzerTargets.has(eff.targetId)) {
+                return false;
+              }
+              return true;
+            });
+            return [...filtered, ...attackResult.newAttackEffects];
+          });
         }
       }
 
@@ -1111,14 +1140,27 @@ export default function TribologyLabPage() {
               <stop offset="100%" stopColor="#000000" stopOpacity="0.1" />
             </linearGradient>
 
-            {/* ClipPath для канала — обрезает ауры коррозии */}
+            {/* ClipPath для канала — П-образная форма с закруглениями */}
             <clipPath id="channelClip">
-              {/* Левый вертикальный канал */}
-              <rect x={0} y={0} width={conveyorWidth} height={totalHeight} />
-              {/* Верхний горизонтальный канал */}
-              <rect x={0} y={0} width={totalWidth} height={conveyorWidth} />
-              {/* Правый вертикальный канал */}
-              <rect x={totalWidth - conveyorWidth} y={0} width={conveyorWidth} height={totalHeight} />
+              <path
+                fillRule="evenodd"
+                d={`
+                  M 0 ${totalHeight}
+                  L 0 ${cornerRadius}
+                  Q 0 0 ${cornerRadius} 0
+                  L ${totalWidth - cornerRadius} 0
+                  Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
+                  L ${totalWidth} ${totalHeight}
+                  Z
+                  M ${conveyorWidth} ${totalHeight}
+                  L ${conveyorWidth} ${conveyorWidth + 21}
+                  Q ${conveyorWidth} ${conveyorWidth} ${conveyorWidth + 21} ${conveyorWidth}
+                  L ${totalWidth - conveyorWidth - 21} ${conveyorWidth}
+                  Q ${totalWidth - conveyorWidth} ${conveyorWidth} ${totalWidth - conveyorWidth} ${conveyorWidth + 21}
+                  L ${totalWidth - conveyorWidth} ${totalHeight}
+                  Z
+                `}
+              />
             </clipPath>
           </defs>
 
@@ -1886,7 +1928,9 @@ export default function TribologyLabPage() {
                   const gap = 3;
 
                   // Статусы ВСЕГДА справа от врага
-                  const anchorX = size + 6;
+                  // Ограничиваем смещение чтобы статусы не вылезали на поле карточек
+                  const maxAnchorX = 38;
+                  const anchorX = Math.min(size + 6, maxAnchorX);
                   const anchorY = -size / 2;
 
                   return (
@@ -2117,6 +2161,7 @@ export default function TribologyLabPage() {
                           isLubricated={lubricatedModuleIds.has(module.id)}
                           isProtected={protectedModuleIds.has(module.id)}
                           corrosionStacks={getCorrosionStacks(module)}
+                          hasNearbyCorrosion={hasNearbyCorrosion(module)}
                         />
                       </div>
                     )}

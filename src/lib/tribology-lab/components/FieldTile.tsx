@@ -11,6 +11,7 @@ interface FieldTileProps {
   isLubricated?: boolean;  // Есть ли бафф от смазки рядом
   isProtected?: boolean;   // Есть ли бафф от ингибитора рядом
   corrosionStacks?: number;  // 0, 1, 2, или 3
+  hasNearbyCorrosion?: boolean;  // Есть ли коррозия рядом (для показа иммунитета)
 }
 
 export function FieldTile({
@@ -21,6 +22,7 @@ export function FieldTile({
   isLubricated = false,
   isProtected = false,
   corrosionStacks = 0,
+  hasNearbyCorrosion = false,
 }: FieldTileProps) {
   const config = MODULES[type];
   const code = MODULE_CODES[type];
@@ -64,7 +66,7 @@ export function FieldTile({
           </div>
         )}
         {/* Иммунитет — показывать на Фильтре и Ингибиторе когда коррозия рядом */}
-        {corrosionStacks > 0 && (type === 'filter' || type === 'inhibitor') && (
+        {hasNearbyCorrosion && (type === 'filter' || type === 'inhibitor') && (
           <div className="status-item immune">
             {/* Щит с галочкой — иммунитет */}
             <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
