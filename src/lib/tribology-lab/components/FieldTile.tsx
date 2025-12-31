@@ -9,6 +9,7 @@ interface FieldTileProps {
   size?: number;
   isDragging?: boolean;
   isLubricated?: boolean;  // Есть ли бафф от смазки рядом
+  isProtected?: boolean;   // Есть ли бафф от ингибитора рядом
   corrosionStacks?: number;  // 0, 1, 2, или 3
 }
 
@@ -18,6 +19,7 @@ export function FieldTile({
   size = 110,
   isDragging = false,
   isLubricated = false,
+  isProtected = false,
   corrosionStacks = 0,
 }: FieldTileProps) {
   const config = MODULES[type];
@@ -84,16 +86,20 @@ export function FieldTile({
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          RightRail — атрибуты (💧)
+          RightRail — атрибуты (баффы: 💧 смазка, 🛡️ защита)
           ═══════════════════════════════════════════════════════════════ */}
-      {isLubricated && (
+      {(isLubricated || isProtected) && (
         <div className="right-rail">
-          <div className="attribute-item lubed">💧</div>
+          {isLubricated && <div className="attribute-item lubed">💧</div>}
+          {isProtected && <div className="attribute-item protected">🛡️</div>}
         </div>
       )}
 
       {/* Глянец от смазки */}
       {isLubricated && <div className="lubricant-sheen" />}
+
+      {/* Аура ингибитора — пульсирующее кольцо защиты */}
+      {type === 'inhibitor' && <div className="inhibitor-aura" />}
 
       {/* ═══════════════════════════════════════════════════════════════
           BottomBar — название
@@ -269,6 +275,11 @@ export function FieldTile({
           border: 1px solid rgba(136, 69, 199, 0.5);
         }
 
+        .attribute-item.protected {
+          background: rgba(199, 181, 106, 0.3);
+          border: 1px solid rgba(199, 181, 106, 0.5);
+        }
+
         /* ═══════════════════════════════════════════════════════════════
            Рамка коррозии по всему контуру карточки
            ═══════════════════════════════════════════════════════════════ */
@@ -356,6 +367,25 @@ export function FieldTile({
         @keyframes sheen-move {
           0%, 100% { opacity: 0.5; }
           50% { opacity: 1; }
+        }
+
+        /* Аура ингибитора — пульсирующее защитное кольцо */
+        .inhibitor-aura {
+          position: absolute;
+          width: 200%;
+          height: 200%;
+          left: -50%;
+          top: -50%;
+          border: 2px solid rgba(199, 181, 106, 0.25);
+          border-radius: 50%;
+          pointer-events: none;
+          animation: inhibitor-pulse 2s ease-in-out infinite;
+          z-index: 1;
+        }
+
+        @keyframes inhibitor-pulse {
+          0%, 100% { transform: scale(0.9); opacity: 0.15; }
+          50% { transform: scale(1.1); opacity: 0.35; }
         }
 
       `}</style>

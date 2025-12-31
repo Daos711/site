@@ -158,6 +158,23 @@ export default function TribologyLabPage() {
     return buffedIds;
   }, [modules]);
 
+  // Вычисляем какие модули получают защиту от Ингибитора
+  const protectedModuleIds = useMemo(() => {
+    const inhibitors = modules.filter(m => m.type === 'inhibitor');
+    const protectedIds = new Set<string>();
+
+    for (const inh of inhibitors) {
+      for (const mod of modules) {
+        if (mod.id === inh.id) continue;
+        if (Math.abs(mod.x - inh.x) <= 1 && Math.abs(mod.y - inh.y) <= 1) {
+          protectedIds.add(mod.id);
+        }
+      }
+    }
+
+    return protectedIds;
+  }, [modules]);
+
   // Функция для вычисления стеков коррозии на модуле
   const getCorrosionStacks = useCallback((module: Module): number => {
     const modulePos = getModulePosition(module);
@@ -1808,6 +1825,42 @@ export default function TribologyLabPage() {
                         </g>
                       );
                     })()}
+                    {/* Сухость (от Деэмульгатора) */}
+                    {(() => {
+                      const dryEffect = enemy.effects.find(e => e.type === 'dry');
+                      return dryEffect && (
+                        <g transform={`translate(${size + 8}, ${-size + 56})`}>
+                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(212,165,116,0.25)" />
+                          <text textAnchor="middle" dy={4} fontSize={9} fill="#d4a574" fontWeight="bold">
+                            🌵
+                          </text>
+                        </g>
+                      );
+                    })()}
+                    {/* Метка (от Анализатора) */}
+                    {(() => {
+                      const markedEffect = enemy.effects.find(e => e.type === 'marked');
+                      return markedEffect && (
+                        <g transform={`translate(${size + 8}, ${-size + 73})`}>
+                          <rect x={-16} y={-7} width={32} height={14} rx={4} fill="rgba(224,232,240,0.25)" />
+                          <text textAnchor="middle" dy={4} fontSize={9} fill="#e0e8f0" fontWeight="bold">
+                            🎯+{markedEffect.strength}%
+                          </text>
+                        </g>
+                      );
+                    })()}
+                    {/* Захват (от Барьера) */}
+                    {(() => {
+                      const heldEffect = enemy.effects.find(e => e.type === 'held');
+                      return heldEffect && (
+                        <g transform={`translate(${size + 8}, ${-size + 90})`}>
+                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(245,158,11,0.25)" />
+                          <text textAnchor="middle" dy={4} fontSize={9} fill="#f59e0b" fontWeight="bold">
+                            ⛓
+                          </text>
+                        </g>
+                      );
+                    })()}
                   </g>
                 )}
 
@@ -1982,6 +2035,7 @@ export default function TribologyLabPage() {
                           level={module.level}
                           size={cellSize}
                           isLubricated={lubricatedModuleIds.has(module.id)}
+                          isProtected={protectedModuleIds.has(module.id)}
                           corrosionStacks={getCorrosionStacks(module)}
                         />
                       </div>
@@ -2297,6 +2351,220 @@ export default function TribologyLabPage() {
                   {/* Точка фокуса (на цели) */}
                   <circle cx={effect.toX} cy={effect.toY} r={8} fill="#FF4444" opacity={0.5} />
                   <circle cx={effect.toX} cy={effect.toY} r={4} fill="#FFFFFF" opacity={0.8} />
+                </g>
+              );
+            }
+
+            // ИНГИБИТОР — волновой импульс (пассивная защита)
+            if (effect.moduleType === 'inhibitor') {
+              return (
+                <g key={effect.id} opacity={1 - progress * 0.8}>
+                  {/* Волна защиты */}
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={20 + progress * 80}
+                    fill="none"
+                    stroke="#C7B56A"
+                    strokeWidth={2}
+                    strokeDasharray="6,4"
+                  />
+                  <circle
+                    cx={effect.fromX}
+                    cy={effect.fromY}
+                    r={10 + progress * 50}
+                    fill="none"
+                    stroke="#C7B56A"
+                    strokeWidth={1}
+                    opacity={0.5}
+                  />
+                </g>
+              );
+            }
+
+            // ДЕЭМУЛЬГАТОР — конусная струя осушения
+            if (effect.moduleType === 'demulsifier') {
+              const dx = effect.toX - effect.fromX;
+              const dy = effect.toY - effect.fromY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+              return (
+                <g key={effect.id} transform={`translate(${effect.fromX}, ${effect.fromY}) rotate(${angle})`}>
+                  {/* Конусная струя */}
+                  <path
+                    d={`M 0,0 L ${dist * progress},-12 L ${dist * progress + 15},0 L ${dist * progress},12 Z`}
+                    fill="rgba(212, 165, 116, 0.4)"
+                    opacity={1 - progress * 0.6}
+                  />
+                  {/* Линии внутри конуса */}
+                  <line x1={0} y1={0} x2={dist * progress * 0.9} y2={-6} stroke="#d4a574" strokeWidth={1} opacity={0.7 - progress * 0.5} />
+                  <line x1={0} y1={0} x2={dist * progress} y2={0} stroke="#d4a574" strokeWidth={1.5} opacity={0.8 - progress * 0.5} />
+                  <line x1={0} y1={0} x2={dist * progress * 0.9} y2={6} stroke="#d4a574" strokeWidth={1} opacity={0.7 - progress * 0.5} />
+                  {/* Частицы испарения */}
+                  <circle cx={dist * 0.5} cy={-4} r={2} fill="#d4a574" opacity={(0.6 - progress) * Math.max(0, 1 - progress * 2)} />
+                  <circle cx={dist * 0.6} cy={3} r={1.5} fill="#d4a574" opacity={(0.5 - progress) * Math.max(0, 1 - progress * 2)} />
+                  <circle cx={dist * 0.7} cy={-7} r={1} fill="#d4a574" opacity={(0.4 - progress) * Math.max(0, 1 - progress * 2)} />
+                </g>
+              );
+            }
+
+            // АНАЛИЗАТОР — скан-пинг
+            if (effect.moduleType === 'analyzer') {
+              const scanProgress = progress < 0.5 ? progress * 2 : 1;
+              const flashProgress = progress > 0.4 ? (progress - 0.4) / 0.6 : 0;
+
+              return (
+                <g key={effect.id}>
+                  {/* Линия сканирования */}
+                  {progress < 0.6 && (
+                    <line
+                      x1={effect.fromX}
+                      y1={effect.fromY}
+                      x2={effect.fromX + (effect.toX - effect.fromX) * scanProgress}
+                      y2={effect.fromY + (effect.toY - effect.fromY) * scanProgress}
+                      stroke="#e0e8f0"
+                      strokeWidth={2}
+                      opacity={0.8 - progress}
+                    />
+                  )}
+                  {/* Прицел на враге */}
+                  {progress > 0.3 && (
+                    <g transform={`translate(${effect.toX}, ${effect.toY})`} opacity={1 - flashProgress * 0.8}>
+                      {/* Круг прицела */}
+                      <circle cx={0} cy={0} r={12 + flashProgress * 5} fill="none" stroke="#e0e8f0" strokeWidth={1.5} />
+                      {/* Перекрестие */}
+                      <line x1={0} y1={-18} x2={0} y2={-8} stroke="#e0e8f0" strokeWidth={1.5} />
+                      <line x1={0} y1={8} x2={0} y2={18} stroke="#e0e8f0" strokeWidth={1.5} />
+                      <line x1={-18} y1={0} x2={-8} y2={0} stroke="#e0e8f0" strokeWidth={1.5} />
+                      <line x1={8} y1={0} x2={18} y2={0} stroke="#e0e8f0" strokeWidth={1.5} />
+                      {/* Вспышка в центре */}
+                      <circle cx={0} cy={0} r={4 + flashProgress * 8} fill="#e0e8f0" opacity={0.6 - flashProgress * 0.6} />
+                    </g>
+                  )}
+                </g>
+              );
+            }
+
+            // ЦЕНТРИФУГА — кольцевой импульс отброса
+            if (effect.moduleType === 'centrifuge') {
+              const dx = effect.toX - effect.fromX;
+              const dy = effect.toY - effect.fromY;
+              const angle = Math.atan2(dy, dx);
+
+              return (
+                <g key={effect.id} opacity={1 - progress * 0.7}>
+                  {/* Кольцо импульса на враге */}
+                  <circle
+                    cx={effect.toX}
+                    cy={effect.toY}
+                    r={15 + progress * 25}
+                    fill="none"
+                    stroke="#FF9F43"
+                    strokeWidth={3 - progress * 2}
+                  />
+                  {/* Линии отброса (назад от направления) */}
+                  {[-0.3, 0, 0.3].map((offset, i) => {
+                    const lineAngle = angle + Math.PI + offset;
+                    const startX = effect.toX + Math.cos(lineAngle) * 10;
+                    const startY = effect.toY + Math.sin(lineAngle) * 10;
+                    const endX = effect.toX + Math.cos(lineAngle) * (25 + progress * 20);
+                    const endY = effect.toY + Math.sin(lineAngle) * (25 + progress * 20);
+                    return (
+                      <line
+                        key={i}
+                        x1={startX}
+                        y1={startY}
+                        x2={endX}
+                        y2={endY}
+                        stroke="#FF9F43"
+                        strokeWidth={2 - i * 0.3}
+                        opacity={0.7 - progress * 0.5}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            }
+
+            // ЭЛЕКТРОСТАТ — цепная молния
+            if (effect.moduleType === 'electrostatic') {
+              // Генерируем зигзаг-путь для молнии
+              const generateLightning = (x1: number, y1: number, x2: number, y2: number, segments = 6) => {
+                const points: string[] = [];
+                const dx = (x2 - x1) / segments;
+                const dy = (y2 - y1) / segments;
+
+                points.push(`M${x1},${y1}`);
+                for (let i = 1; i < segments; i++) {
+                  const offsetX = (Math.random() - 0.5) * 12;
+                  const offsetY = (Math.random() - 0.5) * 12;
+                  points.push(`L${x1 + dx * i + offsetX},${y1 + dy * i + offsetY}`);
+                }
+                points.push(`L${x2},${y2}`);
+                return points.join(' ');
+              };
+
+              return (
+                <g key={effect.id} opacity={1 - progress * 0.6}>
+                  {/* Свечение */}
+                  <path
+                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 5)}
+                    fill="none"
+                    stroke="#fde047"
+                    strokeWidth={6}
+                    opacity={0.3}
+                    style={{ filter: 'blur(3px)' }}
+                  />
+                  {/* Основная молния */}
+                  <path
+                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 6)}
+                    fill="none"
+                    stroke="#fde047"
+                    strokeWidth={3}
+                    opacity={0.9}
+                  />
+                  {/* Ядро молнии */}
+                  <path
+                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 4)}
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth={1.5}
+                    opacity={0.8}
+                  />
+                  {/* Искра на цели */}
+                  <circle cx={effect.toX} cy={effect.toY} r={8 - progress * 5} fill="#fde047" opacity={0.7} />
+                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#ffffff" opacity={0.9 - progress * 0.5} />
+                </g>
+              );
+            }
+
+            // БАРЬЕР — клетка-захват
+            if (effect.moduleType === 'barrier') {
+              const scale = progress < 0.2 ? 0.8 + progress : 1;
+              const fadeOut = progress > 0.7 ? (1 - progress) / 0.3 : 1;
+
+              return (
+                <g key={effect.id} transform={`translate(${effect.toX}, ${effect.toY})`} opacity={fadeOut}>
+                  {/* Внешняя рамка */}
+                  <rect
+                    x={-18 * scale}
+                    y={-18 * scale}
+                    width={36 * scale}
+                    height={36 * scale}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    rx={4}
+                  />
+                  {/* Перемычки */}
+                  <line x1={-18 * scale} y1={0} x2={18 * scale} y2={0} stroke="#f59e0b" strokeWidth={1.5} opacity={0.7} />
+                  <line x1={0} y1={-18 * scale} x2={0} y2={18 * scale} stroke="#f59e0b" strokeWidth={1.5} opacity={0.7} />
+                  {/* Уголки усиления */}
+                  <path d={`M${-18 * scale},${-18 * scale} L${-12 * scale},${-18 * scale} M${-18 * scale},${-18 * scale} L${-18 * scale},${-12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
+                  <path d={`M${18 * scale},${-18 * scale} L${12 * scale},${-18 * scale} M${18 * scale},${-18 * scale} L${18 * scale},${-12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
+                  <path d={`M${-18 * scale},${18 * scale} L${-12 * scale},${18 * scale} M${-18 * scale},${18 * scale} L${-18 * scale},${12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
+                  <path d={`M${18 * scale},${18 * scale} L${12 * scale},${18 * scale} M${18 * scale},${18 * scale} L${18 * scale},${12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
                 </g>
               );
             }

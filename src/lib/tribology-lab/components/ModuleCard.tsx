@@ -103,14 +103,17 @@ export function ModuleCard({
               <span className="stat-value">{config.baseDamage}</span>
             </div>
             <div className="stat-block">
-              <span className="stat-label">Радиус</span>
-              <span className="stat-value">{config.range}</span>
-            </div>
-            <div className="stat-block">
               <span className="stat-label">Атак/с</span>
               <span className="stat-value">{config.attackSpeed}</span>
             </div>
           </div>
+
+          {/* Особенность модуля */}
+          {getModuleFeature(type) && (
+            <div className="feature-row">
+              <span className="feature-text">{getModuleFeature(type)}</span>
+            </div>
+          )}
 
           {/* Теги эффектов */}
           <div className="effect-tags">
@@ -119,7 +122,7 @@ export function ModuleCard({
             {config.effectType && (
               <span className="tag tag-effect">
                 {getEffectIcon(config.effectType)} {config.effectStrength}
-                {config.effectType === 'slow' ? '%' : ' HP/с'}
+                {config.effectType === 'slow' ? '%' : config.effectType === 'burn' ? ' HP/с' : '%'}
               </span>
             )}
 
@@ -408,6 +411,19 @@ export function ModuleCard({
           margin-top: 2px;
         }
 
+        .feature-row {
+          padding: 6px 10px;
+          background: rgba(0,0,0,0.25);
+          border-radius: 4px;
+          border-left: 2px solid var(--module-accent);
+          margin-bottom: 12px;
+        }
+
+        .feature-text {
+          font-size: 11px;
+          color: #9DB0C6;
+        }
+
         .effect-tags {
           display: flex;
           flex-wrap: wrap;
@@ -438,7 +454,23 @@ function getAttackTypeName(type?: string): string {
     case 'projectile': return 'Снаряд';
     case 'wave': return 'Волна';
     case 'aoe': return 'Область';
+    case 'chain': return 'Цепь';
     default: return 'Обычный';
+  }
+}
+
+function getModuleFeature(type: ModuleType): string | null {
+  switch (type) {
+    case 'inhibitor': return '🛡️ Защита соседей от коррозии';
+    case 'demulsifier': return '💨 ×2 по мокрым, сушит';
+    case 'analyzer': return '🎯 Метка цели +25% урона';
+    case 'centrifuge': return '↩️ Отброс врагов назад';
+    case 'electrostatic': return '⚡ Цепь на 4 цели';
+    case 'barrier': return '⛓ Полная остановка 1.5с';
+    case 'lubricant': return '💧 +25% урон соседям';
+    case 'filter': return '🛡️ Иммунитет к коррозии';
+    case 'laser': return '🔥 Пробивает насквозь';
+    default: return null;
   }
 }
 
@@ -446,6 +478,10 @@ function getEffectIcon(type: string): string {
   switch (type) {
     case 'slow': return '❄';
     case 'burn': return '🔥';
+    case 'marked': return '🎯';
+    case 'dry': return '🌵';
+    case 'coated': return '💧';
+    case 'held': return '⛓';
     default: return '✧';
   }
 }
