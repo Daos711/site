@@ -157,7 +157,7 @@ export function FieldTile({
         .module-code {
           position: absolute;
           top: 6px;
-          left: 8px;
+          left: 16px;
           font-size: 9px;
           color: #5A6A7A;
           font-family: monospace;
@@ -167,7 +167,7 @@ export function FieldTile({
         .level-badge {
           position: absolute;
           top: 6px;
-          right: 8px;
+          right: 16px;
           font-size: 10px;
           font-weight: 600;
           padding: 2px 6px;
