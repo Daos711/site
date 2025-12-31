@@ -35,7 +35,7 @@ import {
 import { ShopCard, FieldTile } from "@/lib/tribology-lab/components";
 
 // Начальные модули в магазине
-const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'magnet', 'cooler', 'filter'];
+const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet', 'cooler'];
 
 // Цвета градиентов для карточек модулей
 const MODULE_GRADIENTS: Record<ModuleType, { bg: string; border: string }> = {

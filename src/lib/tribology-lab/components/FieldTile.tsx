@@ -77,14 +77,9 @@ export function FieldTile({
         <div className="niche-glare" />
       </div>
 
-      {/* Угловые скобы коррозии */}
+      {/* Рамка коррозии по всему контуру карточки */}
       {corrosionStacks > 0 && type !== 'filter' && (
-        <>
-          <div className="corrosion-corner top-left" />
-          <div className="corrosion-corner top-right" />
-          <div className="corrosion-corner bottom-left" />
-          <div className="corrosion-corner bottom-right" />
-        </>
+        <div className="corrosion-border" />
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -274,42 +269,18 @@ export function FieldTile({
         }
 
         /* ═══════════════════════════════════════════════════════════════
-           Угловые скобы коррозии (вместо полной рамки)
+           Рамка коррозии по всему контуру карточки
            ═══════════════════════════════════════════════════════════════ */
-        .corrosion-corner {
+        .corrosion-border {
           position: absolute;
-          width: 12px;
-          height: 12px;
-          z-index: 6;
+          inset: 0;
+          border: 2px solid rgba(74, 180, 100, 0.7);
+          border-radius: 12px;
           pointer-events: none;
-        }
-
-        .corrosion-corner.top-left {
-          top: 20px;
-          left: 24px;
-          border-top: 2px solid rgba(74, 124, 89, 0.7);
-          border-left: 2px solid rgba(74, 124, 89, 0.7);
-        }
-
-        .corrosion-corner.top-right {
-          top: 20px;
-          right: 24px;
-          border-top: 2px solid rgba(74, 124, 89, 0.7);
-          border-right: 2px solid rgba(74, 124, 89, 0.7);
-        }
-
-        .corrosion-corner.bottom-left {
-          bottom: 20px;
-          left: 24px;
-          border-bottom: 2px solid rgba(74, 124, 89, 0.7);
-          border-left: 2px solid rgba(74, 124, 89, 0.7);
-        }
-
-        .corrosion-corner.bottom-right {
-          bottom: 20px;
-          right: 24px;
-          border-bottom: 2px solid rgba(74, 124, 89, 0.7);
-          border-right: 2px solid rgba(74, 124, 89, 0.7);
+          z-index: 20;
+          box-shadow:
+            inset 0 0 8px rgba(74, 180, 100, 0.3),
+            0 0 6px rgba(74, 180, 100, 0.4);
         }
 
         /* ═══════════════════════════════════════════════════════════════
