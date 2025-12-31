@@ -25,7 +25,7 @@ export function FieldTile({
 
   return (
     <div
-      className={`field-tile ${isDragging ? 'dragging' : ''}`}
+      className={`field-tile ${isDragging ? 'dragging' : ''} ${corrosionStacks > 0 && type !== 'filter' ? 'has-corrosion' : ''}`}
       style={{
         '--module-accent': palette.light,
         '--module-glow': palette.glow,
@@ -43,13 +43,32 @@ export function FieldTile({
       <div className="rivet bottom-left" />
       <div className="rivet bottom-right" />
 
-      {/* Код модуля (TL) */}
+      {/* ═══════════════════════════════════════════════════════════════
+          TopBar — код и уровень
+          ═══════════════════════════════════════════════════════════════ */}
       <div className="module-code">{code}</div>
-
-      {/* Уровень (TR) */}
       <div className="level-badge">Lv.{level}</div>
 
-      {/* Иконка */}
+      {/* ═══════════════════════════════════════════════════════════════
+          LeftRail — статусы (🦠, 🛡️)
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="left-rail">
+        {corrosionStacks > 0 && type !== 'filter' && (
+          <div className="status-item corrosion">
+            <span className="status-icon">🦠</span>
+            <span className="status-count">{corrosionStacks}</span>
+          </div>
+        )}
+        {corrosionStacks > 0 && type === 'filter' && (
+          <div className="status-item immune">
+            <span className="status-icon">🛡️</span>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          IconWell — центральная иконка (защищённая зона!)
+          ═══════════════════════════════════════════════════════════════ */}
       <div className="icon-niche">
         <NichePattern type={type} />
         <div className="icon-container">
@@ -58,36 +77,32 @@ export function FieldTile({
         <div className="niche-glare" />
       </div>
 
-      {/* Название */}
-      <div className="module-name">{config.name}</div>
+      {/* Угловые скобы коррозии */}
+      {corrosionStacks > 0 && type !== 'filter' && (
+        <>
+          <div className="corrosion-corner top-left" />
+          <div className="corrosion-corner top-right" />
+          <div className="corrosion-corner bottom-left" />
+          <div className="corrosion-corner bottom-right" />
+        </>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════
+          RightRail — атрибуты (💧)
+          ═══════════════════════════════════════════════════════════════ */}
+      {isLubricated && (
+        <div className="right-rail">
+          <div className="attribute-item lubed">💧</div>
+        </div>
+      )}
 
       {/* Глянец от смазки */}
       {isLubricated && <div className="lubricant-sheen" />}
 
-      {/* Рамка коррозии (тонкая) */}
-      {corrosionStacks > 0 && type !== 'filter' && (
-        <div className="corrosion-border" />
-      )}
-
-      {/* Стек статусов (BL) */}
-      <div className="status-stack">
-        {corrosionStacks > 0 && type !== 'filter' && (
-          <div className="status-badge corrosion">
-            <span className="status-icon">🦠</span>
-            <span className="status-count">{corrosionStacks}</span>
-          </div>
-        )}
-        {corrosionStacks > 0 && type === 'filter' && (
-          <div className="status-badge immune">
-            <span className="status-icon">🛡️</span>
-          </div>
-        )}
-      </div>
-
-      {/* Бафф смазки (BR) */}
-      {isLubricated && (
-        <div className="lubed-badge">💧</div>
-      )}
+      {/* ═══════════════════════════════════════════════════════════════
+          BottomBar — название
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="module-name">{config.name}</div>
 
       <style jsx>{`
         .field-tile {
@@ -168,10 +183,145 @@ export function FieldTile({
           z-index: 15;
         }
 
-        .icon-niche {
+        /* ═══════════════════════════════════════════════════════════════
+           LeftRail — статусы слева от иконки
+           ═══════════════════════════════════════════════════════════════ */
+        .left-rail {
+          position: absolute;
+          left: 4px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 18px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          z-index: 15;
+        }
+
+        .status-item {
           position: relative;
-          width: ${size * 0.55}px;
-          height: ${size * 0.55}px;
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+        }
+
+        .status-item.corrosion {
+          background: rgba(74, 124, 89, 0.3);
+          border: 1px solid rgba(74, 124, 89, 0.6);
+        }
+
+        .status-item.immune {
+          background: rgba(251, 191, 36, 0.3);
+          border: 1px solid rgba(251, 191, 36, 0.6);
+        }
+
+        .status-item .status-icon {
+          font-size: 11px;
+          line-height: 1;
+        }
+
+        .status-item .status-count {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          min-width: 12px;
+          height: 12px;
+          background: #4a7c59;
+          border-radius: 6px;
+          font-size: 8px;
+          font-weight: 700;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 2px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           RightRail — атрибуты справа от иконки
+           ═══════════════════════════════════════════════════════════════ */
+        .right-rail {
+          position: absolute;
+          right: 4px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 18px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          z-index: 15;
+        }
+
+        .attribute-item {
+          width: 18px;
+          height: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          font-size: 11px;
+        }
+
+        .attribute-item.lubed {
+          background: rgba(136, 69, 199, 0.3);
+          border: 1px solid rgba(136, 69, 199, 0.5);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           Угловые скобы коррозии (вместо полной рамки)
+           ═══════════════════════════════════════════════════════════════ */
+        .corrosion-corner {
+          position: absolute;
+          width: 12px;
+          height: 12px;
+          z-index: 6;
+          pointer-events: none;
+        }
+
+        .corrosion-corner.top-left {
+          top: 20px;
+          left: 24px;
+          border-top: 2px solid rgba(74, 124, 89, 0.7);
+          border-left: 2px solid rgba(74, 124, 89, 0.7);
+        }
+
+        .corrosion-corner.top-right {
+          top: 20px;
+          right: 24px;
+          border-top: 2px solid rgba(74, 124, 89, 0.7);
+          border-right: 2px solid rgba(74, 124, 89, 0.7);
+        }
+
+        .corrosion-corner.bottom-left {
+          bottom: 20px;
+          left: 24px;
+          border-bottom: 2px solid rgba(74, 124, 89, 0.7);
+          border-left: 2px solid rgba(74, 124, 89, 0.7);
+        }
+
+        .corrosion-corner.bottom-right {
+          bottom: 20px;
+          right: 24px;
+          border-bottom: 2px solid rgba(74, 124, 89, 0.7);
+          border-right: 2px solid rgba(74, 124, 89, 0.7);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           IconWell — центральная зона (защищённая!)
+           ═══════════════════════════════════════════════════════════════ */
+        .icon-niche {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: ${size * 0.52}px;
+          height: ${size * 0.52}px;
           background: #0D1218;
           border-radius: 10px;
           display: flex;
@@ -182,7 +332,6 @@ export function FieldTile({
             inset 0 0 0 1px rgba(255,255,255,0.05),
             0 1px 0 rgba(255,255,255,0.08);
           overflow: hidden;
-          margin-top: 8px;
         }
 
         .icon-container {
@@ -237,69 +386,6 @@ export function FieldTile({
           50% { opacity: 1; }
         }
 
-        .lubed-badge {
-          position: absolute;
-          bottom: 24px;
-          right: 8px;
-          width: 22px;
-          height: 22px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          background: rgba(136, 69, 199, 0.3);
-          border: 1px solid rgba(136, 69, 199, 0.5);
-          border-radius: 4px;
-          z-index: 15;
-        }
-
-        .corrosion-border {
-          position: absolute;
-          inset: 0;
-          border: 1px solid rgba(74, 124, 89, 0.3);
-          border-radius: 12px;
-          pointer-events: none;
-          z-index: 5;
-        }
-
-        .status-stack {
-          position: absolute;
-          bottom: 24px;
-          left: 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          z-index: 15;
-        }
-
-        .status-badge {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 10px;
-          background: rgba(0, 0, 0, 0.5);
-        }
-
-        .status-badge.corrosion {
-          border: 1px solid rgba(74, 124, 89, 0.6);
-          color: #a7e8c2;
-        }
-
-        .status-badge.immune {
-          border: 1px solid rgba(251, 191, 36, 0.6);
-          color: #fbbf24;
-        }
-
-        .status-icon {
-          font-size: 12px;
-        }
-
-        .status-count {
-          font-weight: 600;
-          font-size: 11px;
-        }
       `}</style>
     </div>
   );
