@@ -391,8 +391,8 @@ export function calculateDamage(
     damage *= (1 + markedEffect.strength / 100);  // +25% урон
   }
 
-  // Штраф от коррозии (кроме фильтра — он игнорирует)
-  if (module.type !== 'filter') {
+  // Штраф от коррозии (кроме фильтра и ингибитора — они иммунны)
+  if (module.type !== 'filter' && module.type !== 'inhibitor') {
     const corrosionPenalty = getCorrosionPenalty(module, allEnemies, path);
     const inhibitorProtection = getInhibitorProtection(module, allModules);
     const finalCorrosionPenalty = corrosionPenalty * (1 - inhibitorProtection);

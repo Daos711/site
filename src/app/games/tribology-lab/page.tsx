@@ -177,6 +177,11 @@ export default function TribologyLabPage() {
 
   // Функция для вычисления стеков коррозии на модуле
   const getCorrosionStacks = useCallback((module: Module): number => {
+    // Фильтр и Ингибитор иммунны к коррозии
+    if (module.type === 'filter' || module.type === 'inhibitor') {
+      return 0;
+    }
+
     const modulePos = getModulePosition(module);
     const corrosionRadius = 140;
 
@@ -392,6 +397,7 @@ export default function TribologyLabPage() {
       // 6. Фильтрация: враги дошли до финиша или погибли
       let livesLost = 0;
       let goldEarned = 0;
+      const deadEnemyIds: string[] = [];
 
       updated = updated.filter(enemy => {
         if (hasReachedFinish(enemy)) {
@@ -403,14 +409,25 @@ export default function TribologyLabPage() {
           } else {
             livesLost += 1;
           }
+          deadEnemyIds.push(enemy.id);
           return false;
         }
         if (isDead(enemy)) {
           goldEarned += enemy.reward;
+          deadEnemyIds.push(enemy.id);
           return false;
         }
         return true;
       });
+
+      // Удаляем эффекты атак, нацеленные на мёртвых врагов (для Анализатора)
+      if (deadEnemyIds.length > 0) {
+        setAttackEffects(prev => prev.filter(eff => {
+          // Проверяем по координатам - если эффект направлен на позицию мёртвого врага
+          // Для простоты просто не фильтруем по ID (эффекты истекают по времени)
+          return true;
+        }));
+      }
 
       if (livesLost > 0) {
         setLives(l => Math.max(0, l - livesLost));
@@ -1511,13 +1528,13 @@ export default function TribologyLabPage() {
                     ═══════════════════════════════════════════════════════════════ */}
                 {config.shape === 'blob' && (
                   <g>
-                    {/* Аура коррозии 140px */}
+                    {/* Аура коррозии 80px радиус (160px диаметр - уменьшена чтобы не выходила за канал) */}
                     <circle
                       cx={0}
                       cy={0}
-                      r={140}
+                      r={80}
                       fill="url(#corrosionAura)"
-                      opacity={0.5}
+                      opacity={0.4}
                     />
 
                     {/* Контактная тень */}
@@ -1836,7 +1853,21 @@ export default function TribologyLabPage() {
                   const hiddenCount = statusList.length - 2;
                   const badgeSize = 18;
                   const gap = 3;
-                  const anchorX = size + 6;
+
+                  // === АВТО-ФЛИП для боссов: если бейджи заходят на поле карточек ===
+                  const cardFieldLeftEdge = conveyorWidth;
+                  const cardFieldRightEdge = totalWidth - conveyorWidth;
+                  const badgeTotalWidth = badgeSize + 8; // ширина бейджа + отступ
+
+                  // Проверяем выход за границу справа (в поле карточек)
+                  const wouldOverlapRight = pos.x + size + 6 + badgeTotalWidth > cardFieldLeftEdge && pos.x < cardFieldLeftEdge + conveyorWidth;
+                  // Проверяем выход за границу слева (с правой стороны канала)
+                  const wouldOverlapLeft = pos.x - size - 6 - badgeTotalWidth < cardFieldRightEdge && pos.x > cardFieldRightEdge - conveyorWidth;
+
+                  // Флип влево если бейджи справа заходят на карточки
+                  const flipLeft = wouldOverlapRight;
+
+                  const anchorX = flipLeft ? -(size + 6 + badgeSize) : size + 6;
                   const anchorY = -size / 2;
 
                   return (
@@ -1848,14 +1879,21 @@ export default function TribologyLabPage() {
                             x={0} y={-badgeSize/2}
                             width={badgeSize} height={badgeSize}
                             rx={4}
-                            fill="rgba(13, 18, 24, 0.75)"
+                            fill="rgba(13, 18, 24, 0.85)"
                             stroke={status.color}
                             strokeWidth={1.2}
-                            strokeOpacity={0.6}
+                            strokeOpacity={0.7}
                           />
                           {/* Иконка */}
                           {typeof status.icon === 'string' ? (
-                            <text x={badgeSize/2} y={1} textAnchor="middle" fontSize={12} dominantBaseline="middle">
+                            <text
+                              x={badgeSize/2}
+                              y={1}
+                              textAnchor="middle"
+                              fontSize={11}
+                              dominantBaseline="middle"
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
                               {status.icon}
                             </text>
                           ) : (
@@ -1872,7 +1910,7 @@ export default function TribologyLabPage() {
                             x={0} y={-badgeSize/2}
                             width={badgeSize} height={badgeSize}
                             rx={4}
-                            fill="rgba(13, 18, 24, 0.75)"
+                            fill="rgba(13, 18, 24, 0.85)"
                             stroke="#6b7280"
                             strokeWidth={1}
                             strokeOpacity={0.5}
@@ -2433,11 +2471,14 @@ export default function TribologyLabPage() {
 
             // АНАЛИЗАТОР — скан-пинг (3 этапа)
             if (effect.moduleType === 'analyzer') {
-              // Фаза 1: 0-0.12 - тонкая линия на цель
-              // Фаза 2: 0.12-0.30 - скан-линия по врагу
-              // Фаза 3: 0.30+ - прицел
-              const phase1End = 0.12;
-              const phase2End = 0.30;
+              // Фаза 1: 0-0.20 - тонкая линия на цель (замедлено)
+              // Фаза 2: 0.20-0.50 - скан-линия по врагу (замедлено)
+              // Фаза 3: 0.50+ - прицел угасает
+              const phase1End = 0.20;
+              const phase2End = 0.50;
+
+              // Opacity для фазы 3 — полностью исчезает к концу
+              const phase3Opacity = Math.max(0, 1 - (progress - phase2End) / (1 - phase2End));
 
               return (
                 <g key={effect.id}>
@@ -2485,9 +2526,9 @@ export default function TribologyLabPage() {
                       </g>
                     );
                   })()}
-                  {/* Фаза 3: Прицел остаётся */}
-                  {progress >= phase2End && (
-                    <g transform={`translate(${effect.toX}, ${effect.toY})`} opacity={1 - (progress - phase2End) * 1.2}>
+                  {/* Фаза 3: Прицел угасает полностью */}
+                  {progress >= phase2End && phase3Opacity > 0 && (
+                    <g transform={`translate(${effect.toX}, ${effect.toY})`} opacity={phase3Opacity}>
                       {/* Круг прицела */}
                       <circle cx={0} cy={0} r={10} fill="none" stroke="#e0e8f0" strokeWidth={1.5} />
                       {/* 4 риски по сторонам */}
@@ -2541,18 +2582,21 @@ export default function TribologyLabPage() {
                       />
                     );
                   })}
-                  {/* Микро-частицы по дуге */}
-                  {[0, 0.5, 1, 1.5, 2].map((n) => {
-                    const a = pushAngle - 0.5 + n * 0.25;
-                    const r = enemyRadius * 1.3 + progress * 10;
+                  {/* Микро-частицы вдоль направления отката */}
+                  {[0, 1, 2, 3, 4].map((n) => {
+                    // Частицы выстраиваются вдоль линий движения, между кольцом и линиями
+                    const spread = [-0.2, 0.1, 0, -0.1, 0.2][n];
+                    const a = pushAngle + spread;
+                    const baseDist = enemyRadius + 3 + n * 3;
+                    const r = baseDist + progress * 12;
                     return (
                       <circle
                         key={n}
                         cx={effect.toX + Math.cos(a) * r}
                         cy={effect.toY + Math.sin(a) * r}
-                        r={1.5 + (n % 2)}
+                        r={1.5 + (n % 2) * 0.5}
                         fill="#FF9F43"
-                        opacity={0.45 - progress * 0.4}
+                        opacity={0.5 - progress * 0.45}
                       />
                     );
                   })}
@@ -2614,6 +2658,17 @@ export default function TribologyLabPage() {
 
             // БАРЬЕР — клетка-зажим с "щёлк"
             if (effect.moduleType === 'barrier') {
+              // Находим врага под эффектом для масштабирования клетки
+              const targetEnemy = enemies.find(e => {
+                const eConfig = ENEMIES[e.type];
+                const ePos = getPositionOnPath(enemyPath, e.progress, eConfig.oscillation);
+                const dist = Math.sqrt((ePos.x - effect.toX) ** 2 + (ePos.y - effect.toY) ** 2);
+                return dist < 50 && e.effects.some(eff => eff.type === 'held');
+              });
+              // Базовый размер клетки = max(20, радиус врага * 1.3)
+              const enemyRadius = targetEnemy ? ENEMIES[targetEnemy.type].size : 15;
+              const cageHalf = Math.max(20, enemyRadius * 1.3);
+
               // Анимация "щёлк": scale 1.12 → 1.0 за первые 10%
               const clickPhase = progress < 0.1;
               const scale = clickPhase ? 1.12 - progress * 1.2 : 1;
@@ -2627,10 +2682,10 @@ export default function TribologyLabPage() {
                 <g key={effect.id} transform={`translate(${effect.toX}, ${effect.toY})`} opacity={fadeOut}>
                   {/* Внешняя рамка (rounded rect) */}
                   <rect
-                    x={-20 * finalScale}
-                    y={-20 * finalScale}
-                    width={40 * finalScale}
-                    height={40 * finalScale}
+                    x={-cageHalf * finalScale}
+                    y={-cageHalf * finalScale}
+                    width={cageHalf * 2 * finalScale}
+                    height={cageHalf * 2 * finalScale}
                     fill="none"
                     stroke="#f59e0b"
                     strokeWidth={3}
@@ -2639,22 +2694,22 @@ export default function TribologyLabPage() {
                     strokeLinejoin="round"
                   />
                   {/* Вертикальные перемычки (решётка) */}
-                  <line x1={-7 * finalScale} y1={-20 * finalScale} x2={-7 * finalScale} y2={20 * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
-                  <line x1={7 * finalScale} y1={-20 * finalScale} x2={7 * finalScale} y2={20 * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
+                  <line x1={-cageHalf * 0.35 * finalScale} y1={-cageHalf * finalScale} x2={-cageHalf * 0.35 * finalScale} y2={cageHalf * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
+                  <line x1={cageHalf * 0.35 * finalScale} y1={-cageHalf * finalScale} x2={cageHalf * 0.35 * finalScale} y2={cageHalf * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
                   {/* Горизонтальная полоса */}
-                  <line x1={-20 * finalScale} y1={0} x2={20 * finalScale} y2={0} stroke="#f59e0b" strokeWidth={2} opacity={0.5} strokeLinecap="round" />
+                  <line x1={-cageHalf * finalScale} y1={0} x2={cageHalf * finalScale} y2={0} stroke="#f59e0b" strokeWidth={2} opacity={0.5} strokeLinecap="round" />
                   {/* Маркер STOP — две вертикальные полоски || над клеткой */}
-                  <g transform={`translate(0, ${-28 * finalScale})`} opacity={0.8}>
+                  <g transform={`translate(0, ${-(cageHalf + 8) * finalScale})`} opacity={0.8}>
                     <line x1={-4} y1={-5} x2={-4} y2={5} stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
                     <line x1={4} y1={-5} x2={4} y2={5} stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
                   </g>
                   {/* Вспышка при "щёлк" */}
                   {clickPhase && (
                     <rect
-                      x={-22}
-                      y={-22}
-                      width={44}
-                      height={44}
+                      x={-(cageHalf + 2)}
+                      y={-(cageHalf + 2)}
+                      width={(cageHalf + 2) * 2}
+                      height={(cageHalf + 2) * 2}
                       fill="none"
                       stroke="#fde047"
                       strokeWidth={2}

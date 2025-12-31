@@ -53,10 +53,10 @@ export function FieldTile({
       <div className="level-badge">Lv.{level}</div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          LeftRail — статусы (🦠, 🛡️)
+          LeftRail — статусы (🦠, 🛡️✓)
           ═══════════════════════════════════════════════════════════════ */}
       <div className="left-rail">
-        {corrosionStacks > 0 && type !== 'filter' && (
+        {corrosionStacks > 0 && type !== 'filter' && type !== 'inhibitor' && (
           <div className="status-item corrosion">
             <span className="status-icon">🦠</span>
             <span className="status-count">{corrosionStacks}</span>
@@ -64,7 +64,23 @@ export function FieldTile({
         )}
         {corrosionStacks > 0 && type === 'filter' && (
           <div className="status-item immune">
-            <span className="status-icon">🛡️</span>
+            {/* Щит с галочкой — иммунитет Фильтра */}
+            <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
+              <path
+                d="M7 1 L12 3 L12 7 Q12 11 7 13 Q2 11 2 7 L2 3 Z"
+                fill="none"
+                stroke="#E6EEF7"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M4.5 7 L6 8.5 L9.5 5"
+                stroke="#E6EEF7"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
           </div>
         )}
       </div>
@@ -86,12 +102,32 @@ export function FieldTile({
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
-          RightRail — атрибуты (баффы: 💧 смазка, 🛡️ защита)
+          RightRail — атрибуты (баффы: 💧 смазка, 🛡️½ защита)
           ═══════════════════════════════════════════════════════════════ */}
       {(isLubricated || isProtected) && (
         <div className="right-rail">
           {isLubricated && <div className="attribute-item lubed">💧</div>}
-          {isProtected && <div className="attribute-item protected">🛡️</div>}
+          {isProtected && (
+            <div className="attribute-item protected">
+              {/* Щит с ½ — защита Ингибитора */}
+              <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
+                <path
+                  d="M7 1 L12 3 L12 7 Q12 11 7 13 Q2 11 2 7 L2 3 Z"
+                  fill="none"
+                  stroke="#C7B56A"
+                  strokeWidth="1.5"
+                />
+                <text
+                  x="7"
+                  y="9"
+                  textAnchor="middle"
+                  fontSize="6"
+                  fontWeight="bold"
+                  fill="#C7B56A"
+                >½</text>
+              </svg>
+            </div>
+          )}
         </div>
       )}
 
