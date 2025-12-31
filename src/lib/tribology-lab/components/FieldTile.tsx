@@ -8,6 +8,7 @@ interface FieldTileProps {
   size?: number;
   isDragging?: boolean;
   isLubricated?: boolean;  // Есть ли бафф от смазки рядом
+  corrosionStacks?: number;  // 0, 1, 2, или 3
 }
 
 export function FieldTile({
@@ -16,6 +17,7 @@ export function FieldTile({
   size = 110,
   isDragging = false,
   isLubricated = false,
+  corrosionStacks = 0,
 }: FieldTileProps) {
   const config = MODULES[type];
   const code = MODULE_CODES[type];
@@ -65,6 +67,31 @@ export function FieldTile({
           <div className="lubricant-sheen" />
           <div className="lubed-badge">💧</div>
         </>
+      )}
+
+      {/* Рамка коррозии */}
+      {corrosionStacks > 0 && type !== 'filter' && (
+        <div className="corrosion-border" />
+      )}
+
+      {/* Overlay коррозии */}
+      {corrosionStacks > 0 && type !== 'filter' && (
+        <div
+          className="corrosion-overlay"
+          style={{ opacity: 0.1 + corrosionStacks * 0.08 }}
+        />
+      )}
+
+      {/* Бейдж коррозии */}
+      {corrosionStacks > 0 && type !== 'filter' && (
+        <div className="corrosion-badge">
+          🦠 {corrosionStacks}
+        </div>
+      )}
+
+      {/* Иммунитет фильтра */}
+      {corrosionStacks > 0 && type === 'filter' && (
+        <div className="immune-badge">🛡️</div>
       )}
 
       <style jsx>{`
@@ -224,6 +251,55 @@ export function FieldTile({
           padding: 1px 3px;
           z-index: 11;
         }
+
+        .corrosion-border {
+          position: absolute;
+          inset: 0;
+          border: 2px solid #4a7c59;
+          border-radius: 12px;
+          box-shadow:
+            0 0 10px rgba(74, 124, 89, 0.3),
+            inset 0 0 15px rgba(74, 124, 89, 0.15);
+          pointer-events: none;
+          z-index: 12;
+        }
+
+        .corrosion-overlay {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            ellipse at 30% 70%,
+            rgba(74, 124, 89, 0.3) 0%,
+            transparent 70%
+          );
+          pointer-events: none;
+          border-radius: 12px;
+          z-index: 10;
+        }
+
+        .corrosion-badge {
+          position: absolute;
+          bottom: 22px;
+          left: 6px;
+          font-size: 10px;
+          background: rgba(74, 124, 89, 0.4);
+          border: 1px solid #4a7c59;
+          border-radius: 4px;
+          padding: 1px 4px;
+          color: #a7e8c2;
+          z-index: 13;
+        }
+
+        .immune-badge {
+          position: absolute;
+          bottom: 22px;
+          left: 6px;
+          font-size: 10px;
+          background: rgba(251, 191, 36, 0.3);
+          border-radius: 4px;
+          padding: 1px 3px;
+          z-index: 13;
+        }
       `}</style>
     </div>
   );
@@ -283,6 +359,55 @@ function NichePattern({ type }: { type: ModuleType }) {
         position: 'absolute',
         inset: 0,
         background: `linear-gradient(90deg, transparent 45%, ${palette.glow} 48%, ${palette.glow} 52%, transparent 55%)`,
+      }} />
+    ),
+    inhibitor: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `radial-gradient(ellipse at center, ${palette.glow} 0%, transparent 70%)`,
+      }} />
+    ),
+    demulsifier: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `linear-gradient(180deg, transparent 40%, ${palette.glow} 50%, transparent 60%)`,
+      }} />
+    ),
+    analyzer: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `
+          radial-gradient(circle at center, transparent 40%, ${palette.glow} 45%, transparent 50%),
+          linear-gradient(0deg, transparent 48%, ${palette.glow} 50%, transparent 52%),
+          linear-gradient(90deg, transparent 48%, ${palette.glow} 50%, transparent 52%)
+        `,
+      }} />
+    ),
+    centrifuge: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `conic-gradient(from 0deg, transparent, ${palette.glow} 30%, transparent 60%, ${palette.glow} 90%, transparent)`,
+      }} />
+    ),
+    electrostatic: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `
+          radial-gradient(circle at 25% 25%, ${palette.glow} 0%, transparent 30%),
+          radial-gradient(circle at 75% 75%, ${palette.glow} 0%, transparent 30%)
+        `,
+      }} />
+    ),
+    barrier: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `linear-gradient(90deg, ${palette.glow} 0%, transparent 20%, transparent 80%, ${palette.glow} 100%)`,
       }} />
     ),
   };
@@ -360,6 +485,138 @@ function ModuleIcon({ type }: { type: ModuleType }) {
         <circle cx="38" cy="20" r="2" fill={palette.light}>
           <animate attributeName="r" values="2;3;2" dur="0.5s" repeatCount="indefinite" />
         </circle>
+      </svg>
+    ),
+    inhibitor: (
+      <svg viewBox="0 0 40 40" fill="none">
+        <path
+          d="M20 4 L32 9 L32 22 Q32 32 20 36 Q8 32 8 22 L8 9 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="2"
+        />
+        <path
+          d="M20 10 Q26 18 26 23 Q26 30 20 30 Q14 30 14 23 Q14 18 20 10 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="2"
+        />
+        <path
+          d="M14 23 Q14.5 16 20 13"
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+        <path
+          d="M26 23 Q25.5 16 20 13"
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+        <ellipse cx="17.2" cy="22" rx="2.2" ry="3.6" fill="rgba(255,255,255,0.2)" />
+      </svg>
+    ),
+    demulsifier: (
+      <svg viewBox="0 0 40 40" fill="none">
+        <rect
+          x="9" y="6" width="22" height="28" rx="3"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="2"
+        />
+        <line
+          x1="11" y1="21" x2="29" y2="21"
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+        <path
+          d="M13 21 L15.5 18.8 L18 22 L20.5 19.2 L23 22.4 L25.5 20.5 L27 21"
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="15.5" cy="14.5" r="2" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" opacity="0.6" />
+        <circle cx="24.5" cy="27" r="2" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" opacity="0.35" />
+      </svg>
+    ),
+    analyzer: (
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="14" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <line x1="20" y1="6" x2="20" y2="12" stroke={palette.light} strokeWidth="3" strokeLinecap="round" />
+        <line x1="20" y1="28" x2="20" y2="34" stroke={palette.light} strokeWidth="3" strokeLinecap="round" />
+        <line x1="6" y1="20" x2="12" y2="20" stroke={palette.light} strokeWidth="3" strokeLinecap="round" />
+        <line x1="28" y1="20" x2="34" y2="20" stroke={palette.light} strokeWidth="3" strokeLinecap="round" />
+        <circle cx="20" cy="20" r="3" fill={palette.light} />
+        <path
+          d="M27 8 H34 V15 L30 19 L27 16 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="2"
+        />
+        <circle cx="29.2" cy="12" r="1.3" fill={palette.light} />
+      </svg>
+    ),
+    centrifuge: (
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="14" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <circle cx="20" cy="20" r="4" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <path d="M20 10 L24.5 18 L20 17 L15.5 18 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <path d="M29 24 L21.5 23 L23 27.5 L26 29 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <path d="M11 24 L14 29 L17 27.5 L18.5 23 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <path
+          d="M28 13 A10 10 0 0 1 30 20"
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+        <path
+          d="M30 20 L29 18.5 M30 20 L28.5 19.2"
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.6"
+        />
+        <line x1="26" y1="31" x2="14" y2="31" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M14 31 L16.6 29.6 M14 31 L16.6 32.4" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    ),
+    electrostatic: (
+      <svg viewBox="0 0 40 40" fill="none">
+        <path
+          d="M20 6 L15 18 H20 L17 34 L25 20 H20 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <circle cx="10" cy="12" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <circle cx="30" cy="12" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <circle cx="10" cy="28" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <circle cx="30" cy="28" r="2.2" fill={palette.dark} stroke={palette.light} strokeWidth="2" />
+        <line x1="18" y1="18" x2="12" y2="13.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="22" y1="18" x2="28" y2="13.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="18" y1="24" x2="12" y2="26.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+        <line x1="22" y1="24" x2="28" y2="26.5" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+      </svg>
+    ),
+    barrier: (
+      <svg viewBox="0 0 40 40" fill="none">
+        <rect
+          x="7" y="9" width="26" height="22" rx="3"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="2"
+        />
+        <rect x="11" y="13" width="18" height="5" rx="1.5" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <rect x="11" y="22" width="18" height="5" rx="1.5" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="20" cy="20" r="2.8" fill={palette.light} />
+        <line x1="31" y1="13" x2="31" y2="27" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <circle cx="31" cy="20" r="1.6" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" opacity="0.6" />
       </svg>
     ),
   };

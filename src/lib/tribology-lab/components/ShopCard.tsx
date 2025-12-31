@@ -264,6 +264,55 @@ function NichePattern({ type }: { type: ModuleType }) {
         background: `linear-gradient(90deg, transparent 45%, ${palette.glow} 48%, ${palette.glow} 52%, transparent 55%)`,
       }} />
     ),
+    inhibitor: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `radial-gradient(ellipse at center, ${palette.glow} 0%, transparent 70%)`,
+      }} />
+    ),
+    demulsifier: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `linear-gradient(180deg, transparent 40%, ${palette.glow} 50%, transparent 60%)`,
+      }} />
+    ),
+    analyzer: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `
+          radial-gradient(circle at center, transparent 40%, ${palette.glow} 45%, transparent 50%),
+          linear-gradient(0deg, transparent 48%, ${palette.glow} 50%, transparent 52%),
+          linear-gradient(90deg, transparent 48%, ${palette.glow} 50%, transparent 52%)
+        `,
+      }} />
+    ),
+    centrifuge: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `conic-gradient(from 0deg, transparent, ${palette.glow} 30%, transparent 60%, ${palette.glow} 90%, transparent)`,
+      }} />
+    ),
+    electrostatic: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `
+          radial-gradient(circle at 25% 25%, ${palette.glow} 0%, transparent 30%),
+          radial-gradient(circle at 75% 75%, ${palette.glow} 0%, transparent 30%)
+        `,
+      }} />
+    ),
+    barrier: (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: `linear-gradient(90deg, ${palette.glow} 0%, transparent 20%, transparent 80%, ${palette.glow} 100%)`,
+      }} />
+    ),
   };
 
   return <>{patterns[type]}</>;
@@ -335,6 +384,80 @@ function ModuleIcon({ type }: { type: ModuleType }) {
         <line x1="27" y1="16" x2="32" y2="16" stroke={palette.light} strokeWidth="2" strokeLinecap="round">
           <animate attributeName="opacity" values="1;0.5;1" dur="0.5s" repeatCount="indefinite" />
         </line>
+      </svg>
+    ),
+    inhibitor: (
+      <svg viewBox="0 0 32 32" fill="none">
+        <path
+          d="M16 3 L26 7 L26 17 Q26 25 16 29 Q6 25 6 17 L6 7 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="1.5"
+        />
+        <path
+          d="M16 8 Q21 14 21 18 Q21 24 16 24 Q11 24 11 18 Q11 14 16 8 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="1.5"
+        />
+        <ellipse cx="14" cy="17" rx="1.8" ry="3" fill="rgba(255,255,255,0.2)" />
+      </svg>
+    ),
+    demulsifier: (
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect x="7" y="4" width="18" height="24" rx="2.5" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <line x1="9" y1="17" x2="23" y2="17" stroke={palette.light} strokeWidth="1" opacity="0.6" />
+        <path d="M10 17 L12.5 14.5 L15 18 L17.5 15.5 L20 18.5 L22 17" stroke={palette.light} strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="12" cy="11" r="1.5" fill={palette.dark} stroke={palette.light} strokeWidth="1" opacity="0.6" />
+        <circle cx="20" cy="22" r="1.5" fill={palette.dark} stroke={palette.light} strokeWidth="1" opacity="0.35" />
+      </svg>
+    ),
+    analyzer: (
+      <svg viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="11" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <line x1="16" y1="5" x2="16" y2="10" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="16" y1="22" x2="16" y2="27" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="5" y1="16" x2="10" y2="16" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="22" y1="16" x2="27" y2="16" stroke={palette.light} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="16" cy="16" r="2.5" fill={palette.light} />
+        <path d="M22 6 H28 V12 L24 15.5 L22 13 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="23.5" cy="9.5" r="1" fill={palette.light} />
+      </svg>
+    ),
+    centrifuge: (
+      <svg viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="11" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="16" cy="16" r="3" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <path d="M16 8 L19.5 14 L16 13 L12.5 14 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1" />
+        <path d="M23 19 L17 18.5 L18.5 22 L21 23.5 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1" />
+        <path d="M9 19 L11 23.5 L13.5 22 L15 18.5 Z" fill={palette.dark} stroke={palette.light} strokeWidth="1" />
+        <line x1="21" y1="25" x2="11" y2="25" stroke={palette.light} strokeWidth="2" strokeLinecap="round" />
+        <path d="M11 25 L13 23.5 M11 25 L13 26.5" stroke={palette.light} strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
+    electrostatic: (
+      <svg viewBox="0 0 32 32" fill="none">
+        <path
+          d="M16 5 L12 14 H16 L14 27 L20 16 H16 Z"
+          fill={palette.dark}
+          stroke={palette.light}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        <circle cx="8" cy="10" r="1.8" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="24" cy="10" r="1.8" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="8" cy="22" r="1.8" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <circle cx="24" cy="22" r="1.8" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <line x1="14" y1="14" x2="10" y2="11" stroke={palette.light} strokeWidth="1" opacity="0.6" />
+        <line x1="18" y1="14" x2="22" y2="11" stroke={palette.light} strokeWidth="1" opacity="0.6" />
+      </svg>
+    ),
+    barrier: (
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect x="5" y="7" width="22" height="18" rx="2.5" fill={palette.dark} stroke={palette.light} strokeWidth="1.5" />
+        <rect x="9" y="10" width="14" height="4" rx="1" fill={palette.dark} stroke={palette.light} strokeWidth="1" />
+        <rect x="9" y="18" width="14" height="4" rx="1" fill={palette.dark} stroke={palette.light} strokeWidth="1" />
+        <circle cx="16" cy="16" r="2.2" fill={palette.light} />
       </svg>
     ),
   };

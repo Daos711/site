@@ -29,6 +29,8 @@ import {
   processBurnDamage,
   processBossRegeneration,
   generateShopSlots,
+  getModulePosition,
+  getDistance,
 } from "@/lib/tribology-lab/combat";
 import { ShopCard, FieldTile } from "@/lib/tribology-lab/components";
 
@@ -43,6 +45,12 @@ const MODULE_GRADIENTS: Record<ModuleType, { bg: string; border: string }> = {
   lubricant: { bg: 'linear-gradient(145deg, #a855f7 0%, #7e22ce 100%)', border: '#c4b5fd' },
   ultrasonic: { bg: 'linear-gradient(145deg, #14b8a6 0%, #0f766e 100%)', border: '#5eead4' },
   laser: { bg: 'linear-gradient(145deg, #ef4444 0%, #b91c1c 100%)', border: '#fca5a5' },
+  inhibitor: { bg: 'linear-gradient(145deg, #C7B56A 0%, #8a7a3a 100%)', border: '#d4c98a' },
+  demulsifier: { bg: 'linear-gradient(145deg, #A7E8C2 0%, #5d9a72 100%)', border: '#c4f0d5' },
+  analyzer: { bg: 'linear-gradient(145deg, #E6EEF7 0%, #9aa8b5 100%)', border: '#f0f5fa' },
+  centrifuge: { bg: 'linear-gradient(145deg, #FF9F43 0%, #b56d1f 100%)', border: '#ffb870' },
+  electrostatic: { bg: 'linear-gradient(145deg, #F5E663 0%, #a89a2d 100%)', border: '#f8ed8c' },
+  barrier: { bg: 'linear-gradient(145deg, #FFD166 0%, #b5923a 100%)', border: '#ffe08c' },
 };
 
 interface DragState {
@@ -128,6 +136,22 @@ export default function TribologyLabPage() {
 
     return buffedIds;
   }, [modules]);
+
+  // Функция для вычисления стеков коррозии на модуле
+  const getCorrosionStacks = useCallback((module: Module): number => {
+    const modulePos = getModulePosition(module);
+    const corrosionRadius = 80;
+
+    let stacks = 0;
+    for (const enemy of enemies) {
+      if (enemy.type !== 'corrosion') continue;
+      const enemyConfig = ENEMIES[enemy.type];
+      const enemyPos = getPositionOnPath(enemyPath, enemy.progress, enemyConfig.oscillation);
+      const dist = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
+      if (dist <= corrosionRadius) stacks++;
+    }
+    return Math.min(stacks, 3);
+  }, [enemies, enemyPath]);
 
   // Начало волны
   const startWave = useCallback(() => {
@@ -920,6 +944,13 @@ export default function TribologyLabPage() {
               <stop offset="100%" stopColor="#3a5a38" />
             </radialGradient>
 
+            {/* Аура коррозии */}
+            <radialGradient id="corrosionAura">
+              <stop offset="0%" stopColor="#4a7c59" stopOpacity="0.15" />
+              <stop offset="70%" stopColor="#4a7c59" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#4a7c59" stopOpacity="0" />
+            </radialGradient>
+
             {/* Влага — прозрачная капля */}
             <radialGradient id="moistureGradient" cx="30%" cy="30%">
               <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
@@ -1299,6 +1330,15 @@ export default function TribologyLabPage() {
                     ═══════════════════════════════════════════════════════════════ */}
                 {config.shape === 'blob' && (
                   <g>
+                    {/* Аура коррозии 80px */}
+                    <circle
+                      cx={0}
+                      cy={0}
+                      r={80}
+                      fill="url(#corrosionAura)"
+                      opacity={0.5}
+                    />
+
                     {/* Контактная тень */}
                     <ellipse cx={0} cy={size*0.55} rx={size*0.8} ry={size*0.25} fill="url(#contactShadow)" opacity={0.5} />
 
@@ -1769,6 +1809,7 @@ export default function TribologyLabPage() {
                           level={module.level}
                           size={cellSize}
                           isLubricated={lubricatedModuleIds.has(module.id)}
+                          corrosionStacks={getCorrosionStacks(module)}
                         />
                       </div>
                     )}

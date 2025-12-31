@@ -1,10 +1,12 @@
 // ==================== ТИПЫ ====================
 
-export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultrasonic' | 'laser';
+export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultrasonic' | 'laser'
+  | 'inhibitor' | 'demulsifier' | 'analyzer' | 'centrifuge' | 'electrostatic' | 'barrier';
 
 export type EnemyType = 'dust' | 'abrasive' | 'heat' | 'metal' | 'corrosion' | 'moisture' | 'static' | 'boss_wear' | 'boss_pitting';
 
-export type EffectType = 'slow' | 'burn' | 'marked' | 'coated';
+export type EffectType = 'slow' | 'burn' | 'marked' | 'coated'
+  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 
@@ -48,7 +50,7 @@ export interface ModuleConfig {
   color: string;        // цвет подсветки
   description: string;
   // Боевые параметры
-  attackType: 'beam' | 'projectile' | 'wave' | 'aoe';  // тип визуала
+  attackType: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain';  // тип визуала
   effectType?: EffectType;  // какой эффект накладывает (slow, burn, marked)
   effectDuration?: number;  // длительность эффекта мс
   effectStrength?: number;  // сила эффекта
@@ -266,6 +268,88 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     tagPenalties: { wet: 0.8 },  // -20% по мокрым
     piercing: true,  // пробивает насквозь
   },
+  inhibitor: {
+    id: 'inhibitor',
+    name: 'Ингибитор',
+    icon: '🛢️',
+    basePrice: 95,
+    baseDamage: 3,
+    range: 120,
+    attackSpeed: 0.6,
+    color: '#C7B56A',
+    description: 'Защищает соседей от коррозии',
+    attackType: 'wave',
+  },
+  demulsifier: {
+    id: 'demulsifier',
+    name: 'Деэмульгатор',
+    icon: '🧪',
+    basePrice: 90,
+    baseDamage: 9,
+    range: 180,
+    attackSpeed: 0.8,
+    color: '#A7E8C2',
+    description: 'x2 по влаге, снимает иммунитет к slow',
+    attackType: 'projectile',
+    effectType: 'dry',
+    effectDuration: 2500,
+    effectStrength: 50,
+    tagBonuses: { wet: 2.0 },
+  },
+  analyzer: {
+    id: 'analyzer',
+    name: 'Анализатор',
+    icon: '🎯',
+    basePrice: 110,
+    baseDamage: 5,
+    range: 220,
+    attackSpeed: 0.5,
+    color: '#E6EEF7',
+    description: 'Метка: +25% урона от всех',
+    attackType: 'beam',
+    effectType: 'marked',
+    effectDuration: 3000,
+    effectStrength: 25,
+  },
+  centrifuge: {
+    id: 'centrifuge',
+    name: 'Центрифуга',
+    icon: '🌀',
+    basePrice: 105,
+    baseDamage: 6,
+    range: 170,
+    attackSpeed: 0.35,
+    color: '#FF9F43',
+    description: 'Откатывает врагов назад',
+    attackType: 'aoe',
+  },
+  electrostatic: {
+    id: 'electrostatic',
+    name: 'Электростат',
+    icon: '⚡',
+    basePrice: 100,
+    baseDamage: 8,
+    range: 200,
+    attackSpeed: 0.9,
+    color: '#F5E663',
+    description: 'Цепная молния на 4 врагов',
+    attackType: 'chain',
+    tagBonuses: { dusty: 1.25 },
+  },
+  barrier: {
+    id: 'barrier',
+    name: 'Барьер',
+    icon: '🧱',
+    basePrice: 115,
+    baseDamage: 0,
+    range: 150,
+    attackSpeed: 0.25,
+    color: '#FFD166',
+    description: 'Блокирует врага на месте',
+    attackType: 'aoe',
+    effectType: 'held',
+    effectDuration: 1500,
+  },
 };
 
 // ==================== ДАННЫЕ ВРАГОВ ====================
@@ -407,6 +491,12 @@ export const MODULE_UNLOCK_WAVES: Record<ModuleType, number> = {
   lubricant: 5,
   ultrasonic: 10,
   laser: 15,
+  inhibitor: 8,
+  demulsifier: 10,
+  analyzer: 12,
+  centrifuge: 14,
+  electrostatic: 16,
+  barrier: 18,
 };
 
 // Серийные коды модулей (инженерный стиль)
@@ -417,6 +507,12 @@ export const MODULE_CODES: Record<ModuleType, string> = {
   lubricant: 'LUB-D4',
   ultrasonic: 'USN-K7',
   laser: 'LAS-OP3',
+  inhibitor: 'INH-01',
+  demulsifier: 'DEM-01',
+  analyzer: 'ANL-01',
+  centrifuge: 'CEN-01',
+  electrostatic: 'ELS-01',
+  barrier: 'BAR-01',
 };
 
 // Инженерная палитра модулей (приглушённые цвета)
@@ -454,6 +550,36 @@ export const MODULE_PALETTE: Record<ModuleType, {
     dark: '#4A1616',
     light: '#BF3636',
     glow: 'rgba(191, 54, 54, 0.15)',
+  },
+  inhibitor: {
+    dark: '#2B2F24',
+    light: '#C7B56A',
+    glow: 'rgba(199, 181, 106, 0.18)',
+  },
+  demulsifier: {
+    dark: '#20302A',
+    light: '#A7E8C2',
+    glow: 'rgba(167, 232, 194, 0.18)',
+  },
+  analyzer: {
+    dark: '#222831',
+    light: '#E6EEF7',
+    glow: 'rgba(230, 238, 247, 0.16)',
+  },
+  centrifuge: {
+    dark: '#2D241D',
+    light: '#FF9F43',
+    glow: 'rgba(255, 159, 67, 0.16)',
+  },
+  electrostatic: {
+    dark: '#2B2B1F',
+    light: '#F5E663',
+    glow: 'rgba(245, 230, 99, 0.20)',
+  },
+  barrier: {
+    dark: '#1F232A',
+    light: '#FFD166',
+    glow: 'rgba(255, 209, 102, 0.14)',
   },
 };
 

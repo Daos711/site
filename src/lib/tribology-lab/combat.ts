@@ -55,7 +55,7 @@ export function isInRange(
 
 // ==================== TARGETING ====================
 
-export type TargetingMode = 'first' | 'closest' | 'strongest' | 'weakest';
+export type TargetingMode = 'first' | 'closest' | 'strongest' | 'weakest' | 'analyzer';
 
 /**
  * Находит цель для модуля
@@ -101,6 +101,14 @@ export function findTarget(
       return enemies.reduce((best, enemy) =>
         enemy.hp < best.hp ? enemy : best
       );
+
+    case 'analyzer':
+      // Приоритет: боссы > самый жирный
+      const bosses = enemies.filter(e => e.type.startsWith('boss_'));
+      if (bosses.length > 0) {
+        return bosses.reduce((a, b) => a.hp > b.hp ? a : b);
+      }
+      return enemies.reduce((a, b) => a.hp > b.hp ? a : b);
 
     default:
       return enemies[0];
@@ -158,6 +166,49 @@ export function findAllOnLine(
 
     return distFromLine < enemyConfig.size + 10;  // +10 для погрешности
   });
+}
+
+/**
+ * Находит цепочку целей для Электростатика
+ * Каждая следующая цель - ближайший враг к предыдущему
+ */
+export function findChainTargets(
+  module: Module,
+  enemies: Enemy[],
+  path: PathPoint[],
+  maxTargets: number
+): Enemy[] {
+  const targets: Enemy[] = [];
+  const primary = findTarget(module, enemies, path, 'first');
+  if (!primary) return targets;
+
+  targets.push(primary);
+  const chainRadius = 100;
+
+  while (targets.length < maxTargets) {
+    const last = targets[targets.length - 1];
+    const lastConfig = ENEMIES[last.type];
+    const lastPos = getPositionOnPath(path, last.progress, lastConfig.oscillation);
+
+    let nearest: Enemy | null = null;
+    let nearestDist = Infinity;
+
+    for (const enemy of enemies) {
+      if (targets.includes(enemy)) continue;
+      const enemyConfig = ENEMIES[enemy.type];
+      const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
+      const dist = getDistance(lastPos.x, lastPos.y, enemyPos.x, enemyPos.y);
+      if (dist < chainRadius && dist < nearestDist) {
+        nearest = enemy;
+        nearestDist = dist;
+      }
+    }
+
+    if (!nearest) break;
+    targets.push(nearest);
+  }
+
+  return targets;
 }
 
 // ==================== РАСЧЁТ УРОНА ====================
@@ -258,8 +309,28 @@ export function getCorrosionPenalty(
     return dist <= corrosionRadius;
   });
 
-  // Каждая коррозия снижает урон на 20%
-  return nearbyCorrosion.length * 0.2;
+  // Мультипликативные стеки: 1=-20%, 2=-36%, 3=-48.8%
+  const stacks = Math.min(nearbyCorrosion.length, 3);
+  const multiplier = Math.pow(0.8, stacks);
+  return 1 - multiplier;
+}
+
+/**
+ * Проверяет защиту от коррозии от соседних ингибиторов
+ * Возвращает коэффициент снижения штрафа коррозии (0 = нет защиты, 0.5+ = есть защита)
+ */
+export function getInhibitorProtection(module: Module, allModules: Module[]): number {
+  if (module.type === 'inhibitor') return 0;
+
+  const inhibitors = allModules.filter(m => {
+    if (m.type !== 'inhibitor') return false;
+    return Math.abs(m.x - module.x) <= 1 && Math.abs(m.y - module.y) <= 1;
+  });
+
+  if (inhibitors.length === 0) return 0;
+
+  const best = inhibitors.reduce((a, b) => a.level > b.level ? a : b);
+  return 0.5 + (best.level - 1) * 0.0375;  // 50% + 3.75% за уровень
 }
 
 /**
@@ -314,10 +385,18 @@ export function calculateDamage(
     damage *= (1 + coatedEffect.strength / 100);  // +15% урон
   }
 
+  // Бонус от marked дебаффа (Анализатор накладывает +25% урона)
+  const markedEffect = target.effects.find(e => e.type === 'marked');
+  if (markedEffect) {
+    damage *= (1 + markedEffect.strength / 100);  // +25% урон
+  }
+
   // Штраф от коррозии (кроме фильтра — он игнорирует)
   if (module.type !== 'filter') {
     const corrosionPenalty = getCorrosionPenalty(module, allEnemies, path);
-    damage *= (1 - Math.min(corrosionPenalty, 0.6));  // максимум -60%
+    const inhibitorProtection = getInhibitorProtection(module, allModules);
+    const finalCorrosionPenalty = corrosionPenalty * (1 - inhibitorProtection);
+    damage *= (1 - Math.min(finalCorrosionPenalty, 0.6));  // максимум -60%
   }
 
   // Ультразвук: бонус от количества врагов
@@ -372,7 +451,13 @@ function getEffectCap(effectType: EffectType, enemyType: EnemyType): number {
 export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
   // Проверяем иммунитеты
   if (effect.type === 'slow' && enemy.type === 'moisture') {
-    return enemy;  // влага иммунна к замедлению
+    // Dry эффект снимает иммунитет к slow у влаги
+    const hasDry = enemy.effects.some(e => e.type === 'dry');
+    if (!hasDry) {
+      return enemy;  // влага иммунна к замедлению БЕЗ dry
+    }
+    // С dry эффектом замедление работает, но слабее
+    effect = { ...effect, strength: Math.floor(effect.strength * 0.5) };
   }
   if (effect.type === 'burn' && enemy.type === 'heat') {
     return enemy;  // перегрев иммунен к ожогу
@@ -449,7 +534,10 @@ export function processModuleAttack(
   // Находим цель(и)
   let targets: Enemy[] = [];
 
-  if (config.aoeRadius) {
+  if (module.type === 'electrostatic') {
+    // Электростатик — цепная молния на 4 врагов
+    targets = findChainTargets(module, enemies, path, 4);
+  } else if (config.aoeRadius) {
     // AOE — бьём всех в радиусе
     targets = findAllInRange(module, enemies, path);
   } else if (config.piercing) {
@@ -457,6 +545,12 @@ export function processModuleAttack(
     const primary = findTarget(module, enemies, path, 'first');
     if (primary) {
       targets = findAllOnLine(module, primary, enemies, path);
+    }
+  } else if (module.type === 'analyzer') {
+    // Анализатор — приоритет босс > жирный
+    const target = findTarget(module, enemies, path, 'analyzer');
+    if (target) {
+      targets = [target];
     }
   } else {
     // Обычная атака — одна цель
@@ -473,36 +567,95 @@ export function processModuleAttack(
   // Наносим урон
   let updatedEnemies = [...enemies];
 
-  for (const target of targets) {
-    const damage = calculateDamage(
-      module, target, allModules, enemies, path, targets.length
-    );
+  // Электростатик: урон затухает по цепи
+  if (module.type === 'electrostatic') {
+    const damageMultipliers = [1.0, 0.6, 0.4, 0.25];
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i];
+      const baseDamage = calculateDamage(module, target, allModules, enemies, path, 1);
+      const finalDamage = Math.floor(baseDamage * damageMultipliers[i]);
 
-    const index = updatedEnemies.findIndex(e => e.id === target.id);
-    if (index >= 0) {
-      // Наносим урон
-      updatedEnemies[index] = damageEnemy(updatedEnemies[index], damage);
-
-      // Применяем эффект модуля с учётом уровня
-      if (config.effectType && config.effectDuration && config.effectStrength) {
-        const effect: Effect = {
-          type: config.effectType,
-          duration: getEffectDuration(config.effectDuration, module.level),
-          strength: getEffectStrength(config.effectStrength, module.level),
-        };
-        updatedEnemies[index] = applyEffect(updatedEnemies[index], effect);
+      const index = updatedEnemies.findIndex(e => e.id === target.id);
+      if (index >= 0) {
+        updatedEnemies[index] = damageEnemy(updatedEnemies[index], finalDamage);
       }
+    }
+  } else {
+    // Стандартная обработка для остальных модулей
+    for (const target of targets) {
+      const damage = calculateDamage(
+        module, target, allModules, enemies, path, targets.length
+      );
 
-      // Сепаратор замедляет металл (физика: магнит притягивает)
-      if (module.type === 'magnet') {
-        const enemyConfig = ENEMIES[target.type];
-        if (enemyConfig.tags.includes('metal')) {
-          const slowEffect: Effect = {
-            type: 'slow',
-            duration: 2000,  // 2 секунды
-            strength: 20,    // 20% замедление
+      const index = updatedEnemies.findIndex(e => e.id === target.id);
+      if (index >= 0) {
+        // Наносим урон
+        updatedEnemies[index] = damageEnemy(updatedEnemies[index], damage);
+
+        // Применяем эффект модуля с учётом уровня
+        if (config.effectType && config.effectDuration && config.effectStrength) {
+          const effect: Effect = {
+            type: config.effectType,
+            duration: getEffectDuration(config.effectDuration, module.level),
+            strength: getEffectStrength(config.effectStrength, module.level),
           };
-          updatedEnemies[index] = applyEffect(updatedEnemies[index], slowEffect);
+          updatedEnemies[index] = applyEffect(updatedEnemies[index], effect);
+        }
+
+        // Сепаратор замедляет металл (физика: магнит притягивает)
+        if (module.type === 'magnet') {
+          const enemyConfig = ENEMIES[target.type];
+          if (enemyConfig.tags.includes('metal')) {
+            const slowEffect: Effect = {
+              type: 'slow',
+              duration: 2000,  // 2 секунды
+              strength: 20,    // 20% замедление
+            };
+            updatedEnemies[index] = applyEffect(updatedEnemies[index], slowEffect);
+          }
+        }
+
+        // Центрифуга: откат врагов назад
+        if (module.type === 'centrifuge') {
+          const hasAntiPush = updatedEnemies[index].effects.some(e => e.type === 'antiPush');
+          if (!hasAntiPush) {
+            const isBoss = target.type.startsWith('boss_');
+            const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
+
+            let pushAmount = 0.04;  // 4% назад
+            if (isElite) pushAmount = 0.02;
+            if (isBoss) pushAmount = 0.008;
+
+            updatedEnemies[index] = {
+              ...updatedEnemies[index],
+              progress: Math.max(0, updatedEnemies[index].progress - pushAmount),
+              effects: [
+                ...updatedEnemies[index].effects,
+                { type: 'antiPush' as EffectType, duration: 2500, strength: 0 }
+              ]
+            };
+          }
+        }
+
+        // Барьер: удержание врага
+        if (module.type === 'barrier') {
+          const hasAntiHold = updatedEnemies[index].effects.some(e => e.type === 'antiHold');
+          if (!hasAntiHold) {
+            const isBoss = target.type.startsWith('boss_');
+            const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
+
+            let holdDuration = 1500;
+            if (isElite) holdDuration = 1000;
+            if (isBoss) holdDuration = 500;
+
+            updatedEnemies[index] = {
+              ...updatedEnemies[index],
+              effects: [
+                ...updatedEnemies[index].effects,
+                { type: 'held' as EffectType, duration: holdDuration, strength: 0 }
+              ]
+            };
+          }
         }
       }
     }
