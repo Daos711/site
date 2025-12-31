@@ -462,7 +462,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 20,
     reward: 25,
     description: 'Мини-босс',
-    size: 25,       // уменьшен чтобы статусы влезали
+    size: 22,       // уменьшен чтобы статусы влезали в канал
     color: '#4a4a4a',  // тёмный металл
     oscillation: 1,
     shape: 'scarred',  // царапины
@@ -476,7 +476,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 15,
     reward: 75,
     description: 'Регенерация 10 HP/с',
-    size: 28,       // уменьшен чтобы статусы влезали
+    size: 24,       // уменьшен чтобы статусы влезали в канал
     color: '#374151',  // тёмно-серый
     oscillation: 0,
     shape: 'pitted',  // кратеры

@@ -65,8 +65,8 @@ export function FieldTile({
             <span className="status-count">{corrosionStacks}</span>
           </div>
         )}
-        {/* Иммунитет — показывать на Фильтре и Ингибиторе когда коррозия рядом */}
-        {hasNearbyCorrosion && (type === 'filter' || type === 'inhibitor') && (
+        {/* Иммунитет — показывать только на Фильтре когда коррозия рядом */}
+        {hasNearbyCorrosion && type === 'filter' && (
           <div className="status-item immune">
             {/* Щит с галочкой — иммунитет */}
             <svg viewBox="0 0 14 14" width="14" height="14" fill="none">

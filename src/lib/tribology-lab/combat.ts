@@ -103,12 +103,25 @@ export function findTarget(
       );
 
     case 'analyzer':
-      // Приоритет: боссы > самый жирный
-      const bosses = enemies.filter(e => e.type.startsWith('boss_'));
+      // Новый таргетинг: приоритет непомеченным → боссам → по прогрессу
+
+      // Фильтруем врагов БЕЗ метки marked
+      const unmarked = enemies.filter(e =>
+        !e.effects.some(eff => eff.type === 'marked')
+      );
+
+      // Если есть непомеченные — выбираем из них, иначе из всех
+      const pool = unmarked.length > 0 ? unmarked : enemies;
+
+      // Приоритет: боссы
+      const bosses = pool.filter(e => e.type.startsWith('boss_'));
       if (bosses.length > 0) {
-        return bosses.reduce((a, b) => a.hp > b.hp ? a : b);
+        // Среди боссов — ближе к финишу
+        return bosses.reduce((a, b) => a.progress > b.progress ? a : b);
       }
-      return enemies.reduce((a, b) => a.hp > b.hp ? a : b);
+
+      // Среди обычных — ближе к финишу
+      return pool.reduce((a, b) => a.progress > b.progress ? a : b);
 
     default:
       return enemies[0];
@@ -594,6 +607,14 @@ export function processModuleAttack(
 
         // Применяем эффект модуля с учётом уровня
         if (config.effectType && config.effectDuration && config.effectStrength) {
+          // Анализатор: снимаем ВСЕ старые метки перед применением новой
+          if (module.type === 'analyzer') {
+            updatedEnemies = updatedEnemies.map(e => ({
+              ...e,
+              effects: e.effects.filter(eff => eff.type !== 'marked')
+            }));
+          }
+
           const effect: Effect = {
             type: config.effectType,
             duration: getEffectDuration(config.effectDuration, module.level),

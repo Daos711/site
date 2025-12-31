@@ -400,21 +400,14 @@ export default function TribologyLabPage() {
           modulesRef.current = attackResult.updatedModules;
           setModules(attackResult.updatedModules);
 
-          // Для анализатора: убираем старые прицелы на ту же цель (избегаем "следа")
-          const newAnalyzerTargets = new Set(
-            attackResult.newAttackEffects
-              .filter(e => e.moduleType === 'analyzer' && e.targetId)
-              .map(e => e.targetId)
-          );
+          // Для анализатора: убираем ВСЕ старые прицелы при новой атаке
+          const hasNewAnalyzerAttack = attackResult.newAttackEffects.some(e => e.moduleType === 'analyzer');
 
           setAttackEffects(prevEffects => {
-            // Удаляем старые эффекты анализатора для целей, которые получают новый прицел
-            const filtered = prevEffects.filter(eff => {
-              if (eff.moduleType === 'analyzer' && eff.targetId && newAnalyzerTargets.has(eff.targetId)) {
-                return false;
-              }
-              return true;
-            });
+            // Если есть новая атака анализатора — удаляем ВСЕ старые прицелы
+            const filtered = hasNewAnalyzerAttack
+              ? prevEffects.filter(eff => eff.moduleType !== 'analyzer')
+              : prevEffects;
             return [...filtered, ...attackResult.newAttackEffects];
           });
         }
@@ -2538,6 +2531,19 @@ export default function TribologyLabPage() {
             if (effect.moduleType === 'analyzer') {
               const pingDuration = 0.14; // Фаза 1: быстрый пинг
 
+              // Получаем ТЕКУЩУЮ позицию врага по targetId (прицел следует за ним)
+              let targetX = effect.toX;
+              let targetY = effect.toY;
+              if (effect.targetId) {
+                const targetEnemy = enemies.find(e => e.id === effect.targetId);
+                if (targetEnemy) {
+                  const targetConfig = ENEMIES[targetEnemy.type];
+                  const livePos = getPositionOnPath(enemyPath, targetEnemy.progress, targetConfig.oscillation);
+                  targetX = livePos.x;
+                  targetY = livePos.y;
+                }
+              }
+
               return (
                 <g key={effect.id}>
                   {/* Фаза 1: Пинг — линия к цели + вспышка */}
@@ -2546,8 +2552,8 @@ export default function TribologyLabPage() {
                       <line
                         x1={effect.fromX}
                         y1={effect.fromY}
-                        x2={effect.toX}
-                        y2={effect.toY}
+                        x2={targetX}
+                        y2={targetY}
                         stroke="#e0e8f0"
                         strokeWidth={2}
                         opacity={0.8 * (1 - progress / pingDuration)}
@@ -2555,8 +2561,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Вспышка на враге */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={targetX}
+                        cy={targetY}
                         r={2 + (progress / pingDuration) * 3}
                         fill="#e0e8f0"
                         opacity={0.9 * (1 - progress / pingDuration)}
@@ -2567,7 +2573,7 @@ export default function TribologyLabPage() {
                   {/* Фаза 2: Прицел (метка) — слегка "дышит" */}
                   {progress >= pingDuration && (
                     <g
-                      transform={`translate(${Math.round(effect.toX)}, ${Math.round(effect.toY)})`}
+                      transform={`translate(${Math.round(targetX)}, ${Math.round(targetY)})`}
                       opacity={0.75 + Math.sin(progress * 10) * 0.1}
                     >
                       {/* Круг прицела */}
