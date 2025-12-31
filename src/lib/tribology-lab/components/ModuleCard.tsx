@@ -9,6 +9,11 @@ interface ModuleCardProps {
   showDetails?: boolean;
   onClick?: () => void;
   className?: string;
+  // Для магазина
+  canAfford?: boolean;
+  isDragging?: boolean;
+  onMouseDown?: (e: React.MouseEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
 }
 
 export function ModuleCard({
@@ -18,6 +23,10 @@ export function ModuleCard({
   showDetails = true,
   onClick,
   className = '',
+  canAfford = true,
+  isDragging = false,
+  onMouseDown,
+  onTouchStart,
 }: ModuleCardProps) {
   const config = MODULES[type];
   const code = MODULE_CODES[type];
@@ -26,8 +35,10 @@ export function ModuleCard({
 
   return (
     <div
-      className={`module-card ${selected ? 'selected' : ''} ${className}`}
+      className={`module-card ${selected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''} ${isDragging ? 'dragging' : ''} ${className}`}
       onClick={onClick}
+      onMouseDown={canAfford ? onMouseDown : undefined}
+      onTouchStart={canAfford ? onTouchStart : undefined}
       style={{
         '--module-accent': palette.light,
         '--module-glow': palette.glow,
@@ -130,18 +141,19 @@ export function ModuleCard({
           border-radius: 8px;
           padding: 16px;
           overflow: hidden;
-          cursor: ${onClick ? 'pointer' : 'default'};
+          cursor: ${onMouseDown ? 'grab' : onClick ? 'pointer' : 'default'};
           transition: all 0.2s ease;
           box-shadow:
             0 4px 12px rgba(0,0,0,0.4),
             inset 0 1px 0 rgba(255,255,255,0.05);
         }
 
-        .module-card:hover {
+        .module-card:hover:not(.disabled) {
           box-shadow:
             0 8px 24px rgba(0,0,0,0.5),
             inset 0 1px 0 rgba(255,255,255,0.08),
-            0 0 0 1px var(--module-accent);
+            0 0 0 1px var(--module-accent),
+            0 0 15px var(--module-glow);
         }
 
         .module-card.selected {
@@ -149,6 +161,19 @@ export function ModuleCard({
             0 8px 24px rgba(0,0,0,0.5),
             0 0 20px var(--module-glow),
             0 0 0 2px var(--module-accent);
+        }
+
+        .module-card.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          filter: grayscale(30%);
+        }
+
+        .module-card.dragging {
+          opacity: 0.7;
+          transform: scale(1.05);
+          cursor: grabbing;
+          z-index: 100;
         }
 
         .card-texture {
