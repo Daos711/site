@@ -185,41 +185,49 @@ export function ModuleCard({
         }
 
         /* ═══════════════════════════════════════════════════════════════
-           Компактный режим для магазина
+           Компактный режим для магазина (как ShopCard)
            ═══════════════════════════════════════════════════════════════ */
         .module-card.compact {
-          width: 90px;
-          padding: 8px;
+          width: 80px;
+          height: 100px;
+          padding: 6px;
           display: flex;
           flex-direction: column;
           align-items: center;
         }
 
         .module-card.compact .icon-niche {
-          width: 56px;
-          height: 56px;
-          margin: 4px 0 8px;
+          width: 52px;
+          height: 52px;
+          margin: 0;
+          border-radius: 8px;
         }
 
         .module-card.compact .icon-container {
-          width: 36px;
-          height: 36px;
+          width: 32px;
+          height: 32px;
         }
 
         .module-card.compact .price-badge {
-          padding: 4px 10px;
+          padding: 2px 8px;
+          margin-top: 4px;
           margin-bottom: 0;
+          border-radius: 3px;
         }
 
         .module-card.compact .price-value {
-          font-size: 14px;
+          font-size: 12px;
+        }
+
+        .module-card.compact .coin-icon {
+          font-size: 10px;
         }
 
         .compact-code {
           font-size: 8px;
           color: #5A6A7A;
           font-family: monospace;
-          margin-bottom: 2px;
+          margin-bottom: 4px;
         }
 
         .card-texture {
