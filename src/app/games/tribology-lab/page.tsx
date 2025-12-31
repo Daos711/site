@@ -8,7 +8,9 @@ import {
   GRID_ROWS,
   INITIAL_LIVES,
   INITIAL_GOLD,
+  MODULE_CODES,
   type ModuleType,
+  type EnemyType,
   type Module,
   type Enemy,
   type AttackEffect,
@@ -101,6 +103,10 @@ export default function TribologyLabPage() {
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
   const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
+
+  // DEV-панель для тестирования
+  const [devMode, setDevMode] = useState(false);
+  const [selectedDevModule, setSelectedDevModule] = useState<ModuleType | null>(null);
 
   // Размеры
   const cellSize = 110;
@@ -222,6 +228,58 @@ export default function TribologyLabPage() {
   useEffect(() => {
     spawnQueueRef.current = spawnQueue;
   }, [spawnQueue]);
+
+  // Обработчик клавиши D для Dev-панели
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') {
+        // Не активируем если фокус в input
+        if (document.activeElement?.tagName === 'INPUT') return;
+        setDevMode(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // DEV: Спавн врага вне волны
+  const devSpawnEnemy = useCallback((type: EnemyType, count: number = 1) => {
+    const newEnemies: Enemy[] = [];
+    for (let i = 0; i < count; i++) {
+      const enemy = createEnemy(type, wave);
+      // Добавляем небольшое смещение по progress чтобы враги не накладывались
+      enemy.progress = i * 0.02;
+      newEnemies.push(enemy);
+    }
+    setEnemies(prev => [...prev, ...newEnemies]);
+    enemiesRef.current = [...enemiesRef.current, ...newEnemies];
+  }, [wave]);
+
+  // DEV: Установка модуля на поле
+  const devPlaceModule = useCallback((x: number, y: number) => {
+    if (!selectedDevModule) return;
+
+    const existing = modules.find(m => m.x === x && m.y === y);
+    if (existing) {
+      // Повысить уровень (до 5)
+      if (existing.level < 5) {
+        setModules(prev => prev.map(m =>
+          m.id === existing.id ? { ...m, level: m.level + 1 } : m
+        ));
+      }
+    } else {
+      // Новый модуль
+      const newModule: Module = {
+        id: `dev-${Date.now()}-${Math.random()}`,
+        type: selectedDevModule,
+        level: 1,
+        x,
+        y,
+        lastAttack: 0,
+      };
+      setModules(prev => [...prev, newModule]);
+    }
+  }, [selectedDevModule, modules]);
 
   // Игровой цикл
   useEffect(() => {
@@ -1868,6 +1926,9 @@ export default function TribologyLabPage() {
                   return dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
                 })();
 
+                // DEV: Подсветка для выбранного модуля
+                const isDevTarget = devMode && selectedDevModule && !module;
+
                 return (
                   <div
                     key={`${x}-${y}`}
@@ -1876,12 +1937,18 @@ export default function TribologyLabPage() {
                       ${isDropTarget ? 'ring-4 ring-green-500 ring-opacity-70' : ''}
                       ${canMerge ? 'ring-4 ring-yellow-400 ring-opacity-70' : ''}
                       ${isInLubricantBuffZone ? 'ring-2 ring-purple-400 ring-opacity-50' : ''}
+                      ${isDevTarget ? 'ring-2 ring-cyan-400 ring-opacity-50 cursor-pointer' : ''}
                     `}
                     style={{
                       width: cellSize,
                       height: cellSize,
                       background: 'linear-gradient(145deg, #080c10 0%, #0f1318 100%)',
                       boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.9), inset 0 -1px 0 rgba(255,255,255,0.02)',
+                    }}
+                    onClick={() => {
+                      if (devMode && selectedDevModule) {
+                        devPlaceModule(x, y);
+                      }
                     }}
                   >
                     {module && !isDraggingThis && (
@@ -2305,7 +2372,186 @@ export default function TribologyLabPage() {
       {/* Подсказка */}
       <p className="text-gray-500 text-sm text-center max-w-lg mt-2">
         Перетащи модуль из магазина на поле. Два одинаковых модуля одного уровня можно объединить.
+        <span className="text-gray-600 ml-2">(D — dev-панель)</span>
       </p>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          DEV-ПАНЕЛЬ
+          ═══════════════════════════════════════════════════════════════ */}
+      {devMode && (
+        <div
+          className="fixed right-4 top-4 bg-black/90 border border-cyan-500/30 rounded-xl p-4 z-[200] max-h-[90vh] overflow-y-auto"
+          style={{ width: 320 }}
+        >
+          {/* Заголовок */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-cyan-400 font-bold text-lg flex items-center gap-2">
+              🔧 DEV MODE
+            </h3>
+            <button
+              onClick={() => setDevMode(false)}
+              className="text-gray-500 hover:text-white text-xl leading-none"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* ═══════════════ МОДУЛИ ═══════════════ */}
+          <div className="mb-4">
+            <h4 className="text-gray-400 text-sm mb-2 uppercase tracking-wider">Модули</h4>
+            <div className="grid grid-cols-4 gap-2">
+              {(Object.keys(MODULES) as ModuleType[]).map(type => {
+                const isSelected = selectedDevModule === type;
+                const code = MODULE_CODES[type];
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedDevModule(isSelected ? null : type)}
+                    className={`
+                      p-2 rounded-lg text-xs font-mono transition-all
+                      ${isSelected
+                        ? 'bg-cyan-500/30 border-2 border-cyan-400 text-cyan-300'
+                        : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-white'
+                      }
+                    `}
+                    title={MODULES[type].name}
+                  >
+                    {code.split('-')[0]}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedDevModule && (
+              <p className="text-cyan-300 text-xs mt-2">
+                Выбран: <span className="font-bold">{MODULES[selectedDevModule].name}</span>
+                <br />
+                <span className="text-gray-500">Кликни на пустую ячейку чтобы поставить</span>
+              </p>
+            )}
+          </div>
+
+          {/* ═══════════════ ВРАГИ ═══════════════ */}
+          <div className="mb-4">
+            <h4 className="text-gray-400 text-sm mb-2 uppercase tracking-wider">Враги</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {(['dust', 'abrasive', 'heat', 'metal', 'corrosion', 'moisture', 'static', 'boss_wear', 'boss_pitting'] as EnemyType[]).map(type => {
+                const config = ENEMIES[type];
+                const icons: Record<string, string> = {
+                  dust: '💨',
+                  abrasive: '🪨',
+                  heat: '🔥',
+                  metal: '⚙️',
+                  corrosion: '🦠',
+                  moisture: '💧',
+                  static: '⚡',
+                  boss_wear: '👑',
+                  boss_pitting: '💀',
+                };
+                return (
+                  <button
+                    key={type}
+                    onClick={(e) => {
+                      const count = e.shiftKey ? 5 : e.ctrlKey ? 10 : 1;
+                      devSpawnEnemy(type, count);
+                    }}
+                    className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:bg-red-900/50 hover:border-red-500/50 hover:text-white transition-all text-center"
+                    title={`${config.name} (Shift=5, Ctrl=10)`}
+                  >
+                    <div className="text-lg">{icons[type]}</div>
+                    <div className="text-[10px] truncate">{config.name}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-gray-500 text-xs mt-2">
+              Shift+клик = 5 врагов, Ctrl+клик = 10 врагов
+            </p>
+          </div>
+
+          {/* ═══════════════ ИНСТРУМЕНТЫ ═══════════════ */}
+          <div className="mb-2">
+            <h4 className="text-gray-400 text-sm mb-2 uppercase tracking-wider">Инструменты</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setGold(g => g + 100)}
+                className="p-2 rounded-lg bg-yellow-900/30 border border-yellow-600/30 text-yellow-400 hover:bg-yellow-800/50 transition-all text-sm"
+              >
+                💰 +100
+              </button>
+              <button
+                onClick={() => setGold(g => g + 500)}
+                className="p-2 rounded-lg bg-yellow-900/30 border border-yellow-600/30 text-yellow-400 hover:bg-yellow-800/50 transition-all text-sm"
+              >
+                💰 +500
+              </button>
+              <button
+                onClick={() => setLives(l => l + 5)}
+                className="p-2 rounded-lg bg-red-900/30 border border-red-600/30 text-red-400 hover:bg-red-800/50 transition-all text-sm"
+              >
+                ❤️ +5 HP
+              </button>
+              <button
+                onClick={() => {
+                  setEnemies([]);
+                  enemiesRef.current = [];
+                }}
+                className="p-2 rounded-lg bg-purple-900/30 border border-purple-600/30 text-purple-400 hover:bg-purple-800/50 transition-all text-sm"
+              >
+                ☠️ Убить всех
+              </button>
+              <button
+                onClick={() => setModules([])}
+                className="p-2 rounded-lg bg-gray-800 border border-gray-600 text-gray-400 hover:bg-gray-700 transition-all text-sm"
+              >
+                🗑️ Очистить поле
+              </button>
+              <button
+                onClick={() => setIsPaused(p => !p)}
+                className={`p-2 rounded-lg border transition-all text-sm ${
+                  isPaused
+                    ? 'bg-green-900/30 border-green-600/30 text-green-400'
+                    : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
+                }`}
+              >
+                {isPaused ? '▶️ Продолжить' : '⏸️ Пауза'}
+              </button>
+            </div>
+          </div>
+
+          {/* Скорость игры */}
+          <div className="mt-3 pt-3 border-t border-gray-700">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 text-sm">Скорость: {gameSpeed}x</span>
+              <div className="flex gap-1">
+                {[1, 2, 5, 10].map(speed => (
+                  <button
+                    key={speed}
+                    onClick={() => setGameSpeed(speed)}
+                    className={`px-2 py-1 rounded text-xs ${
+                      gameSpeed === speed
+                        ? 'bg-cyan-500/30 text-cyan-300'
+                        : 'bg-gray-800 text-gray-500 hover:text-white'
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Кнопка активации DEV-панели */}
+      {!devMode && (
+        <button
+          onClick={() => setDevMode(true)}
+          className="fixed right-4 bottom-4 w-10 h-10 rounded-full bg-gray-800/50 border border-gray-700 text-gray-500 hover:text-cyan-400 hover:border-cyan-500/50 transition-all z-50 flex items-center justify-center"
+          title="Dev Mode (D)"
+        >
+          🔧
+        </button>
+      )}
     </div>
   );
 }
