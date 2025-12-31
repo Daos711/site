@@ -420,11 +420,13 @@ export default function TribologyLabPage() {
         return true;
       });
 
-      // Удаляем эффекты атак, нацеленные на мёртвых врагов (для Анализатора)
+      // Удаляем эффекты анализатора, нацеленные на мёртвых врагов
       if (deadEnemyIds.length > 0) {
         setAttackEffects(prev => prev.filter(eff => {
-          // Проверяем по координатам - если эффект направлен на позицию мёртвого врага
-          // Для простоты просто не фильтруем по ID (эффекты истекают по времени)
+          // Если эффект анализатора и враг мёртв — удалить
+          if (eff.moduleType === 'analyzer' && eff.targetId && deadEnemyIds.includes(eff.targetId)) {
+            return false;
+          }
           return true;
         }));
       }
@@ -1108,6 +1110,16 @@ export default function TribologyLabPage() {
               <stop offset="0%" stopColor="#ffffff" stopOpacity="0.15" />
               <stop offset="100%" stopColor="#000000" stopOpacity="0.1" />
             </linearGradient>
+
+            {/* ClipPath для канала — обрезает ауры коррозии */}
+            <clipPath id="channelClip">
+              {/* Левый вертикальный канал */}
+              <rect x={0} y={0} width={conveyorWidth} height={totalHeight} />
+              {/* Верхний горизонтальный канал */}
+              <rect x={0} y={0} width={totalWidth} height={conveyorWidth} />
+              {/* Правый вертикальный канал */}
+              <rect x={totalWidth - conveyorWidth} y={0} width={conveyorWidth} height={totalHeight} />
+            </clipPath>
           </defs>
 
           {/* Металлический бортик - с дугами для одинаковой ширины */}
@@ -1302,6 +1314,8 @@ export default function TribologyLabPage() {
           </g>
 
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
+          {/* Обёртка с clipPath для обрезки аур коррозии по границам канала */}
+          <g clipPath="url(#channelClip)">
           {enemies.map(enemy => {
             const config = ENEMIES[enemy.type];
             const pos = getPositionOnPath(enemyPath, enemy.progress, config.oscillation);
@@ -1817,9 +1831,26 @@ export default function TribologyLabPage() {
                   if (enemy.effects.find(e => e.type === 'held')) {
                     statusList.push({ type: 'held', icon: '⛓', color: '#f59e0b' });
                   }
-                  // Приоритет 2: Заморозка
+                  // Приоритет 2: Заморозка (SVG снежинка для лучшего центрирования)
                   if (enemy.effects.find(e => e.type === 'slow')) {
-                    statusList.push({ type: 'slow', icon: '❄️', color: '#38bdf8' });
+                    statusList.push({
+                      type: 'slow',
+                      icon: (
+                        <svg viewBox="0 0 16 16" width="12" height="12">
+                          {/* Центральная снежинка */}
+                          <line x1="8" y1="1" x2="8" y2="15" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"/>
+                          <line x1="1" y1="8" x2="15" y2="8" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"/>
+                          <line x1="3" y1="3" x2="13" y2="13" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
+                          <line x1="13" y1="3" x2="3" y2="13" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round"/>
+                          {/* Маленькие ответвления */}
+                          <line x1="8" y1="3" x2="6" y2="1" stroke="#38bdf8" strokeWidth="1" strokeLinecap="round"/>
+                          <line x1="8" y1="3" x2="10" y2="1" stroke="#38bdf8" strokeWidth="1" strokeLinecap="round"/>
+                          <line x1="8" y1="13" x2="6" y2="15" stroke="#38bdf8" strokeWidth="1" strokeLinecap="round"/>
+                          <line x1="8" y1="13" x2="10" y2="15" stroke="#38bdf8" strokeWidth="1" strokeLinecap="round"/>
+                        </svg>
+                      ),
+                      color: '#38bdf8'
+                    });
                   }
                   // Приоритет 3: Метка
                   if (enemy.effects.find(e => e.type === 'marked')) {
@@ -1854,20 +1885,8 @@ export default function TribologyLabPage() {
                   const badgeSize = 18;
                   const gap = 3;
 
-                  // === АВТО-ФЛИП для боссов: если бейджи заходят на поле карточек ===
-                  const cardFieldLeftEdge = conveyorWidth;
-                  const cardFieldRightEdge = totalWidth - conveyorWidth;
-                  const badgeTotalWidth = badgeSize + 8; // ширина бейджа + отступ
-
-                  // Проверяем выход за границу справа (в поле карточек)
-                  const wouldOverlapRight = pos.x + size + 6 + badgeTotalWidth > cardFieldLeftEdge && pos.x < cardFieldLeftEdge + conveyorWidth;
-                  // Проверяем выход за границу слева (с правой стороны канала)
-                  const wouldOverlapLeft = pos.x - size - 6 - badgeTotalWidth < cardFieldRightEdge && pos.x > cardFieldRightEdge - conveyorWidth;
-
-                  // Флип влево если бейджи справа заходят на карточки
-                  const flipLeft = wouldOverlapRight;
-
-                  const anchorX = flipLeft ? -(size + 6 + badgeSize) : size + 6;
+                  // Статусы ВСЕГДА справа от врага
+                  const anchorX = size + 6;
                   const anchorY = -size / 2;
 
                   return (
@@ -1927,6 +1946,7 @@ export default function TribologyLabPage() {
               </g>
             );
           })}
+          </g>
 
           {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
           <g>
@@ -2469,75 +2489,51 @@ export default function TribologyLabPage() {
               );
             }
 
-            // АНАЛИЗАТОР — скан-пинг (3 этапа)
+            // АНАЛИЗАТОР — упрощённая анимация "пинг + метка" (2 фазы)
             if (effect.moduleType === 'analyzer') {
-              // Фаза 1: 0-0.20 - тонкая линия на цель (замедлено)
-              // Фаза 2: 0.20-0.50 - скан-линия по врагу (замедлено)
-              // Фаза 3: 0.50+ - прицел угасает
-              const phase1End = 0.20;
-              const phase2End = 0.50;
-
-              // Opacity для фазы 3 — полностью исчезает к концу
-              const phase3Opacity = Math.max(0, 1 - (progress - phase2End) / (1 - phase2End));
+              const pingDuration = 0.14; // Фаза 1: быстрый пинг
 
               return (
                 <g key={effect.id}>
-                  {/* Фаза 1: Тонкая линия к цели */}
-                  {progress < phase1End && (
-                    <line
-                      x1={effect.fromX}
-                      y1={effect.fromY}
-                      x2={effect.fromX + (effect.toX - effect.fromX) * (progress / phase1End)}
-                      y2={effect.fromY + (effect.toY - effect.fromY) * (progress / phase1End)}
-                      stroke="#e0e8f0"
-                      strokeWidth={2}
-                      opacity={0.8}
-                      strokeLinecap="round"
-                    />
+                  {/* Фаза 1: Пинг — линия к цели + вспышка */}
+                  {progress < pingDuration && (
+                    <>
+                      <line
+                        x1={effect.fromX}
+                        y1={effect.fromY}
+                        x2={effect.toX}
+                        y2={effect.toY}
+                        stroke="#e0e8f0"
+                        strokeWidth={2}
+                        opacity={0.8 * (1 - progress / pingDuration)}
+                        strokeLinecap="round"
+                      />
+                      {/* Вспышка на враге */}
+                      <circle
+                        cx={effect.toX}
+                        cy={effect.toY}
+                        r={2 + (progress / pingDuration) * 3}
+                        fill="#e0e8f0"
+                        opacity={0.9 * (1 - progress / pingDuration)}
+                      />
+                    </>
                   )}
-                  {/* Фаза 2: Скан-линия проезжает по врагу */}
-                  {progress >= phase1End && progress < phase2End && (() => {
-                    const scanT = (progress - phase1End) / (phase2End - phase1End);
-                    const scanOffset = -15 + scanT * 30; // от -15 до +15
-                    return (
-                      <g transform={`translate(${effect.toX}, ${effect.toY})`}>
-                        {/* Основная скан-линия */}
-                        <line
-                          x1={scanOffset}
-                          y1={-18}
-                          x2={scanOffset}
-                          y2={18}
-                          stroke="#e0e8f0"
-                          strokeWidth={2.5}
-                          opacity={0.9}
-                          strokeLinecap="round"
-                        />
-                        {/* Призрак */}
-                        <line
-                          x1={scanOffset - 4}
-                          y1={-16}
-                          x2={scanOffset - 4}
-                          y2={16}
-                          stroke="#e0e8f0"
-                          strokeWidth={1.5}
-                          opacity={0.35}
-                          strokeLinecap="round"
-                        />
-                      </g>
-                    );
-                  })()}
-                  {/* Фаза 3: Прицел угасает полностью */}
-                  {progress >= phase2End && phase3Opacity > 0 && (
-                    <g transform={`translate(${effect.toX}, ${effect.toY})`} opacity={phase3Opacity}>
+
+                  {/* Фаза 2: Прицел (метка) — слегка "дышит" */}
+                  {progress >= pingDuration && (
+                    <g
+                      transform={`translate(${Math.round(effect.toX)}, ${Math.round(effect.toY)})`}
+                      opacity={0.75 + Math.sin(progress * 10) * 0.1}
+                    >
                       {/* Круг прицела */}
                       <circle cx={0} cy={0} r={10} fill="none" stroke="#e0e8f0" strokeWidth={1.5} />
                       {/* 4 риски по сторонам */}
-                      <line x1={0} y1={-16} x2={0} y2={-12} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
-                      <line x1={0} y1={12} x2={0} y2={16} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
-                      <line x1={-16} y1={0} x2={-12} y2={0} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
-                      <line x1={12} y1={0} x2={16} y2={0} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={0} y1={-15} x2={0} y2={-11} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={0} y1={11} x2={0} y2={15} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={-15} y1={0} x2={-11} y2={0} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={11} y1={0} x2={15} y2={0} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
                       {/* Точка в центре */}
-                      <circle cx={0} cy={0} r={2} fill="#e0e8f0" opacity={0.9} />
+                      <circle cx={0} cy={0} r={2} fill="#e0e8f0" />
                     </g>
                   )}
                 </g>
@@ -2665,9 +2661,10 @@ export default function TribologyLabPage() {
                 const dist = Math.sqrt((ePos.x - effect.toX) ** 2 + (ePos.y - effect.toY) ** 2);
                 return dist < 50 && e.effects.some(eff => eff.type === 'held');
               });
-              // Базовый размер клетки = max(20, радиус врага * 1.3)
+              // Базовый размер клетки = min(max(20, радиус врага * 1.3), 30)
+              // Максимум 30 чтобы клетка + статус не выходили на карточки
               const enemyRadius = targetEnemy ? ENEMIES[targetEnemy.type].size : 15;
-              const cageHalf = Math.max(20, enemyRadius * 1.3);
+              const cageHalf = Math.min(Math.max(20, enemyRadius * 1.3), 30);
 
               // Анимация "щёлк": scale 1.12 → 1.0 за первые 10%
               const clickPhase = progress < 0.1;

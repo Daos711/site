@@ -669,6 +669,11 @@ export function processModuleAttack(
   const targetConfig = ENEMIES[primaryTarget.type];
   const targetPos = getPositionOnPath(path, primaryTarget.progress, targetConfig.oscillation);
 
+  // Анализатор: прицел держится пока активен эффект marked (3000мс)
+  const effectDuration = module.type === 'analyzer'
+    ? (config.effectDuration || 3000)  // Длительность эффекта marked
+    : config.attackType === 'beam' ? 150 : 300;
+
   const attackEffect: AttackEffect = {
     id: `attack-${module.id}-${currentTime}`,
     type: config.attackType || 'beam',
@@ -679,8 +684,9 @@ export function processModuleAttack(
     toY: targetPos.y,
     color: config.color,
     startTime: currentTime,
-    duration: config.attackType === 'beam' ? 150 : 300,  // beam быстрее
+    duration: effectDuration,
     progress: 0,
+    targetId: primaryTarget.id,  // Для удаления при смерти врага
   };
 
   // Обновляем lastAttack модуля

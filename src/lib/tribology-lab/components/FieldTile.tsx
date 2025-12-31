@@ -53,18 +53,20 @@ export function FieldTile({
       <div className="level-badge">Lv.{level}</div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          LeftRail — статусы (🦠, 🛡️✓)
+          LeftRail — статусы (🦠 коррозия, 🛡️✓ иммунитет)
           ═══════════════════════════════════════════════════════════════ */}
       <div className="left-rail">
+        {/* Коррозия — показывать только на НЕ иммунных модулях */}
         {corrosionStacks > 0 && type !== 'filter' && type !== 'inhibitor' && (
           <div className="status-item corrosion">
             <span className="status-icon">🦠</span>
             <span className="status-count">{corrosionStacks}</span>
           </div>
         )}
-        {corrosionStacks > 0 && type === 'filter' && (
+        {/* Иммунитет — показывать на Фильтре и Ингибиторе когда коррозия рядом */}
+        {corrosionStacks > 0 && (type === 'filter' || type === 'inhibitor') && (
           <div className="status-item immune">
-            {/* Щит с галочкой — иммунитет Фильтра */}
+            {/* Щит с галочкой — иммунитет */}
             <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
               <path
                 d="M7 1 L12 3 L12 7 Q12 11 7 13 Q2 11 2 7 L2 3 Z"
@@ -103,13 +105,14 @@ export function FieldTile({
 
       {/* ═══════════════════════════════════════════════════════════════
           RightRail — атрибуты (баффы: 💧 смазка, 🛡️½ защита)
+          Защита ½ НЕ показывается на иммунных модулях (filter, inhibitor)
           ═══════════════════════════════════════════════════════════════ */}
-      {(isLubricated || isProtected) && (
+      {(isLubricated || (isProtected && type !== 'filter' && type !== 'inhibitor')) && (
         <div className="right-rail">
           {isLubricated && <div className="attribute-item lubed">💧</div>}
-          {isProtected && (
+          {isProtected && type !== 'filter' && type !== 'inhibitor' && (
             <div className="attribute-item protected">
-              {/* Щит с ½ — защита Ингибитора */}
+              {/* Щит с ½ — защита Ингибитора (только для НЕ иммунных) */}
               <svg viewBox="0 0 14 14" width="14" height="14" fill="none">
                 <path
                   d="M7 1 L12 3 L12 7 Q12 11 7 13 Q2 11 2 7 L2 3 Z"

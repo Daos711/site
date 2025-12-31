@@ -26,6 +26,7 @@ export interface AttackEffect {
   startTime: number;
   duration: number;  // мс
   progress: number;  // 0-1 для анимации
+  targetId?: string; // ID врага-цели (для удаления при смерти)
 }
 
 // ==================== МОДУЛИ ====================
@@ -461,7 +462,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 20,
     reward: 25,
     description: 'Мини-босс',
-    size: 30,       // +25%
+    size: 25,       // уменьшен чтобы статусы влезали
     color: '#4a4a4a',  // тёмный металл
     oscillation: 1,
     shape: 'scarred',  // царапины
@@ -475,7 +476,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     speed: 15,
     reward: 75,
     description: 'Регенерация 10 HP/с',
-    size: 40,       // +25%
+    size: 28,       // уменьшен чтобы статусы влезали
     color: '#374151',  // тёмно-серый
     oscillation: 0,
     shape: 'pitted',  // кратеры
