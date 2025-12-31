@@ -615,22 +615,25 @@ export function processModuleAttack(
           }
         }
 
-        // Центрифуга: откат врагов назад
+        // Центрифуга: плавный откат врагов назад
         if (module.type === 'centrifuge') {
           const hasAntiPush = updatedEnemies[index].effects.some(e => e.type === 'antiPush');
-          if (!hasAntiPush) {
+          const hasPushback = updatedEnemies[index].effects.some(e => e.type === 'pushback');
+          if (!hasAntiPush && !hasPushback) {
             const isBoss = target.type.startsWith('boss_');
             const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
 
+            // strength = общий откат (0.04 = 4%), duration = время анимации
             let pushAmount = 0.04;  // 4% назад
             if (isElite) pushAmount = 0.02;
             if (isBoss) pushAmount = 0.008;
 
             updatedEnemies[index] = {
               ...updatedEnemies[index],
-              progress: Math.max(0, updatedEnemies[index].progress - pushAmount),
               effects: [
                 ...updatedEnemies[index].effects,
+                // pushback: strength в процентах * 1000 для точности (40 = 0.04)
+                { type: 'pushback' as EffectType, duration: 400, strength: pushAmount * 1000 },
                 { type: 'antiPush' as EffectType, duration: 2500, strength: 0 }
               ]
             };

@@ -6,7 +6,7 @@ export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultraso
 export type EnemyType = 'dust' | 'abrasive' | 'heat' | 'metal' | 'corrosion' | 'moisture' | 'static' | 'boss_wear' | 'boss_pitting';
 
 export type EffectType = 'slow' | 'burn' | 'marked' | 'coated'
-  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold';
+  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 

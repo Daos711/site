@@ -485,25 +485,59 @@ export function updateEnemy(
   deltaTime: number,
   pathLength: number
 ): Enemy {
+  // Обновляем эффекты (уменьшаем длительность)
+  let updatedEffects = enemy.effects
+    .map(e => ({ ...e, duration: e.duration - deltaTime }))
+    .filter(e => e.duration > 0);
+
+  // Проверяем захват (held) — враг полностью остановлен
+  const heldEffect = updatedEffects.find(e => e.type === 'held');
+  if (heldEffect) {
+    // Если эффект заканчивается, добавляем иммунитет antiHold на 4 секунды
+    if (heldEffect.duration <= 0) {
+      updatedEffects = updatedEffects.filter(e => e.type !== 'held');
+      updatedEffects.push({ type: 'antiHold', duration: 4000, strength: 0 });
+    }
+    return {
+      ...enemy,
+      effects: updatedEffects,
+      // Не двигаемся пока захвачен
+    };
+  }
+
+  // Проверяем откат (pushback) — плавное движение назад
+  const pushbackEffect = updatedEffects.find(e => e.type === 'pushback');
+  let pushbackDelta = 0;
+  if (pushbackEffect && pushbackEffect.strength > 0) {
+    // strength хранит оставшийся откат * 1000 (например 40 = 0.04 = 4%)
+    // Вычисляем сколько откатить за этот кадр
+    const totalPush = pushbackEffect.strength / 1000;  // общий откат
+    const initialDuration = 400;  // начальная длительность эффекта
+    const pushPerMs = totalPush / initialDuration;  // откат за мс
+    pushbackDelta = pushPerMs * deltaTime;
+
+    // Уменьшаем оставшийся откат
+    const newStrength = Math.max(0, pushbackEffect.strength - pushbackDelta * 1000);
+    updatedEffects = updatedEffects.map(e =>
+      e.type === 'pushback' ? { ...e, strength: newStrength } : e
+    );
+  }
+
   // Применяем эффекты замедления
   let speedMultiplier = 1;
-  for (const effect of enemy.effects) {
+  for (const effect of updatedEffects) {
     if (effect.type === 'slow') {
       speedMultiplier *= (1 - effect.strength / 100);
     }
   }
-
-  // Обновляем эффекты (уменьшаем длительность)
-  const updatedEffects = enemy.effects
-    .map(e => ({ ...e, duration: e.duration - deltaTime }))
-    .filter(e => e.duration > 0);
 
   // Вычисляем изменение прогресса
   const speedPerSecond = enemy.speed * speedMultiplier;
   const progressPerSecond = speedPerSecond / pathLength;
   const deltaProgress = progressPerSecond * (deltaTime / 1000);
 
-  let newProgress = enemy.progress + deltaProgress;
+  // Применяем движение вперёд минус откат от pushback
+  let newProgress = enemy.progress + deltaProgress - pushbackDelta;
 
   // Телепорт для Static: каждые 10% прогресса прыгает ещё на +10%
   if (enemy.type === 'static') {
@@ -517,7 +551,7 @@ export function updateEnemy(
 
   return {
     ...enemy,
-    progress: Math.min(1, newProgress),
+    progress: Math.max(0, Math.min(1, newProgress)),
     effects: updatedEffects,
   };
 }

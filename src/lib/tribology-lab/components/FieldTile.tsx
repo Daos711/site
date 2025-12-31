@@ -95,8 +95,7 @@ export function FieldTile({
         </div>
       )}
 
-      {/* Глянец от смазки */}
-      {isLubricated && <div className="lubricant-sheen" />}
+      {/* Убран lubricant-sheen по запросу */}
 
       {/* Аура ингибитора — пульсирующее кольцо защиты */}
       {type === 'inhibitor' && <div className="inhibitor-aura" />}
@@ -345,28 +344,6 @@ export function FieldTile({
           font-size: 11px;
           font-weight: 500;
           color: #9DB0C6;
-        }
-
-        .lubricant-sheen {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            135deg,
-            transparent 30%,
-            rgba(136, 69, 199, 0.15) 45%,
-            rgba(136, 69, 199, 0.25) 50%,
-            rgba(136, 69, 199, 0.15) 55%,
-            transparent 70%
-          );
-          pointer-events: none;
-          border-radius: 12px;
-          animation: sheen-move 3s ease-in-out infinite;
-          z-index: 10;
-        }
-
-        @keyframes sheen-move {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 1; }
         }
 
         /* Аура ингибитора — пульсирующее защитное кольцо */

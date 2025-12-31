@@ -461,14 +461,14 @@ function getAttackTypeName(type?: string): string {
 
 function getModuleFeature(type: ModuleType): string | null {
   switch (type) {
-    case 'inhibitor': return '🛡️ Защита соседей от коррозии';
+    case 'inhibitor': return '🛢️½ Защита соседей от коррозии';
     case 'demulsifier': return '💨 ×2 по мокрым, сушит';
     case 'analyzer': return '🎯 Метка цели +25% урона';
     case 'centrifuge': return '↩️ Отброс врагов назад';
     case 'electrostatic': return '⚡ Цепь на 4 цели';
     case 'barrier': return '⛓ Полная остановка 1.5с';
     case 'lubricant': return '💧 +25% урон соседям';
-    case 'filter': return '🛡️ Иммунитет к коррозии';
+    case 'filter': return '🛡️✓ Иммунитет к коррозии';
     case 'laser': return '🔥 Пробивает насквозь';
     default: return null;
   }

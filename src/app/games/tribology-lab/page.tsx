@@ -1788,81 +1788,103 @@ export default function TribologyLabPage() {
 
 
                 {/* ═══════════════════════════════════════════════════════════════
-                    ИНДИКАТОРЫ ЭФФЕКТОВ С СИЛОЙ
+                    ИНДИКАТОРЫ ЭФФЕКТОВ — КОМПАКТНЫЕ БЕЙДЖИ СПРАВА
+                    Приоритет: held > slow > marked > dry > burn > coated
+                    Максимум 2 видимых + "+N"
                     ═══════════════════════════════════════════════════════════════ */}
-                {enemy.effects.length > 0 && (
-                  <g>
-                    {(() => {
-                      const slowEffect = enemy.effects.find(e => e.type === 'slow');
-                      return slowEffect && (
-                        <g transform={`translate(${size + 8}, ${-size + 5})`}>
-                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(56,189,248,0.25)" />
-                          <text textAnchor="middle" dy={4} fontSize={9} fill="#38bdf8" fontWeight="bold">
-                            ❄️{slowEffect.strength}%
+                {enemy.effects.length > 0 && (() => {
+                  // Собираем активные статусы с приоритетом
+                  const statusList: { type: string; icon: React.ReactNode; color: string }[] = [];
+
+                  // Приоритет 1: Захват (барьер)
+                  if (enemy.effects.find(e => e.type === 'held')) {
+                    statusList.push({ type: 'held', icon: '⛓', color: '#f59e0b' });
+                  }
+                  // Приоритет 2: Заморозка
+                  if (enemy.effects.find(e => e.type === 'slow')) {
+                    statusList.push({ type: 'slow', icon: '❄️', color: '#38bdf8' });
+                  }
+                  // Приоритет 3: Метка
+                  if (enemy.effects.find(e => e.type === 'marked')) {
+                    statusList.push({ type: 'marked', icon: '🎯', color: '#e0e8f0' });
+                  }
+                  // Приоритет 4: Сухость
+                  if (enemy.effects.find(e => e.type === 'dry')) {
+                    statusList.push({
+                      type: 'dry',
+                      icon: (
+                        <svg viewBox="0 0 16 16" width="12" height="12">
+                          <path d="M8 2 Q12 7 12 10 Q12 14 8 14 Q4 14 4 10 Q4 7 8 2 Z" fill="none" stroke="#C9C2B3" strokeWidth="1.5"/>
+                          <line x1="3" y1="3" x2="13" y2="13" stroke="#C9C2B3" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      ),
+                      color: '#C9C2B3'
+                    });
+                  }
+                  // Приоритет 5: Ожог
+                  if (enemy.effects.find(e => e.type === 'burn')) {
+                    statusList.push({ type: 'burn', icon: '🔥', color: '#ef4444' });
+                  }
+                  // Приоритет 6: Покрытие смазкой
+                  if (enemy.effects.find(e => e.type === 'coated')) {
+                    statusList.push({ type: 'coated', icon: '💧', color: '#a855f7' });
+                  }
+
+                  if (statusList.length === 0) return null;
+
+                  const visibleStatuses = statusList.slice(0, 2);
+                  const hiddenCount = statusList.length - 2;
+                  const badgeSize = 18;
+                  const gap = 3;
+                  const anchorX = size + 6;
+                  const anchorY = -size / 2;
+
+                  return (
+                    <g>
+                      {visibleStatuses.map((status, i) => (
+                        <g key={status.type} transform={`translate(${anchorX}, ${anchorY + i * (badgeSize + gap)})`}>
+                          {/* Фон бейджа */}
+                          <rect
+                            x={0} y={-badgeSize/2}
+                            width={badgeSize} height={badgeSize}
+                            rx={4}
+                            fill="rgba(13, 18, 24, 0.75)"
+                            stroke={status.color}
+                            strokeWidth={1.2}
+                            strokeOpacity={0.6}
+                          />
+                          {/* Иконка */}
+                          {typeof status.icon === 'string' ? (
+                            <text x={badgeSize/2} y={1} textAnchor="middle" fontSize={12} dominantBaseline="middle">
+                              {status.icon}
+                            </text>
+                          ) : (
+                            <g transform={`translate(${(badgeSize - 12) / 2}, ${-6})`}>
+                              {status.icon}
+                            </g>
+                          )}
+                        </g>
+                      ))}
+                      {/* "+N" если больше 2 статусов */}
+                      {hiddenCount > 0 && (
+                        <g transform={`translate(${anchorX}, ${anchorY + 2 * (badgeSize + gap)})`}>
+                          <rect
+                            x={0} y={-badgeSize/2}
+                            width={badgeSize} height={badgeSize}
+                            rx={4}
+                            fill="rgba(13, 18, 24, 0.75)"
+                            stroke="#6b7280"
+                            strokeWidth={1}
+                            strokeOpacity={0.5}
+                          />
+                          <text x={badgeSize/2} y={1} textAnchor="middle" fontSize={10} fill="#9ca3af" dominantBaseline="middle" fontWeight="bold">
+                            +{hiddenCount}
                           </text>
                         </g>
-                      );
-                    })()}
-                    {(() => {
-                      const burnEffect = enemy.effects.find(e => e.type === 'burn');
-                      return burnEffect && (
-                        <g transform={`translate(${size + 8}, ${-size + 22})`}>
-                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(239,68,68,0.25)" />
-                          <text textAnchor="middle" dy={4} fontSize={9} fill="#f87171" fontWeight="bold">
-                            🔥{burnEffect.strength}
-                          </text>
-                        </g>
-                      );
-                    })()}
-                    {(() => {
-                      const coatedEffect = enemy.effects.find(e => e.type === 'coated');
-                      return coatedEffect && (
-                        <g transform={`translate(${size + 8}, ${-size + 39})`}>
-                          <rect x={-16} y={-7} width={32} height={14} rx={4} fill="rgba(168,85,247,0.25)" />
-                          <text textAnchor="middle" dy={4} fontSize={9} fill="#a855f7" fontWeight="bold">
-                            💧+{coatedEffect.strength}%
-                          </text>
-                        </g>
-                      );
-                    })()}
-                    {/* Сухость (от Деэмульгатора) */}
-                    {(() => {
-                      const dryEffect = enemy.effects.find(e => e.type === 'dry');
-                      return dryEffect && (
-                        <g transform={`translate(${size + 8}, ${-size + 56})`}>
-                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(212,165,116,0.25)" />
-                          <text textAnchor="middle" dy={4} fontSize={9} fill="#d4a574" fontWeight="bold">
-                            🌵
-                          </text>
-                        </g>
-                      );
-                    })()}
-                    {/* Метка (от Анализатора) */}
-                    {(() => {
-                      const markedEffect = enemy.effects.find(e => e.type === 'marked');
-                      return markedEffect && (
-                        <g transform={`translate(${size + 8}, ${-size + 73})`}>
-                          <rect x={-16} y={-7} width={32} height={14} rx={4} fill="rgba(224,232,240,0.25)" />
-                          <text textAnchor="middle" dy={4} fontSize={9} fill="#e0e8f0" fontWeight="bold">
-                            🎯+{markedEffect.strength}%
-                          </text>
-                        </g>
-                      );
-                    })()}
-                    {/* Захват (от Барьера) */}
-                    {(() => {
-                      const heldEffect = enemy.effects.find(e => e.type === 'held');
-                      return heldEffect && (
-                        <g transform={`translate(${size + 8}, ${-size + 90})`}>
-                          <rect x={-14} y={-7} width={28} height={14} rx={4} fill="rgba(245,158,11,0.25)" />
-                          <text textAnchor="middle" dy={4} fontSize={9} fill="#f59e0b" fontWeight="bold">
-                            ⛓
-                          </text>
-                        </g>
-                      );
-                    })()}
-                  </g>
-                )}
+                      )}
+                    </g>
+                  );
+                })()}
 
               </g>
             );
@@ -2409,77 +2431,128 @@ export default function TribologyLabPage() {
               );
             }
 
-            // АНАЛИЗАТОР — скан-пинг
+            // АНАЛИЗАТОР — скан-пинг (3 этапа)
             if (effect.moduleType === 'analyzer') {
-              const scanProgress = progress < 0.5 ? progress * 2 : 1;
-              const flashProgress = progress > 0.4 ? (progress - 0.4) / 0.6 : 0;
+              // Фаза 1: 0-0.12 - тонкая линия на цель
+              // Фаза 2: 0.12-0.30 - скан-линия по врагу
+              // Фаза 3: 0.30+ - прицел
+              const phase1End = 0.12;
+              const phase2End = 0.30;
 
               return (
                 <g key={effect.id}>
-                  {/* Линия сканирования */}
-                  {progress < 0.6 && (
+                  {/* Фаза 1: Тонкая линия к цели */}
+                  {progress < phase1End && (
                     <line
                       x1={effect.fromX}
                       y1={effect.fromY}
-                      x2={effect.fromX + (effect.toX - effect.fromX) * scanProgress}
-                      y2={effect.fromY + (effect.toY - effect.fromY) * scanProgress}
+                      x2={effect.fromX + (effect.toX - effect.fromX) * (progress / phase1End)}
+                      y2={effect.fromY + (effect.toY - effect.fromY) * (progress / phase1End)}
                       stroke="#e0e8f0"
                       strokeWidth={2}
-                      opacity={0.8 - progress}
+                      opacity={0.8}
+                      strokeLinecap="round"
                     />
                   )}
-                  {/* Прицел на враге */}
-                  {progress > 0.3 && (
-                    <g transform={`translate(${effect.toX}, ${effect.toY})`} opacity={1 - flashProgress * 0.8}>
+                  {/* Фаза 2: Скан-линия проезжает по врагу */}
+                  {progress >= phase1End && progress < phase2End && (() => {
+                    const scanT = (progress - phase1End) / (phase2End - phase1End);
+                    const scanOffset = -15 + scanT * 30; // от -15 до +15
+                    return (
+                      <g transform={`translate(${effect.toX}, ${effect.toY})`}>
+                        {/* Основная скан-линия */}
+                        <line
+                          x1={scanOffset}
+                          y1={-18}
+                          x2={scanOffset}
+                          y2={18}
+                          stroke="#e0e8f0"
+                          strokeWidth={2.5}
+                          opacity={0.9}
+                          strokeLinecap="round"
+                        />
+                        {/* Призрак */}
+                        <line
+                          x1={scanOffset - 4}
+                          y1={-16}
+                          x2={scanOffset - 4}
+                          y2={16}
+                          stroke="#e0e8f0"
+                          strokeWidth={1.5}
+                          opacity={0.35}
+                          strokeLinecap="round"
+                        />
+                      </g>
+                    );
+                  })()}
+                  {/* Фаза 3: Прицел остаётся */}
+                  {progress >= phase2End && (
+                    <g transform={`translate(${effect.toX}, ${effect.toY})`} opacity={1 - (progress - phase2End) * 1.2}>
                       {/* Круг прицела */}
-                      <circle cx={0} cy={0} r={12 + flashProgress * 5} fill="none" stroke="#e0e8f0" strokeWidth={1.5} />
-                      {/* Перекрестие */}
-                      <line x1={0} y1={-18} x2={0} y2={-8} stroke="#e0e8f0" strokeWidth={1.5} />
-                      <line x1={0} y1={8} x2={0} y2={18} stroke="#e0e8f0" strokeWidth={1.5} />
-                      <line x1={-18} y1={0} x2={-8} y2={0} stroke="#e0e8f0" strokeWidth={1.5} />
-                      <line x1={8} y1={0} x2={18} y2={0} stroke="#e0e8f0" strokeWidth={1.5} />
-                      {/* Вспышка в центре */}
-                      <circle cx={0} cy={0} r={4 + flashProgress * 8} fill="#e0e8f0" opacity={0.6 - flashProgress * 0.6} />
+                      <circle cx={0} cy={0} r={10} fill="none" stroke="#e0e8f0" strokeWidth={1.5} />
+                      {/* 4 риски по сторонам */}
+                      <line x1={0} y1={-16} x2={0} y2={-12} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={0} y1={12} x2={0} y2={16} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={-16} y1={0} x2={-12} y2={0} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      <line x1={12} y1={0} x2={16} y2={0} stroke="#e0e8f0" strokeWidth={2} strokeLinecap="round" />
+                      {/* Точка в центре */}
+                      <circle cx={0} cy={0} r={2} fill="#e0e8f0" opacity={0.9} />
                     </g>
                   )}
                 </g>
               );
             }
 
-            // ЦЕНТРИФУГА — кольцевой импульс отброса
+            // ЦЕНТРИФУГА — ударный импульс
             if (effect.moduleType === 'centrifuge') {
               const dx = effect.toX - effect.fromX;
               const dy = effect.toY - effect.fromY;
-              const angle = Math.atan2(dy, dx);
+              const pushAngle = Math.atan2(dy, dx) + Math.PI; // назад от модуля
+              const enemyRadius = 15;
 
               return (
-                <g key={effect.id} opacity={1 - progress * 0.7}>
-                  {/* Кольцо импульса на враге */}
+                <g key={effect.id}>
+                  {/* Ударное кольцо расширяется */}
                   <circle
                     cx={effect.toX}
                     cy={effect.toY}
-                    r={15 + progress * 25}
+                    r={enemyRadius * 1.1 + progress * enemyRadius * 0.6}
                     fill="none"
                     stroke="#FF9F43"
-                    strokeWidth={3 - progress * 2}
+                    strokeWidth={3}
+                    opacity={0.7 - progress * 0.7}
                   />
-                  {/* Линии отброса (назад от направления) */}
-                  {[-0.3, 0, 0.3].map((offset, i) => {
-                    const lineAngle = angle + Math.PI + offset;
-                    const startX = effect.toX + Math.cos(lineAngle) * 10;
-                    const startY = effect.toY + Math.sin(lineAngle) * 10;
-                    const endX = effect.toX + Math.cos(lineAngle) * (25 + progress * 20);
-                    const endY = effect.toY + Math.sin(lineAngle) * (25 + progress * 20);
+                  {/* Линии движения назад */}
+                  {[-0.25, 0, 0.25].map((offset, i) => {
+                    const lineAngle = pushAngle + offset;
+                    const len = 12 + (1 - i % 2) * 4;
+                    const dist = enemyRadius + 8 + progress * 15;
                     return (
                       <line
                         key={i}
-                        x1={startX}
-                        y1={startY}
-                        x2={endX}
-                        y2={endY}
+                        x1={effect.toX + Math.cos(lineAngle) * dist}
+                        y1={effect.toY + Math.sin(lineAngle) * dist}
+                        x2={effect.toX + Math.cos(lineAngle) * (dist + len)}
+                        y2={effect.toY + Math.sin(lineAngle) * (dist + len)}
                         stroke="#FF9F43"
-                        strokeWidth={2 - i * 0.3}
-                        opacity={0.7 - progress * 0.5}
+                        strokeWidth={2.5}
+                        strokeLinecap="round"
+                        opacity={0.6 - progress * 0.5}
+                      />
+                    );
+                  })}
+                  {/* Микро-частицы по дуге */}
+                  {[0, 0.5, 1, 1.5, 2].map((n) => {
+                    const a = pushAngle - 0.5 + n * 0.25;
+                    const r = enemyRadius * 1.3 + progress * 10;
+                    return (
+                      <circle
+                        key={n}
+                        cx={effect.toX + Math.cos(a) * r}
+                        cy={effect.toY + Math.sin(a) * r}
+                        r={1.5 + (n % 2)}
+                        fill="#FF9F43"
+                        opacity={0.45 - progress * 0.4}
                       />
                     );
                   })}
@@ -2539,32 +2612,56 @@ export default function TribologyLabPage() {
               );
             }
 
-            // БАРЬЕР — клетка-захват
+            // БАРЬЕР — клетка-зажим с "щёлк"
             if (effect.moduleType === 'barrier') {
-              const scale = progress < 0.2 ? 0.8 + progress : 1;
+              // Анимация "щёлк": scale 1.12 → 1.0 за первые 10%
+              const clickPhase = progress < 0.1;
+              const scale = clickPhase ? 1.12 - progress * 1.2 : 1;
+              // Плавное затухание в конце
               const fadeOut = progress > 0.7 ? (1 - progress) / 0.3 : 1;
+              // "Дыхание" клетки при удержании
+              const breathe = Math.sin(progress * Math.PI * 6) * 0.08 + 1;
+              const finalScale = clickPhase ? scale : breathe;
 
               return (
                 <g key={effect.id} transform={`translate(${effect.toX}, ${effect.toY})`} opacity={fadeOut}>
-                  {/* Внешняя рамка */}
+                  {/* Внешняя рамка (rounded rect) */}
                   <rect
-                    x={-18 * scale}
-                    y={-18 * scale}
-                    width={36 * scale}
-                    height={36 * scale}
+                    x={-20 * finalScale}
+                    y={-20 * finalScale}
+                    width={40 * finalScale}
+                    height={40 * finalScale}
                     fill="none"
                     stroke="#f59e0b"
-                    strokeWidth={2}
-                    rx={4}
+                    strokeWidth={3}
+                    rx={5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                  {/* Перемычки */}
-                  <line x1={-18 * scale} y1={0} x2={18 * scale} y2={0} stroke="#f59e0b" strokeWidth={1.5} opacity={0.7} />
-                  <line x1={0} y1={-18 * scale} x2={0} y2={18 * scale} stroke="#f59e0b" strokeWidth={1.5} opacity={0.7} />
-                  {/* Уголки усиления */}
-                  <path d={`M${-18 * scale},${-18 * scale} L${-12 * scale},${-18 * scale} M${-18 * scale},${-18 * scale} L${-18 * scale},${-12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
-                  <path d={`M${18 * scale},${-18 * scale} L${12 * scale},${-18 * scale} M${18 * scale},${-18 * scale} L${18 * scale},${-12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
-                  <path d={`M${-18 * scale},${18 * scale} L${-12 * scale},${18 * scale} M${-18 * scale},${18 * scale} L${-18 * scale},${12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
-                  <path d={`M${18 * scale},${18 * scale} L${12 * scale},${18 * scale} M${18 * scale},${18 * scale} L${18 * scale},${12 * scale}`} stroke="#f59e0b" strokeWidth={3} />
+                  {/* Вертикальные перемычки (решётка) */}
+                  <line x1={-7 * finalScale} y1={-20 * finalScale} x2={-7 * finalScale} y2={20 * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
+                  <line x1={7 * finalScale} y1={-20 * finalScale} x2={7 * finalScale} y2={20 * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
+                  {/* Горизонтальная полоса */}
+                  <line x1={-20 * finalScale} y1={0} x2={20 * finalScale} y2={0} stroke="#f59e0b" strokeWidth={2} opacity={0.5} strokeLinecap="round" />
+                  {/* Маркер STOP — две вертикальные полоски || над клеткой */}
+                  <g transform={`translate(0, ${-28 * finalScale})`} opacity={0.8}>
+                    <line x1={-4} y1={-5} x2={-4} y2={5} stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
+                    <line x1={4} y1={-5} x2={4} y2={5} stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
+                  </g>
+                  {/* Вспышка при "щёлк" */}
+                  {clickPhase && (
+                    <rect
+                      x={-22}
+                      y={-22}
+                      width={44}
+                      height={44}
+                      fill="none"
+                      stroke="#fde047"
+                      strokeWidth={2}
+                      rx={6}
+                      opacity={1 - progress * 10}
+                    />
+                  )}
                 </g>
               );
             }
