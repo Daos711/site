@@ -166,7 +166,7 @@ export function FieldTile({
 
         .level-badge {
           position: absolute;
-          top: 6px;
+          top: 4px;
           right: 16px;
           font-size: 9px;
           font-weight: 600;
