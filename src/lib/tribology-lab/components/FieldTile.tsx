@@ -168,12 +168,12 @@ export function FieldTile({
           position: absolute;
           top: 6px;
           right: 16px;
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 600;
-          padding: 2px 6px;
+          padding: 1px 4px;
           background: var(--module-dark);
           border: 1px solid var(--module-accent);
-          border-radius: 4px;
+          border-radius: 3px;
           color: var(--module-accent);
           z-index: 15;
         }
