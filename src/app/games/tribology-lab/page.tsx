@@ -55,6 +55,22 @@ const MODULE_GRADIENTS: Record<ModuleType, { bg: string; border: string }> = {
   barrier: { bg: 'linear-gradient(145deg, #FFD166 0%, #b5923a 100%)', border: '#ffe08c' },
 };
 
+// Русские сокращения модулей для DEV-панели
+const DEV_MODULE_CODES_RU: Record<ModuleType, string> = {
+  magnet: 'СЕП',      // Сепаратор
+  cooler: 'КРИ',      // Криоблок
+  filter: 'ФИЛ',      // Фильтр
+  lubricant: 'СМА',   // Смазка
+  ultrasonic: 'УЗВ',  // Ультразвук
+  laser: 'ЛАЗ',       // Лазер
+  inhibitor: 'ИНГ',   // Ингибитор
+  demulsifier: 'ДЕМ', // Демульгатор
+  analyzer: 'АНА',    // Анализатор
+  centrifuge: 'ЦЕН',  // Центрифуга
+  electrostatic: 'ЭЛС', // Электростатик
+  barrier: 'БАР',     // Барьер
+};
+
 interface DragState {
   type: 'shop' | 'field';
   shopIndex?: number;
@@ -244,6 +260,10 @@ export default function TribologyLabPage() {
 
   // DEV: Спавн врага вне волны
   const devSpawnEnemy = useCallback((type: EnemyType, count: number = 1) => {
+    // Автоматически запускаем волну, чтобы враги двигались
+    if (gamePhase !== 'wave') {
+      setGamePhase('wave');
+    }
     const newEnemies: Enemy[] = [];
     for (let i = 0; i < count; i++) {
       const enemy = createEnemy(type, wave);
@@ -253,7 +273,7 @@ export default function TribologyLabPage() {
     }
     setEnemies(prev => [...prev, ...newEnemies]);
     enemiesRef.current = [...enemiesRef.current, ...newEnemies];
-  }, [wave]);
+  }, [wave, gamePhase]);
 
   // DEV: Установка модуля на поле
   const devPlaceModule = useCallback((x: number, y: number) => {
@@ -2402,13 +2422,12 @@ export default function TribologyLabPage() {
             <div className="grid grid-cols-4 gap-2">
               {(Object.keys(MODULES) as ModuleType[]).map(type => {
                 const isSelected = selectedDevModule === type;
-                const code = MODULE_CODES[type];
                 return (
                   <button
                     key={type}
                     onClick={() => setSelectedDevModule(isSelected ? null : type)}
                     className={`
-                      p-2 rounded-lg text-xs font-mono transition-all
+                      p-2 rounded-lg text-xs font-bold transition-all
                       ${isSelected
                         ? 'bg-cyan-500/30 border-2 border-cyan-400 text-cyan-300'
                         : 'bg-gray-800 border border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-white'
@@ -2416,7 +2435,7 @@ export default function TribologyLabPage() {
                     `}
                     title={MODULES[type].name}
                   >
-                    {code.split('-')[0]}
+                    {DEV_MODULE_CODES_RU[type]}
                   </button>
                 );
               })}
