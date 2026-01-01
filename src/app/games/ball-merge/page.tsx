@@ -429,6 +429,15 @@ export default function BallMergePage() {
           const bodyA = pair.bodyA as MatterBody;
           const bodyB = pair.bodyB as MatterBody;
 
+          // FIX: Помечаем шар как "в игре" при любом столкновении
+          // (со стенкой, дном или другим шаром)
+          if (bodyA.ballLevel !== undefined && !bodyA.hasEnteredContainer) {
+            bodyA.hasEnteredContainer = true;
+          }
+          if (bodyB.ballLevel !== undefined && !bodyB.hasEnteredContainer) {
+            bodyB.hasEnteredContainer = true;
+          }
+
           // Слияние только одинаковых шаров
           if (
             bodyA.ballLevel !== undefined &&
