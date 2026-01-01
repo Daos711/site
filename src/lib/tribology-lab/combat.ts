@@ -682,11 +682,44 @@ export function processModuleAttack(
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
-    // 2. Проверяем есть ли враги в радиусе модуля
-    const enemiesInRange = enemies.filter(e => e.hp > 0 && isInRange(module, e, path));
+    // 2. Проверяем есть ли враги которые:
+    //    - Ещё НЕ ПРОШЛИ барьер (их позиция ДО барьера по направлению движения)
+    //    - Близко к барьеру (< 60 пикселей)
+    const enemiesReadyForBarrier = enemies.filter(e => {
+      if (e.hp <= 0) return false;
 
-    if (enemiesInRange.length === 0) {
-      // Никто не в радиусе модуля — не активируем
+      const enemyConfig = ENEMIES[e.type];
+      const enemyPos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
+
+      // Для левого канала (module.x === 0): враг идёт СНИЗУ ВВЕРХ
+      // Враг должен быть НИЖЕ барьера (enemyPos.y > barrierPos.y) и близко
+      if (module.x === 0) {
+        const isBeforeBarrier = enemyPos.y > barrierPos.y;
+        const isClose = Math.abs(enemyPos.y - barrierPos.y) < 60;
+        return isBeforeBarrier && isClose;
+      }
+
+      // Для правого канала (module.x === GRID_COLS-1): враг идёт СВЕРХУ ВНИЗ
+      // Враг должен быть ВЫШЕ барьера (enemyPos.y < barrierPos.y) и близко
+      if (module.x === GRID_COLS - 1) {
+        const isBeforeBarrier = enemyPos.y < barrierPos.y;
+        const isClose = Math.abs(enemyPos.y - barrierPos.y) < 60;
+        return isBeforeBarrier && isClose;
+      }
+
+      // Для верхнего канала (module.y === 0): враг идёт СЛЕВА НАПРАВО
+      // Враг должен быть ЛЕВЕЕ барьера (enemyPos.x < barrierPos.x) и близко
+      if (module.y === 0) {
+        const isBeforeBarrier = enemyPos.x < barrierPos.x;
+        const isClose = Math.abs(enemyPos.x - barrierPos.x) < 60;
+        return isBeforeBarrier && isClose;
+      }
+
+      return false;
+    });
+
+    if (enemiesReadyForBarrier.length === 0) {
+      // Никто не подошёл к барьеру — не активируем
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
@@ -702,7 +735,7 @@ export function processModuleAttack(
       duration: baseDuration,
       maxDuration: baseDuration,
       createdAt: currentTime,
-      bossPresure: enemiesInRange.some(e => e.type.startsWith('boss_')),
+      bossPresure: enemiesReadyForBarrier.some(e => e.type.startsWith('boss_')),
       isHorizontal: barrierPos.isHorizontal,
     };
 

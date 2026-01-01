@@ -449,31 +449,59 @@ export default function TribologyLabPage() {
         updated = updated.map(enemy => {
           const enemyConfig = ENEMIES[enemy.type as EnemyType];
           const enemyPos = getPositionOnPath(enemyPath, enemy.progress, enemyConfig.oscillation);
+          const enemyRadius = enemyConfig.size / 2;
 
           for (const barrier of currentBarriers) {
             if (barrier.duration <= 0) continue;
 
-            // Расстояние от врага до барьера (в пикселях)
+            // Расстояние от ЦЕНТРА врага до барьера
             const distToBarrier = Math.sqrt(
               Math.pow(enemyPos.x - barrier.x, 2) +
               Math.pow(enemyPos.y - barrier.y, 2)
             );
 
-            // Блокируем если враг рядом с барьером (< 35 пикселей)
-            if (distToBarrier < 35) {
-              // Определяем длительность блока для этого типа врага
+            // Определяем направление движения и позицию относительно барьера
+            let isBeforeBarrier: boolean;
+            let distanceAlongPath: number;
+
+            if (barrier.isHorizontal) {
+              // Горизонтальный барьер (на вертикальном канале)
+              distanceAlongPath = enemyPos.y - barrier.y;
+              // Левый канал (x < 200): враг идёт вверх (y уменьшается), "до барьера" = y > barrier.y
+              // Правый канал: враг идёт вниз (y увеличивается), "до барьера" = y < barrier.y
+              const isLeftChannel = barrier.x < 200;
+              isBeforeBarrier = isLeftChannel ? (distanceAlongPath > 0) : (distanceAlongPath < 0);
+            } else {
+              // Вертикальный барьер (на горизонтальном канале, верхний)
+              // Враг идёт слева направо, "до барьера" = x < barrier.x
+              distanceAlongPath = enemyPos.x - barrier.x;
+              isBeforeBarrier = distanceAlongPath < 0;
+            }
+
+            // Блокируем если враг близко к барьеру (< 20 пикселей)
+            if (distToBarrier < 20) {
+              // Определяем длительность блока для типа врага
               let blockMultiplier = 1.0;
               if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
               else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) blockMultiplier = 0.7;
 
-              // Блокируем если барьер ещё действует для этого типа врага
               const remainingRatio = barrier.duration / barrier.maxDuration;
               if (remainingRatio > (1 - blockMultiplier)) {
-                // Враг упирается в барьер — чуть "пружинит" назад
-                return {
-                  ...enemy,
-                  progress: Math.max(0, enemy.progress - 0.0005),
-                };
+                // Если враг уже ПРОШЁЛ барьер (центр за барьером) — выталкиваем вперёд
+                if (!isBeforeBarrier && Math.abs(distanceAlongPath) < enemyRadius) {
+                  return {
+                    ...enemy,
+                    progress: enemy.progress + 0.002,
+                  };
+                }
+
+                // Если враг ДО барьера — останавливаем с микро-откатом для "пружинки"
+                if (isBeforeBarrier) {
+                  return {
+                    ...enemy,
+                    progress: Math.max(0, enemy.progress - 0.0003),
+                  };
+                }
               }
             }
           }
