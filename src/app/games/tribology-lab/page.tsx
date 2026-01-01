@@ -3128,7 +3128,7 @@ export default function TribologyLabPage() {
             const materializeProgress = Math.min(1, progress / 0.06);
 
             // Длина мембраны (внутри канала, не пересекает бортики)
-            const membraneLength = (conveyorWidth - 6) * materializeProgress;
+            const membraneLength = (conveyorWidth - 10) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;
