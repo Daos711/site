@@ -447,11 +447,6 @@ function getEffectCap(effectType: EffectType, enemyType: EnemyType): number {
       if (isBoss) return 50;      // Боссы: max 50% slow
       if (isElite) return 60;     // Элиты: max 60% slow
       return 75;                   // Обычные: max 75% slow
-    case 'viscous':
-      // Вязкость от Деэмульгатора — слабее slow, но работает на всех
-      if (isBoss) return 30;      // Боссы: max 30% viscous
-      if (isElite) return 35;     // Элиты: max 35% viscous
-      return 40;                   // Обычные: max 40% viscous
     case 'coated':
       if (isBoss) return 25;      // Боссы: max +25% урона
       if (isElite) return 35;     // Элиты: max +35% урона

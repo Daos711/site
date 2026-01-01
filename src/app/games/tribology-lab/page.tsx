@@ -262,10 +262,6 @@ export default function TribologyLabPage() {
       }
     }
 
-    // Аванс: 50% награды при старте волны
-    const upfrontReward = Math.floor(config.reward * 0.5);
-    setGold(prev => prev + upfrontReward);
-
     spawnedIdsRef.current.clear(); // Сбрасываем отслеживание
     pauseTimeRef.current = 0;      // Сбрасываем время паузы
     pauseStartRef.current = 0;     // Сбрасываем начало паузы
@@ -283,9 +279,7 @@ export default function TribologyLabPage() {
   const endWave = useCallback(() => {
     const config = getWaveConfig(wave);
     const nextWave = wave + 1;
-    // Оставшиеся 50% награды (50% уже выданы при старте)
-    const completionReward = config.reward - Math.floor(config.reward * 0.5);
-    setGold(prev => prev + completionReward);
+    setGold(prev => prev + config.reward);
     setWave(nextWave);
     setGamePhase('preparing');
     enemiesRef.current = [];
@@ -2188,10 +2182,6 @@ export default function TribologyLabPage() {
                   // Приоритет 6: Покрытие смазкой
                   if (enemy.effects.find(e => e.type === 'coated')) {
                     statusList.push({ type: 'coated', icon: '💧', color: '#a855f7' });
-                  }
-                  // Приоритет 7: Вязкость (viscous) от Деэмульгатора
-                  if (enemy.effects.find(e => e.type === 'viscous')) {
-                    statusList.push({ type: 'viscous', icon: '🫠', color: '#A7E8C2' });
                   }
 
                   if (statusList.length === 0) return null;

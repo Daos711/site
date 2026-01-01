@@ -6,7 +6,7 @@ export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultraso
 export type EnemyType = 'dust' | 'abrasive' | 'heat' | 'metal' | 'corrosion' | 'moisture' | 'static' | 'boss_wear' | 'boss_pitting';
 
 export type EffectType = 'slow' | 'burn' | 'marked' | 'coated'
-  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback' | 'viscous';
+  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 
@@ -156,22 +156,14 @@ export function getEffectStrength(baseStrength: number, level: number): number {
 }
 
 // Формула HP врагов:
-// Волны 1-5: HP = baseHp × 1.06^(wave-1) — мягкий рост
-// Волны 6-20: HP = base5 × 1.12^(wave-5) — нормальный рост
-// Волны 21+: HP = base20 × 1.09^(wave-20) — замедленный рост
+// До волны 20: HP = baseHp × 1.12^(wave-1)
+// После волны 20: HP = baseHp × 1.12^19 × 1.09^(wave-20)
 export function getEnemyHp(baseHp: number, wave: number): number {
-  if (wave <= 5) {
-    // Волны 1-5: мягкий рост +6% за волну
-    return Math.floor(baseHp * Math.pow(1.06, wave - 1));
-  }
   if (wave <= 20) {
-    // Волны 6-20: нормальный рост +12% за волну (от базы 5-й волны)
-    const base5 = Math.pow(1.06, 4);
-    return Math.floor(baseHp * base5 * Math.pow(1.12, wave - 5));
+    return Math.floor(baseHp * Math.pow(1.12, wave - 1));
   }
-  // Волны 21+: замедленный рост +9%
-  const base5 = Math.pow(1.06, 4);
-  const base20 = base5 * Math.pow(1.12, 15);
+  // После 20: замедляем рост экспоненты
+  const base20 = Math.pow(1.12, 19);
   const extra = Math.pow(1.09, wave - 20);
   return Math.floor(baseHp * base20 * extra);
 }
@@ -190,12 +182,12 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     icon: '🧲',
     basePrice: 40,
     baseDamage: 12,
-    range: 170,       // было 150, баф радиуса
+    range: 150,
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
-    description: 'x1.5 по металлу, x1.3 по пыли',
+    description: 'x1.5 урона, замедляет металл',
     attackType: 'beam',
-    tagBonuses: { metal: 1.5, dusty: 1.3 },  // +50% по металлу, +30% по пыли
+    tagBonuses: { metal: 1.5 },  // +50% по металлу
   },
   cooler: {
     id: 'cooler',
@@ -292,16 +284,16 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'demulsifier',
     name: 'Деэмульгатор',
     icon: '🧪',
-    basePrice: 70,     // было 90
-    baseDamage: 15,    // было 9
-    range: 160,
-    attackSpeed: 1.1,
+    basePrice: 90,
+    baseDamage: 9,
+    range: 180,
+    attackSpeed: 0.8,
     color: '#A7E8C2',
-    description: 'x2 по влаге, замедляет всех на 20%',
+    description: 'x2 по влаге, снимает иммунитет к slow',
     attackType: 'projectile',
-    effectType: 'viscous',  // НОВЫЙ эффект — игнорирует slow immunity
+    effectType: 'dry',
     effectDuration: 2500,
-    effectStrength: 20,     // 20% замедление
+    effectStrength: 50,
     tagBonuses: { wet: 2.0 },
   },
   analyzer: {

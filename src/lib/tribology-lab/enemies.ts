@@ -242,29 +242,29 @@ export function getWaveConfig(waveNumber: number): WaveConfig {
       break;
 
     case 2:
-      enemies.push({ type: 'dust', count: 8 });
-      spawnInterval = 1600;
-      break;
-
-    case 3:
-      enemies.push({ type: 'dust', count: 8 });
-      enemies.push({ type: 'abrasive', count: 1, delay: 3000 });
+      enemies.push({ type: 'dust', count: 10 });
       spawnInterval = 1400;
       break;
 
-    case 4:
+    case 3:
       enemies.push({ type: 'dust', count: 10 });
-      enemies.push({ type: 'abrasive', count: 2, delay: 2000 });
-      enemies.push({ type: 'heat', count: 1, delay: 4000 });
+      enemies.push({ type: 'abrasive', count: 2, delay: 3000 });
       spawnInterval = 1300;
       break;
 
-    case 5: // ★ БОСС
-      enemies.push({ type: 'dust', count: 6 });
-      enemies.push({ type: 'abrasive', count: 2 });
-      enemies.push({ type: 'heat', count: 1, delay: 3000 });
-      enemies.push({ type: 'boss_wear', count: 1, delay: 6000 });
+    case 4:
+      enemies.push({ type: 'dust', count: 12 });
+      enemies.push({ type: 'abrasive', count: 4, delay: 2000 });
+      enemies.push({ type: 'heat', count: 2, delay: 4000 });
       spawnInterval = 1200;
+      break;
+
+    case 5: // ★ БОСС
+      enemies.push({ type: 'dust', count: 8 });
+      enemies.push({ type: 'abrasive', count: 4 });
+      enemies.push({ type: 'heat', count: 2, delay: 3000 });
+      enemies.push({ type: 'boss_wear', count: 1, delay: 6000 });
+      spawnInterval = 1100;
       break;
 
     case 6:
@@ -527,10 +527,6 @@ export function updateEnemy(
   let speedMultiplier = 1;
   for (const effect of updatedEffects) {
     if (effect.type === 'slow') {
-      speedMultiplier *= (1 - effect.strength / 100);
-    }
-    // Viscous (вязкость) — замедление, игнорирующее иммунитет к slow
-    if (effect.type === 'viscous') {
       speedMultiplier *= (1 - effect.strength / 100);
     }
   }
