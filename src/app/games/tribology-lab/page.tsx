@@ -140,6 +140,9 @@ export default function TribologyLabPage() {
   const [devMode, setDevMode] = useState(false);
   const [selectedDevModule, setSelectedDevModule] = useState<ModuleType | null>(null);
 
+  // Тестовая колода для ручного тестирования баланса (?deck=...)
+  const [testDeck, setTestDeck] = useState<ModuleType[] | null>(null);
+
   // Размеры
   const cellSize = 110;
   const cellGap = 14;
@@ -267,10 +270,19 @@ export default function TribologyLabPage() {
     setEnemies([]);
     setSpawnQueue([]);
     // Обновляем магазин — новые модули разблокируются с волнами
-    setShop(generateShopSlots(nextWave));
+    if (testDeck) {
+      // Для тестовой колоды — рандомим только из неё
+      const slots: ModuleType[] = [];
+      for (let i = 0; i < 6; i++) {
+        slots.push(testDeck[Math.floor(Math.random() * testDeck.length)]);
+      }
+      setShop(slots);
+    } else {
+      setShop(generateShopSlots(nextWave));
+    }
     // Запускаем обратный отсчёт до следующей волны (10 сек)
     setNextWaveCountdown(10);
-  }, [wave]);
+  }, [wave, testDeck]);
 
   // Автостарт следующей волны
   useEffect(() => {
@@ -306,6 +318,28 @@ export default function TribologyLabPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Парсинг URL параметра ?deck= для тестовой колоды
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const deckParam = params.get('deck');
+    if (deckParam) {
+      const validModules = Object.keys(MODULES) as ModuleType[];
+      const modules = deckParam.split(',').filter(m =>
+        validModules.includes(m as ModuleType)
+      ) as ModuleType[];
+      if (modules.length > 0) {
+        setTestDeck(modules);
+        // Сразу обновляем магазин для тестовой колоды
+        const testShop: ModuleType[] = [];
+        for (let i = 0; i < 6; i++) {
+          testShop.push(modules[Math.floor(Math.random() * modules.length)]);
+        }
+        setShop(testShop);
+        console.log('🎯 Тестовая колода:', modules);
+      }
+    }
   }, []);
 
   // DEV: Спавн врага вне волны
@@ -837,6 +871,25 @@ export default function TribologyLabPage() {
           animation: merge 0.4s ease-out, mergeGlow 0.4s ease-out;
         }
       `}</style>
+
+      {/* Индикатор тестовой колоды */}
+      {testDeck && (
+        <div style={{
+          position: 'fixed',
+          top: 10,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(234, 179, 8, 0.9)',
+          color: '#000',
+          padding: '4px 12px',
+          borderRadius: 4,
+          fontSize: 12,
+          fontWeight: 600,
+          zIndex: 1000,
+        }}>
+          🧪 ТЕСТ: {testDeck.join(', ')}
+        </div>
+      )}
 
       <h1 className="text-3xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
 
@@ -2939,7 +2992,16 @@ export default function TribologyLabPage() {
                   setModules([]);
                   setEnemies([]);
                   setSpawnQueue([]);
-                  setShop(INITIAL_SHOP);
+                  // Магазин: тестовая колода или стандартный
+                  if (testDeck) {
+                    const slots: ModuleType[] = [];
+                    for (let i = 0; i < 6; i++) {
+                      slots.push(testDeck[Math.floor(Math.random() * testDeck.length)]);
+                    }
+                    setShop(slots);
+                  } else {
+                    setShop(INITIAL_SHOP);
+                  }
                   setGameStarted(false);
                   setNextWaveCountdown(0);
                   spawnedIdsRef.current.clear();
