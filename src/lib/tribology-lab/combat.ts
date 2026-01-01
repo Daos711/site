@@ -66,7 +66,7 @@ export function getBarrierPosition(
   path: PathPoint[]
 ): { x: number; y: number; isHorizontal: boolean } | null {
   const modulePos = getModulePosition(module);
-  const channelCenterOffset = CONVEYOR_WIDTH / 2 + 2;
+  const channelCenterOffset = CONVEYOR_WIDTH / 2 + 4;
 
   const gridWidth = GRID_COLS * CELL_SIZE + (GRID_COLS - 1) * CELL_GAP;
   const totalWidth = gridWidth + PANEL_PADDING * 2 + CONVEYOR_WIDTH * 2;

@@ -3128,7 +3128,7 @@ export default function TribologyLabPage() {
             const materializeProgress = Math.min(1, progress / 0.06);
 
             // Длина мембраны (внутри канала, не пересекает бортики)
-            const membraneLength = (conveyorWidth - 10) * materializeProgress;
+            const membraneLength = (conveyorWidth - 14) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;
@@ -3195,15 +3195,14 @@ export default function TribologyLabPage() {
                   opacity={0.9}
                 />
 
-                {/* Линии течения внутри плёнки */}
+                {/* Линии течения внутри плёнки — симметрично по длине */}
                 {[0.2, 0.4, 0.6, 0.8].map((pos, i) => {
-                  const flowPos = (pos + progress * 1.5) % 1;
                   const fx = isH
-                    ? lineStart.x + membraneLength * flowPos
+                    ? lineStart.x + membraneLength * pos
                     : barrier.x + deform + bulge;
                   const fy = isH
                     ? barrier.y + deform + bulge
-                    : lineStart.y + membraneLength * flowPos;
+                    : lineStart.y + membraneLength * pos;
                   return (
                     <line
                       key={i}
