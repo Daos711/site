@@ -111,12 +111,25 @@ export class Simulator {
       // 1. Обновить магазин
       this.refreshShop();
 
-      // 2. Бот делает покупки и расстановку
+      // 2. Аванс: 50% награды за волну ДО покупок
+      const waveConfig = getWaveConfig(this.wave);
+      const upfrontReward = Math.floor(waveConfig.reward * 0.5);
+      this.gold += upfrontReward;
+      this.totalGoldEarned += upfrontReward;
+
+      // 3. Бот делает покупки и расстановку
       bot.makeMoves(this);
 
-      // 3. Симулировать волну
+      // 4. Симулировать волну
       const waveResult = this.simulateWave();
       this.wavesData.push(waveResult);
+
+      // 5. Оставшиеся 50% награды (если пережил волну)
+      if (this.lives > 0) {
+        const completionReward = waveConfig.reward - upfrontReward;
+        this.gold += completionReward;
+        this.totalGoldEarned += completionReward;
+      }
 
       if (this.lives <= 0) break;
     }
@@ -255,6 +268,12 @@ export class Simulator {
         const slowEffect = enemy.effects.find((e) => e.type === 'slow');
         if (slowEffect) {
           speed *= 1 - slowEffect.strength / 100;
+        }
+
+        // Вязкость (viscous) — замедление, игнорирует иммунитет к slow
+        const viscousEffect = enemy.effects.find((e) => e.type === 'viscous');
+        if (viscousEffect) {
+          speed *= 1 - viscousEffect.strength / 100;
         }
 
         // Остановка от held
