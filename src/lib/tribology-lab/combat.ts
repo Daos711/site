@@ -84,6 +84,46 @@ export function findEnemiesInBarrierRange(
   return enemies.filter(e => e.hp > 0 && isInRange(module, e, path));
 }
 
+/**
+ * Находит ближайшую точку на пути к модулю и определяет направление канала
+ * isHorizontal = true: канал идёт вертикально, барьер горизонтальный
+ * isHorizontal = false: канал идёт горизонтально, барьер вертикальный
+ */
+export function findClosestPathPointWithDirection(
+  modulePos: { x: number; y: number },
+  path: PathPoint[]
+): { point: PathPoint; isHorizontal: boolean } {
+  let closestIndex = 0;
+  let minDist = Infinity;
+
+  for (let i = 0; i < path.length; i++) {
+    const point = path[i];
+    const dist = Math.sqrt(
+      Math.pow(point.x - modulePos.x, 2) +
+      Math.pow(point.y - modulePos.y, 2)
+    );
+    if (dist < minDist) {
+      minDist = dist;
+      closestIndex = i;
+    }
+  }
+
+  const closest = path[closestIndex];
+
+  // Определяем направление канала по соседним точкам
+  const prev = path[Math.max(0, closestIndex - 1)];
+  const next = path[Math.min(path.length - 1, closestIndex + 1)];
+
+  const dx = Math.abs(next.x - prev.x);
+  const dy = Math.abs(next.y - prev.y);
+
+  // Если канал идёт вертикально (dy > dx), барьер горизонтальный
+  // Если канал идёт горизонтально (dx > dy), барьер вертикальный
+  const isHorizontal = dy > dx;
+
+  return { point: closest, isHorizontal };
+}
+
 // ==================== TARGETING ====================
 
 export type TargetingMode = 'first' | 'closest' | 'strongest' | 'weakest' | 'analyzer';
@@ -592,19 +632,23 @@ export function processModuleAttack(
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
-    // Создаём барьер
+    // Создаём барьер на ближайшей точке канала (НЕ на позиции модуля!)
     const baseDuration = config.effectDuration || 2500;
     const barrierId = `barrier-${module.id}-${currentTime}`;
+
+    // Находим ближайшую точку на канале и определяем направление
+    const { point: closestPoint, isHorizontal } = findClosestPathPointWithDirection(modulePos, path);
 
     const newBarrier: ActiveBarrier = {
       id: barrierId,
       moduleId: module.id,
-      x: modulePos.x,
-      y: modulePos.y,
+      x: closestPoint.x,      // Координата X на КАНАЛЕ
+      y: closestPoint.y,      // Координата Y на КАНАЛЕ
       duration: baseDuration,
       maxDuration: baseDuration,
       createdAt: currentTime,
       bossPresure: enemiesInRange.some(e => e.type.startsWith('boss_')),
+      isHorizontal,           // Направление барьера
     };
 
     // Применяем эффект blocked ко всем врагам в зоне

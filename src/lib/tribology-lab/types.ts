@@ -33,12 +33,13 @@ export interface AttackEffect {
 export interface ActiveBarrier {
   id: string;
   moduleId: string;
-  x: number;           // позиция по X на канале
-  y: number;           // позиция по Y (центр канала)
+  x: number;           // позиция по X на КАНАЛЕ (не модуля!)
+  y: number;           // позиция по Y на КАНАЛЕ (не модуля!)
   duration: number;    // оставшаяся длительность
   maxDuration: number; // изначальная длительность
   createdAt: number;   // timestamp создания
   bossPresure: boolean; // босс давит на барьер
+  isHorizontal: boolean; // направление барьера (true = горизонтальный, для вертикального канала)
 }
 
 // ==================== МОДУЛИ ====================

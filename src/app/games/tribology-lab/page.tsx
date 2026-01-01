@@ -34,6 +34,7 @@ import {
   generateShopSlots,
   getModulePosition,
   getDistance,
+  findClosestPathPointWithDirection,
 } from "@/lib/tribology-lab/combat";
 import { ModuleCard, FieldTile } from "@/lib/tribology-lab/components";
 
@@ -3049,39 +3050,50 @@ export default function TribologyLabPage() {
 
             // Анимация появления (первые 0.15 сек = 6% от 2.5 сек)
             const materializeProgress = Math.min(1, progress / 0.06);
-            const scaleY = materializeProgress;  // Плёнка "надувается"
 
-            // Высота мембраны (ширина канала)
-            const membraneHeight = (conveyorWidth - 8) * scaleY;
+            // Длина мембраны (ширина канала)
+            const membraneLength = (conveyorWidth - 8) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;
 
             // Цвета по ТЗ:
-            // Плёнка: серо-голубая #8BA4B8, при давлении босса — красноватая
             const membraneColor = barrier.bossPresure ? '#D4A0A0' : '#8BA4B8';
             const membraneOpacity = 0.6 + breathe * 0.05;
-            // Кромки-фиксаторы: золото #FFD166, при боссе — оранжево-красные
             const fixtureColor = barrier.bossPresure ? '#FF9F43' : '#FFD166';
-            // Glow
             const glowColor = barrier.bossPresure ? 'rgba(255, 107, 107, 0.25)' : 'rgba(255, 209, 102, 0.2)';
-            // Линии течения
             const flowColor = barrier.bossPresure ? '#E0B0B0' : '#A0B8C8';
 
-            // Деформация при давлении босса
+            // Деформация и прогиб при давлении босса
             const deform = barrier.bossPresure ? Math.sin(progress * Math.PI * 12) * 4 : 0;
-
-            // Прогиб мембраны (bulge) при давлении
             const bulge = barrier.bossPresure ? 6 + Math.sin(progress * Math.PI * 6) * 2 : 0;
+
+            // Координаты начала и конца линии барьера
+            // isHorizontal = true → барьер горизонтальный (канал вертикальный)
+            // isHorizontal = false → барьер вертикальный (канал горизонтальный)
+            const isH = barrier.isHorizontal;
+
+            // Для горизонтального: линия по X, смещение по Y
+            // Для вертикального: линия по Y, смещение по X
+            const lineStart = {
+              x: isH ? barrier.x - membraneLength / 2 : barrier.x + deform + bulge,
+              y: isH ? barrier.y + deform + bulge : barrier.y - membraneLength / 2
+            };
+            const lineEnd = {
+              x: isH ? barrier.x + membraneLength / 2 : barrier.x + deform + bulge,
+              y: isH ? barrier.y + deform + bulge : barrier.y + membraneLength / 2
+            };
+
+            // Кромки - позиции на концах
+            const fixture1 = { x: lineStart.x, y: lineStart.y };
+            const fixture2 = { x: lineEnd.x, y: lineEnd.y };
 
             return (
               <g key={barrier.id} opacity={fadeOut}>
                 {/* Мягкий glow по контуру */}
                 <line
-                  x1={barrier.x + deform + bulge}
-                  y1={barrier.y - membraneHeight / 2}
-                  x2={barrier.x + deform + bulge}
-                  y2={barrier.y + membraneHeight / 2}
+                  x1={lineStart.x} y1={lineStart.y}
+                  x2={lineEnd.x} y2={lineEnd.y}
                   stroke={glowColor}
                   strokeWidth={16 + breathe * 2}
                   strokeLinecap="round"
@@ -3089,76 +3101,64 @@ export default function TribologyLabPage() {
 
                 {/* Основная плёнка (серо-голубая) */}
                 <line
-                  x1={barrier.x + deform + bulge}
-                  y1={barrier.y - membraneHeight / 2}
-                  x2={barrier.x + deform + bulge}
-                  y2={barrier.y + membraneHeight / 2}
+                  x1={lineStart.x} y1={lineStart.y}
+                  x2={lineEnd.x} y2={lineEnd.y}
                   stroke={membraneColor}
                   strokeWidth={8}
                   strokeLinecap="butt"
                   opacity={membraneOpacity}
                 />
 
-                {/* Центральная линия плёнки (более насыщенная) */}
+                {/* Центральная линия плёнки */}
                 <line
-                  x1={barrier.x + deform + bulge}
-                  y1={barrier.y - membraneHeight / 2}
-                  x2={barrier.x + deform + bulge}
-                  y2={barrier.y + membraneHeight / 2}
+                  x1={lineStart.x} y1={lineStart.y}
+                  x2={lineEnd.x} y2={lineEnd.y}
                   stroke={membraneColor}
                   strokeWidth={3}
                   strokeLinecap="butt"
                   opacity={0.9}
                 />
 
-                {/* Кромки-фиксаторы у стенок (золотые) */}
-                {/* Верхняя кромка */}
+                {/* Кромки-фиксаторы (золотые) */}
                 <rect
-                  x={barrier.x + deform - 6}
-                  y={barrier.y - membraneHeight / 2 - 3}
-                  width={12}
-                  height={6}
+                  x={fixture1.x - (isH ? 3 : 6)}
+                  y={fixture1.y - (isH ? 6 : 3)}
+                  width={isH ? 6 : 12}
+                  height={isH ? 12 : 6}
                   rx={2}
                   fill={fixtureColor}
                   opacity={materializeProgress}
                 />
-                {/* Нижняя кромка */}
                 <rect
-                  x={barrier.x + deform - 6}
-                  y={barrier.y + membraneHeight / 2 - 3}
-                  width={12}
-                  height={6}
+                  x={fixture2.x - (isH ? 3 : 6)}
+                  y={fixture2.y - (isH ? 6 : 3)}
+                  width={isH ? 6 : 12}
+                  height={isH ? 12 : 6}
                   rx={2}
                   fill={fixtureColor}
                   opacity={materializeProgress}
                 />
 
                 {/* Glow на кромках */}
-                <circle
-                  cx={barrier.x + deform}
-                  cy={barrier.y - membraneHeight / 2}
-                  r={8}
-                  fill={fixtureColor}
-                  opacity={0.15 + breathe * 0.05}
-                />
-                <circle
-                  cx={barrier.x + deform}
-                  cy={barrier.y + membraneHeight / 2}
-                  r={8}
-                  fill={fixtureColor}
-                  opacity={0.15 + breathe * 0.05}
-                />
+                <circle cx={fixture1.x} cy={fixture1.y} r={8} fill={fixtureColor} opacity={0.15 + breathe * 0.05} />
+                <circle cx={fixture2.x} cy={fixture2.y} r={8} fill={fixtureColor} opacity={0.15 + breathe * 0.05} />
 
-                {/* Линии течения внутри плёнки (анимация) */}
+                {/* Линии течения внутри плёнки */}
                 {[0.2, 0.4, 0.6, 0.8].map((pos, i) => {
-                  const flowY = barrier.y - membraneHeight / 2 + membraneHeight * ((pos + progress * 1.5) % 1);
+                  const flowPos = (pos + progress * 1.5) % 1;
+                  const fx = isH
+                    ? lineStart.x + membraneLength * flowPos
+                    : barrier.x + deform + bulge;
+                  const fy = isH
+                    ? barrier.y + deform + bulge
+                    : lineStart.y + membraneLength * flowPos;
                   return (
                     <line
                       key={i}
-                      x1={barrier.x + deform + bulge - 3}
-                      y1={flowY}
-                      x2={barrier.x + deform + bulge + 3}
-                      y2={flowY}
+                      x1={isH ? fx : fx - 3}
+                      y1={isH ? fy - 3 : fy}
+                      x2={isH ? fx : fx + 3}
+                      y2={isH ? fy + 3 : fy}
                       stroke={flowColor}
                       strokeWidth={1.5}
                       opacity={0.4}
@@ -3170,34 +3170,36 @@ export default function TribologyLabPage() {
                 {/* Индикатор давления босса: shear bands */}
                 {barrier.bossPresure && (
                   <g>
-                    {/* Полосы сдвига (светлые жилки) */}
-                    {[0.25, 0.5, 0.75].map((pos, i) => (
-                      <line
-                        key={i}
-                        x1={barrier.x + deform - 4}
-                        y1={barrier.y - membraneHeight / 3 + membraneHeight * pos * 0.6}
-                        x2={barrier.x + deform + bulge + 8}
-                        y2={barrier.y - membraneHeight / 3 + membraneHeight * pos * 0.6 + 4}
-                        stroke="#FFEEEE"
-                        strokeWidth={1.5}
-                        opacity={0.5 + Math.sin(progress * Math.PI * 15 + i) * 0.3}
-                      />
-                    ))}
+                    {[0.25, 0.5, 0.75].map((pos, i) => {
+                      const shearPos = pos * membraneLength;
+                      return (
+                        <line
+                          key={i}
+                          x1={isH ? lineStart.x + shearPos - 4 : barrier.x + deform - 4}
+                          y1={isH ? barrier.y + deform - 4 : lineStart.y + shearPos - 4}
+                          x2={isH ? lineStart.x + shearPos + bulge + 8 : barrier.x + deform + bulge + 8}
+                          y2={isH ? barrier.y + deform + bulge + 4 : lineStart.y + shearPos + 4}
+                          stroke="#FFEEEE"
+                          strokeWidth={1.5}
+                          opacity={0.5 + Math.sin(progress * Math.PI * 15 + i) * 0.3}
+                        />
+                      );
+                    })}
                     {/* Warning мигание на кромках */}
                     <rect
-                      x={barrier.x + deform - 7}
-                      y={barrier.y - membraneHeight / 2 - 4}
-                      width={14}
-                      height={8}
+                      x={fixture1.x - (isH ? 4 : 7)}
+                      y={fixture1.y - (isH ? 7 : 4)}
+                      width={isH ? 8 : 14}
+                      height={isH ? 14 : 8}
                       rx={2}
                       fill="#FF6B6B"
                       opacity={0.3 + Math.sin(progress * Math.PI * 4) * 0.2}
                     />
                     <rect
-                      x={barrier.x + deform - 7}
-                      y={barrier.y + membraneHeight / 2 - 4}
-                      width={14}
-                      height={8}
+                      x={fixture2.x - (isH ? 4 : 7)}
+                      y={fixture2.y - (isH ? 7 : 4)}
+                      width={isH ? 8 : 14}
+                      height={isH ? 14 : 8}
                       rx={2}
                       fill="#FF6B6B"
                       opacity={0.3 + Math.sin(progress * Math.PI * 4) * 0.2}
@@ -3208,10 +3210,10 @@ export default function TribologyLabPage() {
                 {/* Скан-линия при появлении */}
                 {materializeProgress < 1 && (
                   <line
-                    x1={barrier.x + deform - 5}
-                    y1={barrier.y - membraneHeight / 2 + membraneHeight * materializeProgress}
-                    x2={barrier.x + deform + 5}
-                    y2={barrier.y - membraneHeight / 2 + membraneHeight * materializeProgress}
+                    x1={isH ? lineStart.x + membraneLength * materializeProgress - 5 : barrier.x + deform - 5}
+                    y1={isH ? barrier.y + deform : lineStart.y + membraneLength * materializeProgress}
+                    x2={isH ? lineStart.x + membraneLength * materializeProgress + 5 : barrier.x + deform + 5}
+                    y2={isH ? barrier.y + deform : lineStart.y + membraneLength * materializeProgress}
                     stroke="#FFFFFF"
                     strokeWidth={2}
                     opacity={0.8}
@@ -3240,27 +3242,39 @@ export default function TribologyLabPage() {
             const moduleX = gridStartX + cellX * (cellSize + cellGap) + cellSize / 2;
             const moduleY = gridStartY + cellY * (cellSize + cellGap) + cellSize / 2;
 
-            // Высота превью (ширина канала)
-            const previewHeight = conveyorWidth - 8;
+            // Находим ближайшую точку на канале и направление
+            const { point, isHorizontal } = findClosestPathPointWithDirection(
+              { x: moduleX, y: moduleY },
+              enemyPath
+            );
+
+            // Длина превью (ширина канала)
+            const previewLength = conveyorWidth - 8;
+
+            // Координаты линии в зависимости от ориентации
+            const lineStart = {
+              x: isHorizontal ? point.x - previewLength / 2 : point.x,
+              y: isHorizontal ? point.y : point.y - previewLength / 2
+            };
+            const lineEnd = {
+              x: isHorizontal ? point.x + previewLength / 2 : point.x,
+              y: isHorizontal ? point.y : point.y + previewLength / 2
+            };
 
             return (
               <g opacity={0.6}>
                 {/* Glow */}
                 <line
-                  x1={moduleX}
-                  y1={moduleY - previewHeight / 2}
-                  x2={moduleX}
-                  y2={moduleY + previewHeight / 2}
+                  x1={lineStart.x} y1={lineStart.y}
+                  x2={lineEnd.x} y2={lineEnd.y}
                   stroke="rgba(255, 209, 102, 0.2)"
                   strokeWidth={14}
                   strokeLinecap="round"
                 />
                 {/* Плёнка (серо-голубая) */}
                 <line
-                  x1={moduleX}
-                  y1={moduleY - previewHeight / 2}
-                  x2={moduleX}
-                  y2={moduleY + previewHeight / 2}
+                  x1={lineStart.x} y1={lineStart.y}
+                  x2={lineEnd.x} y2={lineEnd.y}
                   stroke="#8BA4B8"
                   strokeWidth={6}
                   strokeLinecap="butt"
@@ -3269,19 +3283,19 @@ export default function TribologyLabPage() {
                 />
                 {/* Кромки-фиксаторы (золотые) */}
                 <rect
-                  x={moduleX - 5}
-                  y={moduleY - previewHeight / 2 - 2}
-                  width={10}
-                  height={5}
+                  x={lineStart.x - (isHorizontal ? 2 : 5)}
+                  y={lineStart.y - (isHorizontal ? 5 : 2)}
+                  width={isHorizontal ? 5 : 10}
+                  height={isHorizontal ? 10 : 5}
                   rx={1.5}
                   fill="#FFD166"
                   opacity={0.8}
                 />
                 <rect
-                  x={moduleX - 5}
-                  y={moduleY + previewHeight / 2 - 3}
-                  width={10}
-                  height={5}
+                  x={lineEnd.x - (isHorizontal ? 3 : 5)}
+                  y={lineEnd.y - (isHorizontal ? 5 : 3)}
+                  width={isHorizontal ? 5 : 10}
+                  height={isHorizontal ? 10 : 5}
                   rx={1.5}
                   fill="#FFD166"
                   opacity={0.8}
