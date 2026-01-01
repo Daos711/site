@@ -57,48 +57,94 @@ export function isInRange(
 
 /**
  * Вычисляет позицию барьера ГЕОМЕТРИЧЕСКИ — напротив центра модуля на канале
+ * Для угловых ячеек определяет направление по позиции ближайших врагов
  * Возвращает null если модуль слишком далеко от канала
  */
 export function getBarrierPosition(
-  module: Module
+  module: Module,
+  enemies: Enemy[],
+  path: PathPoint[]
 ): { x: number; y: number; isHorizontal: boolean } | null {
   const modulePos = getModulePosition(module);
-  const innerOffset = 8;
+  const channelCenterOffset = CONVEYOR_WIDTH / 2 + 8;
 
-  // Центр левого канала
-  const leftChannelX = CONVEYOR_WIDTH / 2 + innerOffset;
-  // Центр верхнего канала
-  const topChannelY = CONVEYOR_WIDTH / 2 + innerOffset;
-  // Центр правого канала (нужен totalWidth)
   const gridWidth = GRID_COLS * CELL_SIZE + (GRID_COLS - 1) * CELL_GAP;
   const totalWidth = gridWidth + PANEL_PADDING * 2 + CONVEYOR_WIDTH * 2;
-  const rightChannelX = totalWidth - CONVEYOR_WIDTH / 2 - innerOffset;
 
-  // ПЕРВЫЙ СТОЛБЕЦ (x=0) — барьер на ЛЕВОМ канале
+  // УГЛОВАЯ ЯЧЕЙКА ЛЕВАЯ ВЕРХНЯЯ (x=0, y=0)
+  if (module.x === 0 && module.y === 0) {
+    // Проверяем откуда идут ближайшие враги
+    const nearbyEnemies = enemies.filter(e => {
+      if (e.hp <= 0) return false;
+      const enemyConfig = ENEMIES[e.type];
+      const enemyPos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
+      const dist = Math.sqrt(
+        Math.pow(enemyPos.x - modulePos.x, 2) +
+        Math.pow(enemyPos.y - modulePos.y, 2)
+      );
+      return dist < 150;
+    });
+
+    if (nearbyEnemies.length === 0) return null;
+
+    // Проверяем где враги — на левом канале (x < 150) или на верхнем
+    const enemyOnLeft = nearbyEnemies.some(e => {
+      const enemyConfig = ENEMIES[e.type];
+      const pos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
+      return pos.x < 150;
+    });
+
+    if (enemyOnLeft) {
+      // Враги на левом канале — горизонтальный барьер
+      return { x: channelCenterOffset, y: modulePos.y, isHorizontal: true };
+    } else {
+      // Враги на верхнем канале — вертикальный барьер
+      return { x: modulePos.x, y: channelCenterOffset, isHorizontal: false };
+    }
+  }
+
+  // УГЛОВАЯ ЯЧЕЙКА ПРАВАЯ ВЕРХНЯЯ (x=GRID_COLS-1, y=0)
+  if (module.x === GRID_COLS - 1 && module.y === 0) {
+    const nearbyEnemies = enemies.filter(e => {
+      if (e.hp <= 0) return false;
+      const enemyConfig = ENEMIES[e.type];
+      const enemyPos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
+      const dist = Math.sqrt(
+        Math.pow(enemyPos.x - modulePos.x, 2) +
+        Math.pow(enemyPos.y - modulePos.y, 2)
+      );
+      return dist < 150;
+    });
+
+    if (nearbyEnemies.length === 0) return null;
+
+    // Проверяем где враги — на верхнем канале (y < 150) или на правом
+    const enemyOnTop = nearbyEnemies.some(e => {
+      const enemyConfig = ENEMIES[e.type];
+      const pos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
+      return pos.y < 150;
+    });
+
+    if (enemyOnTop) {
+      // Враги на верхнем канале — вертикальный барьер
+      return { x: modulePos.x, y: channelCenterOffset, isHorizontal: false };
+    } else {
+      // Враги на правом канале — горизонтальный барьер
+      return { x: totalWidth - channelCenterOffset, y: modulePos.y, isHorizontal: true };
+    }
+  }
+
+  // Остальные ячейки — стандартная логика
   if (module.x === 0) {
-    return {
-      x: leftChannelX,
-      y: modulePos.y,
-      isHorizontal: true,  // горизонтальный барьер (перекрывает вертикальный канал)
-    };
+    return { x: channelCenterOffset, y: modulePos.y, isHorizontal: true };
   }
 
-  // ПОСЛЕДНИЙ СТОЛБЕЦ (x=GRID_COLS-1) — барьер на ПРАВОМ канале
   if (module.x === GRID_COLS - 1) {
-    return {
-      x: rightChannelX,
-      y: modulePos.y,
-      isHorizontal: true,  // горизонтальный барьер
-    };
+    return { x: totalWidth - channelCenterOffset, y: modulePos.y, isHorizontal: true };
   }
 
-  // ПЕРВАЯ СТРОКА (y=0) — барьер на ВЕРХНЕМ канале
   if (module.y === 0) {
-    return {
-      x: modulePos.x,
-      y: topChannelY,
-      isHorizontal: false,  // вертикальный барьер (перекрывает горизонтальный канал)
-    };
+    return { x: modulePos.x, y: channelCenterOffset, isHorizontal: false };
   }
 
   // Модуль НЕ рядом с каналом — барьер не работает
@@ -675,7 +721,7 @@ export function processModuleAttack(
   // ==================== ОСОБАЯ ЛОГИКА БАРЬЕРА ====================
   if (module.type === 'barrier') {
     // 1. Вычисляем позицию барьера ГЕОМЕТРИЧЕСКИ
-    const barrierPos = getBarrierPosition(module);
+    const barrierPos = getBarrierPosition(module, enemies, path);
 
     // Если модуль далеко от канала (не в крайнем столбце/строке) — барьер не работает
     if (!barrierPos) {

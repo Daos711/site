@@ -461,7 +461,7 @@ export default function TribologyLabPage() {
             );
 
             // Порог расстояния зависит от размера врага (боссы больше)
-            const blockDistance = enemy.type.startsWith('boss_') ? 60 : 40;
+            const blockDistance = enemy.type.startsWith('boss_') ? 35 : 25;
 
             // Определяем направление движения и позицию относительно барьера
             let isBeforeBarrier: boolean;
@@ -502,9 +502,10 @@ export default function TribologyLabPage() {
 
                 // Если враг ДО барьера — ОТКАТЫВАЕМ и держим
                 if (isBeforeBarrier) {
+                  // Минимальный откат — враг стоит на месте без вибрации
                   return {
                     ...enemy,
-                    progress: Math.max(0, enemy.progress - 0.003),  // сильный откат
+                    progress: Math.max(0, enemy.progress - 0.0005),
                   };
                 }
               }
@@ -3127,7 +3128,7 @@ export default function TribologyLabPage() {
             const materializeProgress = Math.min(1, progress / 0.06);
 
             // Длина мембраны (внутри канала, не пересекает бортики)
-            const membraneLength = (conveyorWidth - 8) * materializeProgress;
+            const membraneLength = (conveyorWidth - 16) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;
@@ -3157,6 +3158,11 @@ export default function TribologyLabPage() {
               x: isH ? barrier.x + membraneLength / 2 : barrier.x + deform + bulge,
               y: isH ? barrier.y + deform + bulge : barrier.y + membraneLength / 2
             };
+
+            // Кромки-фиксаторы (золотые)
+            const fixtureColor = barrier.bossPresure ? '#FF9F43' : '#FFD166';
+            const fixture1 = { x: lineStart.x, y: lineStart.y };
+            const fixture2 = { x: lineEnd.x, y: lineEnd.y };
 
             return (
               <g key={barrier.id} opacity={fadeOut}>
@@ -3246,6 +3252,26 @@ export default function TribologyLabPage() {
                     opacity={0.8}
                   />
                 )}
+
+                {/* Кромки-фиксаторы */}
+                <rect
+                  x={fixture1.x - (isH ? 3 : 6)}
+                  y={fixture1.y - (isH ? 6 : 3)}
+                  width={isH ? 6 : 12}
+                  height={isH ? 12 : 6}
+                  rx={2}
+                  fill={fixtureColor}
+                  opacity={materializeProgress}
+                />
+                <rect
+                  x={fixture2.x - (isH ? 3 : 6)}
+                  y={fixture2.y - (isH ? 6 : 3)}
+                  width={isH ? 6 : 12}
+                  height={isH ? 12 : 6}
+                  rx={2}
+                  fill={fixtureColor}
+                  opacity={materializeProgress}
+                />
               </g>
             );
           })}
