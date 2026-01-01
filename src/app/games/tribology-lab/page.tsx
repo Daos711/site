@@ -271,12 +271,8 @@ export default function TribologyLabPage() {
     setSpawnQueue([]);
     // Обновляем магазин — новые модули разблокируются с волнами
     if (testDeck) {
-      // Для тестовой колоды — рандомим только из неё
-      const slots: ModuleType[] = [];
-      for (let i = 0; i < 6; i++) {
-        slots.push(testDeck[Math.floor(Math.random() * testDeck.length)]);
-      }
-      setShop(slots);
+      // Для тестовой колоды — ровно те модули из колоды
+      setShop([...testDeck]);
     } else {
       setShop(generateShopSlots(nextWave));
     }
@@ -331,12 +327,8 @@ export default function TribologyLabPage() {
       ) as ModuleType[];
       if (modules.length > 0) {
         setTestDeck(modules);
-        // Сразу обновляем магазин для тестовой колоды
-        const testShop: ModuleType[] = [];
-        for (let i = 0; i < 6; i++) {
-          testShop.push(modules[Math.floor(Math.random() * modules.length)]);
-        }
-        setShop(testShop);
+        // Магазин = ровно те модули из колоды (по одному каждого)
+        setShop([...modules]);
         console.log('🎯 Тестовая колода:', modules);
       }
     }
@@ -2994,11 +2986,7 @@ export default function TribologyLabPage() {
                   setSpawnQueue([]);
                   // Магазин: тестовая колода или стандартный
                   if (testDeck) {
-                    const slots: ModuleType[] = [];
-                    for (let i = 0; i < 6; i++) {
-                      slots.push(testDeck[Math.floor(Math.random() * testDeck.length)]);
-                    }
-                    setShop(slots);
+                    setShop([...testDeck]);
                   } else {
                     setShop(INITIAL_SHOP);
                   }
