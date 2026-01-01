@@ -683,36 +683,39 @@ export function processModuleAttack(
     }
 
     // 2. Проверяем есть ли враги которые:
-    //    - Ещё НЕ ПРОШЛИ барьер (их позиция ДО барьера по направлению движения)
-    //    - Близко к барьеру (< 60 пикселей)
+    //    - БЛИЗКО к позиции барьера (< 60 пикселей)
+    //    - Ещё НЕ ПРОШЛИ барьер (по направлению движения)
     const enemiesReadyForBarrier = enemies.filter(e => {
       if (e.hp <= 0) return false;
 
       const enemyConfig = ENEMIES[e.type];
       const enemyPos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
 
+      // Расстояние от врага до ПОЗИЦИИ БАРЬЕРА (не до модуля!)
+      const distToBarrierPos = Math.sqrt(
+        Math.pow(enemyPos.x - barrierPos.x, 2) +
+        Math.pow(enemyPos.y - barrierPos.y, 2)
+      );
+
+      // Враг должен быть БЛИЗКО к позиции барьера
+      if (distToBarrierPos > 60) {
+        return false;  // Слишком далеко — не активируем
+      }
+
+      // Проверяем что враг ещё НЕ ПРОШЁЛ барьер
       // Для левого канала (module.x === 0): враг идёт СНИЗУ ВВЕРХ
-      // Враг должен быть НИЖЕ барьера (enemyPos.y > barrierPos.y) и близко
       if (module.x === 0) {
-        const isBeforeBarrier = enemyPos.y > barrierPos.y;
-        const isClose = Math.abs(enemyPos.y - barrierPos.y) < 60;
-        return isBeforeBarrier && isClose;
+        return enemyPos.y > barrierPos.y;  // враг ниже барьера = ещё не дошёл
       }
 
-      // Для правого канала (module.x === GRID_COLS-1): враг идёт СВЕРХУ ВНИЗ
-      // Враг должен быть ВЫШЕ барьера (enemyPos.y < barrierPos.y) и близко
+      // Для правого канала: враг идёт СВЕРХУ ВНИЗ
       if (module.x === GRID_COLS - 1) {
-        const isBeforeBarrier = enemyPos.y < barrierPos.y;
-        const isClose = Math.abs(enemyPos.y - barrierPos.y) < 60;
-        return isBeforeBarrier && isClose;
+        return enemyPos.y < barrierPos.y;  // враг выше барьера = ещё не дошёл
       }
 
-      // Для верхнего канала (module.y === 0): враг идёт СЛЕВА НАПРАВО
-      // Враг должен быть ЛЕВЕЕ барьера (enemyPos.x < barrierPos.x) и близко
+      // Для верхнего канала: враг идёт СЛЕВА НАПРАВО
       if (module.y === 0) {
-        const isBeforeBarrier = enemyPos.x < barrierPos.x;
-        const isClose = Math.abs(enemyPos.x - barrierPos.x) < 60;
-        return isBeforeBarrier && isClose;
+        return enemyPos.x < barrierPos.x;  // враг левее барьера = ещё не дошёл
       }
 
       return false;

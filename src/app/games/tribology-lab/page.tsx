@@ -460,6 +460,9 @@ export default function TribologyLabPage() {
               Math.pow(enemyPos.y - barrier.y, 2)
             );
 
+            // Порог расстояния зависит от размера врага (боссы больше)
+            const blockDistance = enemy.type.startsWith('boss_') ? 40 : 20;
+
             // Определяем направление движения и позицию относительно барьера
             let isBeforeBarrier: boolean;
             let distanceAlongPath: number;
@@ -467,26 +470,28 @@ export default function TribologyLabPage() {
             if (barrier.isHorizontal) {
               // Горизонтальный барьер (на вертикальном канале)
               distanceAlongPath = enemyPos.y - barrier.y;
-              // Левый канал (x < 200): враг идёт вверх (y уменьшается), "до барьера" = y > barrier.y
-              // Правый канал: враг идёт вниз (y увеличивается), "до барьера" = y < barrier.y
               const isLeftChannel = barrier.x < 200;
               isBeforeBarrier = isLeftChannel ? (distanceAlongPath > 0) : (distanceAlongPath < 0);
             } else {
-              // Вертикальный барьер (на горизонтальном канале, верхний)
-              // Враг идёт слева направо, "до барьера" = x < barrier.x
+              // Вертикальный барьер (на горизонтальном канале)
               distanceAlongPath = enemyPos.x - barrier.x;
               isBeforeBarrier = distanceAlongPath < 0;
             }
 
-            // Блокируем если враг близко к барьеру (< 20 пикселей)
-            if (distToBarrier < 20) {
-              // Определяем длительность блока для типа врага
-              let blockMultiplier = 1.0;
-              if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
-              else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) blockMultiplier = 0.7;
+            // Блокируем если враг близко к барьеру
+            if (distToBarrier < blockDistance) {
+              // passThreshold: при каком remainingRatio враг НАЧИНАЕТ проходить
+              // boss: проходит когда осталось 65% барьера (блокируется первые 35%)
+              // elite: проходит когда осталось 30% (блокируется первые 70%)
+              // обычный: passThreshold = 0, блокируется ВСЁ время
+              let passThreshold = 0;
+              if (enemy.type.startsWith('boss_')) passThreshold = 0.65;
+              else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) passThreshold = 0.30;
 
               const remainingRatio = barrier.duration / barrier.maxDuration;
-              if (remainingRatio > (1 - blockMultiplier)) {
+
+              // Блокируем если барьер ещё "держит" этого врага
+              if (remainingRatio > passThreshold) {
                 // Если враг уже ПРОШЁЛ барьер (центр за барьером) — выталкиваем вперёд
                 if (!isBeforeBarrier && Math.abs(distanceAlongPath) < enemyRadius) {
                   return {
@@ -495,11 +500,11 @@ export default function TribologyLabPage() {
                   };
                 }
 
-                // Если враг ДО барьера — останавливаем с микро-откатом для "пружинки"
+                // Если враг ДО барьера — ФИКСИРУЕМ позицию (не даём двигаться)
                 if (isBeforeBarrier) {
                   return {
                     ...enemy,
-                    progress: Math.max(0, enemy.progress - 0.0003),
+                    progress: enemy.progress,  // фиксируем на месте
                   };
                 }
               }
@@ -3121,17 +3126,16 @@ export default function TribologyLabPage() {
             // Анимация появления (первые 0.15 сек = 6% от 2.5 сек)
             const materializeProgress = Math.min(1, progress / 0.06);
 
-            // Длина мембраны (ширина канала, с отступом от бортиков)
-            const membraneLength = (conveyorWidth - 20) * materializeProgress;
+            // Длина мембраны (касается бортиков канала)
+            const membraneLength = (conveyorWidth + 5) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;
 
-            // Цвета по ТЗ:
+            // Цвета: серо-голубая плёнка, красноватая при боссе
             const membraneColor = barrier.bossPresure ? '#D4A0A0' : '#8BA4B8';
             const membraneOpacity = 0.6 + breathe * 0.05;
-            const fixtureColor = barrier.bossPresure ? '#FF9F43' : '#FFD166';
-            const glowColor = barrier.bossPresure ? 'rgba(255, 107, 107, 0.25)' : 'rgba(255, 209, 102, 0.2)';
+            const glowColor = barrier.bossPresure ? 'rgba(255, 107, 107, 0.25)' : 'rgba(139, 164, 184, 0.3)';
             const flowColor = barrier.bossPresure ? '#E0B0B0' : '#A0B8C8';
 
             // Деформация и прогиб при давлении босса
@@ -3153,10 +3157,6 @@ export default function TribologyLabPage() {
               x: isH ? barrier.x + membraneLength / 2 : barrier.x + deform + bulge,
               y: isH ? barrier.y + deform + bulge : barrier.y + membraneLength / 2
             };
-
-            // Кромки - позиции на концах
-            const fixture1 = { x: lineStart.x, y: lineStart.y };
-            const fixture2 = { x: lineEnd.x, y: lineEnd.y };
 
             return (
               <g key={barrier.id} opacity={fadeOut}>
@@ -3188,30 +3188,6 @@ export default function TribologyLabPage() {
                   strokeLinecap="butt"
                   opacity={0.9}
                 />
-
-                {/* Кромки-фиксаторы (золотые) */}
-                <rect
-                  x={fixture1.x - (isH ? 3 : 6)}
-                  y={fixture1.y - (isH ? 6 : 3)}
-                  width={isH ? 6 : 12}
-                  height={isH ? 12 : 6}
-                  rx={2}
-                  fill={fixtureColor}
-                  opacity={materializeProgress}
-                />
-                <rect
-                  x={fixture2.x - (isH ? 3 : 6)}
-                  y={fixture2.y - (isH ? 6 : 3)}
-                  width={isH ? 6 : 12}
-                  height={isH ? 12 : 6}
-                  rx={2}
-                  fill={fixtureColor}
-                  opacity={materializeProgress}
-                />
-
-                {/* Glow на кромках */}
-                <circle cx={fixture1.x} cy={fixture1.y} r={8} fill={fixtureColor} opacity={0.15 + breathe * 0.05} />
-                <circle cx={fixture2.x} cy={fixture2.y} r={8} fill={fixtureColor} opacity={0.15 + breathe * 0.05} />
 
                 {/* Линии течения внутри плёнки */}
                 {[0.2, 0.4, 0.6, 0.8].map((pos, i) => {
@@ -3255,25 +3231,6 @@ export default function TribologyLabPage() {
                         />
                       );
                     })}
-                    {/* Warning мигание на кромках */}
-                    <rect
-                      x={fixture1.x - (isH ? 4 : 7)}
-                      y={fixture1.y - (isH ? 7 : 4)}
-                      width={isH ? 8 : 14}
-                      height={isH ? 14 : 8}
-                      rx={2}
-                      fill="#FF6B6B"
-                      opacity={0.3 + Math.sin(progress * Math.PI * 4) * 0.2}
-                    />
-                    <rect
-                      x={fixture2.x - (isH ? 4 : 7)}
-                      y={fixture2.y - (isH ? 7 : 4)}
-                      width={isH ? 8 : 14}
-                      height={isH ? 14 : 8}
-                      rx={2}
-                      fill="#FF6B6B"
-                      opacity={0.3 + Math.sin(progress * Math.PI * 4) * 0.2}
-                    />
                   </g>
                 )}
 
