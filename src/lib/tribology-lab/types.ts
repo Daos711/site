@@ -40,6 +40,7 @@ export interface ActiveBarrier {
   createdAt: number;   // timestamp создания
   bossPresure: boolean; // босс давит на барьер
   isHorizontal: boolean; // направление барьера (true = горизонтальный, для вертикального канала)
+  pathProgress: number;  // позиция на пути (0-1) для блокировки врагов
 }
 
 // ==================== МОДУЛИ ====================

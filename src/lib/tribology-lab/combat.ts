@@ -88,11 +88,12 @@ export function findEnemiesInBarrierRange(
  * Находит ближайшую точку на пути к модулю и определяет направление канала
  * isHorizontal = true: канал идёт вертикально, барьер горизонтальный
  * isHorizontal = false: канал идёт горизонтально, барьер вертикальный
+ * pathProgress = позиция на пути (0-1) для блокировки врагов
  */
 export function findClosestPathPointWithDirection(
   modulePos: { x: number; y: number },
   path: PathPoint[]
-): { point: PathPoint; isHorizontal: boolean } {
+): { point: PathPoint; isHorizontal: boolean; pathProgress: number } {
   let closestIndex = 0;
   let minDist = Infinity;
 
@@ -110,6 +111,9 @@ export function findClosestPathPointWithDirection(
 
   const closest = path[closestIndex];
 
+  // Вычисляем progress (0-1) для этой точки на пути
+  const pathProgress = closestIndex / (path.length - 1);
+
   // Определяем направление канала по соседним точкам
   const prev = path[Math.max(0, closestIndex - 1)];
   const next = path[Math.min(path.length - 1, closestIndex + 1)];
@@ -121,7 +125,7 @@ export function findClosestPathPointWithDirection(
   // Если канал идёт горизонтально (dx > dy), барьер вертикальный
   const isHorizontal = dy > dx;
 
-  return { point: closest, isHorizontal };
+  return { point: closest, isHorizontal, pathProgress };
 }
 
 // ==================== TARGETING ====================
@@ -624,64 +628,51 @@ export function processModuleAttack(
 
   // ==================== ОСОБАЯ ЛОГИКА БАРЬЕРА ====================
   if (module.type === 'barrier') {
-    // Проверяем есть ли враги в зоне
-    const enemiesInRange = findEnemiesInBarrierRange(module, enemies, path);
+    // 1. Сначала находим позицию барьера на пути
+    const { point: closestPoint, isHorizontal, pathProgress } = findClosestPathPointWithDirection(modulePos, path);
 
-    if (enemiesInRange.length === 0) {
-      // Нет врагов — не активируем, не тратим cooldown
+    // 2. Проверяем есть ли враги которые ДОСТИГЛИ позиции барьера
+    const enemiesAtBarrier = enemies.filter(e =>
+      e.hp > 0 &&
+      e.progress >= pathProgress - 0.02 &&  // небольшой допуск
+      e.progress <= pathProgress + 0.15     // не слишком далеко впереди
+    );
+
+    if (enemiesAtBarrier.length === 0) {
+      // Никто не дошёл до позиции барьера — не активируем
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
-    // Создаём барьер на ближайшей точке канала (НЕ на позиции модуля!)
+    // 3. Создаём барьер
     const baseDuration = config.effectDuration || 2500;
     const barrierId = `barrier-${module.id}-${currentTime}`;
-
-    // Находим ближайшую точку на канале и определяем направление
-    const { point: closestPoint, isHorizontal } = findClosestPathPointWithDirection(modulePos, path);
 
     const newBarrier: ActiveBarrier = {
       id: barrierId,
       moduleId: module.id,
-      x: closestPoint.x,      // Координата X на КАНАЛЕ
-      y: closestPoint.y,      // Координата Y на КАНАЛЕ
+      x: closestPoint.x,
+      y: closestPoint.y,
       duration: baseDuration,
       maxDuration: baseDuration,
       createdAt: currentTime,
-      bossPresure: enemiesInRange.some(e => e.type.startsWith('boss_')),
-      isHorizontal,           // Направление барьера
+      bossPresure: enemiesAtBarrier.some(e => e.type.startsWith('boss_')),
+      isHorizontal,
+      pathProgress,  // для динамической блокировки врагов
     };
 
-    // Применяем эффект blocked ко всем врагам в зоне
-    let updatedEnemies = [...enemies];
-    for (const enemy of enemiesInRange) {
-      const index = updatedEnemies.findIndex(e => e.id === enemy.id);
-      if (index >= 0) {
-        // Микро-откат
-        const newProgress = Math.max(0, updatedEnemies[index].progress - 0.02);
-
-        // Длительность блока зависит от типа врага
-        const blockDuration = getBlockDuration(enemy, baseDuration);
-
-        updatedEnemies[index] = {
-          ...updatedEnemies[index],
-          progress: newProgress,
-          effects: [
-            ...updatedEnemies[index].effects,
-            { type: 'blocked' as EffectType, duration: blockDuration, strength: 0 }
-          ]
-        };
-      }
-    }
+    // НЕ применяем эффект blocked здесь!
+    // Блокировка будет динамической в page.tsx — враги останавливаются
+    // когда их progress >= barrier.pathProgress
 
     // Визуальный эффект барьера
     const attackEffect: AttackEffect = {
       id: barrierId,
       type: 'barrier',
       moduleType: module.type,
-      fromX: modulePos.x,
-      fromY: modulePos.y,
-      toX: modulePos.x,
-      toY: modulePos.y,
+      fromX: closestPoint.x,
+      fromY: closestPoint.y,
+      toX: closestPoint.x,
+      toY: closestPoint.y,
       color: config.color,
       startTime: currentTime,
       duration: baseDuration,
@@ -693,7 +684,7 @@ export function processModuleAttack(
       lastAttack: currentTime,
     };
 
-    return { updatedEnemies, updatedModule, attackEffect, newBarrier };
+    return { updatedEnemies: enemies, updatedModule, attackEffect, newBarrier };
   }
 
   // ==================== ОБЫЧНЫЕ МОДУЛИ ====================

@@ -125,6 +125,7 @@ export default function TribologyLabPage() {
   const [waveStartTime, setWaveStartTime] = useState(0);
   const [attackEffects, setAttackEffects] = useState<AttackEffect[]>([]);
   const [activeBarriers, setActiveBarriers] = useState<ActiveBarrier[]>([]);
+  const activeBarriersRef = useRef<ActiveBarrier[]>([]); // Ref для доступа в game loop
   const [deathEffects, setDeathEffects] = useState<DeathEffect[]>([]);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
@@ -288,6 +289,7 @@ export default function TribologyLabPage() {
     enemiesRef.current = [];
     setEnemies([]);
     setSpawnQueue([]);
+    activeBarriersRef.current = [];
     setActiveBarriers([]);
     // Обновляем магазин — новые модули разблокируются с волнами
     if (testDeck) {
@@ -441,6 +443,37 @@ export default function TribologyLabPage() {
       // 2. Движение врагов
       updated = updated.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
 
+      // 2.5. Динамическая блокировка врагов барьерами
+      // Враги останавливаются когда достигают позиции активного барьера
+      const currentBarriers = activeBarriersRef.current;
+      if (currentBarriers.length > 0) {
+        updated = updated.map(enemy => {
+          for (const barrier of currentBarriers) {
+            if (barrier.duration > 0) {
+              // Враг достиг барьера?
+              if (enemy.progress >= barrier.pathProgress - 0.005) {
+                // Определяем длительность блока для этого типа врага
+                const baseDuration = barrier.maxDuration;
+                let blockMultiplier = 1.0;
+                if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
+                else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) blockMultiplier = 0.7;
+
+                // Блокируем если барьер ещё действует для этого типа врага
+                const remainingRatio = barrier.duration / barrier.maxDuration;
+                if (remainingRatio > (1 - blockMultiplier)) {
+                  // Останавливаем врага на позиции барьера
+                  return {
+                    ...enemy,
+                    progress: Math.min(enemy.progress, barrier.pathProgress - 0.005),
+                  };
+                }
+              }
+            }
+          }
+          return enemy;
+        });
+      }
+
       // 3. Регенерация босса Питтинг
       updated = processBossRegeneration(updated, deltaTime);
 
@@ -475,7 +508,8 @@ export default function TribologyLabPage() {
 
           // Добавляем новые барьеры
           if (attackResult.newBarriers.length > 0) {
-            setActiveBarriers(prev => [...prev, ...attackResult.newBarriers]);
+            activeBarriersRef.current = [...activeBarriersRef.current, ...attackResult.newBarriers];
+            setActiveBarriers(activeBarriersRef.current);
           }
         }
       }
@@ -584,13 +618,14 @@ export default function TribologyLabPage() {
       );
 
       // Обновление и очистка барьеров
-      setActiveBarriers(prev => prev
+      const updatedBarriers = activeBarriersRef.current
         .map(barrier => ({
           ...barrier,
           duration: barrier.duration - deltaTime,
         }))
-        .filter(barrier => barrier.duration > 0)
-      );
+        .filter(barrier => barrier.duration > 0);
+      activeBarriersRef.current = updatedBarriers;
+      setActiveBarriers(updatedBarriers);
 
       // Очистка завершённых эффектов смерти
       setDeathEffects(prev => prev.filter(effect => {
@@ -3051,8 +3086,8 @@ export default function TribologyLabPage() {
             // Анимация появления (первые 0.15 сек = 6% от 2.5 сек)
             const materializeProgress = Math.min(1, progress / 0.06);
 
-            // Длина мембраны (ширина канала)
-            const membraneLength = (conveyorWidth - 8) * materializeProgress;
+            // Длина мембраны (ширина канала, с отступом от бортиков)
+            const membraneLength = (conveyorWidth - 20) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;
@@ -3095,7 +3130,7 @@ export default function TribologyLabPage() {
                   x1={lineStart.x} y1={lineStart.y}
                   x2={lineEnd.x} y2={lineEnd.y}
                   stroke={glowColor}
-                  strokeWidth={16 + breathe * 2}
+                  strokeWidth={10 + breathe * 1}
                   strokeLinecap="round"
                 />
 
@@ -3414,6 +3449,7 @@ export default function TribologyLabPage() {
                   setModules([]);
                   setEnemies([]);
                   setSpawnQueue([]);
+                  activeBarriersRef.current = [];
                   setActiveBarriers([]);
                   // Магазин: тестовая колода или стандартный
                   if (testDeck) {
