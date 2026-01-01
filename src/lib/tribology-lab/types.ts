@@ -358,9 +358,9 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 150,
     attackSpeed: 0.09,  // ~11 сек cooldown
     color: '#FFD166',
-    description: 'Создаёт перегородку на 2.5 сек',
+    description: 'Создаёт перегородку на 3 сек',
     attackType: 'barrier',
-    effectDuration: 2500,  // длительность перегородки
+    effectDuration: 3000,  // длительность перегородки
   },
 };
 

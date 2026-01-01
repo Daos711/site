@@ -2,7 +2,7 @@ import {
   Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength,
   Enemy, EnemyConfig, ENEMIES, EnemyTag, EnemyType,
   Effect, EffectType, AttackEffect, ActiveBarrier,
-  CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH,
+  CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH, GRID_COLS,
   MODULE_UNLOCK_WAVES, ModuleType
 } from './types';
 import { PathPoint, getPositionOnPath } from './enemies';
@@ -54,6 +54,56 @@ export function isInRange(
 }
 
 // ==================== БАРЬЕР ====================
+
+/**
+ * Вычисляет позицию барьера ГЕОМЕТРИЧЕСКИ — напротив центра модуля на канале
+ * Возвращает null если модуль слишком далеко от канала
+ */
+export function getBarrierPosition(
+  module: Module
+): { x: number; y: number; isHorizontal: boolean } | null {
+  const modulePos = getModulePosition(module);
+  const innerOffset = 8;
+
+  // Центр левого канала
+  const leftChannelX = CONVEYOR_WIDTH / 2 + innerOffset;
+  // Центр верхнего канала
+  const topChannelY = CONVEYOR_WIDTH / 2 + innerOffset;
+  // Центр правого канала (нужен totalWidth)
+  const gridWidth = GRID_COLS * CELL_SIZE + (GRID_COLS - 1) * CELL_GAP;
+  const totalWidth = gridWidth + PANEL_PADDING * 2 + CONVEYOR_WIDTH * 2;
+  const rightChannelX = totalWidth - CONVEYOR_WIDTH / 2 - innerOffset;
+
+  // ПЕРВЫЙ СТОЛБЕЦ (x=0) — барьер на ЛЕВОМ канале
+  if (module.x === 0) {
+    return {
+      x: leftChannelX,
+      y: modulePos.y,
+      isHorizontal: true,  // горизонтальный барьер (перекрывает вертикальный канал)
+    };
+  }
+
+  // ПОСЛЕДНИЙ СТОЛБЕЦ (x=GRID_COLS-1) — барьер на ПРАВОМ канале
+  if (module.x === GRID_COLS - 1) {
+    return {
+      x: rightChannelX,
+      y: modulePos.y,
+      isHorizontal: true,  // горизонтальный барьер
+    };
+  }
+
+  // ПЕРВАЯ СТРОКА (y=0) — барьер на ВЕРХНЕМ канале
+  if (module.y === 0) {
+    return {
+      x: modulePos.x,
+      y: topChannelY,
+      isHorizontal: false,  // вертикальный барьер (перекрывает горизонтальный канал)
+    };
+  }
+
+  // Модуль НЕ рядом с каналом — барьер не работает
+  return null;
+}
 
 /**
  * Рассчитывает cooldown барьера по уровню
@@ -624,39 +674,36 @@ export function processModuleAttack(
 
   // ==================== ОСОБАЯ ЛОГИКА БАРЬЕРА ====================
   if (module.type === 'barrier') {
-    // 1. Находим позицию барьера на канале (ближайшая точка к модулю)
-    const { point: closestPoint, isHorizontal } = findClosestPathPointWithDirection(modulePos, path);
+    // 1. Вычисляем позицию барьера ГЕОМЕТРИЧЕСКИ
+    const barrierPos = getBarrierPosition(module);
 
-    // 2. Проверяем есть ли враги рядом с ПОЗИЦИЕЙ БАРЬЕРА на канале
-    // (не с модулем, а с точкой где появится барьер!)
-    const barrierRange = 60; // радиус активации барьера
-    const enemiesNearBarrier = enemies.filter(e => {
-      if (e.hp <= 0) return false;
-      const enemyConfig = ENEMIES[e.type];
-      const enemyPos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
-      const dist = getDistance(closestPoint.x, closestPoint.y, enemyPos.x, enemyPos.y);
-      return dist <= barrierRange;
-    });
-
-    if (enemiesNearBarrier.length === 0) {
-      // Никто не рядом с позицией барьера — не активируем
+    // Если модуль далеко от канала (не в крайнем столбце/строке) — барьер не работает
+    if (!barrierPos) {
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
-    // 4. Создаём барьер (3 секунды)
-    const baseDuration = 3000;
+    // 2. Проверяем есть ли враги в радиусе модуля
+    const enemiesInRange = enemies.filter(e => e.hp > 0 && isInRange(module, e, path));
+
+    if (enemiesInRange.length === 0) {
+      // Никто не в радиусе модуля — не активируем
+      return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
+    }
+
+    // 3. Создаём барьер (3 секунды)
+    const baseDuration = config.effectDuration || 3000;
     const barrierId = `barrier-${module.id}-${currentTime}`;
 
     const newBarrier: ActiveBarrier = {
       id: barrierId,
       moduleId: module.id,
-      x: closestPoint.x,
-      y: closestPoint.y,
+      x: barrierPos.x,
+      y: barrierPos.y,
       duration: baseDuration,
       maxDuration: baseDuration,
       createdAt: currentTime,
-      bossPresure: enemiesNearBarrier.some(e => e.type.startsWith('boss_')),
-      isHorizontal,
+      bossPresure: enemiesInRange.some(e => e.type.startsWith('boss_')),
+      isHorizontal: barrierPos.isHorizontal,
     };
 
     // Блокировка будет динамической в page.tsx — по расстоянию до барьера
@@ -666,10 +713,10 @@ export function processModuleAttack(
       id: barrierId,
       type: 'barrier',
       moduleType: module.type,
-      fromX: closestPoint.x,
-      fromY: closestPoint.y,
-      toX: closestPoint.x,
-      toY: closestPoint.y,
+      fromX: barrierPos.x,
+      fromY: barrierPos.y,
+      toX: barrierPos.x,
+      toY: barrierPos.y,
       color: config.color,
       startTime: currentTime,
       duration: baseDuration,

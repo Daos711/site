@@ -459,8 +459,8 @@ export default function TribologyLabPage() {
               Math.pow(enemyPos.y - barrier.y, 2)
             );
 
-            // Блокируем если враг рядом с барьером (< 40 пикселей)
-            if (distToBarrier < 40) {
+            // Блокируем если враг рядом с барьером (< 35 пикселей)
+            if (distToBarrier < 35) {
               // Определяем длительность блока для этого типа врага
               let blockMultiplier = 1.0;
               if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
@@ -469,10 +469,10 @@ export default function TribologyLabPage() {
               // Блокируем если барьер ещё действует для этого типа врага
               const remainingRatio = barrier.duration / barrier.maxDuration;
               if (remainingRatio > (1 - blockMultiplier)) {
-                // Останавливаем врага — чуть откатываем назад чтобы не уходил
+                // Враг упирается в барьер — чуть "пружинит" назад
                 return {
                   ...enemy,
-                  progress: Math.max(0, enemy.progress - 0.001),
+                  progress: Math.max(0, enemy.progress - 0.0005),
                 };
               }
             }
