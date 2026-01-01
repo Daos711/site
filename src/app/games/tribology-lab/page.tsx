@@ -461,7 +461,7 @@ export default function TribologyLabPage() {
             );
 
             // Порог расстояния зависит от размера врага (боссы больше)
-            const blockDistance = enemy.type.startsWith('boss_') ? 40 : 20;
+            const blockDistance = enemy.type.startsWith('boss_') ? 60 : 40;
 
             // Определяем направление движения и позицию относительно барьера
             let isBeforeBarrier: boolean;
@@ -500,11 +500,11 @@ export default function TribologyLabPage() {
                   };
                 }
 
-                // Если враг ДО барьера — ФИКСИРУЕМ позицию (не даём двигаться)
+                // Если враг ДО барьера — ОТКАТЫВАЕМ и держим
                 if (isBeforeBarrier) {
                   return {
                     ...enemy,
-                    progress: enemy.progress,  // фиксируем на месте
+                    progress: Math.max(0, enemy.progress - 0.003),  // сильный откат
                   };
                 }
               }
@@ -3126,8 +3126,8 @@ export default function TribologyLabPage() {
             // Анимация появления (первые 0.15 сек = 6% от 2.5 сек)
             const materializeProgress = Math.min(1, progress / 0.06);
 
-            // Длина мембраны (касается бортиков канала)
-            const membraneLength = (conveyorWidth + 5) * materializeProgress;
+            // Длина мембраны (внутри канала, не пересекает бортики)
+            const membraneLength = (conveyorWidth - 8) * materializeProgress;
 
             // "Дыхание" мембраны (после появления)
             const breathe = materializeProgress >= 1 ? Math.sin(progress * Math.PI * 8) * 1.5 : 0;

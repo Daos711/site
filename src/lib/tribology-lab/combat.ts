@@ -698,7 +698,7 @@ export function processModuleAttack(
       );
 
       // Враг должен быть БЛИЗКО к позиции барьера
-      if (distToBarrierPos > 60) {
+      if (distToBarrierPos > 50) {
         return false;  // Слишком далеко — не активируем
       }
 
