@@ -627,21 +627,19 @@ export function processModuleAttack(
     // 1. Находим позицию барьера на канале (ближайшая точка к модулю)
     const { point: closestPoint, isHorizontal } = findClosestPathPointWithDirection(modulePos, path);
 
-    // 2. Проверяем что модуль рядом с каналом (не слишком далеко)
-    const distToChannel = Math.sqrt(
-      Math.pow(modulePos.x - closestPoint.x, 2) +
-      Math.pow(modulePos.y - closestPoint.y, 2)
-    );
-    if (distToChannel > 150) {
-      // Модуль слишком далеко от канала — барьер не работает
-      return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
-    }
+    // 2. Проверяем есть ли враги рядом с ПОЗИЦИЕЙ БАРЬЕРА на канале
+    // (не с модулем, а с точкой где появится барьер!)
+    const barrierRange = 60; // радиус активации барьера
+    const enemiesNearBarrier = enemies.filter(e => {
+      if (e.hp <= 0) return false;
+      const enemyConfig = ENEMIES[e.type];
+      const enemyPos = getPositionOnPath(path, e.progress, enemyConfig.oscillation);
+      const dist = getDistance(closestPoint.x, closestPoint.y, enemyPos.x, enemyPos.y);
+      return dist <= barrierRange;
+    });
 
-    // 3. Проверяем есть ли враги в радиусе МОДУЛЯ (как у остальных модулей)
-    const enemiesInRange = enemies.filter(e => e.hp > 0 && isInRange(module, e, path));
-
-    if (enemiesInRange.length === 0) {
-      // Никто не в радиусе модуля — не активируем
+    if (enemiesNearBarrier.length === 0) {
+      // Никто не рядом с позицией барьера — не активируем
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
@@ -657,7 +655,7 @@ export function processModuleAttack(
       duration: baseDuration,
       maxDuration: baseDuration,
       createdAt: currentTime,
-      bossPresure: enemiesInRange.some(e => e.type.startsWith('boss_')),
+      bossPresure: enemiesNearBarrier.some(e => e.type.startsWith('boss_')),
       isHorizontal,
     };
 
