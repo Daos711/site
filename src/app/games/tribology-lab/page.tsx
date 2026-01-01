@@ -443,34 +443,37 @@ export default function TribologyLabPage() {
       // 2. Движение врагов
       updated = updated.map(enemy => updateEnemy(enemy, deltaTime, pathLength));
 
-      // 2.5. Динамическая блокировка врагов барьерами
-      // Враги останавливаются когда достигают позиции активного барьера
+      // 2.5. Динамическая блокировка врагов барьерами (по координатам)
       const currentBarriers = activeBarriersRef.current;
       if (currentBarriers.length > 0) {
         updated = updated.map(enemy => {
+          const enemyConfig = ENEMIES[enemy.type as EnemyType];
+          const enemyPos = getPositionOnPath(enemyPath, enemy.progress, enemyConfig.oscillation);
+
           for (const barrier of currentBarriers) {
-            if (barrier.duration > 0) {
-              // Расстояние врага от барьера
-              const distanceFromBarrier = enemy.progress - barrier.pathProgress;
+            if (barrier.duration <= 0) continue;
 
-              // Блокируем ТОЛЬКО врагов которые:
-              // 1. Достигли барьера (distanceFromBarrier >= -0.005)
-              // 2. НЕ успели далеко убежать (distanceFromBarrier <= 0.02)
-              if (distanceFromBarrier >= -0.005 && distanceFromBarrier <= 0.02) {
-                // Определяем длительность блока для этого типа врага
-                let blockMultiplier = 1.0;
-                if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
-                else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) blockMultiplier = 0.7;
+            // Расстояние от врага до барьера (в пикселях)
+            const distToBarrier = Math.sqrt(
+              Math.pow(enemyPos.x - barrier.x, 2) +
+              Math.pow(enemyPos.y - barrier.y, 2)
+            );
 
-                // Блокируем если барьер ещё действует для этого типа врага
-                const remainingRatio = barrier.duration / barrier.maxDuration;
-                if (remainingRatio > (1 - blockMultiplier)) {
-                  // Останавливаем врага НА позиции барьера (не откатываем далеко!)
-                  return {
-                    ...enemy,
-                    progress: barrier.pathProgress - 0.003,
-                  };
-                }
+            // Блокируем если враг рядом с барьером (< 40 пикселей)
+            if (distToBarrier < 40) {
+              // Определяем длительность блока для этого типа врага
+              let blockMultiplier = 1.0;
+              if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
+              else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) blockMultiplier = 0.7;
+
+              // Блокируем если барьер ещё действует для этого типа врага
+              const remainingRatio = barrier.duration / barrier.maxDuration;
+              if (remainingRatio > (1 - blockMultiplier)) {
+                // Останавливаем врага — чуть откатываем назад чтобы не уходил
+                return {
+                  ...enemy,
+                  progress: Math.max(0, enemy.progress - 0.001),
+                };
               }
             }
           }
