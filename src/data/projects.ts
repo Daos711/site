@@ -17,6 +17,14 @@ export const projects: Project[] = [
     href: "/games/digits",
   },
   {
+    id: "ball-merge",
+    title: "Шарики",
+    description: "Бросай шарики и соединяй одинаковые. Физика Matter.js.",
+    tags: ["игра", "TypeScript", "React", "web", "Matter.js"],
+    status: "prototype",
+    href: "/games/ball-merge",
+  },
+  {
     id: "beam-calculator",
     title: "Расчёт балки",
     description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров.",
