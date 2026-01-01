@@ -143,6 +143,22 @@ export default function TribologyLabPage() {
   // Тестовая колода для ручного тестирования баланса (?deck=...)
   const [testDeck, setTestDeck] = useState<ModuleType[] | null>(null);
 
+  // Селектор колоды для ручного тестирования
+  const [showDeckSelector, setShowDeckSelector] = useState(false);
+  const [deckDps1, setDeckDps1] = useState<ModuleType>('filter');
+  const [deckDps2, setDeckDps2] = useState<ModuleType>('magnet');
+  const [deckControl, setDeckControl] = useState<ModuleType>('cooler');
+  const [deckSupport, setDeckSupport] = useState<ModuleType>('lubricant');
+  const [deckUtility, setDeckUtility] = useState<ModuleType>('ultrasonic');
+
+  // Роли модулей для селектора
+  const MODULE_ROLES = {
+    dps: ['filter', 'magnet', 'laser', 'electrostatic'] as ModuleType[],
+    control: ['cooler', 'centrifuge', 'barrier'] as ModuleType[],
+    support: ['lubricant', 'inhibitor', 'analyzer'] as ModuleType[],
+    utility: ['ultrasonic', 'demulsifier'] as ModuleType[],
+  };
+
   // Размеры
   const cellSize = 110;
   const cellGap = 14;
@@ -864,24 +880,181 @@ export default function TribologyLabPage() {
         }
       `}</style>
 
-      {/* Индикатор тестовой колоды */}
-      {testDeck && (
-        <div style={{
-          position: 'fixed',
-          top: 10,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(234, 179, 8, 0.9)',
-          color: '#000',
-          padding: '4px 12px',
-          borderRadius: 4,
-          fontSize: 12,
-          fontWeight: 600,
-          zIndex: 1000,
-        }}>
-          🧪 ТЕСТ: {testDeck.join(', ')}
-        </div>
-      )}
+      {/* Кнопка выбора колоды + индикатор */}
+      <div style={{
+        position: 'fixed',
+        top: 10,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+      }}>
+        {/* Индикатор активной тестовой колоды */}
+        {testDeck && (
+          <div style={{
+            background: 'rgba(234, 179, 8, 0.9)',
+            color: '#000',
+            padding: '4px 12px',
+            borderRadius: 4,
+            fontSize: 12,
+            fontWeight: 600,
+          }}>
+            🧪 ТЕСТ: {testDeck.join(', ')}
+          </div>
+        )}
+
+        {/* Кнопка открытия селектора */}
+        <button
+          onClick={() => setShowDeckSelector(!showDeckSelector)}
+          style={{
+            background: showDeckSelector ? 'rgba(234, 179, 8, 0.9)' : 'rgba(100, 100, 100, 0.8)',
+            color: showDeckSelector ? '#000' : '#fff',
+            padding: '4px 12px',
+            borderRadius: 4,
+            fontSize: 12,
+            fontWeight: 600,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          🎴 {showDeckSelector ? 'Скрыть селектор' : 'Выбрать колоду'}
+        </button>
+
+        {/* Панель селектора колоды */}
+        {showDeckSelector && (
+          <div style={{
+            background: 'rgba(13, 18, 24, 0.95)',
+            border: '1px solid rgba(234, 179, 8, 0.5)',
+            borderRadius: 8,
+            padding: 16,
+            minWidth: 320,
+          }}>
+            <div style={{ marginBottom: 12, fontSize: 14, fontWeight: 600, color: '#eab308' }}>
+              Собери колоду (2 DPS + Control + Support + Utility)
+            </div>
+
+            {/* DPS 1 */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>DPS #1:</label>
+              <select
+                value={deckDps1}
+                onChange={(e) => setDeckDps1(e.target.value as ModuleType)}
+                style={{ width: '100%', padding: 6, borderRadius: 4, background: '#1a1f26', color: '#fff', border: '1px solid #333' }}
+              >
+                {MODULE_ROLES.dps.map(m => (
+                  <option key={m} value={m}>{MODULES[m].icon} {MODULES[m].name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* DPS 2 */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>DPS #2:</label>
+              <select
+                value={deckDps2}
+                onChange={(e) => setDeckDps2(e.target.value as ModuleType)}
+                style={{ width: '100%', padding: 6, borderRadius: 4, background: '#1a1f26', color: '#fff', border: '1px solid #333' }}
+              >
+                {MODULE_ROLES.dps.filter(m => m !== deckDps1).map(m => (
+                  <option key={m} value={m}>{MODULES[m].icon} {MODULES[m].name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Control */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Control:</label>
+              <select
+                value={deckControl}
+                onChange={(e) => setDeckControl(e.target.value as ModuleType)}
+                style={{ width: '100%', padding: 6, borderRadius: 4, background: '#1a1f26', color: '#fff', border: '1px solid #333' }}
+              >
+                {MODULE_ROLES.control.map(m => (
+                  <option key={m} value={m}>{MODULES[m].icon} {MODULES[m].name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Support */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Support:</label>
+              <select
+                value={deckSupport}
+                onChange={(e) => setDeckSupport(e.target.value as ModuleType)}
+                style={{ width: '100%', padding: 6, borderRadius: 4, background: '#1a1f26', color: '#fff', border: '1px solid #333' }}
+              >
+                {MODULE_ROLES.support.map(m => (
+                  <option key={m} value={m}>{MODULES[m].icon} {MODULES[m].name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Utility */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, color: '#888', display: 'block', marginBottom: 4 }}>Utility:</label>
+              <select
+                value={deckUtility}
+                onChange={(e) => setDeckUtility(e.target.value as ModuleType)}
+                style={{ width: '100%', padding: 6, borderRadius: 4, background: '#1a1f26', color: '#fff', border: '1px solid #333' }}
+              >
+                {MODULE_ROLES.utility.map(m => (
+                  <option key={m} value={m}>{MODULES[m].icon} {MODULES[m].name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Кнопка применить */}
+            <button
+              onClick={() => {
+                const newDeck = [deckDps1, deckDps2, deckControl, deckSupport, deckUtility];
+                const url = new URL(window.location.href);
+                url.searchParams.set('deck', newDeck.join(','));
+                window.location.href = url.toString();
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 16px',
+                background: 'linear-gradient(145deg, #eab308 0%, #ca8a04 100%)',
+                color: '#000',
+                fontWeight: 600,
+                borderRadius: 6,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              🚀 Применить колоду
+            </button>
+
+            {/* Кнопка сбросить */}
+            {testDeck && (
+              <button
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('deck');
+                  window.location.href = url.toString();
+                }}
+                style={{
+                  width: '100%',
+                  marginTop: 8,
+                  padding: '6px 16px',
+                  background: 'rgba(100, 100, 100, 0.5)',
+                  color: '#fff',
+                  fontWeight: 500,
+                  borderRadius: 6,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                ✕ Сбросить тестовый режим
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       <h1 className="text-3xl font-bold text-amber-400">⚙️ Tribology Lab</h1>
 

@@ -131,7 +131,7 @@ export const GRID_COLS = 4;
 export const GRID_ROWS = 3;
 
 export const INITIAL_LIVES = 10;
-export const INITIAL_GOLD = 9999;  // Много для теста
+export const INITIAL_GOLD = 100;
 
 // Layout константы (должны совпадать с page.tsx)
 export const CELL_SIZE = 110;           // размер ячейки в пикселях
