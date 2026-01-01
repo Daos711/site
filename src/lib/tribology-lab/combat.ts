@@ -634,8 +634,8 @@ export function processModuleAttack(
     // 2. Проверяем есть ли враги которые ДОСТИГЛИ позиции барьера
     const enemiesAtBarrier = enemies.filter(e =>
       e.hp > 0 &&
-      e.progress >= pathProgress - 0.02 &&  // небольшой допуск
-      e.progress <= pathProgress + 0.15     // не слишком далеко впереди
+      e.progress >= pathProgress - 0.005 &&  // враг почти у барьера
+      e.progress <= pathProgress + 0.02      // не более 2% пути вперёд
     );
 
     if (enemiesAtBarrier.length === 0) {

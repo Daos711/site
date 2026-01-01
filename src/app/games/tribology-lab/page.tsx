@@ -450,10 +450,14 @@ export default function TribologyLabPage() {
         updated = updated.map(enemy => {
           for (const barrier of currentBarriers) {
             if (barrier.duration > 0) {
-              // Враг достиг барьера?
-              if (enemy.progress >= barrier.pathProgress - 0.005) {
+              // Расстояние врага от барьера
+              const distanceFromBarrier = enemy.progress - barrier.pathProgress;
+
+              // Блокируем ТОЛЬКО врагов которые:
+              // 1. Достигли барьера (distanceFromBarrier >= -0.005)
+              // 2. НЕ успели далеко убежать (distanceFromBarrier <= 0.02)
+              if (distanceFromBarrier >= -0.005 && distanceFromBarrier <= 0.02) {
                 // Определяем длительность блока для этого типа врага
-                const baseDuration = barrier.maxDuration;
                 let blockMultiplier = 1.0;
                 if (enemy.type.startsWith('boss_')) blockMultiplier = 0.35;
                 else if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) blockMultiplier = 0.7;
@@ -461,10 +465,10 @@ export default function TribologyLabPage() {
                 // Блокируем если барьер ещё действует для этого типа врага
                 const remainingRatio = barrier.duration / barrier.maxDuration;
                 if (remainingRatio > (1 - blockMultiplier)) {
-                  // Останавливаем врага на позиции барьера
+                  // Останавливаем врага НА позиции барьера (не откатываем далеко!)
                   return {
                     ...enemy,
-                    progress: Math.min(enemy.progress, barrier.pathProgress - 0.005),
+                    progress: barrier.pathProgress - 0.003,
                   };
                 }
               }
