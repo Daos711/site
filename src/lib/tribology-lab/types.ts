@@ -181,7 +181,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Сепаратор',
     icon: '🧲',
     basePrice: 40,
-    baseDamage: 12,
+    baseDamage: 24,
     range: 150,
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
