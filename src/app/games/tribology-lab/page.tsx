@@ -3172,7 +3172,7 @@ export default function TribologyLabPage() {
                   x2={lineEnd.x} y2={lineEnd.y}
                   stroke={glowColor}
                   strokeWidth={10 + breathe * 1}
-                  strokeLinecap="round"
+                  strokeLinecap="butt"
                 />
 
                 {/* Основная плёнка (серо-голубая) */}
