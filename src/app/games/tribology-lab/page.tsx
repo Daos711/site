@@ -695,7 +695,7 @@ export default function TribologyLabPage() {
             }
           } else if (
             existingModule.type === dragState.moduleType &&
-            existingModule.level < 5 &&
+            existingModule.level === 1 &&  // Из магазина идёт уровень 1, мёрж только с уровнем 1!
             gold >= config.basePrice
           ) {
             // Такой же тип на поле — мерж из магазина!
