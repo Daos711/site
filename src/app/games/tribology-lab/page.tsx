@@ -82,6 +82,19 @@ interface DragState {
   currentY: number;
 }
 
+// Эффект смерти врага
+interface DeathEffect {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+  size: number;
+  direction: number;  // угол направления движения (радианы)
+  startTime: number;
+  duration: number;   // 250ms (350ms для боссов)
+  isBoss: boolean;
+}
+
 type GamePhase = 'preparing' | 'wave' | 'victory' | 'defeat';
 
 export default function TribologyLabPage() {
@@ -107,6 +120,7 @@ export default function TribologyLabPage() {
   const [spawnQueue, setSpawnQueue] = useState<{ id: string; type: string; spawnAt: number }[]>([]);
   const [waveStartTime, setWaveStartTime] = useState(0);
   const [attackEffects, setAttackEffects] = useState<AttackEffect[]>([]);
+  const [deathEffects, setDeathEffects] = useState<DeathEffect[]>([]);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
   const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
@@ -420,6 +434,7 @@ export default function TribologyLabPage() {
       let livesLost = 0;
       let goldEarned = 0;
       const deadEnemyIds: string[] = [];
+      const newDeathEffects: DeathEffect[] = [];
 
       updated = updated.filter(enemy => {
         if (hasReachedFinish(enemy)) {
@@ -432,15 +447,43 @@ export default function TribologyLabPage() {
             livesLost += 1;
           }
           deadEnemyIds.push(enemy.id);
+          // БЕЗ анимации смерти — враг просто ушёл
           return false;
         }
         if (isDead(enemy)) {
           goldEarned += enemy.reward;
           deadEnemyIds.push(enemy.id);
+
+          // Создаём эффект смерти
+          const config = ENEMIES[enemy.type];
+          const pos = getPositionOnPath(enemyPath, enemy.progress, config.oscillation);
+
+          // Определяем направление движения (по касательной к пути)
+          const nextPos = getPositionOnPath(enemyPath, Math.min(1, enemy.progress + 0.01), config.oscillation);
+          const direction = Math.atan2(nextPos.y - pos.y, nextPos.x - pos.x);
+
+          const isBoss = enemy.type.startsWith('boss_');
+          newDeathEffects.push({
+            id: `death-${enemy.id}`,
+            x: pos.x,
+            y: pos.y,
+            color: config.color,
+            size: config.size,
+            direction: direction,
+            startTime: timestamp,
+            duration: isBoss ? 350 : 250,
+            isBoss: isBoss,
+          });
+
           return false;
         }
         return true;
       });
+
+      // Добавляем эффекты смерти
+      if (newDeathEffects.length > 0) {
+        setDeathEffects(prev => [...prev, ...newDeathEffects]);
+      }
 
       // Удаляем эффекты анализатора, нацеленные на мёртвых врагов
       if (deadEnemyIds.length > 0) {
@@ -484,6 +527,12 @@ export default function TribologyLabPage() {
         }))
         .filter(effect => effect.progress < 1)
       );
+
+      // Очистка завершённых эффектов смерти
+      setDeathEffects(prev => prev.filter(effect => {
+        const elapsed = timestamp - effect.startTime;
+        return elapsed < effect.duration;
+      }));
 
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
@@ -2774,6 +2823,80 @@ export default function TribologyLabPage() {
             }
 
             return null;
+          })}
+
+          {/* ═══════════════════════════════════════════════════════════════
+              ЭФФЕКТЫ СМЕРТИ ВРАГОВ
+              ═══════════════════════════════════════════════════════════════ */}
+          {deathEffects.map(effect => {
+            const now = performance.now();
+            const elapsed = now - effect.startTime;
+            const progress = Math.min(1, elapsed / effect.duration);
+
+            // Easing: ease-out (быстро в начале, замедляется к концу)
+            const eased = 1 - Math.pow(1 - progress, 2);
+
+            // Количество частиц: больше для боссов
+            const particleCount = effect.isBoss ? 8 : 5;
+            const particles = [];
+
+            for (let i = 0; i < particleCount; i++) {
+              // Псевдослучайные значения на основе индекса
+              const seed = i * 137.5;
+              const angleOffset = (Math.sin(seed) * 0.5) * Math.PI / 3;  // ±30°
+              const speed = 50 + (Math.cos(seed) * 0.5 + 0.5) * 40;      // 50-90px
+              const particleSize = 2 + (Math.sin(seed * 2) * 0.5 + 0.5) * 2;  // 2-4px
+
+              const angle = effect.direction + angleOffset;
+              const distance = speed * eased;
+
+              particles.push({
+                x: effect.x + Math.cos(angle) * distance,
+                y: effect.y + Math.sin(angle) * distance,
+                r: particleSize * (1 - eased * 0.5),  // уменьшается
+                opacity: 0.6 * (1 - eased),
+              });
+            }
+
+            return (
+              <g key={effect.id}>
+                {/* Кольцо рассеивания */}
+                <circle
+                  cx={effect.x}
+                  cy={effect.y}
+                  r={effect.size * (1 + eased * 0.5)}
+                  fill="none"
+                  stroke={effect.color}
+                  strokeWidth={1.5}
+                  opacity={0.3 * (1 - eased)}
+                />
+
+                {/* Второе кольцо для боссов */}
+                {effect.isBoss && (
+                  <circle
+                    cx={effect.x}
+                    cy={effect.y}
+                    r={effect.size * (1 + eased * 0.8)}
+                    fill="none"
+                    stroke={effect.color}
+                    strokeWidth={1}
+                    opacity={0.2 * (1 - eased)}
+                  />
+                )}
+
+                {/* Частицы */}
+                {particles.map((p, i) => (
+                  <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={p.r}
+                    fill={effect.color}
+                    opacity={p.opacity}
+                  />
+                ))}
+              </g>
+            );
           })}
         </svg>
 
