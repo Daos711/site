@@ -6,7 +6,7 @@ export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultraso
 export type EnemyType = 'dust' | 'abrasive' | 'heat' | 'metal' | 'corrosion' | 'moisture' | 'static' | 'boss_wear' | 'boss_pitting';
 
 export type EffectType = 'slow' | 'burn' | 'marked' | 'coated'
-  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback';
+  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback' | 'blocked';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 
@@ -16,7 +16,7 @@ export type EnemyTag = 'metal' | 'wet' | 'hot' | 'dusty' | 'organic';
 // Эффект атаки (для визуализации)
 export interface AttackEffect {
   id: string;
-  type: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain';
+  type: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain' | 'barrier';
   moduleType: ModuleType;  // тип модуля для уникального визуала
   fromX: number;
   fromY: number;
@@ -27,6 +27,18 @@ export interface AttackEffect {
   duration: number;  // мс
   progress: number;  // 0-1 для анимации
   targetId?: string; // ID врага-цели (для удаления при смерти)
+}
+
+// Активная перегородка барьера
+export interface ActiveBarrier {
+  id: string;
+  moduleId: string;
+  x: number;           // позиция по X на канале
+  y: number;           // позиция по Y (центр канала)
+  duration: number;    // оставшаяся длительность
+  maxDuration: number; // изначальная длительность
+  createdAt: number;   // timestamp создания
+  bossPresure: boolean; // босс давит на барьер
 }
 
 // ==================== МОДУЛИ ====================
@@ -51,7 +63,7 @@ export interface ModuleConfig {
   color: string;        // цвет подсветки
   description: string;
   // Боевые параметры
-  attackType: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain';  // тип визуала
+  attackType: 'beam' | 'projectile' | 'wave' | 'aoe' | 'chain' | 'barrier';  // тип визуала
   effectType?: EffectType;  // какой эффект накладывает (slow, burn, marked)
   effectDuration?: number;  // длительность эффекта мс
   effectStrength?: number;  // сила эффекта
@@ -343,12 +355,11 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     basePrice: 115,
     baseDamage: 0,
     range: 150,
-    attackSpeed: 0.25,
+    attackSpeed: 0.09,  // ~11 сек cooldown
     color: '#FFD166',
-    description: 'Блокирует врага на месте',
-    attackType: 'aoe',
-    effectType: 'held',
-    effectDuration: 1500,
+    description: 'Создаёт перегородку на 2.5 сек',
+    attackType: 'barrier',
+    effectDuration: 2500,  // длительность перегородки
   },
 };
 

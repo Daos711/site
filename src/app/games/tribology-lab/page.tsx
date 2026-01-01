@@ -14,6 +14,7 @@ import {
   type Module,
   type Enemy,
   type AttackEffect,
+  type ActiveBarrier,
 } from "@/lib/tribology-lab/types";
 import {
   generatePath,
@@ -122,6 +123,7 @@ export default function TribologyLabPage() {
   const [spawnQueue, setSpawnQueue] = useState<{ id: string; type: string; spawnAt: number }[]>([]);
   const [waveStartTime, setWaveStartTime] = useState(0);
   const [attackEffects, setAttackEffects] = useState<AttackEffect[]>([]);
+  const [activeBarriers, setActiveBarriers] = useState<ActiveBarrier[]>([]);
   const [deathEffects, setDeathEffects] = useState<DeathEffect[]>([]);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
@@ -285,6 +287,7 @@ export default function TribologyLabPage() {
     enemiesRef.current = [];
     setEnemies([]);
     setSpawnQueue([]);
+    setActiveBarriers([]);
     // Обновляем магазин — новые модули разблокируются с волнами
     if (testDeck) {
       // Для тестовой колоды — ровно те модули из колоды
@@ -454,7 +457,7 @@ export default function TribologyLabPage() {
         updated = attackResult.updatedEnemies;
 
         // Обновляем модули (lastAttack)
-        if (attackResult.newAttackEffects.length > 0) {
+        if (attackResult.newAttackEffects.length > 0 || attackResult.newBarriers.length > 0) {
           modulesRef.current = attackResult.updatedModules;
           setModules(attackResult.updatedModules);
 
@@ -468,6 +471,11 @@ export default function TribologyLabPage() {
               : prevEffects;
             return [...filtered, ...attackResult.newAttackEffects];
           });
+
+          // Добавляем новые барьеры
+          if (attackResult.newBarriers.length > 0) {
+            setActiveBarriers(prev => [...prev, ...attackResult.newBarriers]);
+          }
         }
       }
 
@@ -572,6 +580,15 @@ export default function TribologyLabPage() {
           progress: Math.min(1, (timestamp - effect.startTime) / effect.duration),
         }))
         .filter(effect => effect.progress < 1)
+      );
+
+      // Обновление и очистка барьеров
+      setActiveBarriers(prev => prev
+        .map(barrier => ({
+          ...barrier,
+          duration: barrier.duration - deltaTime,
+        }))
+        .filter(barrier => barrier.duration > 0)
       );
 
       // Очистка завершённых эффектов смерти
@@ -2133,9 +2150,25 @@ export default function TribologyLabPage() {
                   // Собираем активные статусы с приоритетом
                   const statusList: { type: string; icon: React.ReactNode; color: string }[] = [];
 
-                  // Приоритет 1: Захват (барьер)
+                  // Приоритет 1: Захват (барьер старый)
                   if (enemy.effects.find(e => e.type === 'held')) {
                     statusList.push({ type: 'held', icon: '⛓', color: '#f59e0b' });
+                  }
+                  // Приоритет 1.5: Блокировка перегородкой (новый барьер)
+                  if (enemy.effects.find(e => e.type === 'blocked')) {
+                    statusList.push({
+                      type: 'blocked',
+                      icon: (
+                        <svg viewBox="0 0 16 16" width="12" height="12">
+                          {/* Вертикальная линия (перегородка) */}
+                          <line x1="8" y1="2" x2="8" y2="14" stroke="#FFD166" strokeWidth="3" strokeLinecap="round"/>
+                          {/* Горизонтальные метки */}
+                          <line x1="4" y1="5" x2="12" y2="5" stroke="#FFD166" strokeWidth="1.5" strokeLinecap="round"/>
+                          <line x1="4" y1="11" x2="12" y2="11" stroke="#FFD166" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      ),
+                      color: '#FFD166'
+                    });
                   }
                   // Приоритет 2: Заморозка (SVG снежинка для лучшего центрирования)
                   if (enemy.effects.find(e => e.type === 'slow')) {
@@ -2978,74 +3011,183 @@ export default function TribologyLabPage() {
               );
             }
 
-            // БАРЬЕР — клетка-зажим с "щёлк"
+            // БАРЬЕР — теперь рендерится через activeBarriers, здесь только вспышка активации
             if (effect.moduleType === 'barrier') {
-              // Находим врага под эффектом для масштабирования клетки
-              const targetEnemy = enemies.find(e => {
-                const eConfig = ENEMIES[e.type];
-                const ePos = getPositionOnPath(enemyPath, e.progress, eConfig.oscillation);
-                const dist = Math.sqrt((ePos.x - effect.toX) ** 2 + (ePos.y - effect.toY) ** 2);
-                return dist < 50 && e.effects.some(eff => eff.type === 'held');
-              });
-              // Базовый размер клетки = min(max(20, радиус врага * 1.3), 30)
-              // Максимум 30 чтобы клетка + статус не выходили на карточки
-              const enemyRadius = targetEnemy ? ENEMIES[targetEnemy.type].size : 15;
-              const cageHalf = Math.min(Math.max(20, enemyRadius * 1.3), 30);
-
-              // Анимация "щёлк": scale 1.12 → 1.0 за первые 10%
-              const clickPhase = progress < 0.1;
-              const scale = clickPhase ? 1.12 - progress * 1.2 : 1;
-              // Плавное затухание в конце
-              const fadeOut = progress > 0.7 ? (1 - progress) / 0.3 : 1;
-              // "Дыхание" клетки при удержании
-              const breathe = Math.sin(progress * Math.PI * 6) * 0.08 + 1;
-              const finalScale = clickPhase ? scale : breathe;
+              // Быстрая вспышка активации (0.3 сек)
+              const flashDuration = 300;
+              const flashProgress = Math.min(1, (performance.now() - effect.startTime) / flashDuration);
+              if (flashProgress >= 1) return null;
 
               return (
-                <g key={effect.id} transform={`translate(${effect.toX}, ${effect.toY})`} opacity={fadeOut}>
-                  {/* Внешняя рамка (rounded rect) */}
-                  <rect
-                    x={-cageHalf * finalScale}
-                    y={-cageHalf * finalScale}
-                    width={cageHalf * 2 * finalScale}
-                    height={cageHalf * 2 * finalScale}
+                <g key={effect.id} transform={`translate(${effect.fromX}, ${effect.fromY})`} opacity={1 - flashProgress}>
+                  {/* Круговая вспышка активации */}
+                  <circle
+                    r={30 + flashProgress * 40}
                     fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    rx={5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    stroke="#FFD166"
+                    strokeWidth={3 - flashProgress * 2}
+                    opacity={0.8}
                   />
-                  {/* Вертикальные перемычки (решётка) */}
-                  <line x1={-cageHalf * 0.35 * finalScale} y1={-cageHalf * finalScale} x2={-cageHalf * 0.35 * finalScale} y2={cageHalf * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
-                  <line x1={cageHalf * 0.35 * finalScale} y1={-cageHalf * finalScale} x2={cageHalf * 0.35 * finalScale} y2={cageHalf * finalScale} stroke="#f59e0b" strokeWidth={2} opacity={0.7} strokeLinecap="round" />
-                  {/* Горизонтальная полоса */}
-                  <line x1={-cageHalf * finalScale} y1={0} x2={cageHalf * finalScale} y2={0} stroke="#f59e0b" strokeWidth={2} opacity={0.5} strokeLinecap="round" />
-                  {/* Маркер STOP — две вертикальные полоски || над клеткой */}
-                  <g transform={`translate(0, ${-(cageHalf + 8) * finalScale})`} opacity={0.8}>
-                    <line x1={-4} y1={-5} x2={-4} y2={5} stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
-                    <line x1={4} y1={-5} x2={4} y2={5} stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" />
-                  </g>
-                  {/* Вспышка при "щёлк" */}
-                  {clickPhase && (
-                    <rect
-                      x={-(cageHalf + 2)}
-                      y={-(cageHalf + 2)}
-                      width={(cageHalf + 2) * 2}
-                      height={(cageHalf + 2) * 2}
-                      fill="none"
-                      stroke="#fde047"
-                      strokeWidth={2}
-                      rx={6}
-                      opacity={1 - progress * 10}
-                    />
-                  )}
+                  <circle
+                    r={15 + flashProgress * 25}
+                    fill="#FFD166"
+                    opacity={0.3 - flashProgress * 0.3}
+                  />
                 </g>
               );
             }
 
             return null;
           })}
+
+          {/* ═══════════════════════════════════════════════════════════════
+              АКТИВНЫЕ БАРЬЕРЫ (МЕМБРАНЫ)
+              ═══════════════════════════════════════════════════════════════ */}
+          {activeBarriers.map(barrier => {
+            const progress = 1 - barrier.duration / barrier.maxDuration;
+            const fadeOut = progress > 0.7 ? (1 - progress) / 0.3 : 1;
+
+            // Высота мембраны (ширина канала)
+            const membraneHeight = conveyorWidth - 8;
+
+            // "Дыхание" мембраны
+            const breathe = Math.sin(progress * Math.PI * 8) * 2;
+
+            // Цвет: обычный жёлтый или красноватый при давлении босса
+            const baseColor = barrier.bossPresure ? '#FF6B6B' : '#FFD166';
+            const glowColor = barrier.bossPresure ? 'rgba(255, 107, 107, 0.4)' : 'rgba(255, 209, 102, 0.3)';
+
+            // Деформация при давлении босса
+            const deform = barrier.bossPresure ? Math.sin(progress * Math.PI * 12) * 4 : 0;
+
+            return (
+              <g key={barrier.id} opacity={fadeOut}>
+                {/* Свечение */}
+                <line
+                  x1={barrier.x + deform}
+                  y1={barrier.y - membraneHeight / 2}
+                  x2={barrier.x + deform}
+                  y2={barrier.y + membraneHeight / 2}
+                  stroke={glowColor}
+                  strokeWidth={12 + breathe}
+                  strokeLinecap="round"
+                />
+                {/* Основная линия мембраны */}
+                <line
+                  x1={barrier.x + deform}
+                  y1={barrier.y - membraneHeight / 2}
+                  x2={barrier.x + deform}
+                  y2={barrier.y + membraneHeight / 2}
+                  stroke={baseColor}
+                  strokeWidth={4}
+                  strokeLinecap="round"
+                />
+                {/* Градиентные края */}
+                <circle
+                  cx={barrier.x + deform}
+                  cy={barrier.y - membraneHeight / 2}
+                  r={6}
+                  fill={baseColor}
+                  opacity={0.8}
+                />
+                <circle
+                  cx={barrier.x + deform}
+                  cy={barrier.y + membraneHeight / 2}
+                  r={6}
+                  fill={baseColor}
+                  opacity={0.8}
+                />
+                {/* Полосы потока (анимация) */}
+                {[0.25, 0.5, 0.75].map((pos, i) => (
+                  <circle
+                    key={i}
+                    cx={barrier.x + deform}
+                    cy={barrier.y - membraneHeight / 2 + membraneHeight * ((pos + progress * 2) % 1)}
+                    r={3}
+                    fill={baseColor}
+                    opacity={0.6}
+                  />
+                ))}
+                {/* Индикатор давления босса */}
+                {barrier.bossPresure && (
+                  <g>
+                    {/* Линии напряжения */}
+                    <line
+                      x1={barrier.x - 8}
+                      y1={barrier.y - 10}
+                      x2={barrier.x + 8 + deform * 2}
+                      y2={barrier.y - 5}
+                      stroke="#FF4444"
+                      strokeWidth={2}
+                      opacity={0.7 + Math.sin(progress * Math.PI * 20) * 0.3}
+                    />
+                    <line
+                      x1={barrier.x - 8}
+                      y1={barrier.y + 10}
+                      x2={barrier.x + 8 + deform * 2}
+                      y2={barrier.y + 5}
+                      stroke="#FF4444"
+                      strokeWidth={2}
+                      opacity={0.7 + Math.sin(progress * Math.PI * 20 + 1) * 0.3}
+                    />
+                  </g>
+                )}
+              </g>
+            );
+          })}
+
+          {/* ═══════════════════════════════════════════════════════════════
+              ПРЕВЬЮ БАРЬЕРА ПРИ РАЗМЕЩЕНИИ
+              ═══════════════════════════════════════════════════════════════ */}
+          {dragState && dragState.moduleType === 'barrier' && fieldRef.current && (() => {
+            const rect = fieldRef.current!.getBoundingClientRect();
+            const gridStartX = conveyorWidth + panelPadding;
+            const gridStartY = conveyorWidth + panelPadding;
+            const relX = dragState.currentX - rect.left - gridStartX;
+            const relY = dragState.currentY - rect.top - gridStartY;
+            const cellX = Math.floor(relX / (cellSize + cellGap));
+            const cellY = Math.floor(relY / (cellSize + cellGap));
+
+            // Проверяем валидность ячейки
+            if (cellX < 0 || cellX >= GRID_COLS || cellY < 0 || cellY >= GRID_ROWS) return null;
+
+            // Позиция центра модуля
+            const moduleX = gridStartX + cellX * (cellSize + cellGap) + cellSize / 2;
+            const moduleY = gridStartY + cellY * (cellSize + cellGap) + cellSize / 2;
+
+            // Высота превью (ширина канала)
+            const previewHeight = conveyorWidth - 8;
+
+            return (
+              <g opacity={0.5}>
+                {/* Свечение */}
+                <line
+                  x1={moduleX}
+                  y1={moduleY - previewHeight / 2}
+                  x2={moduleX}
+                  y2={moduleY + previewHeight / 2}
+                  stroke="rgba(255, 209, 102, 0.3)"
+                  strokeWidth={16}
+                  strokeLinecap="round"
+                  strokeDasharray="8,8"
+                />
+                {/* Основная линия */}
+                <line
+                  x1={moduleX}
+                  y1={moduleY - previewHeight / 2}
+                  x2={moduleX}
+                  y2={moduleY + previewHeight / 2}
+                  stroke="#FFD166"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeDasharray="6,6"
+                />
+                {/* Концы */}
+                <circle cx={moduleX} cy={moduleY - previewHeight / 2} r={4} fill="#FFD166" opacity={0.7} />
+                <circle cx={moduleX} cy={moduleY + previewHeight / 2} r={4} fill="#FFD166" opacity={0.7} />
+              </g>
+            );
+          })()}
 
           {/* ═══════════════════════════════════════════════════════════════
               ЭФФЕКТЫ СМЕРТИ ВРАГОВ
@@ -3157,6 +3299,7 @@ export default function TribologyLabPage() {
                   setModules([]);
                   setEnemies([]);
                   setSpawnQueue([]);
+                  setActiveBarriers([]);
                   // Магазин: тестовая колода или стандартный
                   if (testDeck) {
                     setShop([...testDeck]);

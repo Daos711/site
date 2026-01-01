@@ -1,7 +1,7 @@
 import {
   Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength,
   Enemy, EnemyConfig, ENEMIES, EnemyTag, EnemyType,
-  Effect, EffectType, AttackEffect,
+  Effect, EffectType, AttackEffect, ActiveBarrier,
   CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH,
   MODULE_UNLOCK_WAVES, ModuleType
 } from './types';
@@ -51,6 +51,37 @@ export function isInRange(
 
   const distance = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
   return distance <= config.range;
+}
+
+// ==================== БАРЬЕР ====================
+
+/**
+ * Рассчитывает cooldown барьера по уровню
+ * Формула: 11 - (level - 1) * 0.75 сек
+ */
+export function getBarrierCooldown(level: number): number {
+  const seconds = 11 - (level - 1) * 0.75;
+  return seconds * 1000; // в мс
+}
+
+/**
+ * Рассчитывает длительность блокировки врага барьером
+ */
+export function getBlockDuration(enemy: Enemy, baseDuration: number): number {
+  if (enemy.type.startsWith('boss_')) return Math.floor(baseDuration * 0.35);
+  if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) return Math.floor(baseDuration * 0.7);
+  return baseDuration;
+}
+
+/**
+ * Находит всех врагов в зоне барьера (для блокировки)
+ */
+export function findEnemiesInBarrierRange(
+  module: Module,
+  enemies: Enemy[],
+  path: PathPoint[]
+): Enemy[] {
+  return enemies.filter(e => e.hp > 0 && isInRange(module, e, path));
 }
 
 // ==================== TARGETING ====================
@@ -515,6 +546,12 @@ export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
  * @param gameSpeed - множитель скорости (1 = нормальная, 3 = 3x быстрее)
  */
 export function canAttack(module: Module, currentTime: number, gameSpeed: number = 1): boolean {
+  // Барьер имеет особый cooldown по уровню
+  if (module.type === 'barrier') {
+    const cooldown = getBarrierCooldown(module.level) / gameSpeed;
+    return currentTime - module.lastAttack >= cooldown;
+  }
+
   const config = MODULES[module.type];
   const attackInterval = 1000 / config.attackSpeed / gameSpeed;  // мс между атаками (ускоряется с gameSpeed)
   return currentTime - module.lastAttack >= attackInterval;
@@ -522,7 +559,7 @@ export function canAttack(module: Module, currentTime: number, gameSpeed: number
 
 /**
  * Обрабатывает атаку одного модуля
- * Возвращает: обновлённых врагов, обновлённый модуль, эффект атаки (для визуала)
+ * Возвращает: обновлённых врагов, обновлённый модуль, эффект атаки (для визуала), новый барьер
  */
 export function processModuleAttack(
   module: Module,
@@ -535,15 +572,87 @@ export function processModuleAttack(
   updatedEnemies: Enemy[];
   updatedModule: Module;
   attackEffect: AttackEffect | null;
+  newBarrier: ActiveBarrier | null;
 } {
   // Проверяем cooldown (с учётом gameSpeed)
   if (!canAttack(module, currentTime, gameSpeed)) {
-    return { updatedEnemies: enemies, updatedModule: module, attackEffect: null };
+    return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
   }
 
   const config = MODULES[module.type];
   const modulePos = getModulePosition(module);
 
+  // ==================== ОСОБАЯ ЛОГИКА БАРЬЕРА ====================
+  if (module.type === 'barrier') {
+    // Проверяем есть ли враги в зоне
+    const enemiesInRange = findEnemiesInBarrierRange(module, enemies, path);
+
+    if (enemiesInRange.length === 0) {
+      // Нет врагов — не активируем, не тратим cooldown
+      return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
+    }
+
+    // Создаём барьер
+    const baseDuration = config.effectDuration || 2500;
+    const barrierId = `barrier-${module.id}-${currentTime}`;
+
+    const newBarrier: ActiveBarrier = {
+      id: barrierId,
+      moduleId: module.id,
+      x: modulePos.x,
+      y: modulePos.y,
+      duration: baseDuration,
+      maxDuration: baseDuration,
+      createdAt: currentTime,
+      bossPresure: enemiesInRange.some(e => e.type.startsWith('boss_')),
+    };
+
+    // Применяем эффект blocked ко всем врагам в зоне
+    let updatedEnemies = [...enemies];
+    for (const enemy of enemiesInRange) {
+      const index = updatedEnemies.findIndex(e => e.id === enemy.id);
+      if (index >= 0) {
+        // Микро-откат
+        const newProgress = Math.max(0, updatedEnemies[index].progress - 0.02);
+
+        // Длительность блока зависит от типа врага
+        const blockDuration = getBlockDuration(enemy, baseDuration);
+
+        updatedEnemies[index] = {
+          ...updatedEnemies[index],
+          progress: newProgress,
+          effects: [
+            ...updatedEnemies[index].effects,
+            { type: 'blocked' as EffectType, duration: blockDuration, strength: 0 }
+          ]
+        };
+      }
+    }
+
+    // Визуальный эффект барьера
+    const attackEffect: AttackEffect = {
+      id: barrierId,
+      type: 'barrier',
+      moduleType: module.type,
+      fromX: modulePos.x,
+      fromY: modulePos.y,
+      toX: modulePos.x,
+      toY: modulePos.y,
+      color: config.color,
+      startTime: currentTime,
+      duration: baseDuration,
+      progress: 0,
+    };
+
+    const updatedModule: Module = {
+      ...module,
+      lastAttack: currentTime,
+    };
+
+    return { updatedEnemies, updatedModule, attackEffect, newBarrier };
+  }
+
+  // ==================== ОБЫЧНЫЕ МОДУЛИ ====================
   // Находим цель(и)
   let targets: Enemy[] = [];
 
@@ -574,7 +683,7 @@ export function processModuleAttack(
   }
 
   if (targets.length === 0) {
-    return { updatedEnemies: enemies, updatedModule: module, attackEffect: null };
+    return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
   }
 
   // Наносим урон
@@ -661,26 +770,7 @@ export function processModuleAttack(
           }
         }
 
-        // Барьер: удержание врага
-        if (module.type === 'barrier') {
-          const hasAntiHold = updatedEnemies[index].effects.some(e => e.type === 'antiHold');
-          if (!hasAntiHold) {
-            const isBoss = target.type.startsWith('boss_');
-            const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
-
-            let holdDuration = 1500;
-            if (isElite) holdDuration = 1000;
-            if (isBoss) holdDuration = 500;
-
-            updatedEnemies[index] = {
-              ...updatedEnemies[index],
-              effects: [
-                ...updatedEnemies[index].effects,
-                { type: 'held' as EffectType, duration: holdDuration, strength: 0 }
-              ]
-            };
-          }
-        }
+        // Барьер обрабатывается отдельно выше, сюда не попадает
       }
     }
   }
@@ -716,7 +806,7 @@ export function processModuleAttack(
     lastAttack: currentTime,
   };
 
-  return { updatedEnemies, updatedModule, attackEffect };
+  return { updatedEnemies, updatedModule, attackEffect, newBarrier: null };
 }
 
 /**
@@ -733,10 +823,12 @@ export function processAllAttacks(
   updatedEnemies: Enemy[];
   updatedModules: Module[];
   newAttackEffects: AttackEffect[];
+  newBarriers: ActiveBarrier[];
 } {
   let updatedEnemies = enemies;
   let updatedModules = [...modules];
   const newAttackEffects: AttackEffect[] = [];
+  const newBarriers: ActiveBarrier[] = [];
 
   for (let i = 0; i < modules.length; i++) {
     const result = processModuleAttack(
@@ -754,9 +846,13 @@ export function processAllAttacks(
     if (result.attackEffect) {
       newAttackEffects.push(result.attackEffect);
     }
+
+    if (result.newBarrier) {
+      newBarriers.push(result.newBarrier);
+    }
   }
 
-  return { updatedEnemies, updatedModules, newAttackEffects };
+  return { updatedEnemies, updatedModules, newAttackEffects, newBarriers };
 }
 
 // ==================== ОБРАБОТКА ЭФФЕКТОВ ВО ВРЕМЕНИ ====================

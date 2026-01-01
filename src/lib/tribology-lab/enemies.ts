@@ -505,6 +505,16 @@ export function updateEnemy(
     };
   }
 
+  // Проверяем блокировку (blocked) — враг остановлен перегородкой
+  const blockedEffect = updatedEffects.find(e => e.type === 'blocked');
+  if (blockedEffect) {
+    // Враг с эффектом blocked не двигается
+    return {
+      ...enemy,
+      effects: updatedEffects,
+    };
+  }
+
   // Проверяем откат (pushback) — плавное движение назад
   const pushbackEffect = updatedEffects.find(e => e.type === 'pushback');
   let pushbackDelta = 0;
