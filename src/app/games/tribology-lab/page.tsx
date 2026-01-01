@@ -91,8 +91,10 @@ interface DeathEffect {
   size: number;
   direction: number;  // угол направления движения (радианы)
   startTime: number;
-  duration: number;   // 250ms (350ms для боссов)
-  isBoss: boolean;
+  duration: number;   // 250ms (400ms для боссов)
+  particleCount: number;  // 5 обычные, 10 боссы
+  particleSpeed: number;  // 60 обычные, 100 боссы
+  ringCount: number;      // 1 обычные, 2 боссы
 }
 
 type GamePhase = 'preparing' | 'wave' | 'victory' | 'defeat';
@@ -471,8 +473,10 @@ export default function TribologyLabPage() {
             size: config.size,
             direction: direction,
             startTime: timestamp,
-            duration: isBoss ? 350 : 250,
-            isBoss: isBoss,
+            duration: isBoss ? 400 : 250,
+            particleCount: isBoss ? 10 : 5,
+            particleSpeed: isBoss ? 100 : 60,
+            ringCount: isBoss ? 2 : 1,
           });
 
           return false;
@@ -1187,12 +1191,12 @@ export default function TribologyLabPage() {
               <path
                 fillRule="evenodd"
                 d={`
-                  M 0 ${totalHeight}
-                  L 0 ${cornerRadius}
-                  Q 0 0 ${cornerRadius} 0
-                  L ${totalWidth - cornerRadius} 0
-                  Q ${totalWidth} 0 ${totalWidth} ${cornerRadius}
-                  L ${totalWidth} ${totalHeight}
+                  M ${innerOffset} ${totalHeight}
+                  L ${innerOffset} ${cornerRadius}
+                  Q ${innerOffset} ${innerOffset} ${cornerRadius} ${innerOffset}
+                  L ${totalWidth - cornerRadius} ${innerOffset}
+                  Q ${totalWidth - innerOffset} ${innerOffset} ${totalWidth - innerOffset} ${cornerRadius}
+                  L ${totalWidth - innerOffset} ${totalHeight}
                   Z
                   M ${conveyorWidth} ${totalHeight}
                   L ${conveyorWidth} ${conveyorWidth + 21}
@@ -2836,19 +2840,19 @@ export default function TribologyLabPage() {
             // Easing: ease-out (быстро в начале, замедляется к концу)
             const eased = 1 - Math.pow(1 - progress, 2);
 
-            // Количество частиц: больше для боссов
-            const particleCount = effect.isBoss ? 8 : 5;
+            // Параметры из эффекта
+            const { particleCount, particleSpeed, ringCount } = effect;
             const particles = [];
 
             for (let i = 0; i < particleCount; i++) {
               // Псевдослучайные значения на основе индекса
               const seed = i * 137.5;
               const angleOffset = (Math.sin(seed) * 0.5) * Math.PI / 3;  // ±30°
-              const speed = 50 + (Math.cos(seed) * 0.5 + 0.5) * 40;      // 50-90px
+              const speedVariation = particleSpeed * (0.8 + (Math.cos(seed) * 0.5 + 0.5) * 0.4);  // ±20%
               const particleSize = 2 + (Math.sin(seed * 2) * 0.5 + 0.5) * 2;  // 2-4px
 
               const angle = effect.direction + angleOffset;
-              const distance = speed * eased;
+              const distance = speedVariation * eased;
 
               particles.push({
                 x: effect.x + Math.cos(angle) * distance,
@@ -2860,29 +2864,19 @@ export default function TribologyLabPage() {
 
             return (
               <g key={effect.id}>
-                {/* Кольцо рассеивания */}
-                <circle
-                  cx={effect.x}
-                  cy={effect.y}
-                  r={effect.size * (1 + eased * 0.5)}
-                  fill="none"
-                  stroke={effect.color}
-                  strokeWidth={1.5}
-                  opacity={0.3 * (1 - eased)}
-                />
-
-                {/* Второе кольцо для боссов */}
-                {effect.isBoss && (
+                {/* Кольца рассеивания */}
+                {Array.from({ length: ringCount }).map((_, ringIndex) => (
                   <circle
+                    key={`ring-${ringIndex}`}
                     cx={effect.x}
                     cy={effect.y}
-                    r={effect.size * (1 + eased * 0.8)}
+                    r={effect.size * (1 + eased * (0.5 + ringIndex * 0.3))}
                     fill="none"
                     stroke={effect.color}
-                    strokeWidth={1}
-                    opacity={0.2 * (1 - eased)}
+                    strokeWidth={1.5 - ringIndex * 0.4}
+                    opacity={0.3 * (1 - eased) * (1 - ringIndex * 0.3)}
                   />
-                )}
+                ))}
 
                 {/* Частицы */}
                 {particles.map((p, i) => (
