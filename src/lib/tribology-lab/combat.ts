@@ -238,19 +238,10 @@ export function findTarget(
   if (enemies.length === 0) return null;
 
   const modulePos = getModulePosition(module);
-  const moduleConfig = MODULES[module.type];
 
-  // СЕПАРАТОР: атакует ТОЛЬКО врагов в range (исключение из общего правила)
-  let validEnemies = enemies;
-  if (module.type === 'magnet') {
-    validEnemies = enemies.filter(enemy => {
-      const enemyConfig = ENEMIES[enemy.type];
-      const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
-      const dist = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
-      return dist <= moduleConfig.range;
-    });
-    if (validEnemies.length === 0) return null;
-  }
+  // Все модули атакуют любых врагов
+  // Урон Сепаратора уменьшается с расстоянием через getDistanceEfficiency
+  const validEnemies = enemies;
 
   switch (mode) {
     case 'first':
