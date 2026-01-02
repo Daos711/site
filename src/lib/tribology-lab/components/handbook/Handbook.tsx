@@ -149,14 +149,17 @@ export function Handbook({ onClose }: HandbookProps) {
     </div>
   );
 
-  // Всегда рендерим как оверлей поверх всего
+  // Всегда рендерим как оверлей ниже хедера сайта
   return (
     <div
       style={{
         position: 'fixed',
-        inset: 0,
+        top: 48,
+        left: 0,
+        right: 0,
+        bottom: 0,
         background: 'rgba(10, 15, 25, 0.99)',
-        zIndex: 9999,
+        zIndex: 50,
       }}
     >
       {content}
