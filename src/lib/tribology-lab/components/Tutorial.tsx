@@ -251,65 +251,68 @@ function TutorialIllustration({ type }: { type: 'wave' | 'grid' | 'combo' }) {
       <svg width="200" height="100" viewBox="0 0 200 100">
         {/* Модуль 1 */}
         <g>
-          <rect x="10" y="25" width="40" height="45" rx="5" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
-          <text x="30" y="48" textAnchor="middle" fontSize="18">🧲</text>
-          {/* Бейдж уровня внутри */}
-          <rect x="32" y="54" width="16" height="12" rx="3" fill={THEME.accent} opacity="0.9" />
-          <text x="40" y="63" textAnchor="middle" fontSize="8" fill="#fff" fontWeight="bold">1</text>
+          <rect x="10" y="20" width="44" height="50" rx="6" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
+          <text x="32" y="48" textAnchor="middle" fontSize="20">🧲</text>
+          {/* Уровень ПО ЦЕНТРУ снизу */}
+          <text x="32" y="66" textAnchor="middle" fontSize="10" fill={THEME.textMuted}>1</text>
         </g>
 
         {/* Плюс */}
-        <text x="62" y="50" textAnchor="middle" fontSize="16" fill={THEME.textSecondary}>+</text>
+        <text x="68" y="48" textAnchor="middle" fontSize="18" fill={THEME.textSecondary}>+</text>
 
         {/* Модуль 2 */}
         <g>
-          <rect x="75" y="25" width="40" height="45" rx="5" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
-          <text x="95" y="48" textAnchor="middle" fontSize="18">🧲</text>
-          {/* Бейдж уровня внутри */}
-          <rect x="97" y="54" width="16" height="12" rx="3" fill={THEME.accent} opacity="0.9" />
-          <text x="105" y="63" textAnchor="middle" fontSize="8" fill="#fff" fontWeight="bold">1</text>
+          <rect x="82" y="20" width="44" height="50" rx="6" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
+          <text x="104" y="48" textAnchor="middle" fontSize="20">🧲</text>
+          {/* Уровень ПО ЦЕНТРУ снизу */}
+          <text x="104" y="66" textAnchor="middle" fontSize="10" fill={THEME.textMuted}>1</text>
         </g>
 
         {/* Стрелка */}
-        <text x="127" y="50" textAnchor="middle" fontSize="16" fill={THEME.accent}>→</text>
+        <text x="140" y="48" textAnchor="middle" fontSize="18" fill={THEME.accent}>→</text>
 
         {/* Результат */}
         <g>
-          <rect x="140" y="20" width="50" height="55" rx="5" fill={THEME.bgPanel} stroke={THEME.accentGreen} strokeWidth="2">
+          <rect x="154" y="15" width="44" height="55" rx="6" fill={THEME.bgPanel} stroke={THEME.accentGreen} strokeWidth="2">
             <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
           </rect>
-          <text x="165" y="45" textAnchor="middle" fontSize="22">🧲</text>
-          {/* Бейдж уровня внутри — крупнее */}
-          <rect x="155" y="52" width="20" height="14" rx="3" fill={THEME.accentGreen} opacity="0.9" />
-          <text x="165" y="63" textAnchor="middle" fontSize="10" fill="#fff" fontWeight="bold">2</text>
+          <text x="176" y="45" textAnchor="middle" fontSize="24">🧲</text>
+          {/* Уровень ПО ЦЕНТРУ снизу */}
+          <text x="176" y="66" textAnchor="middle" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">2</text>
         </g>
       </svg>
     );
   }
 
-  // Синергии: замедление, метки, покрытие
+  // Синергии: замедление, метки, покрытие — приглушённые лабораторные цвета
+  const labColors = {
+    slow: '#5B8DEF',    // Приглушённый синий
+    marked: '#E87B7B',  // Приглушённый красноватый
+    coated: '#7BC96F',  // Приглушённый зелёный
+  };
+
   return (
     <svg width="200" height="110" viewBox="0 0 200 110">
-      {/* Синергия 1: Охладитель → больше времени */}
-      <g transform="translate(10, 5)">
-        <rect width="36" height="32" rx="6" fill="#3b82f6" opacity="0.85" />
-        <text x="18" y="23" textAnchor="middle" fontSize="16">❄️</text>
+      {/* Синергия 1: Охладитель → замедление → больше времени */}
+      <g transform="translate(10, 8)">
+        <rect width="34" height="30" rx="5" fill={labColors.slow} opacity="0.25" stroke={labColors.slow} strokeWidth="1" />
+        <text x="17" y="21" textAnchor="middle" fontSize="15">❄️</text>
       </g>
-      <text x="56" y="26" fontSize="13" fill={THEME.accentGreen} fontWeight="500">→ больше времени</text>
+      <text x="54" y="27" fontSize="12" fill={THEME.textSecondary}>→ больше времени</text>
 
-      {/* Синергия 2: Анализатор → +урон */}
-      <g transform="translate(10, 42)">
-        <rect width="36" height="32" rx="6" fill="#ec4899" opacity="0.85" />
-        <text x="18" y="23" textAnchor="middle" fontSize="16">🎯</text>
+      {/* Синергия 2: Анализатор → метка → +25% урон */}
+      <g transform="translate(10, 43)">
+        <rect width="34" height="30" rx="5" fill={labColors.marked} opacity="0.25" stroke={labColors.marked} strokeWidth="1" />
+        <text x="17" y="21" textAnchor="middle" fontSize="15">🎯</text>
       </g>
-      <text x="56" y="63" fontSize="13" fill={THEME.accentGreen} fontWeight="500">→ +25% урон</text>
+      <text x="54" y="62" fontSize="12" fill={THEME.textSecondary}>→ +25% урон</text>
 
-      {/* Синергия 3: Смазка → +урон соседям */}
-      <g transform="translate(10, 79)">
-        <rect width="36" height="32" rx="6" fill="#22c55e" opacity="0.85" />
-        <text x="18" y="23" textAnchor="middle" fontSize="16">🛢️</text>
+      {/* Синергия 3: Смазка → покрытие → +25% соседям */}
+      <g transform="translate(10, 78)">
+        <rect width="34" height="30" rx="5" fill={labColors.coated} opacity="0.25" stroke={labColors.coated} strokeWidth="1" />
+        <text x="17" y="21" textAnchor="middle" fontSize="15">💧</text>
       </g>
-      <text x="56" y="100" fontSize="13" fill={THEME.accentGreen} fontWeight="500">→ +25% соседям</text>
+      <text x="54" y="97" fontSize="12" fill={THEME.textSecondary}>→ +25% соседям</text>
     </svg>
   );
 }

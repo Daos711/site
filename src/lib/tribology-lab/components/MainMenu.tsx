@@ -6,6 +6,7 @@ import { LabBackground } from './LabBackground';
 import { StartButton } from './StartButton';
 import { ModeToggle, GameMode, generateSeed } from './ModeToggle';
 import { MODULES, MODULE_PALETTE, ModuleType } from '../types';
+import { ModuleIcon } from './ModuleIcons';
 
 interface MainMenuProps {
   onStart: (seed: number, mode: GameMode) => void;
@@ -205,7 +206,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
                     transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   }}
                 >
-                  {/* Иконка */}
+                  {/* Иконка из игры */}
                   <div
                     style={{
                       width: 52,
@@ -216,12 +217,13 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '22px',
                       boxShadow: isVisible ? `0 0 12px ${palette.glow}` : 'none',
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    {config.icon}
+                    <div style={{ width: 32, height: 32 }}>
+                      <ModuleIcon type={moduleType} />
+                    </div>
                   </div>
 
                   {/* Название */}
