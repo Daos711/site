@@ -1095,13 +1095,18 @@ export function processBurnDamage(enemies: Enemy[], deltaTime: number): Enemy[] 
 
 /**
  * Применяет регенерацию HP боссу Питтинг
+ * Базовый реген 20 HP/сек, масштабируется пропорционально HP
  */
 export function processBossRegeneration(enemies: Enemy[], deltaTime: number): Enemy[] {
+  const BASE_PITTING_HP = 800;  // baseHp из types.ts
+  const BASE_REGEN = 20;        // базовая регенерация HP/сек
+
   return enemies.map(enemy => {
     if (enemy.type !== 'boss_pitting') return enemy;
 
-    // Регенерация 10 HP/сек
-    const regen = 10 * (deltaTime / 1000);
+    // Регенерация масштабируется пропорционально HP
+    const scaledRegen = BASE_REGEN * (enemy.maxHp / BASE_PITTING_HP);
+    const regen = scaledRegen * (deltaTime / 1000);
     return {
       ...enemy,
       hp: Math.min(enemy.maxHp, enemy.hp + regen),

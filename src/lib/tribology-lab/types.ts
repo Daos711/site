@@ -487,7 +487,7 @@ export const ENEMIES: Record<EnemyType, EnemyConfig> = {
     baseHp: 800,
     speed: 15,
     reward: 75,
-    description: 'Регенерация 10 HP/с',
+    description: 'Регенерация 20 HP/с (масштаб.)',
     size: 24,       // уменьшен чтобы статусы влезали в канал
     color: '#374151',  // тёмно-серый
     oscillation: 0,

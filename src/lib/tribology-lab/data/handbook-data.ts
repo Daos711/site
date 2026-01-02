@@ -99,7 +99,6 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
       'Безопасен рядом с Коррозией',
     ],
     notes: [
-      'Самый дешёвый DPS модуль',
       'Иммунен к ауре коррозии',
     ],
     effects: {
@@ -166,7 +165,6 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     keyEffect: 'slow',
     synergies: [
       '+30% урона по Перегреву',
-      'Все DPS модули → больше времени на урон',
       'Высушивание + Охладитель → Влага замедляется',
     ],
     notes: [
@@ -403,7 +401,7 @@ export const HANDBOOK_ENEMIES: Record<string, HandbookEnemyData> = {
     tag: null,
     description: 'Телепортируется вперёд на +10% каждые 3 секунды. Очень быстрый!',
     immunities: [],
-    counters: ['Высокий урон — телепортируется быстро'],
+    counters: ['Требуется высокий DPS — телепортируется каждые 3 сек'],
   },
   boss_wear: {
     name: 'Задир',
@@ -417,7 +415,7 @@ export const HANDBOOK_ENEMIES: Record<string, HandbookEnemyData> = {
     name: 'Питтинг',
     category: 'boss',
     tag: 'metal',
-    description: 'Финальный босс. Регенерация 10 HP/сек!',
+    description: 'Финальный босс. Регенерация 20 HP/сек (масштабируется с волной)!',
     immunities: [],
     counters: ['Сепаратор (+50%)', 'Лазер (+30%)', 'Анализатор (+25%)', 'Высокий DPS'],
   },
