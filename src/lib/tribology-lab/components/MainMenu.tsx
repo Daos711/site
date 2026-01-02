@@ -9,7 +9,7 @@ import { MODULES, MODULE_PALETTE, ModuleType } from '../types';
 import { ModuleIcon } from './ModuleIcons';
 
 interface MainMenuProps {
-  onStart: (seed: number, mode: GameMode) => void;
+  onStart: (seed: number, mode: GameMode, deck: ModuleType[]) => void;
   onTutorial?: () => void;
   hasCompletedTutorial: boolean;
 }
@@ -94,7 +94,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
     if (!hasCompletedTutorial && onTutorial) {
       onTutorial();
     } else {
-      onStart(seed, mode);
+      onStart(seed, mode, deck);
     }
   };
 

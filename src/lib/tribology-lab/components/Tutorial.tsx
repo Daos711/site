@@ -291,6 +291,9 @@ function TutorialIllustration({ type }: { type: 'wave' | 'grid' | 'combo' }) {
     coated: '#7BC96F',  // Приглушённый зелёный
   };
 
+  // Зелёный цвет для текста синергий
+  const synergyTextColor = '#7BC96F';
+
   return (
     <svg width="200" height="110" viewBox="0 0 200 110">
       {/* Синергия 1: Охладитель → замедление → больше времени */}
@@ -298,21 +301,21 @@ function TutorialIllustration({ type }: { type: 'wave' | 'grid' | 'combo' }) {
         <rect width="34" height="30" rx="5" fill={labColors.slow} opacity="0.25" stroke={labColors.slow} strokeWidth="1" />
         <text x="17" y="21" textAnchor="middle" fontSize="15">❄️</text>
       </g>
-      <text x="54" y="27" fontSize="12" fill={THEME.textSecondary}>→ больше времени</text>
+      <text x="54" y="27" fontSize="12" fill={synergyTextColor}>→ больше времени</text>
 
       {/* Синергия 2: Анализатор → метка → +25% урон */}
       <g transform="translate(10, 43)">
         <rect width="34" height="30" rx="5" fill={labColors.marked} opacity="0.25" stroke={labColors.marked} strokeWidth="1" />
         <text x="17" y="21" textAnchor="middle" fontSize="15">🎯</text>
       </g>
-      <text x="54" y="62" fontSize="12" fill={THEME.textSecondary}>→ +25% урон</text>
+      <text x="54" y="62" fontSize="12" fill={synergyTextColor}>→ +25% урон</text>
 
       {/* Синергия 3: Смазка → покрытие → +25% соседям */}
       <g transform="translate(10, 78)">
         <rect width="34" height="30" rx="5" fill={labColors.coated} opacity="0.25" stroke={labColors.coated} strokeWidth="1" />
         <text x="17" y="21" textAnchor="middle" fontSize="15">💧</text>
       </g>
-      <text x="54" y="97" fontSize="12" fill={THEME.textSecondary}>→ +25% соседям</text>
+      <text x="54" y="97" fontSize="12" fill={synergyTextColor}>→ +25% соседям</text>
     </svg>
   );
 }

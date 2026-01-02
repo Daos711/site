@@ -44,8 +44,8 @@ import { MainMenu } from "@/lib/tribology-lab/components/MainMenu";
 import { Tutorial } from "@/lib/tribology-lab/components/Tutorial";
 import type { GameMode } from "@/lib/tribology-lab/components/ModeToggle";
 
-// Начальные модули в магазине
-const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet', 'cooler'];
+// Запасные модули (если не передана колода из меню)
+const FALLBACK_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet'];
 
 interface DragState {
   type: 'shop' | 'field';
@@ -81,7 +81,7 @@ export default function TribologyLabPage() {
   const [gold, setGold] = useState(INITIAL_GOLD);
   const [modules, setModules] = useState<Module[]>([]);
   const modulesRef = useRef<Module[]>([]); // Ref для актуальных модулей в game loop
-  const [shop, setShop] = useState<ModuleType[]>(INITIAL_SHOP);
+  const [shop, setShop] = useState<ModuleType[]>(FALLBACK_SHOP);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
@@ -123,6 +123,7 @@ export default function TribologyLabPage() {
   const [screen, setScreen] = useState<ScreenState>('splash');
   const [gameSeed, setGameSeed] = useState(0);
   const [gameMode, setGameMode] = useState<GameMode>('daily');
+  const [menuDeck, setMenuDeck] = useState<ModuleType[] | null>(null);
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false);
 
   // Загружаем флаг туториала из localStorage
@@ -153,11 +154,29 @@ export default function TribologyLabPage() {
     setScreen('menu');
   }, []);
 
-  const handleStartGame = useCallback((seed: number, mode: GameMode) => {
+  const handleStartGame = useCallback((seed: number, mode: GameMode, deck: ModuleType[]) => {
     setGameSeed(seed);
     setGameMode(mode);
+    setMenuDeck(deck);
+    // Сбрасываем игру при старте
+    setWave(1);
+    setLives(INITIAL_LIVES);
+    setGold(INITIAL_GOLD);
+    setModules([]);
+    setEnemies([]);
+    enemiesRef.current = [];
+    setGamePhase('preparing');
+    activeBarriersRef.current = [];
+    setActiveBarriers([]);
+    setGameStarted(false);
+    setNextWaveCountdown(0);
+    spawnedIdsRef.current.clear();
+    // Устанавливаем магазин из меню (testDeck приоритетнее)
+    if (!testDeck) {
+      setShop([...deck]);
+    }
     setScreen('game');
-  }, []);
+  }, [testDeck]);
 
   const handleShowTutorial = useCallback(() => {
     setScreen('tutorial');
@@ -304,16 +323,17 @@ export default function TribologyLabPage() {
     setSpawnQueue([]);
     activeBarriersRef.current = [];
     setActiveBarriers([]);
-    // Обновляем магазин — новые модули разблокируются с волнами
+    // Обновляем магазин: testDeck → menuDeck → fallback
     if (testDeck) {
-      // Для тестовой колоды — ровно те модули из колоды
       setShop([...testDeck]);
+    } else if (menuDeck) {
+      setShop([...menuDeck]);
     } else {
       setShop(generateShopSlots(nextWave));
     }
     // Запускаем обратный отсчёт до следующей волны (10 сек)
     setNextWaveCountdown(10);
-  }, [wave, testDeck]);
+  }, [wave, testDeck, menuDeck]);
 
   // Автостарт следующей волны
   useEffect(() => {
@@ -3425,11 +3445,13 @@ export default function TribologyLabPage() {
                   setSpawnQueue([]);
                   activeBarriersRef.current = [];
                   setActiveBarriers([]);
-                  // Магазин: тестовая колода или стандартный
+                  // Магазин: тестовая колода → меню колода → fallback
                   if (testDeck) {
                     setShop([...testDeck]);
+                  } else if (menuDeck) {
+                    setShop([...menuDeck]);
                   } else {
-                    setShop(INITIAL_SHOP);
+                    setShop(FALLBACK_SHOP);
                   }
                   setGameStarted(false);
                   setNextWaveCountdown(0);
