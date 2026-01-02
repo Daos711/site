@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { THEME } from '../../theme';
-import { MODULES, ModuleType, MODULE_PALETTE, getDamage, getEffectDuration, getEffectStrength, getModulePrice } from '../../types';
+import { MODULES, ModuleType, MODULE_PALETTE, getDamage, getEffectDuration, getEffectStrength } from '../../types';
 import { ModuleIcon } from '../ModuleIcons';
 import { BackButton, DetailSection, RoleBadge, StatGrid, BulletList } from './HandbookCard';
 import {
@@ -12,6 +12,7 @@ import {
   ATTACK_TYPE_LABELS,
   HANDBOOK_MODULES,
   MODULE_LIST,
+  HANDBOOK_EFFECTS,
 } from '../../data/handbook-data';
 
 interface ModuleDetailProps {
@@ -29,7 +30,7 @@ export function ModuleDetail({ moduleId, onBack }: ModuleDetailProps) {
 
   // Рассчитываем статы для текущего уровня
   const damage = getDamage(config.baseDamage, level);
-  const price = getModulePrice(config.basePrice, level);
+  const price = config.basePrice; // Цена фиксирована, не меняется с уровнем!
   const effectDuration = config.effectDuration ? getEffectDuration(config.effectDuration, level) : null;
   const effectStrength = config.effectStrength ? getEffectStrength(config.effectStrength, level) : null;
 
@@ -192,6 +193,71 @@ export function ModuleDetail({ moduleId, onBack }: ModuleDetailProps) {
         <DetailSection title="Примечания">
           <BulletList items={handbookData.notes} />
         </DetailSection>
+      )}
+
+      {/* Эффекты */}
+      {handbookData.effects && (
+        <>
+          {/* Накладывает эффекты */}
+          {handbookData.effects.gives && handbookData.effects.gives.length > 0 && (
+            <DetailSection title="Накладывает эффекты">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {handbookData.effects.gives.map((effectId, i) => {
+                  const effect = HANDBOOK_EFFECTS[effectId];
+                  if (!effect) return null;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        color: '#3b82f6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      {effect.icon} {effect.nameRu}
+                    </div>
+                  );
+                })}
+              </div>
+            </DetailSection>
+          )}
+
+          {/* Иммунитеты модуля */}
+          {handbookData.effects.immunities && handbookData.effects.immunities.length > 0 && (
+            <DetailSection title="Иммунитеты">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {handbookData.effects.immunities.map((effectId, i) => {
+                  const effect = HANDBOOK_EFFECTS[effectId];
+                  if (!effect) return null;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(168, 85, 247, 0.1)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        color: '#a855f7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      🛡️ {effect.nameRu}
+                    </div>
+                  );
+                })}
+              </div>
+            </DetailSection>
+          )}
+        </>
       )}
 
       {/* Навигация */}

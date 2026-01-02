@@ -2,8 +2,13 @@
 
 import React from 'react';
 import { THEME } from '../../theme';
-import { BackButton, DetailSection, BulletList } from './HandbookCard';
-import { EFFECT_LIST, HANDBOOK_EFFECTS } from '../../data/handbook-data';
+import { BackButton, DetailSection, RoleBadge } from './HandbookCard';
+import {
+  EFFECT_LIST,
+  HANDBOOK_EFFECTS,
+  EFFECT_CATEGORY_LABELS,
+  EFFECT_CATEGORY_COLORS,
+} from '../../data/handbook-data';
 
 interface EffectDetailProps {
   effectId: string;
@@ -23,6 +28,7 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
   }
 
   const currentIndex = EFFECT_LIST.indexOf(effectId);
+  const categoryColor = EFFECT_CATEGORY_COLORS[handbookData.category];
 
   return (
     <div>
@@ -53,13 +59,13 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
             width: 80,
             height: 80,
             margin: '0 auto 12px',
-            background: 'rgba(234, 179, 8, 0.15)',
+            background: `${categoryColor}22`,
             borderRadius: 16,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: `2px solid ${THEME.accent}`,
-            boxShadow: `0 0 20px rgba(234, 179, 8, 0.2)`,
+            border: `2px solid ${categoryColor}`,
+            boxShadow: `0 0 20px ${categoryColor}33`,
             fontSize: 40,
           }}
         >
@@ -83,10 +89,17 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
           style={{
             fontSize: 14,
             color: THEME.accent,
+            marginBottom: 8,
           }}
         >
           ({handbookData.nameRu})
         </div>
+
+        {/* Категория */}
+        <RoleBadge
+          role={EFFECT_CATEGORY_LABELS[handbookData.category]}
+          color={categoryColor}
+        />
       </div>
 
       {/* Что делает */}
@@ -103,6 +116,22 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
         </p>
       </DetailSection>
 
+      {/* Цель */}
+      <DetailSection title="Цель">
+        <div
+          style={{
+            padding: '8px 12px',
+            background: `${categoryColor}15`,
+            border: `1px solid ${categoryColor}50`,
+            borderRadius: 8,
+            fontSize: 13,
+            color: categoryColor,
+          }}
+        >
+          🎯 {handbookData.target}
+        </div>
+      </DetailSection>
+
       {/* Параметры */}
       <DetailSection title="Параметры">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -114,8 +143,10 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
               borderBottom: `1px solid ${THEME.border}`,
             }}
           >
-            <span style={{ fontSize: 13, color: THEME.textMuted }}>Стакается</span>
-            <span style={{ fontSize: 13, color: THEME.textSecondary }}>{handbookData.stacking}</span>
+            <span style={{ fontSize: 13, color: THEME.textMuted }}>Поведение</span>
+            <span style={{ fontSize: 13, color: THEME.textSecondary, textAlign: 'right', maxWidth: '60%' }}>
+              {handbookData.stacking}
+            </span>
           </div>
           {handbookData.cap && (
             <div
@@ -176,6 +207,25 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
                 🛡 {immunity}
               </div>
             ))}
+          </div>
+        </DetailSection>
+      )}
+
+      {/* Примечания */}
+      {handbookData.notes && (
+        <DetailSection title="Примечания">
+          <div
+            style={{
+              padding: '10px 12px',
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: `1px solid ${THEME.accent}`,
+              borderRadius: 8,
+              fontSize: 13,
+              color: THEME.accent,
+              lineHeight: 1.5,
+            }}
+          >
+            💡 {handbookData.notes}
           </div>
         </DetailSection>
       )}

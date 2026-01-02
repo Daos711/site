@@ -10,6 +10,7 @@ import {
   ENEMY_CATEGORY_LABELS,
   ENEMY_CATEGORY_COLORS,
   EnemyCategory,
+  TAG_LABELS_RU,
 } from '../../data/handbook-data';
 
 interface EnemiesListProps {
@@ -145,7 +146,7 @@ export function EnemiesList({ onSelect }: EnemiesListProps) {
                       color: THEME.textMuted,
                     }}
                   >
-                    {handbookData.tag}
+                    {TAG_LABELS_RU[handbookData.tag] || handbookData.tag}
                   </span>
                 )}
                 {handbookData.immunities.length > 0 && (

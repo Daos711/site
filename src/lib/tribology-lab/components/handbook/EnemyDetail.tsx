@@ -9,6 +9,8 @@ import {
   HANDBOOK_ENEMIES,
   ENEMY_CATEGORY_LABELS,
   ENEMY_CATEGORY_COLORS,
+  TAG_LABELS_RU,
+  HANDBOOK_EFFECTS,
 } from '../../data/handbook-data';
 
 interface EnemyDetailProps {
@@ -109,7 +111,7 @@ export function EnemyDetail({ enemyId, onBack }: EnemyDetailProps) {
 
       {/* Тег */}
       {handbookData.tag && (
-        <DetailSection title={`Тег: ${handbookData.tag.toUpperCase()}`}>
+        <DetailSection title={`Тег: ${(TAG_LABELS_RU[handbookData.tag] || handbookData.tag).toUpperCase()}`}>
           <p
             style={{
               fontSize: 14,
@@ -169,6 +171,71 @@ export function EnemyDetail({ enemyId, onBack }: EnemyDetailProps) {
       <DetailSection title="Как контрить">
         <BulletList items={handbookData.counters} color="#7BC96F" />
       </DetailSection>
+
+      {/* Эффекты */}
+      {handbookData.effects && (
+        <>
+          {/* Создаёт эффекты */}
+          {handbookData.effects.gives && handbookData.effects.gives.length > 0 && (
+            <DetailSection title="Создаёт эффекты">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {handbookData.effects.gives.map((effectId, i) => {
+                  const effect = HANDBOOK_EFFECTS[effectId];
+                  if (!effect) return null;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        color: '#ef4444',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      {effect.icon} {effect.nameRu}
+                    </div>
+                  );
+                })}
+              </div>
+            </DetailSection>
+          )}
+
+          {/* Иммунитеты врага */}
+          {handbookData.effects.immunities && handbookData.effects.immunities.length > 0 && (
+            <DetailSection title="Иммунитеты к эффектам">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {handbookData.effects.immunities.map((effectId, i) => {
+                  const effect = HANDBOOK_EFFECTS[effectId];
+                  if (!effect) return null;
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(168, 85, 247, 0.1)',
+                        border: '1px solid rgba(168, 85, 247, 0.3)',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        color: '#a855f7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      🛡️ {effect.nameRu}
+                    </div>
+                  );
+                })}
+              </div>
+            </DetailSection>
+          )}
+        </>
+      )}
 
       {/* Навигация */}
       <div
