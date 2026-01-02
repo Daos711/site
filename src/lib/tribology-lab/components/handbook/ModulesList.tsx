@@ -139,7 +139,6 @@ export function ModulesList({ onSelect }: ModulesListProps) {
               >
                 <span>💥{config.baseDamage}</span>
                 <span>⏱{config.attackSpeed}</span>
-                <span>📡{config.range}</span>
               </div>
             </HandbookCard>
           );

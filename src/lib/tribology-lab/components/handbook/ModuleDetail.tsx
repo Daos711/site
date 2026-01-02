@@ -41,7 +41,6 @@ export function ModuleDetail({ moduleId, onBack }: ModuleDetailProps) {
   const stats: { icon: string; value: string | number; label: string }[] = [
     { icon: '💰', value: price, label: 'Цена' },
     { icon: '💥', value: damage, label: 'Урон' },
-    { icon: '📡', value: config.range, label: 'Дальн.' },
     { icon: '⏱', value: config.attackSpeed, label: 'Скор.' },
   ];
 

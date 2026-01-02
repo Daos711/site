@@ -118,6 +118,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     notes: [
       '+50% урона по металлическим',
       'Замедляет металл на 20% (2 сек)',
+      'Урон падает с расстоянием (мин. 15%)',
     ],
     effects: {
       gives: ['slow'],
@@ -279,6 +280,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     notes: [
       'AOE радиус: 80',
       '+20% урона по пыльным',
+      'Урон падает с расстоянием (мин. 50%)',
     ],
   },
   demulsifier: {
