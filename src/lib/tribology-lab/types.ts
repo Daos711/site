@@ -335,6 +335,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     color: '#FF9F43',
     description: 'Откатывает врагов назад',
     attackType: 'aoe',
+    effectStrength: 8, // Базовый откат 8%, масштабируется с уровнем
   },
   electrostatic: {
     id: 'electrostatic',

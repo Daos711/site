@@ -73,21 +73,25 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
     setLoadingProgress(0);
     setIsLoaded(false);
 
-    const timer = setTimeout(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const timerId = setTimeout(() => {
       let count = 0;
-      const interval = setInterval(() => {
+      intervalId = setInterval(() => {
         count++;
         setLoadingProgress(count);
         if (count >= 5) {
-          clearInterval(interval);
+          if (intervalId) clearInterval(intervalId);
           setIsLoaded(true);
         }
       }, 180);
-
-      return () => clearInterval(interval);
     }, 300);
 
-    return () => clearTimeout(timer);
+    // Очищаем ОБА таймера при смене режима
+    return () => {
+      clearTimeout(timerId);
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [mode, seed]);
 
   const handleStart = () => {

@@ -959,7 +959,7 @@ export function processModuleAttack(
           }
         }
 
-        // Центрифуга: плавный откат врагов назад
+        // Центрифуга: плавный откат врагов назад (масштабируется с уровнем)
         if (module.type === 'centrifuge') {
           const hasAntiPush = updatedEnemies[index].effects.some(e => e.type === 'antiPush');
           const hasPushback = updatedEnemies[index].effects.some(e => e.type === 'pushback');
@@ -967,18 +967,22 @@ export function processModuleAttack(
             const isBoss = target.type.startsWith('boss_');
             const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
 
-            // strength = общий откат (0.04 = 4%), duration = время анимации
-            let pushAmount = 0.04;  // 4% назад
-            if (isElite) pushAmount = 0.02;
-            if (isBoss) pushAmount = 0.008;
+            // Базовый откат 8%, +2% за уровень (L1=8%, L2=10%, L3=12%, L4=14%, L5=16%)
+            const baseStrength = config.effectStrength || 8;
+            const scaledStrength = getEffectStrength(baseStrength, module.level);
+            let pushAmount = scaledStrength / 100; // В десятичную дробь
+
+            // Модификаторы для сильных врагов
+            if (isElite) pushAmount *= 0.5;  // 50% эффективности
+            if (isBoss) pushAmount *= 0.2;   // 20% эффективности
 
             updatedEnemies[index] = {
               ...updatedEnemies[index],
               effects: [
                 ...updatedEnemies[index].effects,
-                // pushback: strength в процентах * 1000 для точности (40 = 0.04)
+                // pushback: strength в процентах * 1000 для точности
                 { type: 'pushback' as EffectType, duration: 400, strength: pushAmount * 1000 },
-                { type: 'antiPush' as EffectType, duration: 2500, strength: 0 }
+                { type: 'antiPush' as EffectType, duration: 1500, strength: 0 } // 1.5 сек кулдаун (было 2.5)
               ]
             };
           }
