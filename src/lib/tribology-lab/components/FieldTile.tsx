@@ -52,7 +52,7 @@ export function FieldTile({
           TopBar — код и уровень
           ═══════════════════════════════════════════════════════════════ */}
       <div className="module-code">{code}</div>
-      <div className="level-badge">Lv.{level}</div>
+      <div className="level-badge">Ур.{level}</div>
 
       {/* ═══════════════════════════════════════════════════════════════
           LeftRail — статусы (🦠 коррозия, 🛡️✓ иммунитет)

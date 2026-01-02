@@ -607,3 +607,35 @@ export const ENEMY_UNLOCK_WAVES: Record<EnemyType, number> = {
   boss_wear: 5,
   boss_pitting: 10,
 };
+
+// Градиенты модулей для UI
+export const MODULE_GRADIENTS: Record<ModuleType, { bg: string; border: string }> = {
+  magnet: { bg: 'linear-gradient(145deg, #7c3aed 0%, #4c1d95 100%)', border: '#a78bfa' },
+  cooler: { bg: 'linear-gradient(145deg, #0ea5e9 0%, #0369a1 100%)', border: '#7dd3fc' },
+  filter: { bg: 'linear-gradient(145deg, #f59e0b 0%, #b45309 100%)', border: '#fcd34d' },
+  lubricant: { bg: 'linear-gradient(145deg, #a855f7 0%, #7e22ce 100%)', border: '#c4b5fd' },
+  ultrasonic: { bg: 'linear-gradient(145deg, #14b8a6 0%, #0f766e 100%)', border: '#5eead4' },
+  laser: { bg: 'linear-gradient(145deg, #ef4444 0%, #b91c1c 100%)', border: '#fca5a5' },
+  inhibitor: { bg: 'linear-gradient(145deg, #C7B56A 0%, #8a7a3a 100%)', border: '#d4c98a' },
+  demulsifier: { bg: 'linear-gradient(145deg, #A7E8C2 0%, #5d9a72 100%)', border: '#c4f0d5' },
+  analyzer: { bg: 'linear-gradient(145deg, #E6EEF7 0%, #9aa8b5 100%)', border: '#f0f5fa' },
+  centrifuge: { bg: 'linear-gradient(145deg, #FF9F43 0%, #b56d1f 100%)', border: '#ffb870' },
+  electrostatic: { bg: 'linear-gradient(145deg, #F5E663 0%, #a89a2d 100%)', border: '#f8ed8c' },
+  barrier: { bg: 'linear-gradient(145deg, #FFD166 0%, #b5923a 100%)', border: '#ffe08c' },
+};
+
+// Русские сокращения модулей для DEV-панели
+export const DEV_MODULE_CODES_RU: Record<ModuleType, string> = {
+  magnet: 'СЕП',      // Сепаратор
+  cooler: 'КРИ',      // Криоблок
+  filter: 'ФИЛ',      // Фильтр
+  lubricant: 'СМА',   // Смазка
+  ultrasonic: 'УЗВ',  // Ультразвук
+  laser: 'ЛАЗ',       // Лазер
+  inhibitor: 'ИНГ',   // Ингибитор
+  demulsifier: 'ДЕМ', // Демульгатор
+  analyzer: 'АНА',    // Анализатор
+  centrifuge: 'ЦЕН',  // Центрифуга
+  electrostatic: 'ЭЛС', // Электростатик
+  barrier: 'БАР',     // Барьер
+};

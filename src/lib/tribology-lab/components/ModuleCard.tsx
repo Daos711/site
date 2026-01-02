@@ -84,7 +84,7 @@ export function ModuleCard({
         </div>
         <div className="niche-glare" />
         {level > 1 && (
-          <div className="level-badge">Lv.{level}</div>
+          <div className="level-badge">Ур.{level}</div>
         )}
       </div>
 
