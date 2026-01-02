@@ -548,8 +548,8 @@ export default function TribologyLabPage() {
         });
       }
 
-      // 3. Регенерация босса Питтинг
-      updated = processBossRegeneration(updated, deltaTime);
+      // 3. Регенерация босса Питтинг (Ингибитор блокирует!)
+      updated = processBossRegeneration(updated, deltaTime, modulesRef.current, enemyPath);
 
       // 4. Боевая система — атаки модулей
       const currentModules = modulesRef.current;

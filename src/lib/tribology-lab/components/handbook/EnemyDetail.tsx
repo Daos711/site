@@ -156,7 +156,7 @@ export function EnemyDetail({ enemyId, onBack }: EnemyDetailProps) {
                   color: '#ef4444',
                 }}
               >
-                🛡 {immunity}
+                {immunity}
               </div>
             ))}
           </div>
@@ -223,7 +223,7 @@ export function EnemyDetail({ enemyId, onBack }: EnemyDetailProps) {
                         gap: 6,
                       }}
                     >
-                      🛡️ {effect.name}
+                      {effect.icon} {effect.name}
                     </div>
                   );
                 })}

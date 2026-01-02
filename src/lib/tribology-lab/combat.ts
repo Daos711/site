@@ -1095,10 +1095,33 @@ export function processBurnDamage(enemies: Enemy[], deltaTime: number): Enemy[] 
 
 /**
  * Применяет регенерацию HP боссу Питтинг
+ * Ингибитор в радиусе 150px блокирует регенерацию!
  */
-export function processBossRegeneration(enemies: Enemy[], deltaTime: number): Enemy[] {
+export function processBossRegeneration(
+  enemies: Enemy[],
+  deltaTime: number,
+  modules: Module[],
+  path: PathPoint[]
+): Enemy[] {
   return enemies.map(enemy => {
     if (enemy.type !== 'boss_pitting') return enemy;
+
+    // Получаем позицию врага
+    const enemyConfig = ENEMIES[enemy.type];
+    const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
+
+    // Проверяем есть ли Ингибитор в радиусе Питтинга
+    const hasInhibitorNearby = modules.some(m => {
+      if (m.type !== 'inhibitor') return false;
+      const modulePos = getModulePosition(m);
+      const dx = modulePos.x - enemyPos.x;
+      const dy = modulePos.y - enemyPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      return dist <= 150; // Радиус действия Ингибитора
+    });
+
+    // Ингибитор блокирует регенерацию!
+    if (hasInhibitorNearby) return enemy;
 
     // Регенерация 10 HP/сек
     const regen = 10 * (deltaTime / 1000);

@@ -121,23 +121,10 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
         </div>
       </DetailSection>
 
-      {/* Параметры */}
-      <DetailSection title="Параметры">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '8px 0',
-              borderBottom: `1px solid ${THEME.border}`,
-            }}
-          >
-            <span style={{ fontSize: 13, color: THEME.textMuted }}>Поведение</span>
-            <span style={{ fontSize: 13, color: THEME.textSecondary, textAlign: 'right', maxWidth: '60%' }}>
-              {handbookData.stacking}
-            </span>
-          </div>
-          {handbookData.cap && (
+      {/* Параметры — показываем только если есть кап */}
+      {handbookData.cap && (
+        <DetailSection title="Параметры">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div
               style={{
                 display: 'flex',
@@ -146,12 +133,12 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
                 borderBottom: `1px solid ${THEME.border}`,
               }}
             >
-              <span style={{ fontSize: 13, color: THEME.textMuted }}>Кап</span>
+              <span style={{ fontSize: 13, color: THEME.textMuted }}>Лимит</span>
               <span style={{ fontSize: 13, color: THEME.accent }}>{handbookData.cap}</span>
             </div>
-          )}
-        </div>
-      </DetailSection>
+          </div>
+        </DetailSection>
+      )}
 
       {/* Источники */}
       <DetailSection title="Источники">
@@ -193,7 +180,7 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
                   color: '#ef4444',
                 }}
               >
-                🛡 {immunity}
+                {immunity}
               </div>
             ))}
           </div>
