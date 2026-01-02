@@ -7,6 +7,7 @@ import { StartButton } from './StartButton';
 import { ModeToggle, GameMode, generateSeed } from './ModeToggle';
 import { MODULES, MODULE_PALETTE, ModuleType } from '../types';
 import { ModuleIcon } from './ModuleIcons';
+import { Handbook } from './handbook';
 
 interface MainMenuProps {
   onStart: (seed: number, mode: GameMode, deck: ModuleType[]) => void;
@@ -60,6 +61,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
   const [mode, setMode] = useState<GameMode>('daily');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showHandbook, setShowHandbook] = useState(false);
 
   // Seed и дека зависят от режима
   const seed = useMemo(() => generateSeed(mode), [mode]);
@@ -252,24 +254,51 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
         {/* Кнопка старт — активна только после загрузки */}
         <StartButton onClick={handleStart} disabled={!isLoaded} />
 
-        {/* Ссылка на туториал (если уже прошёл) */}
-        {hasCompletedTutorial && onTutorial && (
+        {/* Нижняя панель: туториал + справочник */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            alignItems: 'center',
+          }}
+        >
+          {hasCompletedTutorial && onTutorial && (
+            <button
+              onClick={onTutorial}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: THEME.textMuted,
+                fontSize: '14px',
+                cursor: 'pointer',
+                padding: '8px 16px',
+                textDecoration: 'underline',
+                textUnderlineOffset: '4px',
+              }}
+            >
+              Как играть?
+            </button>
+          )}
           <button
-            onClick={onTutorial}
+            onClick={() => setShowHandbook(true)}
             style={{
-              background: 'none',
-              border: 'none',
-              color: THEME.textMuted,
-              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'rgba(17, 24, 36, 0.8)',
+              border: `1px solid ${THEME.border}`,
+              borderRadius: 8,
+              color: THEME.textSecondary,
+              fontSize: '13px',
               cursor: 'pointer',
-              padding: '8px 16px',
-              textDecoration: 'underline',
-              textUnderlineOffset: '4px',
+              padding: '8px 14px',
+              transition: 'all 0.15s ease',
             }}
           >
-            Как играть?
+            <span>📒</span>
+            СПРАВОЧНИК
           </button>
-        )}
+        </div>
 
         {/* Seed info (для дебага / шеринга) */}
         <p
@@ -285,6 +314,11 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
           seed: {seed}
         </p>
       </div>
+
+      {/* Справочник */}
+      {showHandbook && (
+        <Handbook onClose={() => setShowHandbook(false)} />
+      )}
     </LabBackground>
   );
 }
