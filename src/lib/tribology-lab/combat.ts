@@ -824,8 +824,9 @@ export function processModuleAttack(
       return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
     }
 
-    // 3. Создаём барьер (3 секунды)
+    // 3. Создаём барьер (длительность растёт с уровнем: +10% за уровень)
     const baseDuration = config.effectDuration || 3000;
+    const scaledDuration = getEffectDuration(baseDuration, module.level);
     const barrierId = `barrier-${module.id}-${currentTime}`;
 
     const newBarrier: ActiveBarrier = {
@@ -833,8 +834,8 @@ export function processModuleAttack(
       moduleId: module.id,
       x: barrierPos.x,
       y: barrierPos.y,
-      duration: baseDuration,
-      maxDuration: baseDuration,
+      duration: scaledDuration,
+      maxDuration: scaledDuration,
       createdAt: currentTime,
       bossPresure: enemiesReadyForBarrier.some(e => e.type.startsWith('boss_')),
       isHorizontal: barrierPos.isHorizontal,
