@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { THEME } from '../theme';
 import { LabBackground } from './LabBackground';
 import { StartButton } from './StartButton';
 import { ModeToggle, GameMode, generateSeed } from './ModeToggle';
-import { ModuleCard } from './ModuleCard';
-import { ModuleType } from '../types';
+import { MODULES, MODULE_PALETTE, ModuleType } from '../types';
 
 interface MainMenuProps {
   onStart: (seed: number, mode: GameMode) => void;
@@ -58,6 +57,8 @@ function generateDeck(seed: number): ModuleType[] {
  */
 export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenuProps) {
   const [mode, setMode] = useState<GameMode>('daily');
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Seed и дека зависят от режима
   const seed = useMemo(() => generateSeed(mode), [mode]);
@@ -65,6 +66,28 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
 
   // Номер "стенда" — просто seed mod 999 + 1
   const standNumber = String((seed % 999) + 1).padStart(3, '0');
+
+  // Анимация загрузки карточек
+  useEffect(() => {
+    setLoadingProgress(0);
+    setIsLoaded(false);
+
+    const timer = setTimeout(() => {
+      let count = 0;
+      const interval = setInterval(() => {
+        count++;
+        setLoadingProgress(count);
+        if (count >= 5) {
+          clearInterval(interval);
+          setIsLoaded(true);
+        }
+      }, 180);
+
+      return () => clearInterval(interval);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [mode, seed]);
 
   const handleStart = () => {
     if (!hasCompletedTutorial && onTutorial) {
@@ -152,38 +175,76 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
               margin: 0,
+              minHeight: '1.2em',
             }}
           >
-            Набор оборудования
+            {isLoaded ? 'Набор оборудования' : `Выдача комплекта... ${loadingProgress}/5`}
           </p>
           <div
             style={{
               display: 'flex',
-              gap: 6,
-              flexWrap: 'wrap',
+              gap: 10,
               justifyContent: 'center',
             }}
           >
-            {deck.map((moduleType, index) => (
-              <div
-                key={`${moduleType}-${index}`}
-                style={{
-                  transform: 'scale(0.85)',
-                  transformOrigin: 'center',
-                }}
-              >
-                <ModuleCard
-                  type={moduleType}
-                  compact={true}
-                  canAfford={true}
-                />
-              </div>
-            ))}
+            {deck.map((moduleType, index) => {
+              const config = MODULES[moduleType];
+              const palette = MODULE_PALETTE[moduleType];
+              const isVisible = index < loadingProgress;
+
+              return (
+                <div
+                  key={`${moduleType}-${index}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 6,
+                    opacity: isVisible ? 1 : 0.15,
+                    transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(15px) scale(0.92)',
+                    transition: 'all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}
+                >
+                  {/* Иконка */}
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 10,
+                      background: THEME.bgPanel,
+                      border: `2px solid ${isVisible ? palette.light : THEME.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '22px',
+                      boxShadow: isVisible ? `0 0 12px ${palette.glow}` : 'none',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {config.icon}
+                  </div>
+
+                  {/* Название */}
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      color: isVisible ? THEME.textSecondary : THEME.textMuted,
+                      textAlign: 'center',
+                      maxWidth: 60,
+                      lineHeight: 1.2,
+                      transition: 'color 0.2s ease',
+                    }}
+                  >
+                    {config.name}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Кнопка старт */}
-        <StartButton onClick={handleStart} />
+        {/* Кнопка старт — активна только после загрузки */}
+        <StartButton onClick={handleStart} disabled={!isLoaded} />
 
         {/* Ссылка на туториал (если уже прошёл) */}
         {hasCompletedTutorial && onTutorial && (
