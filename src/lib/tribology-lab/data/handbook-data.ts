@@ -111,9 +111,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'beam',
     description: 'Магнитный захват. +50% по металлу, замедляет металл на 20%.',
     keyEffect: 'slow',
-    synergies: [
-      'Эффективен против Стружки и Задира',
-    ],
+    synergies: [],
     notes: [
       '+50% урона по металлическим',
       'Замедляет металл на 20% (2 сек)',
@@ -129,10 +127,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'beam',
     description: 'Пробивает насквозь. Накладывает горение.',
     keyEffect: 'burn',
-    synergies: [
-      '+30% урона по металлу',
-      'Эффективен против Стружки и боссов',
-    ],
+    synergies: [],
     notes: [
       'Пробивает всех врагов на линии',
       '+30% урона по металлическим',
@@ -183,10 +178,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'aoe',
     description: 'Откатывает врагов назад, давая больше времени.',
     keyEffect: null,
-    synergies: [
-      'Все модули → больше времени на урон',
-      'Особенно эффективна на длинных участках',
-    ],
+    synergies: [],
     notes: [
       'L1: 8%, L5: 16% отката',
       'Элитные: 50% эффективности',
@@ -200,14 +192,10 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'barrier',
     description: 'Создаёт блокирующую перегородку на канале.',
     keyEffect: null,
-    synergies: [
-      'Задерживает врагов для DPS',
-      'Особенно полезен против быстрых волн',
-    ],
+    synergies: [],
     notes: [
       'Длительность: 3 сек (растёт с уровнем)',
-      'Cooldown: ~11 сек',
-      'Цена: 115',
+      'Кулдаун: ~11 сек',
     ],
   },
   lubricant: {
@@ -216,10 +204,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'aoe',
     description: 'Покрывает врагов смазкой (+15% урона). Соседям +25% урона.',
     keyEffect: 'coated',
-    synergies: [
-      'Соседние модули наносят +25% урона по покрытым',
-      'Работает с любыми DPS',
-    ],
+    synergies: [],
     notes: [
       'Покрытие: враг получает +15% урона (3 сек)',
       'Соседние модули: +25% урона по покрытым',
@@ -234,10 +219,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'beam',
     description: 'Помечает врага. Все источники наносят +25% урона.',
     keyEffect: 'marked',
-    synergies: [
-      'Все модули наносят +25% урона по цели',
-      'Особенно эффективен против боссов',
-    ],
+    synergies: [],
     notes: [
       '+25% урона от ВСЕХ источников',
       'Длительность метки: 3 сек',
@@ -252,14 +234,11 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     attackType: 'aoe',
     description: 'Защищает соседей от коррозии (50%). Ускоряет cooldown соседей (-8%).',
     keyEffect: null,
-    synergies: [
-      'Защищает соседей от ауры Коррозии (50%)',
-      '-8% cooldown соседним модулям',
-    ],
+    synergies: [],
     notes: [
-      'ОБЯЗАТЕЛЕН против Коррозии',
+      'Защита соседей от ауры Коррозии (50%)',
+      '-8% кулдаун соседним модулям',
       'Иммунен к ауре коррозии',
-      'Скорость атаки: 0.6/сек',
     ],
     effects: {
       gives: ['inhibitor_protection'],
@@ -270,13 +249,11 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     name: 'Ультразвук',
     role: 'Utility',
     attackType: 'aoe',
-    description: 'AOE урон по площади. +20% по пыльным врагам.',
+    description: 'Урон по площади. +20% по пыльным врагам.',
     keyEffect: null,
-    synergies: [
-      'Эффективен против групп Пыли и Абразива',
-    ],
+    synergies: [],
     notes: [
-      'AOE радиус: 80',
+      'Радиус поражения: 80',
       '+20% урона по пыльным',
       'Урон падает с расстоянием (мин. 50%)',
     ],
@@ -285,15 +262,14 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     name: 'Деэмульгатор',
     role: 'Utility',
     attackType: 'aoe',
-    description: 'Высушивает влажных врагов, снимая иммунитет к замедлению.',
-    keyEffect: 'dry',
+    description: 'Высушивает врагов. +100% урона по влажным, снимает иммунитет к замедлению.',
+    keyEffect: null,
     synergies: [
-      'Высушивание + Охладитель → Влага замедляется',
-      '+100% урона по влажным врагам',
+      'После Высушивания Охладитель может замедлять Влагу',
     ],
     notes: [
-      'ОБЯЗАТЕЛЕН против Влаги',
-      'Позволяет замедлять влажных',
+      '+100% урона по влажным',
+      'Высушивание: -20% скорости (2.5 сек)',
     ],
     effects: {
       gives: ['dry'],
@@ -377,9 +353,9 @@ export const HANDBOOK_ENEMIES: Record<string, HandbookEnemyData> = {
     name: 'Коррозия',
     category: 'elite',
     tag: 'organic',
-    description: 'Опасная аура! Модули рядом наносят меньше урона. ОБЯЗАТЕЛЕН Ингибитор!',
+    description: 'Опасная аура! Модули рядом наносят меньше урона.',
     immunities: [],
-    counters: ['Ингибитор (снять ауру)', 'Держать модули на расстоянии'],
+    counters: ['Ингибитор (защита соседей)', 'Фильтр (иммунен к ауре)'],
     effects: {
       gives: ['corrosion_aura'],
     },
