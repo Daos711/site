@@ -149,14 +149,14 @@ export function Handbook({ onClose }: HandbookProps) {
     </div>
   );
 
-  // Всегда рендерим как оверлей поверх родителя
+  // Всегда рендерим как оверлей поверх всего
   return (
     <div
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
-        background: 'rgba(10, 15, 25, 0.98)',
-        zIndex: 100,
+        background: 'rgba(10, 15, 25, 0.99)',
+        zIndex: 9999,
       }}
     >
       {content}
