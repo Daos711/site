@@ -195,7 +195,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     synergies: [],
     notes: [
       'Длительность: 3 сек (растёт с уровнем)',
-      'Кулдаун: ~11 сек',
+      'Кулдаун: 11 сек',
     ],
   },
   lubricant: {
