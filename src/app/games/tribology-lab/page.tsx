@@ -39,6 +39,10 @@ import {
   findClosestPathPointWithDirection,
 } from "@/lib/tribology-lab/combat";
 import { ModuleCard, FieldTile } from "@/lib/tribology-lab/components";
+import { SplashScreen } from "@/lib/tribology-lab/components/SplashScreen";
+import { MainMenu } from "@/lib/tribology-lab/components/MainMenu";
+import { Tutorial } from "@/lib/tribology-lab/components/Tutorial";
+import type { GameMode } from "@/lib/tribology-lab/components/ModeToggle";
 
 // Начальные модули в магазине
 const INITIAL_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet', 'cooler'];
@@ -114,6 +118,25 @@ export default function TribologyLabPage() {
   const [devMode, setDevMode] = useState(false);
   const [selectedDevModule, setSelectedDevModule] = useState<ModuleType | null>(null);
 
+  // Экраны: splash → menu → tutorial → game
+  type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
+  const [screen, setScreen] = useState<ScreenState>('splash');
+  const [gameSeed, setGameSeed] = useState(0);
+  const [gameMode, setGameMode] = useState<GameMode>('daily');
+  const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false);
+
+  // Загружаем флаг туториала из localStorage
+  useEffect(() => {
+    const completed = localStorage.getItem('tribolab_tutorial_completed') === 'true';
+    setHasCompletedTutorial(completed);
+  }, []);
+
+  // Сохраняем флаг туториала
+  const markTutorialCompleted = useCallback(() => {
+    localStorage.setItem('tribolab_tutorial_completed', 'true');
+    setHasCompletedTutorial(true);
+  }, []);
+
   // Тестовая колода для ручного тестирования баланса (?deck=...)
   const [testDeck, setTestDeck] = useState<ModuleType[] | null>(null);
 
@@ -124,6 +147,26 @@ export default function TribologyLabPage() {
   const [deckControl, setDeckControl] = useState<ModuleType>('cooler');
   const [deckSupport, setDeckSupport] = useState<ModuleType>('lubricant');
   const [deckUtility, setDeckUtility] = useState<ModuleType>('ultrasonic');
+
+  // Обработчики экранов
+  const handleSplashComplete = useCallback(() => {
+    setScreen('menu');
+  }, []);
+
+  const handleStartGame = useCallback((seed: number, mode: GameMode) => {
+    setGameSeed(seed);
+    setGameMode(mode);
+    setScreen('game');
+  }, []);
+
+  const handleShowTutorial = useCallback(() => {
+    setScreen('tutorial');
+  }, []);
+
+  const handleTutorialComplete = useCallback(() => {
+    markTutorialCompleted();
+    setScreen('menu');
+  }, [markTutorialCompleted]);
 
   // Роли модулей для селектора
   const MODULE_ROLES = {
@@ -870,6 +913,31 @@ export default function TribologyLabPage() {
     rightBottomY: totalHeight,
   };
 
+  // Рендер экранов: splash → menu → tutorial → game
+  if (screen === 'splash') {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  if (screen === 'menu') {
+    return (
+      <MainMenu
+        onStart={handleStartGame}
+        onTutorial={handleShowTutorial}
+        hasCompletedTutorial={hasCompletedTutorial}
+      />
+    );
+  }
+
+  if (screen === 'tutorial') {
+    return (
+      <Tutorial
+        onComplete={handleTutorialComplete}
+        onSkip={handleTutorialComplete}
+      />
+    );
+  }
+
+  // screen === 'game' — основной игровой интерфейс
   return (
     <div
       className="flex flex-col items-center gap-3 py-4"
