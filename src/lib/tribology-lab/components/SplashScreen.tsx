@@ -119,7 +119,7 @@ export function SplashScreen({ onComplete, duration = 2000 }: SplashScreenProps)
               transition: 'opacity 0.5s ease-out 0.3s, transform 0.5s ease-out 0.3s',
             }}
           >
-            Tower Defense
+            Защити подшипник
           </p>
         </div>
 

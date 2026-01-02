@@ -16,8 +16,8 @@ interface ModeToggleProps {
  */
 export function ModeToggle({ mode, onChange }: ModeToggleProps) {
   const modes: { value: GameMode; label: string; icon: string }[] = [
-    { value: 'daily', label: 'DAILY', icon: '📅' },
-    { value: 'random', label: 'RANDOM', icon: '🎲' },
+    { value: 'daily', label: 'ЕЖЕДНЕВНЫЙ', icon: '📅' },
+    { value: 'random', label: 'СЛУЧАЙНЫЙ', icon: '🎲' },
   ];
 
   return (

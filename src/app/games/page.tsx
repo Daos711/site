@@ -21,7 +21,7 @@ const games = [
   },
   {
     id: "tribology-lab",
-    title: "Tribology Lab",
+    title: "Трибо-Лаб",
     description: "Tower Defense + Merge. Защити подшипник от частиц износа.",
     href: "/games/tribology-lab",
     icon: Cog,

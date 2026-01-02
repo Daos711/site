@@ -21,19 +21,19 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     icon: '🎯',
     title: 'Цель игры',
-    description: 'Не дай частицам загрязнения дойти до конца трубы. Каждая пропущенная частица отнимает жизни.',
+    description: 'Не дай частицам загрязнения дойти до конца канала. У тебя 10 жизней — каждый пропущенный враг отнимает одну.',
     highlight: 'wave',
   },
   {
     icon: '🔧',
     title: 'Модули',
-    description: 'Размещай модули на поле и улучшай их. Каждый модуль атакует врагов по-своему.',
+    description: 'Перетащи модуль на поле. Два одинаковых модуля объединяются в более мощный (до 5 уровня).',
     highlight: 'grid',
   },
   {
     icon: '⚡',
-    title: 'Комбо-эффекты',
-    description: 'Эффекты работают лучше вместе! Замедленные враги получают больше урона, а мокрые — больше крио-урона.',
+    title: 'Синергии',
+    description: 'Замедление даёт больше времени для урона. Метки (Анализатор) и покрытие (Смазка) увеличивают получаемый урон.',
     highlight: 'combo',
   },
 ];
@@ -246,81 +246,75 @@ function TutorialIllustration({ type }: { type: 'wave' | 'grid' | 'combo' }) {
   }
 
   if (type === 'grid') {
-    // Сетка с модулями
+    // Слияние модулей: 2 одинаковых → 1 улучшенный
     return (
       <svg width="200" height="120" viewBox="0 0 200 120">
-        {/* Сетка */}
-        {[0, 1, 2, 3].map((col) =>
-          [0, 1, 2].map((row) => (
-            <rect
-              key={`${col}-${row}`}
-              x={30 + col * 40}
-              y={10 + row * 35}
-              width="35"
-              height="30"
-              rx="4"
-              fill={THEME.bgPanel}
-              stroke={THEME.border}
-            />
-          ))
-        )}
-
-        {/* Модуль (анимированный) */}
+        {/* Модуль 1 (слева) */}
         <g>
-          <rect x="70" y="45" width="35" height="30" rx="4" fill={THEME.accent} opacity="0.3">
-            <animate attributeName="opacity" values="0.2;0.5;0.2" dur="1.5s" repeatCount="indefinite" />
-          </rect>
-          <text x="87" y="67" textAnchor="middle" fontSize="18">🧲</text>
+          <rect x="25" y="35" width="45" height="50" rx="6" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
+          <text x="47" y="68" textAnchor="middle" fontSize="22">🧲</text>
+          <text x="47" y="90" textAnchor="middle" fontSize="10" fill={THEME.textMuted}>Ур.1</text>
         </g>
 
-        {/* Курсор */}
-        <path
-          d="M130 70 L130 90 L140 82 L145 95 L150 93 L145 80 L155 80 Z"
-          fill={THEME.textPrimary}
-          opacity="0.8"
-        >
-          <animate attributeName="transform" values="translate(0,0);translate(-60,-25);translate(0,0)" dur="3s" repeatCount="indefinite" />
+        {/* Плюс */}
+        <text x="85" y="65" textAnchor="middle" fontSize="20" fill={THEME.textSecondary}>+</text>
+
+        {/* Модуль 2 (центр) */}
+        <g>
+          <rect x="100" y="35" width="45" height="50" rx="6" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
+          <text x="122" y="68" textAnchor="middle" fontSize="22">🧲</text>
+          <text x="122" y="90" textAnchor="middle" fontSize="10" fill={THEME.textMuted}>Ур.1</text>
+        </g>
+
+        {/* Стрелка */}
+        <path d="M152 60 L165 60 L160 55 M165 60 L160 65" stroke={THEME.accent} strokeWidth="2" fill="none">
+          <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite" />
         </path>
+
+        {/* Результат (улучшенный модуль) */}
+        <g>
+          <rect x="172" y="30" width="50" height="60" rx="6" fill={THEME.bgPanel} stroke={THEME.accentGreen} strokeWidth="2">
+            <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
+          </rect>
+          <text x="197" y="65" textAnchor="middle" fontSize="26">🧲</text>
+          <text x="197" y="95" textAnchor="middle" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">Ур.2</text>
+        </g>
       </svg>
     );
   }
 
-  // Combo
+  // Синергии: замедление, метки, покрытие
   return (
     <svg width="200" height="120" viewBox="0 0 200 120">
-      {/* Два модуля */}
+      {/* Синергия 1: Охладитель → замедление → больше времени */}
       <g>
-        <rect x="30" y="40" width="50" height="40" rx="6" fill="#3b82f6" opacity="0.6" />
-        <text x="55" y="68" textAnchor="middle" fontSize="24">❄️</text>
+        <rect x="10" y="15" width="35" height="30" rx="4" fill="#3b82f6" opacity="0.7" />
+        <text x="27" y="36" textAnchor="middle" fontSize="16">❄️</text>
       </g>
+      <text x="55" y="33" fontSize="14">→</text>
+      <text x="70" y="33" fontSize="14">🐌</text>
+      <text x="88" y="33" fontSize="14">→</text>
+      <text x="115" y="33" fontSize="11" fill={THEME.textSecondary}>⏱️ время</text>
+
+      {/* Синергия 2: Анализатор → метка → +25% урон */}
       <g>
-        <rect x="120" y="40" width="50" height="40" rx="6" fill="#8b5cf6" opacity="0.6" />
-        <text x="145" y="68" textAnchor="middle" fontSize="24">💧</text>
+        <rect x="10" y="50" width="35" height="30" rx="4" fill="#10b981" opacity="0.7" />
+        <text x="27" y="71" textAnchor="middle" fontSize="16">🎯</text>
       </g>
+      <text x="55" y="68" fontSize="14">→</text>
+      <text x="70" y="68" fontSize="14">📍</text>
+      <text x="88" y="68" fontSize="14">→</text>
+      <text x="130" y="68" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">+25% урон</text>
 
-      {/* Стрелка связи */}
-      <path d="M85 60 L115 60" stroke={THEME.accent} strokeWidth="2" strokeDasharray="4,4">
-        <animate attributeName="stroke-dashoffset" values="8;0" dur="0.5s" repeatCount="indefinite" />
-      </path>
-
-      {/* Молния комбо */}
-      <text x="100" y="30" textAnchor="middle" fontSize="20">
-        ⚡
-        <animate attributeName="opacity" values="0.5;1;0.5" dur="0.8s" repeatCount="indefinite" />
-      </text>
-
-      {/* x2 урон */}
-      <text
-        x="100"
-        y="105"
-        textAnchor="middle"
-        fontSize="14"
-        fontWeight="bold"
-        fill={THEME.accentGreen}
-      >
-        x2 УРОН
-        <animate attributeName="opacity" values="0.6;1;0.6" dur="1s" repeatCount="indefinite" />
-      </text>
+      {/* Синергия 3: Смазка → покрытие → +25% урон соседям */}
+      <g>
+        <rect x="10" y="85" width="35" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
+        <text x="27" y="106" textAnchor="middle" fontSize="16">🛢️</text>
+      </g>
+      <text x="55" y="103" fontSize="14">→</text>
+      <text x="70" y="103" fontSize="14">💧</text>
+      <text x="88" y="103" fontSize="14">→</text>
+      <text x="140" y="103" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">+25% соседям</text>
     </svg>
   );
 }

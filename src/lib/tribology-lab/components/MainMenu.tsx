@@ -5,7 +5,8 @@ import { THEME } from '../theme';
 import { LabBackground } from './LabBackground';
 import { StartButton } from './StartButton';
 import { ModeToggle, GameMode, generateSeed } from './ModeToggle';
-import { MODULES, ModuleType, MODULE_GRADIENTS } from '../types';
+import { ModuleCard } from './ModuleCard';
+import { ModuleType } from '../types';
 
 interface MainMenuProps {
   onStart: (seed: number, mode: GameMode) => void;
@@ -13,8 +14,16 @@ interface MainMenuProps {
   hasCompletedTutorial: boolean;
 }
 
+// Роли модулей для правильной генерации колоды
+const MODULE_ROLES = {
+  dps: ['filter', 'magnet', 'laser', 'electrostatic'] as ModuleType[],
+  control: ['cooler', 'centrifuge', 'barrier'] as ModuleType[],
+  support: ['lubricant', 'analyzer', 'inhibitor'] as ModuleType[],
+  utility: ['ultrasonic', 'demulsifier'] as ModuleType[],
+};
+
 /**
- * Генератор деки на основе seed (PRNG)
+ * Генератор случайных чисел на основе seed (PRNG)
  */
 function seededRandom(seed: number): () => number {
   let s = seed;
@@ -24,17 +33,28 @@ function seededRandom(seed: number): () => number {
   };
 }
 
+/**
+ * Генерация колоды по правилам: 2 DPS + 1 Control + 1 Support + 1 Utility = 5 модулей
+ */
 function generateDeck(seed: number): ModuleType[] {
   const random = seededRandom(seed);
-  const allModules = Object.keys(MODULES) as ModuleType[];
 
-  // Shuffle и выбираем 6
-  const shuffled = [...allModules].sort(() => random() - 0.5);
-  return shuffled.slice(0, 6);
+  const shuffledDps = [...MODULE_ROLES.dps].sort(() => random() - 0.5);
+  const shuffledControl = [...MODULE_ROLES.control].sort(() => random() - 0.5);
+  const shuffledSupport = [...MODULE_ROLES.support].sort(() => random() - 0.5);
+  const shuffledUtility = [...MODULE_ROLES.utility].sort(() => random() - 0.5);
+
+  return [
+    shuffledDps[0],      // DPS 1
+    shuffledDps[1],      // DPS 2
+    shuffledControl[0],  // Control
+    shuffledSupport[0],  // Support
+    shuffledUtility[0],  // Utility
+  ];
 }
 
 /**
- * MainMenu — Главное меню "Lab Stand"
+ * MainMenu — Главное меню "Лаб-стенд"
  */
 export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenuProps) {
   const [mode, setMode] = useState<GameMode>('daily');
@@ -54,6 +74,12 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
     }
   };
 
+  // Описания режимов
+  const modeDescriptions: Record<GameMode, string> = {
+    daily: 'Одна колода на сегодня для всех',
+    random: 'Случайная колода каждый запуск',
+  };
+
   return (
     <LabBackground>
       <div
@@ -65,7 +91,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
           alignItems: 'center',
           justifyContent: 'center',
           padding: THEME.padX,
-          gap: 32,
+          gap: 24,
         }}
       >
         {/* Заголовок */}
@@ -87,17 +113,29 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
               fontWeight: 500,
               color: THEME.accent,
               margin: '8px 0 0 0',
-              letterSpacing: '0.2em',
+              letterSpacing: '0.1em',
             }}
           >
-            LAB STAND #{standNumber}
+            Лаб-стенд №{standNumber}
           </p>
         </div>
 
-        {/* Переключатель режима */}
-        <ModeToggle mode={mode} onChange={setMode} />
+        {/* Переключатель режима + описание */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <ModeToggle mode={mode} onChange={setMode} />
+          <p
+            style={{
+              fontSize: '12px',
+              color: THEME.textMuted,
+              margin: 0,
+              textAlign: 'center',
+            }}
+          >
+            {modeDescriptions[mode]}
+          </p>
+        </div>
 
-        {/* Превью деки */}
+        {/* Превью колоды */}
         <div
           style={{
             display: 'flex',
@@ -111,46 +149,36 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
               fontSize: '12px',
               fontWeight: 500,
               color: THEME.textMuted,
-              letterSpacing: '0.15em',
+              letterSpacing: '0.1em',
               textTransform: 'uppercase',
               margin: 0,
             }}
           >
-            Модули сессии
+            Набор оборудования (5)
           </p>
           <div
             style={{
               display: 'flex',
-              gap: 8,
+              gap: 6,
               flexWrap: 'wrap',
               justifyContent: 'center',
-              maxWidth: 320,
             }}
           >
-            {deck.map((moduleType, index) => {
-              const config = MODULES[moduleType];
-              const gradient = MODULE_GRADIENTS[moduleType];
-              return (
-                <div
-                  key={`${moduleType}-${index}`}
-                  title={config.name}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 10,
-                    background: gradient.bg,
-                    border: `2px solid ${gradient.border}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '20px',
-                    boxShadow: `0 2px 8px rgba(0,0,0,0.3)`,
-                  }}
-                >
-                  {config.icon}
-                </div>
-              );
-            })}
+            {deck.map((moduleType, index) => (
+              <div
+                key={`${moduleType}-${index}`}
+                style={{
+                  transform: 'scale(0.85)',
+                  transformOrigin: 'center',
+                }}
+              >
+                <ModuleCard
+                  type={moduleType}
+                  compact={true}
+                  canAfford={true}
+                />
+              </div>
+            ))}
           </div>
         </div>
 
