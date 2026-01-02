@@ -533,13 +533,22 @@ export function updateEnemy(
     );
   }
 
-  // Применяем эффекты замедления
+  // Применяем эффекты замедления (slow и dry оба замедляют)
   let speedMultiplier = 1;
   for (const effect of updatedEffects) {
-    if (effect.type === 'slow') {
+    if (effect.type === 'slow' || effect.type === 'dry') {
       speedMultiplier *= (1 - effect.strength / 100);
     }
   }
+
+  // КАП НА SLOW: минимальная скорость зависит от типа врага
+  let minSpeedMultiplier = 0.30;  // обычные: max 70% slow
+  if (['abrasive', 'metal', 'corrosion'].includes(enemy.type)) {
+    minSpeedMultiplier = 0.45;  // элитные: max 55% slow
+  } else if (enemy.type.startsWith('boss_')) {
+    minSpeedMultiplier = 0.60;  // боссы: max 40% slow
+  }
+  speedMultiplier = Math.max(speedMultiplier, minSpeedMultiplier);
 
   // Вычисляем изменение прогресса
   const speedPerSecond = enemy.speed * speedMultiplier;

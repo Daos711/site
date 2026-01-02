@@ -235,21 +235,33 @@ export function findTarget(
   path: PathPoint[],
   mode: TargetingMode = 'first'
 ): Enemy | null {
-  // НЕ фильтруем по range! Выбираем из ВСЕХ врагов
   if (enemies.length === 0) return null;
 
   const modulePos = getModulePosition(module);
+  const moduleConfig = MODULES[module.type];
+
+  // СЕПАРАТОР: атакует ТОЛЬКО врагов в range (исключение из общего правила)
+  let validEnemies = enemies;
+  if (module.type === 'magnet') {
+    validEnemies = enemies.filter(enemy => {
+      const enemyConfig = ENEMIES[enemy.type];
+      const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
+      const dist = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
+      return dist <= moduleConfig.range;
+    });
+    if (validEnemies.length === 0) return null;
+  }
 
   switch (mode) {
     case 'first':
       // Враг с максимальным progress (ближе к финишу)
-      return enemies.reduce((best, enemy) =>
+      return validEnemies.reduce((best, enemy) =>
         enemy.progress > best.progress ? enemy : best
       );
 
     case 'closest':
       // Враг ближе всего к модулю
-      return enemies.reduce((best, enemy) => {
+      return validEnemies.reduce((best, enemy) => {
         const bestConfig = ENEMIES[best.type];
         const enemyConfig = ENEMIES[enemy.type];
         const bestPos = getPositionOnPath(path, best.progress, bestConfig.oscillation);
@@ -260,12 +272,12 @@ export function findTarget(
       });
 
     case 'strongest':
-      return enemies.reduce((best, enemy) =>
+      return validEnemies.reduce((best, enemy) =>
         enemy.hp > best.hp ? enemy : best
       );
 
     case 'weakest':
-      return enemies.reduce((best, enemy) =>
+      return validEnemies.reduce((best, enemy) =>
         enemy.hp < best.hp ? enemy : best
       );
 
@@ -273,12 +285,12 @@ export function findTarget(
       // Новый таргетинг: приоритет непомеченным → боссам → по прогрессу
 
       // Фильтруем врагов БЕЗ метки marked
-      const unmarked = enemies.filter(e =>
+      const unmarked = validEnemies.filter(e =>
         !e.effects.some(eff => eff.type === 'marked')
       );
 
       // Если есть непомеченные — выбираем из них, иначе из всех
-      const pool = unmarked.length > 0 ? unmarked : enemies;
+      const pool = unmarked.length > 0 ? unmarked : validEnemies;
 
       // Приоритет: боссы
       const bosses = pool.filter(e => e.type.startsWith('boss_'));
@@ -291,7 +303,7 @@ export function findTarget(
       return pool.reduce((a, b) => a.progress > b.progress ? a : b);
 
     default:
-      return enemies[0];
+      return validEnemies[0];
   }
 }
 
@@ -471,6 +483,36 @@ export function getLubricantBonus(module: Module, allModules: Module[]): number 
 }
 
 /**
+ * Проверяет есть ли рядом Ингибитор и возвращает множитель cooldown
+ * Не стакается — берётся лучший (по уровню)
+ */
+export function getInhibitorCooldownMultiplier(
+  module: Module,
+  allModules: Module[]
+): number {
+  // Ингибитор не баффает сам себя
+  if (module.type === 'inhibitor') return 1;
+
+  const neighbors = allModules.filter(m => {
+    if (m.type !== 'inhibitor') return false;
+    const dx = Math.abs(m.x - module.x);
+    const dy = Math.abs(m.y - module.y);
+    // Сосед = ортогонально или диагонально (расстояние ≤ 1 по каждой оси)
+    return dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
+  });
+
+  if (neighbors.length === 0) return 1;
+
+  // Берём лучший по уровню
+  const best = neighbors.reduce((a, b) => a.level > b.level ? a : b);
+
+  // L1: 0.92, L2: 0.90, L3: 0.88, L4: 0.86, L5: 0.84
+  const cooldownMultiplier = 0.92 - (best.level - 1) * 0.02;
+
+  return cooldownMultiplier;
+}
+
+/**
  * Проверяет, есть ли рядом враг-коррозия (дебафф модулям)
  */
 export function getCorrosionPenalty(
@@ -489,8 +531,15 @@ export function getCorrosionPenalty(
     return dist <= corrosionRadius;
   });
 
-  // Мультипликативные стеки: 1=-20%, 2=-36%, 3=-48.8%
   const stacks = Math.min(nearbyCorrosion.length, 3);
+
+  // Фильтр получает только половину штрафа от коррозии (-10% за стак вместо -20%)
+  if (module.type === 'filter') {
+    const multiplier = Math.pow(0.9, stacks);  // -10% за стак
+    return 1 - multiplier;
+  }
+
+  // Остальные модули: полный штраф (-20% за стак)
   const multiplier = Math.pow(0.8, stacks);
   return 1 - multiplier;
 }
@@ -571,8 +620,8 @@ export function calculateDamage(
     damage *= (1 + markedEffect.strength / 100);  // +25% урон
   }
 
-  // Штраф от коррозии (кроме фильтра и ингибитора — они иммунны)
-  if (module.type !== 'filter' && module.type !== 'inhibitor') {
+  // Штраф от коррозии (ингибитор иммунен, фильтр получает половину штрафа)
+  if (module.type !== 'inhibitor') {
     const corrosionPenalty = getCorrosionPenalty(module, allEnemies, path);
     const inhibitorProtection = getInhibitorProtection(module, allModules);
     const finalCorrosionPenalty = corrosionPenalty * (1 - inhibitorProtection);
@@ -636,8 +685,8 @@ export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
     if (!hasDry) {
       return enemy;  // влага иммунна к замедлению БЕЗ dry
     }
-    // С dry эффектом замедление работает, но слабее
-    effect = { ...effect, strength: Math.floor(effect.strength * 0.5) };
+    // С dry эффектом замедление работает на 75% силы
+    effect = { ...effect, strength: Math.floor(effect.strength * 0.75) };
   }
   if (effect.type === 'burn' && enemy.type === 'heat') {
     return enemy;  // перегрев иммунен к ожогу
@@ -680,16 +729,28 @@ export function applyEffect(enemy: Enemy, effect: Effect): Enemy {
 /**
  * Проверяет, может ли модуль атаковать (прошло достаточно времени)
  * @param gameSpeed - множитель скорости (1 = нормальная, 3 = 3x быстрее)
+ * @param allModules - все модули для проверки бонуса от ингибитора
  */
-export function canAttack(module: Module, currentTime: number, gameSpeed: number = 1): boolean {
+export function canAttack(
+  module: Module,
+  currentTime: number,
+  gameSpeed: number = 1,
+  allModules: Module[] = []
+): boolean {
   // Барьер имеет особый cooldown по уровню
   if (module.type === 'barrier') {
-    const cooldown = getBarrierCooldown(module.level) / gameSpeed;
+    let cooldown = getBarrierCooldown(module.level) / gameSpeed;
+    // Ингибитор ускоряет и барьер
+    cooldown *= getInhibitorCooldownMultiplier(module, allModules);
     return currentTime - module.lastAttack >= cooldown;
   }
 
   const config = MODULES[module.type];
-  const attackInterval = 1000 / config.attackSpeed / gameSpeed;  // мс между атаками (ускоряется с gameSpeed)
+  let attackInterval = 1000 / config.attackSpeed / gameSpeed;  // мс между атаками (ускоряется с gameSpeed)
+
+  // Ингибитор уменьшает cooldown соседей
+  attackInterval *= getInhibitorCooldownMultiplier(module, allModules);
+
   return currentTime - module.lastAttack >= attackInterval;
 }
 
@@ -710,8 +771,8 @@ export function processModuleAttack(
   attackEffect: AttackEffect | null;
   newBarrier: ActiveBarrier | null;
 } {
-  // Проверяем cooldown (с учётом gameSpeed)
-  if (!canAttack(module, currentTime, gameSpeed)) {
+  // Проверяем cooldown (с учётом gameSpeed и ингибитора)
+  if (!canAttack(module, currentTime, gameSpeed, allModules)) {
     return { updatedEnemies: enemies, updatedModule: module, attackEffect: null, newBarrier: null };
   }
 

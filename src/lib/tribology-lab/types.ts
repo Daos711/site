@@ -144,7 +144,7 @@ export const GRID_COLS = 4;
 export const GRID_ROWS = 3;
 
 export const INITIAL_LIVES = 10;
-export const INITIAL_GOLD = 100;
+export const INITIAL_GOLD = 130;
 
 // Layout константы (должны совпадать с page.tsx)
 export const CELL_SIZE = 110;           // размер ячейки в пикселях
@@ -193,7 +193,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'magnet',
     name: 'Сепаратор',
     icon: '🧲',
-    basePrice: 40,
+    basePrice: 50,
     baseDamage: 24,
     range: 150,
     attackSpeed: 1.0,
@@ -267,7 +267,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'laser',
     name: 'Лазер',
     icon: '🔬',
-    basePrice: 120,
+    basePrice: 110,
     baseDamage: 15,
     range: 250,       // максимальный радиус для снайпера
     attackSpeed: 0.3,
@@ -276,7 +276,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackType: 'beam',
     effectType: 'burn',
     effectDuration: 3000,
-    effectStrength: 5,  // 5 HP/сек
+    effectStrength: 6,  // 6 HP/сек
     tagBonuses: { metal: 1.3 },  // +30% по металлу
     tagPenalties: { wet: 0.8 },  // -20% по мокрым
     piercing: true,  // пробивает насквозь
@@ -290,7 +290,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 120,
     attackSpeed: 0.6,
     color: '#C7B56A',
-    description: 'Защищает соседей от коррозии',
+    description: '-8% cooldown соседям, защита от коррозии',
     attackType: 'wave',
   },
   demulsifier: {
@@ -302,11 +302,11 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 180,
     attackSpeed: 0.8,
     color: '#A7E8C2',
-    description: 'x2 по влаге, снимает иммунитет к slow',
+    description: 'x2 по влаге, -20% скорости всем',
     attackType: 'projectile',
     effectType: 'dry',
     effectDuration: 2500,
-    effectStrength: 50,
+    effectStrength: 20,  // % замедления
     tagBonuses: { wet: 2.0 },
   },
   analyzer: {
