@@ -139,17 +139,6 @@ export function EffectsList({ onSelect }: EffectsListProps) {
                   </span>
                 </div>
 
-                {/* Русское название */}
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: THEME.accent,
-                    marginBottom: 4,
-                  }}
-                >
-                  {handbookData.nameRu}
-                </div>
-
                 {/* Описание */}
                 <div
                   style={{

@@ -78,22 +78,11 @@ export function EffectDetail({ effectId, onBack }: EffectDetailProps) {
             fontSize: 24,
             fontWeight: 700,
             color: THEME.textPrimary,
-            margin: '0 0 4px 0',
+            margin: '0 0 8px 0',
           }}
         >
           {handbookData.name}
         </h2>
-
-        {/* Русское название */}
-        <div
-          style={{
-            fontSize: 14,
-            color: THEME.accent,
-            marginBottom: 8,
-          }}
-        >
-          ({handbookData.nameRu})
-        </div>
 
         {/* Категория */}
         <RoleBadge

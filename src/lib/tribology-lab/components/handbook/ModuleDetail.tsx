@@ -220,7 +220,7 @@ export function ModuleDetail({ moduleId, onBack }: ModuleDetailProps) {
                         gap: 6,
                       }}
                     >
-                      {effect.icon} {effect.nameRu}
+                      {effect.icon} {effect.name}
                     </div>
                   );
                 })}
@@ -250,7 +250,7 @@ export function ModuleDetail({ moduleId, onBack }: ModuleDetailProps) {
                         gap: 6,
                       }}
                     >
-                      🛡️ {effect.nameRu}
+                      🛡️ {effect.name}
                     </div>
                   );
                 })}
