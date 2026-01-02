@@ -161,12 +161,12 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     keyEffect: 'slow',
     synergies: [
       'Все DPS модули → больше времени на урон',
-      'Dry + Охладитель → влага замедляется на 50%',
+      'Высушивание + Охладитель → влага замедляется на 50%',
     ],
     notes: [
       'Повторное попадание обновляет таймер',
       'Максимум замедления: 80%',
-      'Влага иммунна без эффекта Dry',
+      'Влага иммунна без эффекта Высушивание',
     ],
     effects: {
       gives: ['slow'],
@@ -286,8 +286,8 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     description: 'Высушивает влажных врагов, снимая иммунитет к замедлению.',
     keyEffect: 'dry',
     synergies: [
-      'Dry + Охладитель → влага замедляется на 50%',
-      'Dry + Лазер → убирает штраф -20%',
+      'Высушивание + Охладитель → влага замедляется на 50%',
+      'Высушивание + Лазер → убирает штраф -20%',
     ],
     notes: [
       'ОБЯЗАТЕЛЕН против Влаги',
@@ -356,7 +356,7 @@ export const HANDBOOK_ENEMIES: Record<string, HandbookEnemyData> = {
     name: 'Перегрев',
     category: 'common',
     tag: 'hot',
-    description: 'Иммунитет к горению (burn). Средняя скорость.',
+    description: 'Иммунитет к горению. Средняя скорость.',
     immunities: ['Горение'],
     counters: ['Охладитель (замедление)', 'Любой DPS'],
     effects: {
@@ -388,7 +388,7 @@ export const HANDBOOK_ENEMIES: Record<string, HandbookEnemyData> = {
     tag: 'wet',
     description: 'Иммунитет к замедлению. Требует Деэмульгатор.',
     immunities: ['Замедление'],
-    counters: ['Деэмульгатор → Dry', 'Dry + Охладитель (50%)', 'Электростат (+25%)'],
+    counters: ['Деэмульгатор → Высушивание', 'Высушивание + Охладитель (50%)', 'Электростат (+25%)'],
     effects: {
       immunities: ['slow'],
     },
@@ -466,7 +466,7 @@ export const HANDBOOK_EFFECTS: Record<string, HandbookEffectData> = {
     stacking: 'Повторное попадание обновляет таймер',
     cap: '80% максимум',
     sources: ['Охладитель'],
-    immunities: ['Влага (без эффекта Dry)'],
+    immunities: ['Влага (без Высушивания)'],
   },
 
   marked: {
@@ -606,7 +606,7 @@ export const HANDBOOK_EFFECTS: Record<string, HandbookEffectData> = {
     cap: null,
     sources: ['Влага (пассивно)'],
     immunities: [],
-    notes: 'Снимается эффектом Dry от Деэмульгатора',
+    notes: 'Снимается эффектом Высушивание',
   },
 
   heat_immunity: {

@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { THEME } from '../../theme';
-import { ENEMIES } from '../../types';
+import { ENEMIES, type EnemyType } from '../../types';
 import { BackButton, DetailSection, RoleBadge, StatGrid, BulletList } from './HandbookCard';
+import { EnemySprite } from '../EnemySprite';
 import {
   ENEMY_LIST,
   HANDBOOK_ENEMIES,
@@ -66,23 +67,18 @@ export function EnemyDetail({ enemyId, onBack }: EnemyDetailProps) {
           ВРАГ #{String(currentIndex + 1).padStart(3, '0')}
         </div>
 
-        {/* Иконка */}
+        {/* Спрайт врага */}
         <div
           style={{
-            width: 80,
-            height: 80,
+            width: 100,
+            height: 100,
             margin: '0 auto 12px',
-            background: `${categoryColor}22`,
-            borderRadius: 16,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: `2px solid ${categoryColor}`,
-            boxShadow: `0 0 20px ${categoryColor}33`,
-            fontSize: 40,
           }}
         >
-          {config.icon}
+          <EnemySprite enemyType={enemyId as EnemyType} size={28} animated={true} />
         </div>
 
         {/* Название */}

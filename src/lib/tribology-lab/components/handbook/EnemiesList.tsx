@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { THEME } from '../../theme';
-import { ENEMIES } from '../../types';
+import { ENEMIES, type EnemyType } from '../../types';
 import { HandbookCard, RoleBadge } from './HandbookCard';
+import { EnemySprite } from '../EnemySprite';
 import {
   ENEMY_LIST,
   HANDBOOK_ENEMIES,
@@ -83,22 +84,18 @@ export function EnemiesList({ onSelect }: EnemiesListProps) {
 
           return (
             <HandbookCard key={enemyId} onClick={() => onSelect(enemyId)}>
-              {/* Иконка */}
+              {/* Спрайт врага */}
               <div
                 style={{
-                  width: 48,
-                  height: 48,
+                  width: 56,
+                  height: 56,
                   margin: '0 auto 8px',
-                  background: `${categoryColor}22`,
-                  borderRadius: 10,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: `1px solid ${categoryColor}`,
-                  fontSize: 24,
                 }}
               >
-                {config.icon}
+                <EnemySprite enemyType={enemyId as EnemyType} size={16} animated={false} />
               </div>
 
               {/* Название */}

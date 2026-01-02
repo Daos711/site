@@ -97,6 +97,24 @@ export function Handbook({ onClose }: HandbookProps) {
           zIndex: 10,
         }}
       >
+        {/* Кнопка "В меню" */}
+        <button
+          onClick={onClose}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: 'none',
+            border: 'none',
+            color: THEME.textSecondary,
+            fontSize: 14,
+            cursor: 'pointer',
+            padding: '8px 0',
+          }}
+        >
+          ← В меню
+        </button>
+
         <h1
           style={{
             fontSize: 18,
@@ -108,20 +126,9 @@ export function Handbook({ onClose }: HandbookProps) {
         >
           СПРАВОЧНИК
         </h1>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: THEME.textMuted,
-            fontSize: 24,
-            cursor: 'pointer',
-            padding: '8px',
-            lineHeight: 1,
-          }}
-        >
-          ✕
-        </button>
+
+        {/* Пустой элемент для центрирования заголовка */}
+        <div style={{ width: 70 }} />
       </div>
 
       {/* Tabs - показываем только в режиме списка */}
