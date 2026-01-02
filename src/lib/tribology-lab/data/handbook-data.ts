@@ -409,9 +409,9 @@ export const HANDBOOK_ENEMIES: Record<string, HandbookEnemyData> = {
     name: 'Питтинг',
     category: 'boss',
     tag: 'metal',
-    description: 'Финальный босс. Регенерация 10 HP/сек! Требует Ингибитор.',
+    description: 'Финальный босс. Регенерация 10 HP/сек!',
     immunities: [],
-    counters: ['Ингибитор (блокирует регенерацию!)', 'Сепаратор (+50%)', 'Лазер (+30%)', 'Анализатор (+25%)'],
+    counters: ['Сепаратор (+50%)', 'Лазер (+30%)', 'Анализатор (+25%)', 'Высокий DPS'],
   },
 };
 
