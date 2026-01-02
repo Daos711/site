@@ -21,7 +21,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     icon: '🎯',
     title: 'Цель игры',
-    description: 'Не дай частицам загрязнения дойти до конца канала. У тебя 10 жизней — каждый пропущенный враг отнимает одну.',
+    description: 'Не дай загрязнениям дойти до конца канала. У тебя 10 жизней. Обычные враги отнимают 1, боссы — 3.',
     highlight: 'wave',
   },
   {
@@ -246,75 +246,64 @@ function TutorialIllustration({ type }: { type: 'wave' | 'grid' | 'combo' }) {
   }
 
   if (type === 'grid') {
-    // Слияние модулей: 2 одинаковых → 1 улучшенный
+    // Слияние модулей: 2 одинаковых → 1 улучшенный (компактная версия)
     return (
-      <svg width="200" height="120" viewBox="0 0 200 120">
-        {/* Модуль 1 (слева) */}
+      <svg width="200" height="100" viewBox="0 0 200 100">
+        {/* Модуль 1 */}
         <g>
-          <rect x="25" y="35" width="45" height="50" rx="6" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
-          <text x="47" y="68" textAnchor="middle" fontSize="22">🧲</text>
-          <text x="47" y="90" textAnchor="middle" fontSize="10" fill={THEME.textMuted}>Ур.1</text>
+          <rect x="10" y="25" width="40" height="45" rx="5" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
+          <text x="30" y="52" textAnchor="middle" fontSize="18">🧲</text>
+          <text x="30" y="72" textAnchor="middle" fontSize="9" fill={THEME.textMuted}>Ур.1</text>
         </g>
 
         {/* Плюс */}
-        <text x="85" y="65" textAnchor="middle" fontSize="20" fill={THEME.textSecondary}>+</text>
+        <text x="62" y="50" textAnchor="middle" fontSize="16" fill={THEME.textSecondary}>+</text>
 
-        {/* Модуль 2 (центр) */}
+        {/* Модуль 2 */}
         <g>
-          <rect x="100" y="35" width="45" height="50" rx="6" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
-          <text x="122" y="68" textAnchor="middle" fontSize="22">🧲</text>
-          <text x="122" y="90" textAnchor="middle" fontSize="10" fill={THEME.textMuted}>Ур.1</text>
+          <rect x="75" y="25" width="40" height="45" rx="5" fill={THEME.bgPanel} stroke={THEME.accent} strokeWidth="2" />
+          <text x="95" y="52" textAnchor="middle" fontSize="18">🧲</text>
+          <text x="95" y="72" textAnchor="middle" fontSize="9" fill={THEME.textMuted}>Ур.1</text>
         </g>
 
         {/* Стрелка */}
-        <path d="M152 60 L165 60 L160 55 M165 60 L160 65" stroke={THEME.accent} strokeWidth="2" fill="none">
-          <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite" />
-        </path>
+        <text x="127" y="50" textAnchor="middle" fontSize="16" fill={THEME.accent}>→</text>
 
-        {/* Результат (улучшенный модуль) */}
+        {/* Результат */}
         <g>
-          <rect x="172" y="30" width="50" height="60" rx="6" fill={THEME.bgPanel} stroke={THEME.accentGreen} strokeWidth="2">
+          <rect x="140" y="20" width="50" height="55" rx="5" fill={THEME.bgPanel} stroke={THEME.accentGreen} strokeWidth="2">
             <animate attributeName="stroke-opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
           </rect>
-          <text x="197" y="65" textAnchor="middle" fontSize="26">🧲</text>
-          <text x="197" y="95" textAnchor="middle" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">Ур.2</text>
+          <text x="165" y="50" textAnchor="middle" fontSize="22">🧲</text>
+          <text x="165" y="75" textAnchor="middle" fontSize="10" fill={THEME.accentGreen} fontWeight="bold">Ур.2</text>
         </g>
       </svg>
     );
   }
 
-  // Синергии: замедление, метки, покрытие
+  // Синергии: замедление, метки, покрытие (упрощённая версия)
   return (
-    <svg width="200" height="120" viewBox="0 0 200 120">
-      {/* Синергия 1: Охладитель → замедление → больше времени */}
-      <g>
-        <rect x="10" y="15" width="35" height="30" rx="4" fill="#3b82f6" opacity="0.7" />
-        <text x="27" y="36" textAnchor="middle" fontSize="16">❄️</text>
+    <svg width="200" height="110" viewBox="0 0 200 110">
+      {/* Синергия 1: Охладитель → больше времени */}
+      <g transform="translate(10, 5)">
+        <rect width="32" height="28" rx="4" fill="#3b82f6" opacity="0.7" />
+        <text x="16" y="20" textAnchor="middle" fontSize="14">❄️</text>
       </g>
-      <text x="55" y="33" fontSize="14">→</text>
-      <text x="70" y="33" fontSize="14">🐌</text>
-      <text x="88" y="33" fontSize="14">→</text>
-      <text x="115" y="33" fontSize="11" fill={THEME.textSecondary}>⏱️ время</text>
+      <text x="52" y="23" fontSize="12" fill={THEME.textSecondary}>→ ⏱️ больше времени</text>
 
-      {/* Синергия 2: Анализатор → метка → +25% урон */}
-      <g>
-        <rect x="10" y="50" width="35" height="30" rx="4" fill="#10b981" opacity="0.7" />
-        <text x="27" y="71" textAnchor="middle" fontSize="16">🎯</text>
+      {/* Синергия 2: Анализатор → +урон */}
+      <g transform="translate(10, 40)">
+        <rect width="32" height="28" rx="4" fill="#ec4899" opacity="0.7" />
+        <text x="16" y="20" textAnchor="middle" fontSize="14">🎯</text>
       </g>
-      <text x="55" y="68" fontSize="14">→</text>
-      <text x="70" y="68" fontSize="14">📍</text>
-      <text x="88" y="68" fontSize="14">→</text>
-      <text x="130" y="68" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">+25% урон</text>
+      <text x="52" y="58" fontSize="12" fill={THEME.accentGreen} fontWeight="bold">→ +25% урон</text>
 
-      {/* Синергия 3: Смазка → покрытие → +25% урон соседям */}
-      <g>
-        <rect x="10" y="85" width="35" height="30" rx="4" fill="#f59e0b" opacity="0.7" />
-        <text x="27" y="106" textAnchor="middle" fontSize="16">🛢️</text>
+      {/* Синергия 3: Смазка → +урон соседям */}
+      <g transform="translate(10, 75)">
+        <rect width="32" height="28" rx="4" fill="#22c55e" opacity="0.7" />
+        <text x="16" y="20" textAnchor="middle" fontSize="14">🛢️</text>
       </g>
-      <text x="55" y="103" fontSize="14">→</text>
-      <text x="70" y="103" fontSize="14">💧</text>
-      <text x="88" y="103" fontSize="14">→</text>
-      <text x="140" y="103" fontSize="11" fill={THEME.accentGreen} fontWeight="bold">+25% соседям</text>
+      <text x="52" y="93" fontSize="12" fill={THEME.accentGreen} fontWeight="bold">→ +25% соседям</text>
     </svg>
   );
 }

@@ -6,33 +6,22 @@ import { LabBackground } from './LabBackground';
 
 interface SplashScreenProps {
   onComplete: () => void;
-  duration?: number; // ms, default 2000
 }
 
 /**
  * SplashScreen — Заставка с логотипом и scan-line анимацией
- * Автопереход через duration мс или по тапу/клику
+ * Переход только по тапу/клику (без автоперехода)
  */
-export function SplashScreen({ onComplete, duration = 2000 }: SplashScreenProps) {
+export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [phase, setPhase] = useState<'enter' | 'visible' | 'exit'>('enter');
 
   useEffect(() => {
     // Фаза появления
     const enterTimer = setTimeout(() => setPhase('visible'), 100);
+    return () => clearTimeout(enterTimer);
+  }, []);
 
-    // Авто-переход
-    const exitTimer = setTimeout(() => {
-      setPhase('exit');
-      setTimeout(onComplete, 400); // После fade-out
-    }, duration);
-
-    return () => {
-      clearTimeout(enterTimer);
-      clearTimeout(exitTimer);
-    };
-  }, [duration, onComplete]);
-
-  const handleSkip = () => {
+  const handleClick = () => {
     if (phase !== 'exit') {
       setPhase('exit');
       setTimeout(onComplete, 400);
@@ -42,7 +31,7 @@ export function SplashScreen({ onComplete, duration = 2000 }: SplashScreenProps)
   return (
     <LabBackground>
       <div
-        onClick={handleSkip}
+        onClick={handleClick}
         style={{
           position: 'absolute',
           inset: 0,
@@ -78,7 +67,7 @@ export function SplashScreen({ onComplete, duration = 2000 }: SplashScreenProps)
             ТРИБО-ЛАБ
           </h1>
 
-          {/* Scan-line эффект */}
+          {/* Scan-line эффект — бесконечный цикл */}
           <div
             style={{
               position: 'absolute',
@@ -99,7 +88,7 @@ export function SplashScreen({ onComplete, duration = 2000 }: SplashScreenProps)
                 height: '4px',
                 background: `linear-gradient(90deg, transparent 0%, ${THEME.accent} 50%, transparent 100%)`,
                 opacity: 0.8,
-                animation: 'scanLine 2s ease-in-out infinite',
+                animation: 'scanLine 3s ease-in-out infinite',
               }}
             />
           </div>
@@ -143,19 +132,13 @@ export function SplashScreen({ onComplete, duration = 2000 }: SplashScreenProps)
       {/* CSS анимации */}
       <style>{`
         @keyframes scanLine {
-          0% {
+          0%, 100% {
             transform: translateY(0);
-            opacity: 0;
-          }
-          10% {
             opacity: 0.8;
           }
-          90% {
-            opacity: 0.8;
-          }
-          100% {
+          50% {
             transform: translateY(calc(100% + 60px));
-            opacity: 0;
+            opacity: 0.8;
           }
         }
 

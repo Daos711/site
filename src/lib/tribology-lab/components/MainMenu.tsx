@@ -154,7 +154,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
               margin: 0,
             }}
           >
-            Набор оборудования (5)
+            Набор оборудования
           </p>
           <div
             style={{
