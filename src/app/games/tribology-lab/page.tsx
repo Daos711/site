@@ -1667,27 +1667,18 @@ export default function TribologyLabPage() {
               ДАТЧИКИ-СЕНСОРЫ — мигающие LED на канале
               ═══════════════════════════════════════════════════════════════ */}
           <g style={{ pointerEvents: 'none' }}>
-            {/* Датчик 1: левый канал (после входа) */}
+            {/* Датчик 1: левый канал */}
             <g transform={`translate(${conveyorWidth - 6}, ${totalHeight * 0.7})`}>
               <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
               <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
               </circle>
             </g>
-            {/* Датчик 2: верхний канал (нижняя часть вшита в поле, верхняя выпирает в канал) */}
-            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth + 3})`}>
-              {/* height=16 чтобы после "вшивания" осталось достаточно видимой части */}
-              <rect x={-8} y={-8} width={16} height={16} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-              {/* LED смещён вверх - по центру ВИДИМОЙ части */}
-              <circle cx={0} cy={-5} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
-                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1s" />
-              </circle>
-            </g>
-            {/* Датчик 3: правый канал (перед выходом) */}
+            {/* Датчик 2: правый канал */}
             <g transform={`translate(${totalWidth - conveyorWidth + 6}, ${totalHeight * 0.7})`}>
               <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
               <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
-                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="2s" />
+                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1.5s" />
               </circle>
             </g>
           </g>
@@ -2349,36 +2340,7 @@ export default function TribologyLabPage() {
           })}
           </g>
 
-          {/* СТАРТ - бирюзовый патрубок */}
-          <g>
-            {/* Свечение */}
-            <ellipse cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#startGlow)" />
-            {/* Патрубок - укорочен на 1px с каждой стороны */}
-            <rect x={innerOffset + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
-            {/* Щель с тенью */}
-            <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
-          </g>
-
-          {/* ФИНИШ - красно-янтарный патрубок (непрозрачный!) */}
-          <g>
-            {/* Мягкое свечение (не выходит за границы патрубка) */}
-            <ellipse
-              cx={totalWidth - (conveyorWidth + innerOffset) / 2}
-              cy={totalHeight}
-              rx={(conveyorWidth - innerOffset - 4) * 0.4}
-              ry={8}
-              fill="rgba(180, 74, 58, 0.3)"
-              style={{ filter: 'blur(4px)' }}
-            >
-              <animate attributeName="opacity" values="0.2;0.4;0.2" dur="3s" repeatCount="indefinite" />
-            </ellipse>
-            {/* Патрубок - полностью непрозрачный */}
-            <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#1A2430" stroke="#b84a3a" strokeWidth={2} />
-            {/* Щель с тенью */}
-            <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#1a0808" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
-          </g>
-
-          {/* Карман магазина — расширен до бортиков */}
+          {/* Карман магазина — рисуется ПЕРВЫМ, чтобы патрубки были сверху */}
           <rect
             x={innerOffset}
             y={totalHeight + 5}
@@ -2395,6 +2357,26 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset - 15} cy={totalHeight + 20} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
           <circle cx={innerOffset + 15} cy={totalHeight + 100} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
           <circle cx={totalWidth - innerOffset - 15} cy={totalHeight + 100} r={3} fill="#1a1e22" stroke="#333" strokeWidth={0.5} />
+
+          {/* СТАРТ - бирюзовый патрубок */}
+          <g>
+            {/* Свечение */}
+            <ellipse cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#startGlow)" />
+            {/* Патрубок */}
+            <rect x={innerOffset + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
+            {/* Щель с тенью */}
+            <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
+          </g>
+
+          {/* ФИНИШ - красно-янтарный патрубок (СВЕРХУ кармана магазина) */}
+          <g>
+            {/* Свечение - как у старта */}
+            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)" />
+            {/* Патрубок */}
+            <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#2a1a18" stroke="#b84a3a" strokeWidth={1.5} />
+            {/* Щель с тенью */}
+            <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#1a0808" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
+          </g>
 
           {/* LED индикаторы */}
           <circle cx={innerOffset + 25} cy={totalHeight + 60} r={4} fill="#0ea5e9" opacity={0.6}>
