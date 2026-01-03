@@ -175,6 +175,8 @@ export function LeaderboardModal({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              lineHeight: 1,
+              paddingBottom: 2,
             }}
           >
             ×
@@ -675,7 +677,7 @@ function LeaderboardTable({
                 {entry.nickname}
               </span>
               {isHighlighted && (
-                <span style={{ color: '#32D6FF', fontSize: 10 }}>(вы)</span>
+                <span style={{ color: '#32D6FF', fontSize: 10, marginTop: 2 }}>(вы)</span>
               )}
             </div>
 
