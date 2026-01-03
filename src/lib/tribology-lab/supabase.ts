@@ -81,23 +81,26 @@ interface RunData {
   run_time_ms: number;
 }
 
-export function validateRun(data: RunData): boolean {
+export function validateRun(data: RunData): { valid: boolean; reason?: string } {
   const { wave_reached, kills, lives_left, run_time_ms } = data;
 
-  // Проверка диапазонов
-  if (wave_reached < 1 || wave_reached > 500) return false;
-  if (lives_left < 0 || lives_left > 10) return false;
-  if (kills < 0) return false;
+  // Проверка диапазонов (мягкая валидация)
+  if (wave_reached < 0 || wave_reached > 1000) {
+    return { valid: false, reason: `wave_reached out of range: ${wave_reached}` };
+  }
+  if (lives_left < 0 || lives_left > 20) {
+    return { valid: false, reason: `lives_left out of range: ${lives_left}` };
+  }
+  if (kills < 0) {
+    return { valid: false, reason: `kills negative: ${kills}` };
+  }
 
-  // Проверка времени (минимум 1 сек, максимум 2 часа)
-  if (run_time_ms < 1000 || run_time_ms > 7200000) return false;
+  // Проверка времени (минимум 0, максимум 4 часа)
+  if (run_time_ms < 0 || run_time_ms > 14400000) {
+    return { valid: false, reason: `run_time_ms out of range: ${run_time_ms}` };
+  }
 
-  // Проверка kills vs wave (примерно 30 врагов на волну максимум)
-  const maxKillsPerWave = 30;
-  const maxPossibleKills = wave_reached * maxKillsPerWave;
-  if (kills > maxPossibleKills) return false;
-
-  return true;
+  return { valid: true };
 }
 
 // ==================== API ФУНКЦИИ ====================
@@ -179,10 +182,11 @@ export async function submitRun(
   livesLeft: number,
   runTimeMs: number
 ): Promise<{ success: boolean; runId?: string }> {
-  // Валидация на клиенте
-  if (!validateRun({ wave_reached: waveReached, kills, lives_left: livesLeft, run_time_ms: runTimeMs })) {
-    console.error("Run validation failed");
-    return { success: false };
+  // Валидация на клиенте (мягкая, только логирование)
+  const validation = validateRun({ wave_reached: waveReached, kills, lives_left: livesLeft, run_time_ms: runTimeMs });
+  if (!validation.valid) {
+    console.warn("Run validation warning:", validation.reason, { waveReached, kills, livesLeft, runTimeMs });
+    // Не блокируем отправку, просто предупреждаем
   }
 
   const deckKey = generateDeckKey(deckModules);
