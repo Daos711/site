@@ -1897,13 +1897,13 @@ export default function TribologyLabPage() {
               }}
               className="flex items-center justify-center transition-all active:scale-95 hover:scale-105"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '28px',
+                height: '28px',
                 background: isPaused
                   ? 'linear-gradient(145deg, #22C55E 0%, #16A34A 100%)'
                   : 'linear-gradient(145deg, #32D6FF 0%, #0EA5E9 100%)',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 cursor: 'pointer',
                 boxShadow: isPaused
                   ? '0 2px 8px rgba(34, 197, 94, 0.4)'
@@ -1913,11 +1913,11 @@ export default function TribologyLabPage() {
             >
               {/* Символ паузы/воспроизведения */}
               {isPaused ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#FFFFFF">
                   <polygon points="6,4 6,20 20,12"/>
                 </svg>
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#0B1622">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#0B1622">
                   <rect x="5" y="4" width="5" height="16" rx="1"/>
                   <rect x="14" y="4" width="5" height="16" rx="1"/>
                 </svg>
