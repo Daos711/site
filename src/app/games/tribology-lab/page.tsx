@@ -1847,12 +1847,13 @@ export default function TribologyLabPage() {
           <>
             {/* Цифровой дисплей — враги на поле */}
             <div
-              className="relative flex items-center"
+              className="relative flex items-center justify-center"
               style={{
                 background: '#1A202C',
                 border: '1px solid #4A5568',
                 borderRadius: '6px',
                 padding: '4px 12px',
+                minWidth: '40px',
                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
               }}
             >
@@ -1876,13 +1877,14 @@ export default function TribologyLabPage() {
                     ? '0 0 8px rgba(59, 130, 246, 0.8)'
                     : '0 0 8px rgba(50, 214, 255, 0.6)',
                   letterSpacing: '0.05em',
+                  textAlign: 'center',
                 }}
               >
-                {isPaused ? 'ПАУЗА' : String(enemies.length).padStart(2, '0')}
+                {isPaused ? 'ПАУЗА' : enemies.length}
               </span>
             </div>
 
-            {/* Красная кнопка паузы */}
+            {/* Кнопка паузы — cyan в стиле лаборатории */}
             <button
               onClick={() => {
                 if (isPaused) {
@@ -1893,44 +1895,33 @@ export default function TribologyLabPage() {
                   setShowPauseModal(true);
                 }
               }}
-              className="relative transition-all active:scale-95"
+              className="flex items-center justify-center transition-all active:scale-95 hover:scale-105"
               style={{
-                width: '40px',
-                height: '40px',
-                background: '#2D3748',
-                border: '2px solid #4A5568',
+                width: '36px',
+                height: '36px',
+                background: isPaused
+                  ? 'linear-gradient(145deg, #22C55E 0%, #16A34A 100%)'
+                  : 'linear-gradient(145deg, #32D6FF 0%, #0EA5E9 100%)',
+                border: 'none',
                 borderRadius: '8px',
-                padding: '0',
                 cursor: 'pointer',
+                boxShadow: isPaused
+                  ? '0 2px 8px rgba(34, 197, 94, 0.4)'
+                  : '0 2px 8px rgba(50, 214, 255, 0.4)',
               }}
               title={isPaused ? 'Возобновить' : 'Пауза'}
             >
-              {/* Круглая кнопка внутри */}
-              <svg width="36" height="36" viewBox="0 0 36 36" className="absolute inset-0.5">
-                <defs>
-                  <radialGradient id="redButtonGradHeader">
-                    <stop offset="0%" stopColor={isPaused ? '#22C55E' : '#EF4444'}/>
-                    <stop offset="100%" stopColor={isPaused ? '#16A34A' : '#DC2626'}/>
-                  </radialGradient>
-                </defs>
-                {/* Кнопка */}
-                <circle cx="18" cy="18" r="14"
-                        fill="url(#redButtonGradHeader)"
-                        stroke={isPaused ? '#15803D' : '#991B1B'}
-                        strokeWidth="2"
-                        style={isPaused ? undefined : { animation: 'pauseButtonGlow 1.5s ease-in-out infinite' }}/>
-                {/* Блик */}
-                <ellipse cx="14" cy="14" rx="5" ry="3" fill="rgba(255,255,255,0.25)"/>
-                {/* Символ паузы/воспроизведения */}
-                {isPaused ? (
-                  <polygon points="14,11 14,25 26,18" fill="#FFFFFF"/>
-                ) : (
-                  <>
-                    <rect x="13" y="12" width="3.5" height="12" rx="1" fill="#FFFFFF"/>
-                    <rect x="19.5" y="12" width="3.5" height="12" rx="1" fill="#FFFFFF"/>
-                  </>
-                )}
-              </svg>
+              {/* Символ паузы/воспроизведения */}
+              {isPaused ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF">
+                  <polygon points="6,4 6,20 20,12"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#0B1622">
+                  <rect x="5" y="4" width="5" height="16" rx="1"/>
+                  <rect x="14" y="4" width="5" height="16" rx="1"/>
+                </svg>
+              )}
             </button>
           </>
         )}
@@ -2364,34 +2355,6 @@ export default function TribologyLabPage() {
           {/* Правая сторона */}
           <circle cx={totalWidth - innerOffset / 2} cy={conveyorWidth + 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
           <circle cx={totalWidth - innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
-
-          {/* ═══════════════════════════════════════════════════════════════
-              ЧАСТИЦЫ ПОТОКА — бегут по центру канала
-              ═══════════════════════════════════════════════════════════════ */}
-          <g style={{ pointerEvents: 'none' }}>
-            {[0, 1, 2].map(i => (
-              <circle
-                key={`flow-particle-${i}-${gameSpeed}`}
-                r={2}
-                fill="#32D6FF"
-                style={{ filter: 'drop-shadow(0 0 3px rgba(50,214,255,0.5))' }}
-              >
-                <animateMotion
-                  dur={`${4 / gameSpeed}s`}
-                  repeatCount="indefinite"
-                  begin={`${i * 1.33 / gameSpeed}s`}
-                >
-                  <mpath href="#flowPath" />
-                </animateMotion>
-                <animate
-                  attributeName="opacity"
-                  values="0.4;0.7;0.4"
-                  dur={`${1.5 / gameSpeed}s`}
-                  repeatCount="indefinite"
-                />
-              </circle>
-            ))}
-          </g>
 
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
           {/* Обёртка с clipPath для обрезки аур коррозии по границам канала */}
