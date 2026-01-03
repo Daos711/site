@@ -1784,7 +1784,7 @@ export default function TribologyLabPage() {
             <line x1="13" y1="10" x2="15" y2="10" stroke="#6B7280" strokeWidth="0.5"/>
             <line x1="13" y1="14" x2="15" y2="14" stroke="#6B7280" strokeWidth="0.5"/>
           </svg>
-          <span className="font-bold text-white" style={{ fontFamily: 'monospace' }}>{lives}</span>
+          <span className="font-bold text-white">{lives}</span>
         </div>
 
         {/* Золото — Шестерёнки */}
@@ -1807,7 +1807,7 @@ export default function TribologyLabPage() {
             {/* Блик */}
             <ellipse cx="9" cy="9" rx="2" ry="1.5" fill="rgba(255,255,255,0.25)"/>
           </svg>
-          <span className="font-bold" style={{ color: '#E5E7EB', fontFamily: 'monospace' }}>{gold}</span>
+          <span className="font-bold" style={{ color: '#E5E7EB' }}>{gold}</span>
         </div>
 
         {/* Кнопка Начать волну / Обратный отсчёт */}
