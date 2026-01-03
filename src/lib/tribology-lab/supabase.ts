@@ -218,12 +218,16 @@ export async function submitRun(
   );
 
   if (!insertRes.ok) {
-    console.error("Failed to submit run:", insertRes.statusText);
+    const errorText = await insertRes.text();
+    console.error("Failed to submit run:", insertRes.status, insertRes.statusText, errorText);
+    console.error("Data that failed:", { playerId, mode, dailyDate, deckModules, deckKey, waveReached, kills, livesLeft, runTimeMs });
     return { success: false };
   }
 
-  const [run] = await insertRes.json();
-  return { success: true, runId: run.id };
+  const data = await insertRes.json();
+  console.log("Run submitted successfully:", data);
+  const run = Array.isArray(data) ? data[0] : data;
+  return { success: true, runId: run?.id };
 }
 
 // Получить Daily лидерборд

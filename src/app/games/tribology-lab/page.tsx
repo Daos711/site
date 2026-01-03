@@ -1181,12 +1181,14 @@ export default function TribologyLabPage() {
       // Отправляем результат в лидерборд (если есть никнейм)
       const currentDeck = testDeck || menuDeck || FALLBACK_SHOP;
       const nick = getPlayerNickname();
+      console.log('📊 Game Over data:', { wave, totalKills, finalTimeMs, nick, playerId, gameMode, currentDeck });
+
       if (nick && playerId) {
         // Асинхронная отправка
         (async () => {
           try {
             await getOrCreateProfile(playerId, nick);
-            await submitRun(
+            const result = await submitRun(
               playerId,
               gameMode,
               currentDeck,
@@ -1195,11 +1197,17 @@ export default function TribologyLabPage() {
               0, // lives_left = 0 при game over
               finalTimeMs
             );
-            console.log('Результат отправлен в лидерборд');
+            if (result.success) {
+              console.log('✅ Результат отправлен в лидерборд:', result.runId);
+            } else {
+              console.error('❌ Не удалось отправить результат');
+            }
           } catch (err) {
-            console.error('Ошибка отправки результата:', err);
+            console.error('❌ Ошибка отправки результата:', err);
           }
         })();
+      } else {
+        console.warn('⚠️ Результат не отправлен: нет ника или playerId', { nick, playerId });
       }
     }
   }, [lives, gameStarted, showGameOver, testDeck, menuDeck, playerId, gameMode, wave, totalKills]);
