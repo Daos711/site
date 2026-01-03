@@ -1829,16 +1829,63 @@ export default function TribologyLabPage() {
         {gamePhase === 'preparing' && (
           gameStarted && nextWaveCountdown > 0 ? (
             <div
-              className="px-4 py-1.5 rounded-lg font-bold text-white text-base flex items-center gap-2"
+              className="flex items-center gap-2"
               style={{
-                background: 'linear-gradient(145deg, #3b82f6 0%, #2563eb 100%)',
-                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
+                background: '#1A202C',
+                border: '1px solid #4A5568',
+                borderRadius: '8px',
+                padding: '4px 8px',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
               }}
             >
-              <span>⏱️ {nextWaveCountdown}</span>
+              {/* Иконка таймера — шестерёнка */}
+              <svg width="18" height="18" viewBox="0 0 24 24" className="flex-shrink-0" style={{ animation: 'gearSpin 2s linear infinite' }}>
+                <defs>
+                  <radialGradient id="metalGradTimer">
+                    <stop offset="0%" stopColor="#A8B2C1"/>
+                    <stop offset="100%" stopColor="#6B7280"/>
+                  </radialGradient>
+                </defs>
+                <path d="M12,1 L13.5,4 L16,3.5 L17,6 L20,6 L19.5,9 L22,10.5 L20,12 L22,13.5 L19.5,15 L20,18 L17,18 L16,20.5 L13.5,20 L12,23 L10.5,20 L8,20.5 L7,18 L4,18 L4.5,15 L2,13.5 L4,12 L2,10.5 L4.5,9 L4,6 L7,6 L8,3.5 L10.5,4 Z"
+                      fill="url(#metalGradTimer)" stroke="#4A5568" strokeWidth="0.5"/>
+                <circle cx="12" cy="12" r="3" fill="#1A202C"/>
+              </svg>
+              {/* Счётчик */}
+              <span
+                style={{
+                  fontWeight: 700,
+                  fontSize: '16px',
+                  color: '#32D6FF',
+                  textShadow: '0 0 8px rgba(50, 214, 255, 0.6)',
+                  minWidth: '16px',
+                  textAlign: 'center',
+                }}
+              >
+                {nextWaveCountdown}
+              </span>
+              {/* Кнопка "Сейчас!" */}
               <button
                 onClick={startWave}
-                className="px-2 py-0.5 rounded bg-green-500 hover:bg-green-400 text-sm transition-colors"
+                style={{
+                  padding: '4px 12px',
+                  background: 'linear-gradient(145deg, #22C55E 0%, #16A34A 100%)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.4)',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.4)';
+                }}
               >
                 Сейчас!
               </button>
