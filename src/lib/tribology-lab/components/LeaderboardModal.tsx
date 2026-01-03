@@ -322,7 +322,7 @@ function DailyTab({
       <LeaderboardTable
         entries={entries}
         highlightPlayerId={highlightPlayerId}
-        showDeck={false}
+        showDeck={true}
       />
     </div>
   );

@@ -1,19 +1,20 @@
 'use client';
 
 import React from 'react';
-import { ModuleType, MODULES } from '../types';
+import { ModuleType, MODULES, MODULE_PALETTE } from '../types';
 import { MODULE_ROLES, ROLE_COLORS } from '../data/handbook-data';
+import { ModuleIcon } from './ModuleIcons';
 
 interface ModuleDeckIconsProps {
   modules: (ModuleType | string)[]; // ["laser", "cooler", ...]
-  size?: number; // размер иконки (по умолчанию 20px)
+  size?: number; // размер иконки (по умолчанию 24px)
   gap?: number; // gap между иконками (по умолчанию 4px)
   showTooltip?: boolean; // показывать тултип при hover
 }
 
 export function ModuleDeckIcons({
   modules,
-  size = 20,
+  size = 24,
   gap = 4,
   showTooltip = true,
 }: ModuleDeckIconsProps) {
@@ -21,7 +22,9 @@ export function ModuleDeckIcons({
     <div className="flex items-center" style={{ gap: `${gap}px` }}>
       {modules.map((moduleType, index) => {
         const config = MODULES[moduleType as ModuleType];
-        if (!config) {
+        const palette = MODULE_PALETTE[moduleType as ModuleType];
+
+        if (!config || !palette) {
           return (
             <div
               key={index}
@@ -33,7 +36,8 @@ export function ModuleDeckIcons({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: size * 0.6,
+                fontSize: size * 0.5,
+                color: '#9CA3AF',
               }}
             >
               ?
@@ -41,30 +45,25 @@ export function ModuleDeckIcons({
           );
         }
 
-        const role = MODULE_ROLES[moduleType as ModuleType];
-        const roleColor = role ? ROLE_COLORS[role] : '#6B7280';
-
         return (
           <div
             key={index}
             className="relative group"
             style={{ width: size, height: size }}
           >
-            {/* Иконка модуля */}
+            {/* Иконка модуля — SVG */}
             <div
               style={{
                 width: size,
                 height: size,
-                background: `${roleColor}20`,
-                border: `1px solid ${roleColor}`,
+                background: palette.dark,
+                border: `1px solid ${palette.light}`,
                 borderRadius: 4,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: size * 0.7,
+                padding: 2,
+                boxSizing: 'border-box',
               }}
             >
-              {config.icon}
+              <ModuleIcon type={moduleType as ModuleType} />
             </div>
 
             {/* Тултип при hover */}
@@ -118,7 +117,7 @@ export function ModuleDeckIconsCompact({
 }: {
   modules: (ModuleType | string)[];
 }) {
-  return <ModuleDeckIcons modules={modules} size={16} gap={2} showTooltip={false} />;
+  return <ModuleDeckIcons modules={modules} size={20} gap={2} showTooltip={false} />;
 }
 
 // Крупный вариант для заголовков
@@ -134,10 +133,8 @@ export function ModuleDeckIconsLarge({
       <div className="flex flex-wrap gap-2">
         {modules.map((moduleType, index) => {
           const config = MODULES[moduleType as ModuleType];
-          if (!config) return null;
-
-          const role = MODULE_ROLES[moduleType as ModuleType];
-          const roleColor = role ? ROLE_COLORS[role] : '#6B7280';
+          const palette = MODULE_PALETTE[moduleType as ModuleType];
+          if (!config || !palette) return null;
 
           return (
             <div
@@ -147,12 +144,14 @@ export function ModuleDeckIconsLarge({
                 alignItems: 'center',
                 gap: 6,
                 padding: '4px 8px',
-                background: `${roleColor}15`,
-                border: `1px solid ${roleColor}40`,
+                background: `${palette.dark}`,
+                border: `1px solid ${palette.light}40`,
                 borderRadius: 6,
               }}
             >
-              <span style={{ fontSize: 18 }}>{config.icon}</span>
+              <div style={{ width: 20, height: 20 }}>
+                <ModuleIcon type={moduleType as ModuleType} />
+              </div>
               <span style={{ fontSize: 12, color: '#C5D1DE' }}>{config.name}</span>
             </div>
           );
