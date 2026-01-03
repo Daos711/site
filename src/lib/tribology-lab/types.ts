@@ -157,6 +157,11 @@ export function getDamage(baseDamage: number, level: number): number {
   return Math.floor(baseDamage * Math.pow(1.5, level - 1));
 }
 
+// Формула радиуса AOE: +15% за уровень
+export function getAoeRadius(baseRadius: number, level: number): number {
+  return Math.floor(baseRadius * (1 + (level - 1) * 0.15));
+}
+
 // Формула длительности эффекта: +10% за уровень
 export function getEffectDuration(baseDuration: number, level: number): number {
   return Math.floor(baseDuration * (1 + (level - 1) * 0.1));

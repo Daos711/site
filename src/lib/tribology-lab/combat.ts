@@ -1,5 +1,5 @@
 import {
-  Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength,
+  Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength, getAoeRadius,
   Enemy, EnemyConfig, ENEMIES, EnemyTag, EnemyType,
   Effect, EffectType, AttackEffect, ActiveBarrier,
   CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH, GRID_COLS,
@@ -299,16 +299,29 @@ export function findTarget(
 }
 
 /**
- * Находит всех врагов для AOE
- * ВАЖНО: Возвращаем ВСЕХ врагов — урон зависит от расстояния
+ * Находит всех врагов для AOE в радиусе aoeRadius
+ * Радиус масштабируется с уровнем модуля (+15% за уровень)
  */
 export function findAllInRange(
   module: Module,
   enemies: Enemy[],
   path: PathPoint[]
 ): Enemy[] {
-  // Возвращаем ВСЕХ врагов — без фильтра по range
-  return enemies;
+  const config = MODULES[module.type];
+  const modulePos = getModulePosition(module);
+
+  // Радиус AOE с учетом уровня модуля
+  const baseRadius = config.aoeRadius || 100;
+  const aoeRadius = getAoeRadius(baseRadius, module.level);
+
+  // Фильтруем врагов по расстоянию
+  return enemies.filter(enemy => {
+    const enemyConfig = ENEMIES[enemy.type];
+    const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
+    const distance = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
+
+    return distance <= aoeRadius;
+  });
 }
 
 /**

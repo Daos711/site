@@ -118,6 +118,10 @@ export default function TribologyLabPage() {
   const [devMode, setDevMode] = useState(false);
   const [selectedDevModule, setSelectedDevModule] = useState<ModuleType | null>(null);
 
+  // Модальное окно выхода
+  const [showExitModal, setShowExitModal] = useState(false);
+  const wasPausedBeforeModal = useRef(false);
+
   // Экраны: splash → menu → tutorial → game
   type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
   const [screen, setScreen] = useState<ScreenState>('splash');
@@ -186,6 +190,42 @@ export default function TribologyLabPage() {
     markTutorialCompleted();
     setScreen('menu');
   }, [markTutorialCompleted]);
+
+  // Обработчики модалки выхода
+  const handleOpenExitModal = useCallback(() => {
+    wasPausedBeforeModal.current = isPaused;
+    if (!isPaused) {
+      setIsPaused(true);
+    }
+    setShowExitModal(true);
+  }, [isPaused]);
+
+  const handleCloseExitModal = useCallback(() => {
+    setShowExitModal(false);
+    if (!wasPausedBeforeModal.current) {
+      setIsPaused(false);
+    }
+  }, []);
+
+  const handleConfirmExit = useCallback(() => {
+    setShowExitModal(false);
+    setIsPaused(false);
+    // Полный сброс состояния
+    setWave(1);
+    setLives(INITIAL_LIVES);
+    setGold(INITIAL_GOLD);
+    setModules([]);
+    setEnemies([]);
+    enemiesRef.current = [];
+    setGamePhase('preparing');
+    activeBarriersRef.current = [];
+    setActiveBarriers([]);
+    setGameStarted(false);
+    setNextWaveCountdown(0);
+    spawnedIdsRef.current.clear();
+    // Возврат в главное меню
+    setScreen('menu');
+  }, []);
 
   // Роли модулей для селектора
   const MODULE_ROLES = {
@@ -1060,7 +1100,29 @@ export default function TribologyLabPage() {
 
       </div>
 
-      <h1 className="text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
+      {/* Заголовок с кнопкой выхода */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleOpenExitModal}
+          className="w-10 h-10 flex items-center justify-center rounded-lg transition-all"
+          style={{
+            background: '#161b22',
+            border: '1px solid #30363d',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#22d3ee';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(34, 211, 238, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#30363d';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          title="Выход в меню"
+        >
+          <span className="text-gray-400 text-xl">←</span>
+        </button>
+        <h1 className="text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
+      </div>
 
       {/* Статус-бар */}
       <div className="flex items-center gap-6 text-xl mb-2">
@@ -1151,38 +1213,43 @@ export default function TribologyLabPage() {
             {speed}x
           </button>
         ))}
-        <span className="text-gray-500 mx-2">|</span>
-        <span className="text-gray-400">Волна:</span>
-        <button
-          onClick={() => setWave(w => Math.max(1, w - 1))}
-          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          -
-        </button>
-        <button
-          onClick={() => setWave(w => w + 1)}
-          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          +
-        </button>
-        <button
-          onClick={() => setWave(5)}
-          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          →5
-        </button>
-        <button
-          onClick={() => setWave(10)}
-          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          →10
-        </button>
-        <button
-          onClick={() => setWave(15)}
-          className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
-        >
-          →15
-        </button>
+        {/* Кнопки волн скрыты по умолчанию, видны только в devMode */}
+        {devMode && (
+          <>
+            <span className="text-gray-500 mx-2">|</span>
+            <span className="text-gray-400">Волна:</span>
+            <button
+              onClick={() => setWave(w => Math.max(1, w - 1))}
+              className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              -
+            </button>
+            <button
+              onClick={() => setWave(w => w + 1)}
+              className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setWave(5)}
+              className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              →5
+            </button>
+            <button
+              onClick={() => setWave(10)}
+              className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              →10
+            </button>
+            <button
+              onClick={() => setWave(15)}
+              className="px-2 py-0.5 rounded bg-gray-700 text-white hover:bg-gray-600"
+            >
+              →15
+            </button>
+          </>
+        )}
       </div>
 
       {/* Игровое поле */}
@@ -3524,6 +3591,92 @@ export default function TribologyLabPage() {
         >
           🔧
         </button>
+      )}
+
+      {/* Модальное окно выхода */}
+      {showExitModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(4px)' }}
+          onClick={handleCloseExitModal}
+        >
+          <div
+            className="relative"
+            style={{
+              width: 'min(320px, 90vw)',
+              maxWidth: 360,
+              background: '#161b22',
+              border: '1px solid #30363d',
+              borderRadius: 16,
+              padding: 24,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Иконка */}
+            <div className="text-center mb-4">
+              <span className="text-5xl">⚠️</span>
+            </div>
+
+            {/* Заголовок */}
+            <h2
+              className="text-center mb-3"
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: '#e6edf3',
+              }}
+            >
+              Покинуть стенд?
+            </h2>
+
+            {/* Описание */}
+            <p
+              className="text-center mb-6"
+              style={{
+                fontSize: 14,
+                color: '#8b949e',
+                lineHeight: 1.5,
+              }}
+            >
+              Прогресс текущей попытки будет потерян. Выйти в меню?
+            </p>
+
+            {/* Кнопки */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleCloseExitModal}
+                className="flex-1 h-12 rounded-lg font-semibold transition-all"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #30363d',
+                  color: '#8b949e',
+                  fontSize: 15,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#22d3ee';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#30363d';
+                }}
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleConfirmExit}
+                className="flex-1 h-12 rounded-lg font-semibold transition-all hover:opacity-90"
+                style={{
+                  background: '#da3633',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: 15,
+                }}
+              >
+                Выйти
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
