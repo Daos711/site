@@ -2346,67 +2346,51 @@ export default function TribologyLabPage() {
             {/* Щель с тенью */}
             <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
 
-            {/* Микро-частицы: ОБЛАКО над щелью (X: 15%-85% ширины, Y: -10 до -40px) */}
-            {/* 14 частиц распределены полосой, НЕ из угла */}
+            {/* Микро-частицы: узкая зона НАД ЩЕЛЬЮ (X: центр ±20%, Y: -9 до -18px) */}
+            {/* 10 частиц, прозрачные чтобы враги были видны */}
             <g style={{ pointerEvents: 'none' }}>
-              {/* Мелкие частицы 2-3px (10 шт) */}
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.18} cy={totalHeight - 14} r={2} fill="#32D6FF" opacity={0.6} style={{ filter: 'blur(0.5px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 18};${totalHeight - 14}`} dur="2.2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.6;0.35;0.6" dur="2.2s" repeatCount="indefinite" />
+              {/* Мелкие 2-3px (7 шт) — узкий разброс 30%-70% */}
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.32} cy={totalHeight - 10} r={2} fill="#32D6FF" opacity={0.38} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 10};${totalHeight - 14};${totalHeight - 10}`} dur="2.2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.38;0.18;0.38" dur="2.2s" repeatCount="indefinite" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.30} cy={totalHeight - 20} r={2.5} fill="#32D6FF" opacity={0.5} style={{ filter: 'blur(0.3px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 20};${totalHeight - 24};${totalHeight - 20}`} dur="2.5s" repeatCount="indefinite" begin="0.3s" />
-                <animate attributeName="opacity" values="0.5;0.28;0.5" dur="2.5s" repeatCount="indefinite" begin="0.3s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.42} cy={totalHeight - 14} r={2.5} fill="#32D6FF" opacity={0.32} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 18};${totalHeight - 14}`} dur="2.5s" repeatCount="indefinite" begin="0.3s" />
+                <animate attributeName="opacity" values="0.32;0.15;0.32" dur="2.5s" repeatCount="indefinite" begin="0.3s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.42} cy={totalHeight - 12} r={2} fill="#32D6FF" opacity={0.55} style={{ filter: 'blur(0.4px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 12};${totalHeight - 16};${totalHeight - 12}`} dur="2.3s" repeatCount="indefinite" begin="0.7s" />
-                <animate attributeName="opacity" values="0.55;0.32;0.55" dur="2.3s" repeatCount="indefinite" begin="0.7s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.52} cy={totalHeight - 9} r={2} fill="#32D6FF" opacity={0.4} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 9};${totalHeight - 13};${totalHeight - 9}`} dur="2.3s" repeatCount="indefinite" begin="0.7s" />
+                <animate attributeName="opacity" values="0.4;0.2;0.4" dur="2.3s" repeatCount="indefinite" begin="0.7s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.55} cy={totalHeight - 26} r={2.5} fill="#32D6FF" opacity={0.4} style={{ filter: 'blur(0.8px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 26};${totalHeight - 30};${totalHeight - 26}`} dur="2.6s" repeatCount="indefinite" begin="1.1s" />
-                <animate attributeName="opacity" values="0.4;0.22;0.4" dur="2.6s" repeatCount="indefinite" begin="1.1s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.62} cy={totalHeight - 16} r={2.5} fill="#32D6FF" opacity={0.28} style={{ filter: 'blur(0.5px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 16};${totalHeight - 20};${totalHeight - 16}`} dur="2.6s" repeatCount="indefinite" begin="1.1s" />
+                <animate attributeName="opacity" values="0.28;0.12;0.28" dur="2.6s" repeatCount="indefinite" begin="1.1s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.68} cy={totalHeight - 18} r={2} fill="#32D6FF" opacity={0.5} style={{ filter: 'blur(0.5px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 18};${totalHeight - 22};${totalHeight - 18}`} dur="2.4s" repeatCount="indefinite" begin="0.5s" />
-                <animate attributeName="opacity" values="0.5;0.3;0.5" dur="2.4s" repeatCount="indefinite" begin="0.5s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.38} cy={totalHeight - 12} r={2} fill="#32D6FF" opacity={0.35} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 12};${totalHeight - 16};${totalHeight - 12}`} dur="2.4s" repeatCount="indefinite" begin="0.5s" />
+                <animate attributeName="opacity" values="0.35;0.18;0.35" dur="2.4s" repeatCount="indefinite" begin="0.5s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.78} cy={totalHeight - 32} r={2} fill="#32D6FF" opacity={0.35} style={{ filter: 'blur(1px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 32};${totalHeight - 36};${totalHeight - 32}`} dur="2.8s" repeatCount="indefinite" begin="1.5s" />
-                <animate attributeName="opacity" values="0.35;0.18;0.35" dur="2.8s" repeatCount="indefinite" begin="1.5s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.58} cy={totalHeight - 11} r={2} fill="#32D6FF" opacity={0.36} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 11};${totalHeight - 15};${totalHeight - 11}`} dur="2.1s" repeatCount="indefinite" begin="0.9s" />
+                <animate attributeName="opacity" values="0.36;0.16;0.36" dur="2.1s" repeatCount="indefinite" begin="0.9s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.25} cy={totalHeight - 28} r={2.5} fill="#32D6FF" opacity={0.42} style={{ filter: 'blur(0.7px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 28};${totalHeight - 32};${totalHeight - 28}`} dur="2.1s" repeatCount="indefinite" begin="0.9s" />
-                <animate attributeName="opacity" values="0.42;0.24;0.42" dur="2.1s" repeatCount="indefinite" begin="0.9s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.68} cy={totalHeight - 13} r={2.5} fill="#32D6FF" opacity={0.3} style={{ filter: 'blur(0.5px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 13};${totalHeight - 17};${totalHeight - 13}`} dur="2.8s" repeatCount="indefinite" begin="1.5s" />
+                <animate attributeName="opacity" values="0.3;0.14;0.3" dur="2.8s" repeatCount="indefinite" begin="1.5s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.62} cy={totalHeight - 22} r={2} fill="#32D6FF" opacity={0.48} style={{ filter: 'blur(0.4px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 22};${totalHeight - 26};${totalHeight - 22}`} dur="2.7s" repeatCount="indefinite" begin="1.3s" />
-                <animate attributeName="opacity" values="0.48;0.26;0.48" dur="2.7s" repeatCount="indefinite" begin="1.3s" />
+              {/* Средние 4px (2 шт) */}
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.45} cy={totalHeight - 13} r={4} fill="#32D6FF" opacity={0.25} style={{ filter: 'blur(0.7px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 13};${totalHeight - 17};${totalHeight - 13}`} dur="2.6s" repeatCount="indefinite" begin="0.4s" />
+                <animate attributeName="opacity" values="0.25;0.1;0.25" dur="2.6s" repeatCount="indefinite" begin="0.4s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.82} cy={totalHeight - 16} r={2.5} fill="#32D6FF" opacity={0.38} style={{ filter: 'blur(0.6px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 16};${totalHeight - 20};${totalHeight - 16}`} dur="2.2s" repeatCount="indefinite" begin="0.2s" />
-                <animate attributeName="opacity" values="0.38;0.2;0.38" dur="2.2s" repeatCount="indefinite" begin="0.2s" />
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.55} cy={totalHeight - 15} r={4} fill="#32D6FF" opacity={0.22} style={{ filter: 'blur(0.8px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 15};${totalHeight - 19};${totalHeight - 15}`} dur="2.3s" repeatCount="indefinite" begin="1.0s" />
+                <animate attributeName="opacity" values="0.22;0.08;0.22" dur="2.3s" repeatCount="indefinite" begin="1.0s" />
               </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.48} cy={totalHeight - 34} r={2} fill="#32D6FF" opacity={0.32} style={{ filter: 'blur(1.2px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 34};${totalHeight - 38};${totalHeight - 34}`} dur="2.9s" repeatCount="indefinite" begin="1.7s" />
-                <animate attributeName="opacity" values="0.32;0.15;0.32" dur="2.9s" repeatCount="indefinite" begin="1.7s" />
-              </circle>
-              {/* Средние частицы 4-5px (3 шт) */}
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.35} cy={totalHeight - 16} r={4.5} fill="#32D6FF" opacity={0.38} style={{ filter: 'blur(0.8px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 16};${totalHeight - 20};${totalHeight - 16}`} dur="2.6s" repeatCount="indefinite" begin="0.4s" />
-                <animate attributeName="opacity" values="0.38;0.2;0.38" dur="2.6s" repeatCount="indefinite" begin="0.4s" />
-              </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.58} cy={totalHeight - 24} r={5} fill="#32D6FF" opacity={0.32} style={{ filter: 'blur(1px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 24};${totalHeight - 28};${totalHeight - 24}`} dur="2.3s" repeatCount="indefinite" begin="1.0s" />
-                <animate attributeName="opacity" values="0.32;0.16;0.32" dur="2.3s" repeatCount="indefinite" begin="1.0s" />
-              </circle>
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.72} cy={totalHeight - 30} r={4} fill="#32D6FF" opacity={0.28} style={{ filter: 'blur(1.2px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 30};${totalHeight - 34};${totalHeight - 30}`} dur="2.5s" repeatCount="indefinite" begin="1.6s" />
-                <animate attributeName="opacity" values="0.28;0.14;0.28" dur="2.5s" repeatCount="indefinite" begin="1.6s" />
-              </circle>
-              {/* Крупная частица 8px (1 шт) - по центру */}
-              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.50} cy={totalHeight - 20} r={8} fill="#32D6FF" opacity={0.22} style={{ filter: 'blur(1.5px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 20};${totalHeight - 24};${totalHeight - 20}`} dur="3s" repeatCount="indefinite" begin="0.6s" />
-                <animate attributeName="opacity" values="0.22;0.1;0.22" dur="3s" repeatCount="indefinite" begin="0.6s" />
+              {/* Крупная 6px (1 шт) — по центру */}
+              <circle cx={innerOffset + 1 + (conveyorWidth - innerOffset - 2) * 0.50} cy={totalHeight - 14} r={6} fill="#32D6FF" opacity={0.18} style={{ filter: 'blur(1px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 18};${totalHeight - 14}`} dur="3s" repeatCount="indefinite" begin="0.6s" />
+                <animate attributeName="opacity" values="0.18;0.06;0.18" dur="3s" repeatCount="indefinite" begin="0.6s" />
               </circle>
             </g>
           </g>
@@ -2420,59 +2404,43 @@ export default function TribologyLabPage() {
             {/* Щель с тенью */}
             <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#1a0808" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
 
-            {/* Микро-частицы: ОБЛАКО над щелью (X: 15%-85% ширины, Y: -10 до -40px) */}
-            {/* 12 частиц распределены полосой, НЕ из угла */}
+            {/* Микро-частицы: узкая зона НАД ЩЕЛЬЮ (X: центр ±20%, Y: -9 до -18px) */}
+            {/* 8 частиц, прозрачные чтобы враги были видны */}
             <g style={{ pointerEvents: 'none' }}>
-              {/* Мелкие частицы 2-3px (8 шт) - 60% оранжевые, 40% красные */}
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.20} cy={totalHeight - 14} r={2} fill="#FF6B35" opacity={0.6} style={{ filter: 'blur(0.5px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 18};${totalHeight - 14}`} dur="2.2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.6;0.35;0.6" dur="2.2s" repeatCount="indefinite" />
+              {/* Мелкие 2-3px (5 шт) — 60% оранжевые, 40% красные */}
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.35} cy={totalHeight - 10} r={2} fill="#FF6B35" opacity={0.38} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 10};${totalHeight - 14};${totalHeight - 10}`} dur="2.2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.38;0.18;0.38" dur="2.2s" repeatCount="indefinite" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.35} cy={totalHeight - 22} r={2.5} fill="#FF6B35" opacity={0.5} style={{ filter: 'blur(0.3px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 22};${totalHeight - 26};${totalHeight - 22}`} dur="2.5s" repeatCount="indefinite" begin="0.3s" />
-                <animate attributeName="opacity" values="0.5;0.28;0.5" dur="2.5s" repeatCount="indefinite" begin="0.3s" />
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.45} cy={totalHeight - 14} r={2.5} fill="#FF6B35" opacity={0.32} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 18};${totalHeight - 14}`} dur="2.5s" repeatCount="indefinite" begin="0.3s" />
+                <animate attributeName="opacity" values="0.32;0.15;0.32" dur="2.5s" repeatCount="indefinite" begin="0.3s" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.48} cy={totalHeight - 16} r={2} fill="#FF3B4D" opacity={0.55} style={{ filter: 'blur(0.4px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 16};${totalHeight - 20};${totalHeight - 16}`} dur="2.3s" repeatCount="indefinite" begin="0.7s" />
-                <animate attributeName="opacity" values="0.55;0.32;0.55" dur="2.3s" repeatCount="indefinite" begin="0.7s" />
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.55} cy={totalHeight - 12} r={2} fill="#FF3B4D" opacity={0.35} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 12};${totalHeight - 16};${totalHeight - 12}`} dur="2.3s" repeatCount="indefinite" begin="0.7s" />
+                <animate attributeName="opacity" values="0.35;0.18;0.35" dur="2.3s" repeatCount="indefinite" begin="0.7s" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.60} cy={totalHeight - 28} r={2.5} fill="#FF6B35" opacity={0.42} style={{ filter: 'blur(0.8px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 28};${totalHeight - 32};${totalHeight - 28}`} dur="2.6s" repeatCount="indefinite" begin="1.1s" />
-                <animate attributeName="opacity" values="0.42;0.22;0.42" dur="2.6s" repeatCount="indefinite" begin="1.1s" />
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.62} cy={totalHeight - 16} r={2.5} fill="#FF6B35" opacity={0.3} style={{ filter: 'blur(0.5px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 16};${totalHeight - 20};${totalHeight - 16}`} dur="2.6s" repeatCount="indefinite" begin="1.1s" />
+                <animate attributeName="opacity" values="0.3;0.14;0.3" dur="2.6s" repeatCount="indefinite" begin="1.1s" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.72} cy={totalHeight - 18} r={2} fill="#FF3B4D" opacity={0.5} style={{ filter: 'blur(0.5px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 18};${totalHeight - 22};${totalHeight - 18}`} dur="2.4s" repeatCount="indefinite" begin="0.5s" />
-                <animate attributeName="opacity" values="0.5;0.3;0.5" dur="2.4s" repeatCount="indefinite" begin="0.5s" />
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.50} cy={totalHeight - 9} r={2} fill="#FF3B4D" opacity={0.38} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 9};${totalHeight - 13};${totalHeight - 9}`} dur="2.4s" repeatCount="indefinite" begin="0.5s" />
+                <animate attributeName="opacity" values="0.38;0.18;0.38" dur="2.4s" repeatCount="indefinite" begin="0.5s" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.82} cy={totalHeight - 32} r={2} fill="#FF6B35" opacity={0.38} style={{ filter: 'blur(1px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 32};${totalHeight - 36};${totalHeight - 32}`} dur="2.8s" repeatCount="indefinite" begin="1.5s" />
-                <animate attributeName="opacity" values="0.38;0.2;0.38" dur="2.8s" repeatCount="indefinite" begin="1.5s" />
+              {/* Средние 4px (2 шт) */}
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.42} cy={totalHeight - 13} r={4} fill="#FF6B35" opacity={0.25} style={{ filter: 'blur(0.7px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 13};${totalHeight - 17};${totalHeight - 13}`} dur="2.6s" repeatCount="indefinite" begin="0.4s" />
+                <animate attributeName="opacity" values="0.25;0.1;0.25" dur="2.6s" repeatCount="indefinite" begin="0.4s" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.28} cy={totalHeight - 26} r={2.5} fill="#FF3B4D" opacity={0.45} style={{ filter: 'blur(0.6px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 26};${totalHeight - 30};${totalHeight - 26}`} dur="2.1s" repeatCount="indefinite" begin="0.9s" />
-                <animate attributeName="opacity" values="0.45;0.25;0.45" dur="2.1s" repeatCount="indefinite" begin="0.9s" />
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.58} cy={totalHeight - 15} r={4} fill="#FF3B4D" opacity={0.22} style={{ filter: 'blur(0.8px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 15};${totalHeight - 19};${totalHeight - 15}`} dur="2.3s" repeatCount="indefinite" begin="1.0s" />
+                <animate attributeName="opacity" values="0.22;0.08;0.22" dur="2.3s" repeatCount="indefinite" begin="1.0s" />
               </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.55} cy={totalHeight - 12} r={2} fill="#FF6B35" opacity={0.52} style={{ filter: 'blur(0.3px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 12};${totalHeight - 16};${totalHeight - 12}`} dur="2.7s" repeatCount="indefinite" begin="1.3s" />
-                <animate attributeName="opacity" values="0.52;0.3;0.52" dur="2.7s" repeatCount="indefinite" begin="1.3s" />
-              </circle>
-              {/* Средние частицы 4-5px (3 шт) */}
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.40} cy={totalHeight - 18} r={4.5} fill="#FF6B35" opacity={0.38} style={{ filter: 'blur(0.8px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 18};${totalHeight - 22};${totalHeight - 18}`} dur="2.6s" repeatCount="indefinite" begin="0.4s" />
-                <animate attributeName="opacity" values="0.38;0.2;0.38" dur="2.6s" repeatCount="indefinite" begin="0.4s" />
-              </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.65} cy={totalHeight - 24} r={5} fill="#FF3B4D" opacity={0.32} style={{ filter: 'blur(1px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 24};${totalHeight - 28};${totalHeight - 24}`} dur="2.3s" repeatCount="indefinite" begin="1.0s" />
-                <animate attributeName="opacity" values="0.32;0.16;0.32" dur="2.3s" repeatCount="indefinite" begin="1.0s" />
-              </circle>
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.78} cy={totalHeight - 30} r={4} fill="#FF6B35" opacity={0.28} style={{ filter: 'blur(1.2px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 30};${totalHeight - 34};${totalHeight - 30}`} dur="2.5s" repeatCount="indefinite" begin="1.6s" />
-                <animate attributeName="opacity" values="0.28;0.14;0.28" dur="2.5s" repeatCount="indefinite" begin="1.6s" />
-              </circle>
-              {/* Крупная частица 8px (1 шт) - по центру */}
-              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.50} cy={totalHeight - 22} r={8} fill="#FF6B35" opacity={0.22} style={{ filter: 'blur(1.5px)' }}>
-                <animate attributeName="cy" values={`${totalHeight - 22};${totalHeight - 26};${totalHeight - 22}`} dur="3s" repeatCount="indefinite" begin="0.6s" />
-                <animate attributeName="opacity" values="0.22;0.1;0.22" dur="3s" repeatCount="indefinite" begin="0.6s" />
+              {/* Крупная 6px (1 шт) — по центру */}
+              <circle cx={totalWidth - conveyorWidth + 1 + (conveyorWidth - innerOffset - 2) * 0.50} cy={totalHeight - 14} r={6} fill="#FF6B35" opacity={0.18} style={{ filter: 'blur(1px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 18};${totalHeight - 14}`} dur="3s" repeatCount="indefinite" begin="0.6s" />
+                <animate attributeName="opacity" values="0.18;0.06;0.18" dur="3s" repeatCount="indefinite" begin="0.6s" />
               </circle>
             </g>
           </g>
