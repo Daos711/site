@@ -2365,18 +2365,18 @@ export default function TribologyLabPage() {
           })}
           </g>
 
-          {/* СТАРТ - входной патрубок с болтами */}
+          {/* СТАРТ - порт подачи (минималистичный) */}
           <StartZone
             x={innerOffset}
-            y={totalHeight}
+            y={totalHeight - 20}
             width={conveyorWidth - innerOffset}
             isSpawning={isSpawning}
           />
 
-          {/* ФИНИШ - узел трения с hot spot */}
+          {/* ФИНИШ - горячая зона (минималистичный) */}
           <FinishZone
             x={totalWidth - conveyorWidth}
-            y={totalHeight}
+            y={totalHeight - 20}
             width={conveyorWidth - innerOffset}
             isDamaged={isDamaged}
           />
