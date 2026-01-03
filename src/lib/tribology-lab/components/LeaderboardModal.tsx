@@ -385,7 +385,7 @@ function RandomTab({
             cursor: 'pointer',
           }}
         >
-          Все колоды
+          Все наборы
         </button>
         {currentDeck && (
           <button
@@ -421,7 +421,7 @@ function RandomTab({
           }}
         >
           <div style={{ marginBottom: 8 }}>
-            <span style={{ color: '#C5D1DE', fontSize: 14 }}>Результаты для колоды:</span>
+            <span style={{ color: '#C5D1DE', fontSize: 14 }}>Результаты для набора:</span>
           </div>
           <ModuleDeckIconsLarge modules={currentDeck} showNames />
           <div style={{ marginTop: 8, color: '#9CA3AF', fontSize: 12 }}>
@@ -521,19 +521,19 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
           gap: 24,
         }}
       >
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ color: '#9CA3AF', fontSize: 11 }}>Лучший результат</div>
           <div style={{ color: '#22C55E', fontSize: 20, fontWeight: 700 }}>
             Волна {bestWave}
           </div>
         </div>
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ color: '#9CA3AF', fontSize: 11 }}>Всего забегов</div>
           <div style={{ color: '#E5E7EB', fontSize: 20, fontWeight: 700 }}>
             {runs.length}
           </div>
         </div>
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ color: '#9CA3AF', fontSize: 11 }}>Средняя волна</div>
           <div style={{ color: '#E5E7EB', fontSize: 20, fontWeight: 700 }}>
             {avgWave}
@@ -547,7 +547,6 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
           background: '#0D1219',
           border: '1px solid #2D3748',
           borderRadius: 8,
-          overflow: 'hidden',
         }}
       >
         {/* Заголовок с сортировкой */}
@@ -558,6 +557,7 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
             padding: '10px 12px',
             background: '#1A202C',
             borderBottom: '1px solid #2D3748',
+            borderRadius: '8px 8px 0 0',
             color: '#9CA3AF',
             fontSize: 11,
             fontWeight: 600,
@@ -718,7 +718,6 @@ function LeaderboardTable({
         background: '#0D1219',
         border: '1px solid #2D3748',
         borderRadius: 8,
-        overflow: 'hidden',
       }}
     >
       {/* Заголовок таблицы */}
@@ -731,6 +730,7 @@ function LeaderboardTable({
           padding: '10px 12px',
           background: '#1A202C',
           borderBottom: '1px solid #2D3748',
+          borderRadius: '8px 8px 0 0',
           color: '#9CA3AF',
           fontSize: 11,
           fontWeight: 600,
