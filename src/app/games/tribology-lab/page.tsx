@@ -75,6 +75,276 @@ interface DeathEffect {
 
 type GamePhase = 'preparing' | 'wave' | 'victory' | 'defeat';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// GAME OVER MODAL — Аварийная остановка стенда
+// ═══════════════════════════════════════════════════════════════════════════
+interface GameOverModalProps {
+  isOpen: boolean;
+  wave: number;
+  time: number; // в секундах
+  kills: number;
+  leaks: number;
+  gold: number;
+  onRestart: () => void;
+  onMainMenu: () => void;
+}
+
+function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMainMenu }: GameOverModalProps) {
+  const [showPanel, setShowPanel] = useState(false);
+
+  // Форматирование времени MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Подсказка по волне
+  const getTip = () => {
+    if (wave >= 20) return "Не хватает DPS — добавь Лазер или Сепаратор";
+    if (wave >= 15) return "Коррозия режет урон — Ингибитор рядом с модулями";
+    if (wave >= 10) return "Волна 10+ содержит влагу — попробуй Деэмульгатор";
+    return "Улучшай модули до L3+ для большего урона";
+  };
+
+  // Анимация появления панели
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setShowPanel(true), 400);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPanel(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{
+        zIndex: 100,
+        background: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(8px)',
+        // Шум/сканер эффект
+        backgroundImage: `
+          linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(50, 214, 255, 0.03) 2px,
+            rgba(50, 214, 255, 0.03) 4px
+          )
+        `,
+        animation: 'scanlines 40s linear infinite',
+      }}
+    >
+      {/* Красная вспышка при появлении */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'rgba(255, 59, 77, 0.4)',
+          animation: 'alarm-flash 0.3s ease-out forwards',
+        }}
+      />
+
+      {/* Центральная панель */}
+      <div
+        className="relative"
+        style={{
+          width: 'min(480px, 90vw)',
+          minHeight: '400px',
+          padding: '32px',
+          background: '#0F1419',
+          border: '2px solid #FF3B4D',
+          borderRadius: '16px',
+          boxShadow: '0 12px 48px rgba(0,0,0,0.8), 0 0 40px rgba(255,59,77,0.2)',
+          transform: showPanel ? 'translateY(0)' : 'translateY(100px)',
+          opacity: showPanel ? 1 : 0,
+          transition: 'transform 0.5s ease-out, opacity 0.5s ease-out',
+        }}
+      >
+        {/* LED + Заголовок */}
+        <div className="flex items-center gap-3 mb-2">
+          <div
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#FF3B4D',
+              boxShadow: '0 0 12px rgba(255,59,77,0.8)',
+              animation: 'led-blink 1.2s ease-in-out infinite',
+            }}
+          />
+          <span
+            style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              color: '#FF3B4D',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Аварийная остановка
+          </span>
+        </div>
+
+        {/* Подзаголовок */}
+        <p style={{ fontSize: '14px', color: '#7A8A99', marginBottom: '32px' }}>
+          Потери превысили допустимые
+        </p>
+
+        {/* Крупная цифра волны */}
+        <div
+          className="text-center mb-8"
+          style={{
+            animation: showPanel ? 'wave-bounce 0.4s ease-out 0.2s backwards' : 'none',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 'clamp(48px, 10vw, 64px)',
+              fontWeight: 800,
+              background: 'linear-gradient(180deg, #FFFFFF 0%, #32D6FF 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            ВОЛНА {wave}
+          </span>
+        </div>
+
+        {/* Статистика */}
+        <div
+          className="space-y-3 mb-6"
+          style={{ color: '#C5D1DE', fontSize: '15px' }}
+        >
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: '16px' }}>⏱️</span>
+            <span>Время: {formatTime(time)}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: '16px' }}>⚔️</span>
+            <span>Уничтожено: {kills}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: '16px' }}>💔</span>
+            <span style={{ color: leaks > 0 ? '#FF6B35' : '#C5D1DE' }}>
+              Пропущено: {leaks}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: '16px' }}>💰</span>
+            <span>Получено золота: {gold}</span>
+          </div>
+        </div>
+
+        {/* Рекомендации */}
+        <div
+          className="mb-6"
+          style={{
+            padding: '12px',
+            background: 'rgba(50,214,255,0.05)',
+            borderLeft: '3px solid #32D6FF',
+            borderRadius: '4px',
+          }}
+        >
+          <div style={{ fontSize: '14px', color: '#32D6FF', marginBottom: '8px' }}>
+            💡 Рекомендации
+          </div>
+          <p style={{ fontSize: '13px', color: '#C5D1DE' }}>
+            {getTip()}
+          </p>
+        </div>
+
+        {/* Кнопки */}
+        <button
+          onClick={onRestart}
+          className="w-full mb-3 transition-all"
+          style={{
+            height: '56px',
+            background: '#32D6FF',
+            color: '#0B0F14',
+            fontSize: '16px',
+            fontWeight: 700,
+            border: 'none',
+            borderRadius: '12px',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#7dd3fc';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(50,214,255,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#32D6FF';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          Повторить испытание
+        </button>
+
+        <button
+          onClick={onMainMenu}
+          className="w-full transition-all"
+          style={{
+            height: '48px',
+            background: 'transparent',
+            color: '#7A8A99',
+            fontSize: '15px',
+            fontWeight: 600,
+            border: '1px solid #2A3441',
+            borderRadius: '12px',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#32D6FF';
+            e.currentTarget.style.color = '#C5D1DE';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#2A3441';
+            e.currentTarget.style.color = '#7A8A99';
+          }}
+        >
+          В меню
+        </button>
+
+        {/* ID стенда (мелкий текст внизу) */}
+        <div
+          className="text-center mt-4"
+          style={{ fontSize: '9px', color: '#4A5568' }}
+        >
+          LAB STAND #{Math.floor(Math.random() * 900 + 100)} • ПРОГОН #{wave} • {new Date().toLocaleDateString('ru-RU')}
+        </div>
+      </div>
+
+      {/* CSS анимации */}
+      <style jsx>{`
+        @keyframes alarm-flash {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes led-blink {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
+        }
+        @keyframes wave-bounce {
+          0% { transform: scale(0.8); opacity: 0; }
+          60% { transform: scale(1.05); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes scanlines {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 100vh; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function TribologyLabPage() {
   const [wave, setWave] = useState(1);
   const [lives, setLives] = useState(INITIAL_LIVES);
@@ -121,6 +391,13 @@ export default function TribologyLabPage() {
   // Модальное окно выхода
   const [showExitModal, setShowExitModal] = useState(false);
   const wasPausedBeforeModal = useRef(false);
+
+  // Game Over модалка и статистика
+  const [showGameOver, setShowGameOver] = useState(false);
+  const [totalKills, setTotalKills] = useState(0);
+  const [totalGoldEarned, setTotalGoldEarned] = useState(0);
+  const [gameOverTime, setGameOverTime] = useState(0); // Время игры при Game Over (секунды)
+  const gameStartTimeRef = useRef(0); // Timestamp начала игры
 
   // Экраны: splash → menu → tutorial → game
   type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
@@ -175,6 +452,12 @@ export default function TribologyLabPage() {
     setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
+    // Сбрасываем статистику для Game Over
+    setTotalKills(0);
+    setTotalGoldEarned(0);
+    setShowGameOver(false);
+    setGameOverTime(0);
+    gameStartTimeRef.current = 0; // Обнулим, установим при первом startWave
     // Устанавливаем магазин из меню (testDeck приоритетнее)
     if (!testDeck) {
       setShop([...deck]);
@@ -224,6 +507,64 @@ export default function TribologyLabPage() {
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
     // Возврат в главное меню
+    setScreen('menu');
+  }, []);
+
+  // Game Over: Повторить испытание
+  const handleGameOverRestart = useCallback(() => {
+    setShowGameOver(false);
+    setIsPaused(false);
+    // Полный сброс состояния игры
+    setWave(1);
+    setLives(INITIAL_LIVES);
+    setGold(INITIAL_GOLD);
+    setModules([]);
+    setEnemies([]);
+    enemiesRef.current = [];
+    setGamePhase('preparing');
+    activeBarriersRef.current = [];
+    setActiveBarriers([]);
+    setGameStarted(false);
+    setNextWaveCountdown(0);
+    spawnedIdsRef.current.clear();
+    // Сбрасываем статистику
+    setTotalKills(0);
+    setTotalGoldEarned(0);
+    setGameOverTime(0);
+    gameStartTimeRef.current = 0;
+    // Восстанавливаем магазин
+    if (testDeck) {
+      setShop([...testDeck]);
+    } else if (menuDeck) {
+      setShop([...menuDeck]);
+    } else {
+      setShop(FALLBACK_SHOP);
+    }
+  }, [testDeck, menuDeck]);
+
+  // Game Over: В меню
+  const handleGameOverMainMenu = useCallback(() => {
+    setShowGameOver(false);
+    setIsPaused(false);
+    // Полный сброс состояния
+    setWave(1);
+    setLives(INITIAL_LIVES);
+    setGold(INITIAL_GOLD);
+    setModules([]);
+    setEnemies([]);
+    enemiesRef.current = [];
+    setGamePhase('preparing');
+    activeBarriersRef.current = [];
+    setActiveBarriers([]);
+    setGameStarted(false);
+    setNextWaveCountdown(0);
+    spawnedIdsRef.current.clear();
+    // Сбрасываем статистику
+    setTotalKills(0);
+    setTotalGoldEarned(0);
+    setGameOverTime(0);
+    gameStartTimeRef.current = 0;
+    // Возврат в меню
     setScreen('menu');
   }, []);
 
@@ -344,6 +685,10 @@ export default function TribologyLabPage() {
     setIsPaused(false);            // Снимаем паузу
     setNextWaveCountdown(0);       // Сбрасываем обратный отсчёт
     setGameStarted(true);          // Игра началась
+    // Записываем время начала игры (только при первой волне)
+    if (gameStartTimeRef.current === 0) {
+      gameStartTimeRef.current = Date.now();
+    }
     setSpawnQueue(queue);
     setWaveStartTime(performance.now());
     setGamePhase('wave');
@@ -428,6 +773,20 @@ export default function TribologyLabPage() {
       }
     }
   }, []);
+
+  // Game Over: когда lives достигает 0
+  useEffect(() => {
+    if (lives <= 0 && gameStarted && !showGameOver) {
+      // Вычисляем итоговое время игры
+      const finalTime = gameStartTimeRef.current > 0
+        ? Math.floor((Date.now() - gameStartTimeRef.current) / 1000)
+        : 0;
+      setGameOverTime(finalTime);
+      // Останавливаем игру и показываем модалку
+      setIsPaused(true);
+      setShowGameOver(true);
+    }
+  }, [lives, gameStarted, showGameOver]);
 
   // DEV: Спавн врага вне волны
   const devSpawnEnemy = useCallback((type: EnemyType, count: number = 1) => {
@@ -634,6 +993,7 @@ export default function TribologyLabPage() {
       // 6. Фильтрация: враги дошли до финиша или погибли
       let livesLost = 0;
       let goldEarned = 0;
+      let killsInFrame = 0;  // Подсчёт убийств для статистики
       const deadEnemyIds: string[] = [];
       const newDeathEffects: DeathEffect[] = [];
 
@@ -653,6 +1013,7 @@ export default function TribologyLabPage() {
         }
         if (isDead(enemy)) {
           goldEarned += enemy.reward;
+          killsInFrame += 1;  // Считаем убийство
           deadEnemyIds.push(enemy.id);
 
           // Создаём эффект смерти
@@ -705,6 +1066,12 @@ export default function TribologyLabPage() {
 
       if (goldEarned > 0) {
         setGold(g => g + goldEarned);
+        setTotalGoldEarned(prev => prev + goldEarned);
+      }
+
+      // Обновляем статистику убийств
+      if (killsInFrame > 0) {
+        setTotalKills(prev => prev + killsInFrame);
       }
 
       // 7. Проверка окончания волны
@@ -3778,6 +4145,18 @@ export default function TribologyLabPage() {
           </div>
         </div>
       )}
+
+      {/* Game Over модалка */}
+      <GameOverModal
+        isOpen={showGameOver}
+        wave={wave}
+        time={gameOverTime}
+        kills={totalKills}
+        leaks={INITIAL_LIVES}
+        gold={totalGoldEarned}
+        onRestart={handleGameOverRestart}
+        onMainMenu={handleGameOverMainMenu}
+      />
     </div>
   );
 }
