@@ -264,7 +264,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     color: '#2dd4bf',  // бирюзовый
     description: 'AOE урон',
     attackType: 'aoe',
-    aoeRadius: 80,    // увеличен радиус AOE
+    aoeRadius: 150,   // базовый радиус AOE (150 → 172 → 198 → 228 → 262px)
     tagBonuses: { dusty: 1.2 },  // +20% по пыльным
     // Особенность: урон растёт от количества врагов
   },
