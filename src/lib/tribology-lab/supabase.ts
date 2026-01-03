@@ -414,32 +414,51 @@ export async function getPlayerRuns(playerId: string, limit = 50): Promise<Tribo
   return runsRes.json();
 }
 
-// Получить колоду дня
-export async function getDailyDeck(date?: string): Promise<string[] | null> {
+// Роли модулей (должны совпадать с MainMenu!)
+const MODULE_ROLES = {
+  dps: ['filter', 'magnet', 'laser', 'electrostatic', 'ultrasonic'],
+  control: ['cooler', 'centrifuge', 'barrier'],
+  support: ['lubricant', 'analyzer', 'inhibitor', 'demulsifier'],
+};
+
+// PRNG на основе seed (должен совпадать с MainMenu!)
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+// Генерация набора по правилам: 2 DPS + 1 Control + 2 Support
+// Алгоритм ДОЛЖЕН совпадать с MainMenu для консистентности!
+function generateDailyDeckFromDate(dateStr: string): string[] {
+  // Преобразуем дату в seed (YYYYMMDD)
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const seed = year * 10000 + month * 100 + day;
+
+  const random = seededRandom(seed);
+
+  const shuffledDps = [...MODULE_ROLES.dps].sort(() => random() - 0.5);
+  const shuffledControl = [...MODULE_ROLES.control].sort(() => random() - 0.5);
+  const shuffledSupport = [...MODULE_ROLES.support].sort(() => random() - 0.5);
+
+  return [
+    shuffledDps[0],      // DPS 1
+    shuffledDps[1],      // DPS 2
+    shuffledControl[0],  // Control
+    shuffledSupport[0],  // Support 1
+    shuffledSupport[1],  // Support 2
+  ];
+}
+
+// Получить набор дня (генерируется автоматически из даты)
+export async function getDailyDeck(date?: string): Promise<string[]> {
   const targetDate = date || new Date().toISOString().split('T')[0];
 
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/tribolab_daily_decks?date=eq.${targetDate}&select=deck_modules`,
-      {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-      }
-    );
-
-    if (!res.ok) {
-      // Таблица может не существовать или быть пустой - это нормально
-      return null;
-    }
-
-    const data = await res.json();
-    return data.length > 0 ? data[0].deck_modules : null;
-  } catch (err) {
-    // Сетевая ошибка - молча возвращаем null
-    return null;
-  }
+  // Всегда генерируем набор детерминированно из даты
+  // Это гарантирует одинаковый набор для всех игроков в один день
+  return generateDailyDeckFromDate(targetDate);
 }
 
 // Сравнение двух забегов (для сортировки)
