@@ -273,25 +273,17 @@ export function findTarget(
       );
 
     case 'analyzer':
-      // Новый таргетинг: приоритет непомеченным → боссам → по прогрессу
-
-      // Фильтруем врагов БЕЗ метки marked
-      const unmarked = validEnemies.filter(e =>
-        !e.effects.some(eff => eff.type === 'marked')
-      );
-
-      // Если есть непомеченные — выбираем из них, иначе из всех
-      const pool = unmarked.length > 0 ? unmarked : validEnemies;
+      // Таргетинг: всегда первый враг (ближе к финишу), приоритет боссам
 
       // Приоритет: боссы
-      const bosses = pool.filter(e => e.type.startsWith('boss_'));
+      const bosses = validEnemies.filter(e => e.type.startsWith('boss_'));
       if (bosses.length > 0) {
         // Среди боссов — ближе к финишу
         return bosses.reduce((a, b) => a.progress > b.progress ? a : b);
       }
 
-      // Среди обычных — ближе к финишу
-      return pool.reduce((a, b) => a.progress > b.progress ? a : b);
+      // Среди обычных — ближе к финишу (первый враг)
+      return validEnemies.reduce((a, b) => a.progress > b.progress ? a : b);
 
     default:
       return validEnemies[0];

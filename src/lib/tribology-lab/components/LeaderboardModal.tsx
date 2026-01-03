@@ -300,13 +300,13 @@ function DailyTab({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: 8,
+            marginBottom: dailyDeck ? 8 : 0,
           }}
         >
-          <span style={{ color: '#C5D1DE', fontSize: 14 }}>
+          <span style={{ color: '#C5D1DE', fontSize: 14, lineHeight: 1.4 }}>
             Ежедневное испытание — {today}
           </span>
-          <span style={{ color: '#F59E0B', fontSize: 13 }}>
+          <span style={{ color: '#F59E0B', fontSize: 13, lineHeight: 1.4 }}>
             До смены: {timeUntilReset}
           </span>
         </div>
