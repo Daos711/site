@@ -442,7 +442,16 @@ function RandomTab({
 
 // ==================== ВКЛАДКА МОИ РЕКОРДЫ ====================
 
+type SortField = 'date' | 'kills' | 'wave';
+type SortOrder = 'asc' | 'desc';
+
 function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const PAGE_SIZE = 10;
+
   if (runs.length === 0) {
     return (
       <div
@@ -459,6 +468,40 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
       </div>
     );
   }
+
+  // Сортировка
+  const sortedRuns = [...runs].sort((a, b) => {
+    let diff = 0;
+    if (sortField === 'date') {
+      diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    } else if (sortField === 'kills') {
+      diff = a.kills - b.kills;
+    } else if (sortField === 'wave') {
+      diff = a.wave_reached - b.wave_reached;
+    }
+    return sortOrder === 'asc' ? diff : -diff;
+  });
+
+  // Пагинация
+  const totalPages = Math.ceil(sortedRuns.length / PAGE_SIZE);
+  const pageRuns = sortedRuns.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Переключатель сортировки
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+    setPage(0);
+  };
+
+  // Иконка сортировки
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <span style={{ opacity: 0.3 }}>↕</span>;
+    return <span>{sortOrder === 'desc' ? '↓' : '↑'}</span>;
+  };
 
   // Статистика
   const bestWave = Math.max(...runs.map((r) => r.wave_reached));
@@ -507,11 +550,11 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
           overflow: 'hidden',
         }}
       >
-        {/* Заголовок */}
+        {/* Заголовок с сортировкой */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '100px 80px 1fr 60px 60px',
+            gridTemplateColumns: '100px 80px 1fr 70px 70px',
             padding: '10px 12px',
             background: '#1A202C',
             borderBottom: '1px solid #2D3748',
@@ -520,20 +563,35 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
             fontWeight: 600,
           }}
         >
-          <div>Дата</div>
+          <div
+            onClick={() => toggleSort('date')}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+          >
+            Дата <SortIcon field="date" />
+          </div>
           <div>Режим</div>
           <div style={{ textAlign: 'center' }}>Набор</div>
-          <div style={{ textAlign: 'center' }}>Убито</div>
-          <div style={{ textAlign: 'right' }}>Волна</div>
+          <div
+            onClick={() => toggleSort('kills')}
+            style={{ textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}
+          >
+            Убито <SortIcon field="kills" />
+          </div>
+          <div
+            onClick={() => toggleSort('wave')}
+            style={{ textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
+          >
+            Волна <SortIcon field="wave" />
+          </div>
         </div>
 
         {/* Строки */}
-        {runs.slice(0, 20).map((run) => (
+        {pageRuns.map((run) => (
           <div
             key={run.id}
             style={{
               display: 'grid',
-              gridTemplateColumns: '100px 80px 1fr 60px 60px',
+              gridTemplateColumns: '100px 80px 1fr 70px 70px',
               padding: '10px 12px',
               borderBottom: '1px solid #1A202C',
               alignItems: 'center',
@@ -578,6 +636,53 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
           </div>
         ))}
       </div>
+
+      {/* Пагинация */}
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 12,
+            marginTop: 12,
+          }}
+        >
+          <button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            style={{
+              padding: '6px 12px',
+              background: page === 0 ? '#1A202C' : '#2D3748',
+              border: '1px solid #4A5568',
+              borderRadius: 6,
+              color: page === 0 ? '#4A5568' : '#E5E7EB',
+              cursor: page === 0 ? 'not-allowed' : 'pointer',
+              fontSize: 12,
+            }}
+          >
+            ← Назад
+          </button>
+          <span style={{ color: '#9CA3AF', fontSize: 12 }}>
+            {page + 1} / {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+            disabled={page >= totalPages - 1}
+            style={{
+              padding: '6px 12px',
+              background: page >= totalPages - 1 ? '#1A202C' : '#2D3748',
+              border: '1px solid #4A5568',
+              borderRadius: 6,
+              color: page >= totalPages - 1 ? '#4A5568' : '#E5E7EB',
+              cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer',
+              fontSize: 12,
+            }}
+          >
+            Вперёд →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
