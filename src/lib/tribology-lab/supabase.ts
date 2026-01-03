@@ -89,13 +89,11 @@ export function validateRun(data: RunData): boolean {
   if (lives_left < 0 || lives_left > 10) return false;
   if (kills < 0) return false;
 
-  // Проверка времени (минимум 5 сек на волну, максимум 3 мин)
-  const minTimeMs = wave_reached * 5000;
-  const maxTimeMs = wave_reached * 180000;
-  if (run_time_ms < minTimeMs || run_time_ms > maxTimeMs) return false;
+  // Проверка времени (минимум 1 сек, максимум 2 часа)
+  if (run_time_ms < 1000 || run_time_ms > 7200000) return false;
 
-  // Проверка kills vs wave
-  const maxKillsPerWave = 25;
+  // Проверка kills vs wave (примерно 30 врагов на волну максимум)
+  const maxKillsPerWave = 30;
   const maxPossibleKills = wave_reached * maxKillsPerWave;
   if (kills > maxPossibleKills) return false;
 
