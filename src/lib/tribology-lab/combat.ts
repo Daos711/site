@@ -300,6 +300,7 @@ export function findTarget(
 
 /**
  * Находит всех врагов для AOE в радиусе aoeRadius
+ * Логика: бьёт по ПЕРВОМУ врагу, от него распространяется волна
  * Радиус масштабируется с уровнем модуля (+15% за уровень)
  */
 export function findAllInRange(
@@ -307,18 +308,28 @@ export function findAllInRange(
   enemies: Enemy[],
   path: PathPoint[]
 ): Enemy[] {
+  if (enemies.length === 0) return [];
+
   const config = MODULES[module.type];
-  const modulePos = getModulePosition(module);
+
+  // Находим первого врага (максимальный progress = ближе к финишу)
+  const primaryTarget = enemies.reduce((best, enemy) =>
+    enemy.progress > best.progress ? enemy : best
+  );
+
+  // Позиция первого врага — центр AOE
+  const primaryConfig = ENEMIES[primaryTarget.type];
+  const primaryPos = getPositionOnPath(path, primaryTarget.progress, primaryConfig.oscillation);
 
   // Радиус AOE с учетом уровня модуля
   const baseRadius = config.aoeRadius || 100;
   const aoeRadius = getAoeRadius(baseRadius, module.level);
 
-  // Фильтруем врагов по расстоянию
+  // Фильтруем врагов по расстоянию от ПЕРВОГО ВРАГА
   return enemies.filter(enemy => {
     const enemyConfig = ENEMIES[enemy.type];
     const enemyPos = getPositionOnPath(path, enemy.progress, enemyConfig.oscillation);
-    const distance = getDistance(modulePos.x, modulePos.y, enemyPos.x, enemyPos.y);
+    const distance = getDistance(primaryPos.x, primaryPos.y, enemyPos.x, enemyPos.y);
 
     return distance <= aoeRadius;
   });
