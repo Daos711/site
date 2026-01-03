@@ -2365,19 +2365,17 @@ export default function TribologyLabPage() {
           })}
           </g>
 
-          {/* СТАРТ - порт подачи (минималистичный) */}
+          {/* СТАРТ - маркер входа (стрелка вверх ↑) */}
           <StartZone
-            x={innerOffset}
-            y={totalHeight - 20}
-            width={conveyorWidth - innerOffset}
+            cx={innerOffset + (conveyorWidth - innerOffset) / 2}
+            cy={totalHeight}
             isSpawning={isSpawning}
           />
 
-          {/* ФИНИШ - горячая зона (минималистичный) */}
+          {/* ФИНИШ - маркер выхода (стрелка вниз ↓) */}
           <FinishZone
-            x={totalWidth - conveyorWidth}
-            y={totalHeight - 20}
-            width={conveyorWidth - innerOffset}
+            cx={totalWidth - innerOffset - (conveyorWidth - innerOffset) / 2}
+            cy={totalHeight}
             isDamaged={isDamaged}
           />
 
