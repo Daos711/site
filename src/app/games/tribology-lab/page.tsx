@@ -1755,8 +1755,8 @@ export default function TribologyLabPage() {
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
               </circle>
             </g>
-            {/* Датчик 2: верхний канал (на внутреннем бортике, смотрит вниз на поле) */}
-            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth - 6}) rotate(180)`}>
+            {/* Датчик 2: верхний канал (прижат к краю поля карточек) */}
+            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth + 5})`}>
               <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
               <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1s" />
@@ -2428,40 +2428,26 @@ export default function TribologyLabPage() {
           })}
           </g>
 
-          {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
+          {/* СТАРТ - бирюзовый патрубок */}
           <g>
             {/* Свечение */}
-            <ellipse cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset) * 0.45} ry={12} fill="url(#startGlow)" />
-            {/* Патрубок */}
-            <rect x={innerOffset} y={totalHeight - 6} width={conveyorWidth - innerOffset} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
+            <ellipse cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#startGlow)" />
+            {/* Патрубок - укорочен на 1px с каждой стороны */}
+            <rect x={innerOffset + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
             {/* Щель с тенью */}
             <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
-            {/* Мелкие частицы */}
-            <circle cx={(innerOffset + conveyorWidth - 2) / 2 - 15} cy={totalHeight - 18} r={2} fill="rgba(20, 184, 166, 0.4)" />
-            <circle cx={(innerOffset + conveyorWidth - 2) / 2 + 20} cy={totalHeight - 30} r={1.5} fill="rgba(20, 184, 166, 0.3)" />
           </g>
 
-          {/* ФИНИШ - красно-янтарная горловина (касается обводки панели) */}
-          {/* Свечение с пульсацией */}
-          <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
-            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite" />
-          </ellipse>
+          {/* ФИНИШ - красно-янтарный патрубок (непрозрачный!) */}
           <g>
-            {/* Горловина - непрозрачная */}
-            <path
-              d={`
-                M ${totalWidth - conveyorWidth + 2} ${totalHeight - 4}
-                Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 8} ${totalWidth - innerOffset} ${totalHeight - 4}
-                L ${totalWidth - innerOffset - 3} ${totalHeight + 6}
-                Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 18} ${totalWidth - conveyorWidth + 5} ${totalHeight + 6}
-                Z
-              `}
-              fill="#0B0F14"
-              stroke="#8b3a2a"
-              strokeWidth={1.5}
-            />
-            {/* Тёмный центр */}
-            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 6} rx={(conveyorWidth - innerOffset - 2) * 0.35} ry={6} fill="#050708" />
+            {/* Свечение */}
+            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
+              <animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite" />
+            </ellipse>
+            {/* Патрубок - полностью непрозрачный */}
+            <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#1A2430" stroke="#8b3a2a" strokeWidth={1.5} />
+            {/* Щель с тенью */}
+            <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#0a0505" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
           </g>
 
           {/* Карман магазина — расширен до бортиков */}
