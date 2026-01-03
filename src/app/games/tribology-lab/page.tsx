@@ -1680,6 +1680,19 @@ export default function TribologyLabPage() {
         .animate-merge {
           animation: merge 0.4s ease-out, mergeGlow 0.4s ease-out;
         }
+        /* Header animations */
+        @keyframes gearSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes thermoBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        @keyframes pauseButtonGlow {
+          0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.4); }
+          50% { box-shadow: 0 0 16px rgba(220, 38, 38, 0.8); }
+        }
       `}</style>
 
       {/* Кнопка выбора колоды + индикатор */}
@@ -1744,13 +1757,57 @@ export default function TribologyLabPage() {
           <span className="text-gray-400">Волна:</span>
           <span className="font-bold text-white">{wave}</span>
         </div>
+
+        {/* Жизни — Термометр */}
         <div className="flex items-center gap-2">
-          <span className="text-red-400">❤️</span>
-          <span className="font-bold text-white">{lives}</span>
+          <svg width="20" height="24" viewBox="0 0 20 24" className="flex-shrink-0">
+            <defs>
+              <linearGradient id="tempGradHeader" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={lives <= 3 ? '#DC2626' : lives <= 6 ? '#F97316' : '#F59E0B'}/>
+                <stop offset="100%" stopColor="#DC2626"/>
+              </linearGradient>
+            </defs>
+            {/* Колба термометра */}
+            <rect x="7" y="2" width="6" height="16" rx="3"
+                  fill="#2D3748" stroke="#4A5568" strokeWidth="1"/>
+            {/* Шарик снизу */}
+            <circle cx="10" cy="20" r="3.5"
+                    fill={lives <= 3 ? '#DC2626' : lives <= 6 ? '#F97316' : '#F59E0B'}
+                    stroke="#991B1B" strokeWidth="1"
+                    style={lives <= 3 ? { animation: 'thermoBlink 0.5s ease-in-out infinite' } : undefined}/>
+            {/* Жидкость (столбик, высота зависит от жизней) */}
+            <rect x="8.5" y={4 + 14 * (1 - lives / 10)} width="3"
+                  height={14 * (lives / 10)} rx="1.5"
+                  fill="url(#tempGradHeader)"/>
+            {/* Штрихи разметки */}
+            <line x1="13" y1="6" x2="15" y2="6" stroke="#6B7280" strokeWidth="0.5"/>
+            <line x1="13" y1="10" x2="15" y2="10" stroke="#6B7280" strokeWidth="0.5"/>
+            <line x1="13" y1="14" x2="15" y2="14" stroke="#6B7280" strokeWidth="0.5"/>
+          </svg>
+          <span className="font-bold text-white" style={{ fontFamily: 'monospace' }}>{lives}</span>
         </div>
+
+        {/* Золото — Шестерёнки */}
         <div className="flex items-center gap-2">
-          <span className="text-yellow-400">🪙</span>
-          <span className="font-bold text-white">{gold}</span>
+          <svg width="24" height="24" viewBox="0 0 24 24" className="flex-shrink-0" style={{ animation: 'gearSpin 60s linear infinite' }}>
+            <defs>
+              <radialGradient id="metalGradHeader">
+                <stop offset="0%" stopColor="#A8B2C1"/>
+                <stop offset="100%" stopColor="#6B7280"/>
+              </radialGradient>
+            </defs>
+            {/* Зубчатое колесо */}
+            <path d="M12,1 L13.5,4 L16,3.5 L17,6 L20,6 L19.5,9 L22,10.5 L20,12 L22,13.5 L19.5,15 L20,18 L17,18 L16,20.5 L13.5,20 L12,23 L10.5,20 L8,20.5 L7,18 L4,18 L4.5,15 L2,13.5 L4,12 L2,10.5 L4.5,9 L4,6 L7,6 L8,3.5 L10.5,4 Z"
+                  fill="url(#metalGradHeader)"
+                  stroke="#4A5568"
+                  strokeWidth="0.5"/>
+            {/* Центральное отверстие */}
+            <circle cx="12" cy="12" r="4" fill="#2D3748"/>
+            <circle cx="12" cy="12" r="3" fill="#1A202C"/>
+            {/* Блик */}
+            <ellipse cx="9" cy="9" rx="2" ry="1.5" fill="rgba(255,255,255,0.25)"/>
+          </svg>
+          <span className="font-bold" style={{ color: '#E5E7EB', fontFamily: 'monospace' }}>{gold}</span>
         </div>
 
         {/* Кнопка Начать волну / Обратный отсчёт */}
@@ -1788,38 +1845,92 @@ export default function TribologyLabPage() {
         {/* Индикатор волны в процессе + кнопка паузы */}
         {gamePhase === 'wave' && (
           <>
+            {/* Цифровой дисплей "Осталось" */}
             <div
-              className="px-3 py-1.5 rounded-lg text-white font-medium text-sm"
+              className="relative flex items-center"
               style={{
-                background: isPaused ? 'rgba(59, 130, 246, 0.8)' : 'rgba(239, 68, 68, 0.8)',
-                boxShadow: isPaused ? '0 0 15px rgba(59, 130, 246, 0.4)' : '0 0 15px rgba(239, 68, 68, 0.4)',
+                background: '#1A202C',
+                border: '1px solid #4A5568',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
               }}
             >
-              {isPaused ? '⏸️ ПАУЗА' : `🔥 Осталось: ${enemies.length + spawnQueue.length}`}
+              {/* Внутренняя подсветка */}
+              <div
+                className="absolute inset-0 rounded-md"
+                style={{
+                  background: isPaused
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'rgba(50, 214, 255, 0.05)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: '"Courier New", monospace',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: isPaused ? '#3B82F6' : '#32D6FF',
+                  textShadow: isPaused
+                    ? '0 0 8px rgba(59, 130, 246, 0.8)'
+                    : '0 0 8px rgba(50, 214, 255, 0.6)',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {isPaused ? 'ПАУЗА' : String(enemies.length + spawnQueue.length).padStart(2, '0')}
+              </span>
             </div>
+
+            {/* Красная кнопка паузы */}
             <button
               onClick={() => {
                 if (isPaused) {
-                  // Возобновить игру
                   setShowPauseModal(false);
                   setIsPaused(false);
                 } else {
-                  // Поставить на паузу
                   setIsPaused(true);
                   setShowPauseModal(true);
                 }
               }}
-              className="px-3 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-sm"
+              className="relative transition-all active:scale-95"
               style={{
-                background: isPaused
-                  ? 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)'
-                  : 'linear-gradient(145deg, #3b82f6 0%, #2563eb 100%)',
-                boxShadow: isPaused
-                  ? '0 4px 15px rgba(34, 197, 94, 0.4)'
-                  : '0 4px 15px rgba(59, 130, 246, 0.4)',
+                width: '40px',
+                height: '40px',
+                background: '#2D3748',
+                border: '2px solid #4A5568',
+                borderRadius: '8px',
+                padding: '0',
+                cursor: 'pointer',
               }}
+              title={isPaused ? 'Возобновить' : 'Пауза'}
             >
-              {isPaused ? '▶ Продолжить' : '⏸ Пауза'}
+              {/* Круглая кнопка внутри */}
+              <svg width="36" height="36" viewBox="0 0 36 36" className="absolute inset-0.5">
+                <defs>
+                  <radialGradient id="redButtonGradHeader">
+                    <stop offset="0%" stopColor={isPaused ? '#22C55E' : '#EF4444'}/>
+                    <stop offset="100%" stopColor={isPaused ? '#16A34A' : '#DC2626'}/>
+                  </radialGradient>
+                </defs>
+                {/* Кнопка */}
+                <circle cx="18" cy="18" r="14"
+                        fill="url(#redButtonGradHeader)"
+                        stroke={isPaused ? '#15803D' : '#991B1B'}
+                        strokeWidth="2"
+                        style={isPaused ? undefined : { animation: 'pauseButtonGlow 1.5s ease-in-out infinite' }}/>
+                {/* Блик */}
+                <ellipse cx="14" cy="14" rx="5" ry="3" fill="rgba(255,255,255,0.25)"/>
+                {/* Символ паузы/воспроизведения */}
+                {isPaused ? (
+                  <polygon points="14,11 14,25 26,18" fill="#FFFFFF"/>
+                ) : (
+                  <>
+                    <rect x="13" y="12" width="3.5" height="12" rx="1" fill="#FFFFFF"/>
+                    <rect x="19.5" y="12" width="3.5" height="12" rx="1" fill="#FFFFFF"/>
+                  </>
+                )}
+              </svg>
             </button>
           </>
         )}
