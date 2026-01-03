@@ -1501,6 +1501,28 @@ export default function TribologyLabPage() {
                 `}
               />
             </clipPath>
+
+            {/* Path для анимации частиц потока (центр канала) */}
+            {(() => {
+              const channelCenter = innerOffset + (conveyorWidth - innerOffset) / 2;
+              const channelCenterRight = totalWidth - innerOffset - (conveyorWidth - innerOffset) / 2;
+              const turnRadius = channelCenter;
+              return (
+                <path
+                  id="flowPath"
+                  d={`
+                    M ${channelCenter} ${totalHeight}
+                    L ${channelCenter} ${turnRadius + channelCenter}
+                    A ${turnRadius} ${turnRadius} 0 0 1 ${turnRadius + channelCenter} ${channelCenter}
+                    L ${totalWidth - turnRadius - channelCenter} ${channelCenter}
+                    A ${turnRadius} ${turnRadius} 0 0 1 ${channelCenterRight} ${turnRadius + channelCenter}
+                    L ${channelCenterRight} ${totalHeight}
+                  `}
+                  fill="none"
+                  stroke="none"
+                />
+              );
+            })()}
           </defs>
 
           {/* Металлический бортик - с дугами для одинаковой ширины */}
@@ -1692,6 +1714,61 @@ export default function TribologyLabPage() {
               strokeLinecap="round"
               fill="none"
             />
+          </g>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              ЧАСТИЦЫ ПОТОКА — бегут по центру канала
+              ═══════════════════════════════════════════════════════════════ */}
+          <g style={{ pointerEvents: 'none' }}>
+            {[0, 1, 2].map(i => (
+              <circle
+                key={`flow-particle-${i}`}
+                r={3}
+                fill="#32D6FF"
+                style={{ filter: 'blur(1px) drop-shadow(0 0 4px rgba(50,214,255,0.6))' }}
+              >
+                <animateMotion
+                  dur="4s"
+                  repeatCount="indefinite"
+                  begin={`${i * 1.33}s`}
+                >
+                  <mpath href="#flowPath" />
+                </animateMotion>
+                <animate
+                  attributeName="opacity"
+                  values="0.4;0.7;0.4"
+                  dur="1.5s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            ))}
+          </g>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              ДАТЧИКИ-СЕНСОРЫ — мигающие LED на канале
+              ═══════════════════════════════════════════════════════════════ */}
+          <g style={{ pointerEvents: 'none' }}>
+            {/* Датчик 1: левый канал (после входа) */}
+            <g transform={`translate(${conveyorWidth - 6}, ${totalHeight * 0.7})`}>
+              <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+              <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
+                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
+              </circle>
+            </g>
+            {/* Датчик 2: верхний канал (центр) */}
+            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth - 6})`}>
+              <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+              <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
+                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1s" />
+              </circle>
+            </g>
+            {/* Датчик 3: правый канал (перед выходом) */}
+            <g transform={`translate(${totalWidth - conveyorWidth + 6}, ${totalHeight * 0.7})`}>
+              <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+              <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
+                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="2s" />
+              </circle>
+            </g>
           </g>
 
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
