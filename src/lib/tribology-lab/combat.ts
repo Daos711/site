@@ -1,5 +1,5 @@
 import {
-  Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength, getAoeRadius,
+  Module, ModuleConfig, MODULES, getDamage, getEffectDuration, getEffectStrength, getAoeRadius, getCooldownMultiplier,
   Enemy, EnemyConfig, ENEMIES, EnemyTag, EnemyType,
   Effect, EffectType, AttackEffect, ActiveBarrier,
   CELL_SIZE, CELL_GAP, PANEL_PADDING, CONVEYOR_WIDTH, GRID_COLS,
@@ -273,16 +273,8 @@ export function findTarget(
       );
 
     case 'analyzer':
-      // Таргетинг: всегда первый враг (ближе к финишу), приоритет боссам
-
-      // Приоритет: боссы
-      const bosses = validEnemies.filter(e => e.type.startsWith('boss_'));
-      if (bosses.length > 0) {
-        // Среди боссов — ближе к финишу
-        return bosses.reduce((a, b) => a.progress > b.progress ? a : b);
-      }
-
-      // Среди обычных — ближе к финишу (первый враг)
+      // Таргетинг: всегда первый враг (ближе к финишу), без приоритета боссов
+      // Метка должна держаться на самом опасном враге (ближе к выходу)
       return validEnemies.reduce((a, b) => a.progress > b.progress ? a : b);
 
     default:
@@ -754,6 +746,9 @@ export function canAttack(
 
   const config = MODULES[module.type];
   let attackInterval = 1000 / config.attackSpeed / gameSpeed;  // мс между атаками (ускоряется с gameSpeed)
+
+  // Уровень уменьшает cooldown: L1=100%, L2=95%, L3=90%, L4=85%, L5=80%
+  attackInterval *= getCooldownMultiplier(module.level);
 
   // Ингибитор уменьшает cooldown соседей
   attackInterval *= getInhibitorCooldownMultiplier(module, allModules);

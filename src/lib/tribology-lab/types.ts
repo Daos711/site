@@ -173,6 +173,12 @@ export function getEffectStrength(baseStrength: number, level: number): number {
   return baseStrength + (level - 1) * 2;
 }
 
+// Формула множителя кулдауна: -5% за уровень
+// L1: 100%, L2: 95%, L3: 90%, L4: 85%, L5: 80%
+export function getCooldownMultiplier(level: number): number {
+  return 1 - (level - 1) * 0.05;
+}
+
 // Формула HP врагов:
 // До волны 20: HP = baseHp × 1.12^(wave-1)
 // После волны 20: HP = baseHp × 1.12^19 × 1.09^(wave-20)
