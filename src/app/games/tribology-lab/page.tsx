@@ -222,14 +222,29 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
             <span>Уничтожено: {kills}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span style={{ fontSize: '16px' }}>💔</span>
+            <svg width="20" height="24" viewBox="0 0 20 24" className="flex-shrink-0">
+              <rect x="7" y="2" width="6" height="18" rx="3" fill="none" stroke="#6B7280" strokeWidth="1.5"/>
+              <circle cx="10" cy="20" r="3.5" fill="#DC2626"/>
+              <rect x="8.5" y="10" width="3" height="8" rx="1.5" fill="#DC2626"/>
+            </svg>
             <span style={{ color: leaks > 0 ? '#FF6B35' : '#C5D1DE' }}>
               Пропущено: {leaks}
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span style={{ fontSize: '16px' }}>💰</span>
-            <span>Получено золота: {gold}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" className="flex-shrink-0">
+              <defs>
+                <radialGradient id="metalGradModal">
+                  <stop offset="0%" stopColor="#A8B2C1"/>
+                  <stop offset="100%" stopColor="#6B7280"/>
+                </radialGradient>
+              </defs>
+              <path d="M12,1 L13.5,4 L16,3.5 L17,6 L20,6 L19.5,9 L22,10.5 L20,12 L22,13.5 L19.5,15 L20,18 L17,18 L16,20.5 L13.5,20 L12,23 L10.5,20 L8,20.5 L7,18 L4,18 L4.5,15 L2,13.5 L4,12 L2,10.5 L4.5,9 L4,6 L7,6 L8,3.5 L10.5,4 Z"
+                    fill="url(#metalGradModal)" stroke="#4A5568" strokeWidth="0.5"/>
+              <circle cx="12" cy="12" r="4" fill="#2D3748"/>
+              <circle cx="12" cy="12" r="3" fill="#1A202C"/>
+            </svg>
+            <span>Получено шестерёнок: {gold}</span>
           </div>
         </div>
 
