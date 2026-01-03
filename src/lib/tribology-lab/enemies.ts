@@ -197,18 +197,6 @@ export function createEnemy(type: EnemyType, wave: number): Enemy {
     lastDamageTime: 0, // 0 = ни разу не получал урон
   };
 }
-
-/**
- * Наносит урон врагу и обновляет lastDamageTime
- */
-export function damageEnemy(enemy: Enemy, damage: number): Enemy {
-  return {
-    ...enemy,
-    hp: Math.max(0, enemy.hp - damage),
-    lastDamageTime: Date.now(),
-  };
-}
-
 // ==================== СИСТЕМА ВОЛН ====================
 
 export interface WaveEnemy {
