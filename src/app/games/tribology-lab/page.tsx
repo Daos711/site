@@ -1636,87 +1636,6 @@ export default function TribologyLabPage() {
           <circle cx={totalWidth - innerOffset / 2} cy={totalHeight - 60} r={3} fill="#22262a" stroke="#333840" strokeWidth={0.5} />
 
           {/* ═══════════════════════════════════════════════════════════════
-              СТРЕЛКИ НАПРАВЛЕНИЯ ПОТОКА (рисуются ПОД врагами)
-              ═══════════════════════════════════════════════════════════════ */}
-          {/* Левый вертикальный участок — стрелка ВВЕРХ */}
-          <g opacity="0.2" style={{ pointerEvents: 'none' }}>
-            <line
-              x1={conveyorWidth / 2}
-              y1={totalHeight * 0.55}
-              x2={conveyorWidth / 2}
-              y2={totalHeight * 0.45}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d={`M ${conveyorWidth / 2 - 4} ${totalHeight * 0.47} L ${conveyorWidth / 2} ${totalHeight * 0.43} L ${conveyorWidth / 2 + 4} ${totalHeight * 0.47}`}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </g>
-
-          {/* Верхний горизонтальный участок — стрелки ВПРАВО */}
-          <g opacity="0.2" style={{ pointerEvents: 'none' }}>
-            {/* Стрелка 1 */}
-            <line
-              x1={totalWidth * 0.28}
-              y1={conveyorWidth / 2}
-              x2={totalWidth * 0.36}
-              y2={conveyorWidth / 2}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d={`M ${totalWidth * 0.34} ${conveyorWidth / 2 - 4} L ${totalWidth * 0.38} ${conveyorWidth / 2} L ${totalWidth * 0.34} ${conveyorWidth / 2 + 4}`}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              fill="none"
-            />
-            {/* Стрелка 2 */}
-            <line
-              x1={totalWidth * 0.58}
-              y1={conveyorWidth / 2}
-              x2={totalWidth * 0.66}
-              y2={conveyorWidth / 2}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d={`M ${totalWidth * 0.64} ${conveyorWidth / 2 - 4} L ${totalWidth * 0.68} ${conveyorWidth / 2} L ${totalWidth * 0.64} ${conveyorWidth / 2 + 4}`}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </g>
-
-          {/* Правый вертикальный участок — стрелка ВНИЗ */}
-          <g opacity="0.2" style={{ pointerEvents: 'none' }}>
-            <line
-              x1={totalWidth - conveyorWidth / 2}
-              y1={totalHeight * 0.45}
-              x2={totalWidth - conveyorWidth / 2}
-              y2={totalHeight * 0.55}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d={`M ${totalWidth - conveyorWidth / 2 - 4} ${totalHeight * 0.53} L ${totalWidth - conveyorWidth / 2} ${totalHeight * 0.57} L ${totalWidth - conveyorWidth / 2 + 4} ${totalHeight * 0.53}`}
-              stroke="rgba(255, 255, 255, 0.4)"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </g>
-
-          {/* ═══════════════════════════════════════════════════════════════
               ЧАСТИЦЫ ПОТОКА — бегут по центру канала
               ═══════════════════════════════════════════════════════════════ */}
           <g style={{ pointerEvents: 'none' }}>
@@ -1755,8 +1674,8 @@ export default function TribologyLabPage() {
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
               </circle>
             </g>
-            {/* Датчик 2: верхний канал (прижат к краю поля карточек) */}
-            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth + 5})`}>
+            {/* Датчик 2: верхний канал (выпирает в канал, прижат к краю поля) */}
+            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth - 5})`}>
               <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
               <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1s" />
@@ -2440,14 +2359,23 @@ export default function TribologyLabPage() {
 
           {/* ФИНИШ - красно-янтарный патрубок (непрозрачный!) */}
           <g>
-            {/* Свечение */}
+            {/* Большое свечение снизу (маскирует магазин) */}
+            <ellipse
+              cx={totalWidth - (conveyorWidth + innerOffset) / 2}
+              cy={totalHeight + 8}
+              rx={(conveyorWidth - innerOffset) * 0.6}
+              ry={18}
+              fill="rgba(139, 58, 42, 0.5)"
+              style={{ filter: 'blur(8px)' }}
+            />
+            {/* Свечение вокруг патрубка */}
             <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
-              <animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
             </ellipse>
             {/* Патрубок - полностью непрозрачный */}
-            <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#1A2430" stroke="#8b3a2a" strokeWidth={1.5} />
+            <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#1A2430" stroke="#b84a3a" strokeWidth={2} />
             {/* Щель с тенью */}
-            <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#0a0505" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
+            <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#1a0808" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
           </g>
 
           {/* Карман магазина — расширен до бортиков */}
