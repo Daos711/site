@@ -2345,6 +2345,40 @@ export default function TribologyLabPage() {
             <rect x={innerOffset + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
             {/* Щель с тенью */}
             <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
+
+            {/* Микро-частицы: циановые пузырьки (вход потока) */}
+            <g style={{ pointerEvents: 'none' }}>
+              {/* 70% над патрубком */}
+              <circle cx={(innerOffset + conveyorWidth) / 2 - 12} cy={totalHeight - 14} r={2.5} fill="#32D6FF" opacity={0.5} style={{ filter: 'blur(0.5px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 14};${totalHeight - 22};${totalHeight - 14}`} dur="3s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.5;0.15;0.5" dur="3s" repeatCount="indefinite" />
+              </circle>
+              <circle cx={(innerOffset + conveyorWidth) / 2 + 8} cy={totalHeight - 18} r={3} fill="#32D6FF" opacity={0.4} style={{ filter: 'blur(0.5px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 18};${totalHeight - 28};${totalHeight - 18}`} dur="3.5s" repeatCount="indefinite" begin="0.5s" />
+                <animate attributeName="opacity" values="0.4;0.1;0.4" dur="3.5s" repeatCount="indefinite" begin="0.5s" />
+              </circle>
+              <circle cx={(innerOffset + conveyorWidth) / 2 - 5} cy={totalHeight - 20} r={2} fill="#5CE1E6" opacity={0.6} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 20};${totalHeight - 26};${totalHeight - 20}`} dur="2.8s" repeatCount="indefinite" begin="1s" />
+                <animate attributeName="opacity" values="0.6;0.2;0.6" dur="2.8s" repeatCount="indefinite" begin="1s" />
+              </circle>
+              <circle cx={(innerOffset + conveyorWidth) / 2 + 15} cy={totalHeight - 12} r={2.5} fill="#32D6FF" opacity={0.45} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 12};${totalHeight - 20};${totalHeight - 12}`} dur="3.2s" repeatCount="indefinite" begin="0.3s" />
+                <animate attributeName="opacity" values="0.45;0.12;0.45" dur="3.2s" repeatCount="indefinite" begin="0.3s" />
+              </circle>
+              <circle cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight - 16} r={3.5} fill="#32D6FF" opacity={0.35} style={{ filter: 'blur(0.6px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 16};${totalHeight - 25};${totalHeight - 16}`} dur="4s" repeatCount="indefinite" begin="1.5s" />
+                <animate attributeName="opacity" values="0.35;0.08;0.35" dur="4s" repeatCount="indefinite" begin="1.5s" />
+              </circle>
+              {/* 30% сбоку/снизу */}
+              <circle cx={(innerOffset + conveyorWidth) / 2 - 20} cy={totalHeight - 8} r={2} fill="#5CE1E6" opacity={0.4} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 8};${totalHeight - 14};${totalHeight - 8}`} dur="2.5s" repeatCount="indefinite" begin="0.8s" />
+                <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2.5s" repeatCount="indefinite" begin="0.8s" />
+              </circle>
+              <circle cx={(innerOffset + conveyorWidth) / 2 + 22} cy={totalHeight - 10} r={2.5} fill="#32D6FF" opacity={0.35} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="cy" values={`${totalHeight - 10};${totalHeight - 18};${totalHeight - 10}`} dur="3s" repeatCount="indefinite" begin="2s" />
+                <animate attributeName="opacity" values="0.35;0.1;0.35" dur="3s" repeatCount="indefinite" begin="2s" />
+              </circle>
+            </g>
           </g>
 
           {/* ФИНИШ - красно-янтарный патрубок (СВЕРХУ кармана магазина) */}
@@ -2355,6 +2389,40 @@ export default function TribologyLabPage() {
             <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#2a1a18" stroke="#b84a3a" strokeWidth={1.5} />
             {/* Щель с тенью */}
             <rect x={totalWidth - conveyorWidth + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#1a0808" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
+
+            {/* Микро-частицы: оранжево-красные искры (зона трения/нагрева) */}
+            <g style={{ pointerEvents: 'none' }}>
+              {/* Частицы с "дыханием" свечения */}
+              <circle cx={totalWidth - (conveyorWidth + innerOffset) / 2 - 10} cy={totalHeight - 14} r={2.5} fill="#FF6B35" opacity={0.5} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="opacity" values="0.5;0.25;0.5" dur="2.5s" repeatCount="indefinite" />
+                <animate attributeName="r" values="2.5;3;2.5" dur="2.5s" repeatCount="indefinite" />
+              </circle>
+              <circle cx={totalWidth - (conveyorWidth + innerOffset) / 2 + 12} cy={totalHeight - 16} r={2} fill="#FF4500" opacity={0.45} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="opacity" values="0.45;0.2;0.45" dur="3s" repeatCount="indefinite" begin="0.4s" />
+                <animate attributeName="r" values="2;2.5;2" dur="3s" repeatCount="indefinite" begin="0.4s" />
+              </circle>
+              <circle cx={totalWidth - (conveyorWidth + innerOffset) / 2 - 5} cy={totalHeight - 20} r={3} fill="#FF8C00" opacity={0.4} style={{ filter: 'blur(0.5px)' }}>
+                <animate attributeName="opacity" values="0.4;0.15;0.4" dur="2.8s" repeatCount="indefinite" begin="1s" />
+                <animate attributeName="r" values="3;3.5;3" dur="2.8s" repeatCount="indefinite" begin="1s" />
+              </circle>
+              <circle cx={totalWidth - (conveyorWidth + innerOffset) / 2 + 6} cy={totalHeight - 12} r={2} fill="#FF4500" opacity={0.5} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2.2s" repeatCount="indefinite" begin="0.7s" />
+              </circle>
+              <circle cx={totalWidth - (conveyorWidth + innerOffset) / 2 - 18} cy={totalHeight - 10} r={2.5} fill="#FF6B35" opacity={0.35} style={{ filter: 'blur(0.4px)' }}>
+                <animate attributeName="opacity" values="0.35;0.12;0.35" dur="3.2s" repeatCount="indefinite" begin="1.5s" />
+              </circle>
+              <circle cx={totalWidth - (conveyorWidth + innerOffset) / 2 + 20} cy={totalHeight - 8} r={2} fill="#FF8C00" opacity={0.4} style={{ filter: 'blur(0.3px)' }}>
+                <animate attributeName="opacity" values="0.4;0.18;0.4" dur="2.6s" repeatCount="indefinite" begin="0.2s" />
+              </circle>
+
+              {/* Искры - вытянутые эллипсы с быстрым затуханием */}
+              <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2 + 3} cy={totalHeight - 22} rx={4} ry={1.5} fill="#FFAA00" opacity={0} transform={`rotate(-15 ${totalWidth - (conveyorWidth + innerOffset) / 2 + 3} ${totalHeight - 22})`}>
+                <animate attributeName="opacity" values="0;0.7;0" dur="4s" repeatCount="indefinite" begin="0s" />
+              </ellipse>
+              <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2 - 14} cy={totalHeight - 18} rx={3} ry={1} fill="#FF6347" opacity={0} transform={`rotate(20 ${totalWidth - (conveyorWidth + innerOffset) / 2 - 14} ${totalHeight - 18})`}>
+                <animate attributeName="opacity" values="0;0.6;0" dur="5s" repeatCount="indefinite" begin="2s" />
+              </ellipse>
+            </g>
           </g>
 
           {/* LED индикаторы */}
