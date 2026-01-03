@@ -1104,8 +1104,10 @@ export default function TribologyLabPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleOpenExitModal}
-          className="w-10 h-10 flex items-center justify-center rounded-lg transition-all"
+          className="flex items-center justify-center rounded-lg transition-all"
           style={{
+            width: 36,
+            height: 36,
             background: '#161b22',
             border: '1px solid #30363d',
           }}
@@ -1119,7 +1121,7 @@ export default function TribologyLabPage() {
           }}
           title="Выход в меню"
         >
-          <span className="text-gray-400 text-xl">←</span>
+          <span style={{ color: '#9ca3af', fontSize: 18, lineHeight: 1 }}>←</span>
         </button>
         <h1 className="text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
       </div>

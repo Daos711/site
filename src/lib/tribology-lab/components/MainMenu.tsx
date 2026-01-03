@@ -143,7 +143,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
 
   // Описания режимов
   const modeDescriptions: Record<GameMode, string> = {
-    daily: 'Одна колода на сегодня для всех',
+    daily: 'Один набор на сегодня для всех',
     random: 'Случайная колода каждый запуск',
   };
 
