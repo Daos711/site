@@ -1307,11 +1307,10 @@ export default function TribologyLabPage() {
               <stop offset="100%" stopColor="rgba(20, 184, 166, 0)" />
             </radialGradient>
 
-            {/* Градиент для финиша - глубокое затемнение */}
-            <radialGradient id="finishGlow" cx="50%" cy="30%" r="60%">
-              <stop offset="0%" stopColor="rgba(180, 50, 30, 0.5)" />
-              <stop offset="50%" stopColor="rgba(120, 40, 20, 0.3)" />
-              <stop offset="100%" stopColor="rgba(80, 20, 10, 0)" />
+            {/* Градиент для финиша (красно-янтарный, как у старта) */}
+            <radialGradient id="finishGlow" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stopColor="rgba(180, 74, 58, 0.6)" />
+              <stop offset="100%" stopColor="rgba(180, 74, 58, 0)" />
             </radialGradient>
 
             {/* Глубокое затемнение внутри финиша */}
@@ -1661,26 +1660,6 @@ export default function TribologyLabPage() {
                 />
               </circle>
             ))}
-          </g>
-
-          {/* ═══════════════════════════════════════════════════════════════
-              ДАТЧИКИ-СЕНСОРЫ — мигающие LED на канале
-              ═══════════════════════════════════════════════════════════════ */}
-          <g style={{ pointerEvents: 'none' }}>
-            {/* Датчик 1: левый канал */}
-            <g transform={`translate(${conveyorWidth - 6}, ${totalHeight * 0.7})`}>
-              <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-              <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
-                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
-              </circle>
-            </g>
-            {/* Датчик 2: правый канал */}
-            <g transform={`translate(${totalWidth - conveyorWidth + 6}, ${totalHeight * 0.7})`}>
-              <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-              <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
-                <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1.5s" />
-              </circle>
-            </g>
           </g>
 
           {/* Враги — рисуются ПОД патрубками старта/финиша */}
