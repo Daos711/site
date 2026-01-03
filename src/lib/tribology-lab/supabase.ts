@@ -262,51 +262,35 @@ export async function submitRun(
   return { success: true, runId: run?.id };
 }
 
-// Получить Daily лидерборд (с кэшированием)
-export async function getDailyLeaderboard(date?: string, limit = 100): Promise<LeaderboardEntry[]> {
-  const targetDate = date || new Date().toISOString().split('T')[0];
-  const cacheKey = `daily_${targetDate}_${limit}`;
+// ==================== ХЕЛПЕРЫ ДЛЯ ЛИДЕРБОРДА ====================
 
-  // Проверяем кэш
-  const cached = getCached<LeaderboardEntry[]>(cacheKey);
-  if (cached) return cached;
+// Общие заголовки для запросов
+const SUPABASE_HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+};
 
-  // Получаем забеги
-  const runsRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,lives_left.desc,run_time_ms.asc&limit=${limit}`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
-  );
+// Получить никнеймы по списку player_id
+async function fetchNicknames(playerIds: string[]): Promise<Map<string, string>> {
+  if (playerIds.length === 0) return new Map();
 
-  if (!runsRes.ok) {
-    console.error("Failed to fetch daily leaderboard:", runsRes.statusText);
-    return [];
-  }
-
-  const runs: TribolabRun[] = await runsRes.json();
-
-  // Получаем никнеймы
-  const playerIds = [...new Set(runs.map(r => r.player_id))];
-  if (playerIds.length === 0) return [];
-
-  const profilesRes = await fetch(
+  const res = await fetch(
     `${SUPABASE_URL}/rest/v1/tribolab_profiles?player_id=in.(${playerIds.join(',')})&select=player_id,nickname`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
+    { headers: SUPABASE_HEADERS }
   );
 
-  const profiles: { player_id: string; nickname: string }[] = profilesRes.ok ? await profilesRes.json() : [];
-  const nicknameMap = new Map(profiles.map(p => [p.player_id, p.nickname]));
+  if (!res.ok) return new Map();
 
-  // Оставляем только лучший результат для каждого игрока
+  const profiles: { player_id: string; nickname: string }[] = await res.json();
+  return new Map(profiles.map(p => [p.player_id, p.nickname]));
+}
+
+// Обработка забегов: лучший результат на игрока + никнеймы
+async function processRuns(runs: TribolabRun[], limit: number): Promise<LeaderboardEntry[]> {
+  const playerIds = [...new Set(runs.map(r => r.player_id))];
+  const nicknameMap = await fetchNicknames(playerIds);
+
+  // Лучший результат для каждого игрока
   const bestByPlayer = new Map<string, TribolabRun>();
   for (const run of runs) {
     const existing = bestByPlayer.get(run.player_id);
@@ -315,15 +299,35 @@ export async function getDailyLeaderboard(date?: string, limit = 100): Promise<L
     }
   }
 
-  const result = Array.from(bestByPlayer.values())
+  return Array.from(bestByPlayer.values())
     .sort((a, b) => compareRuns(b, a))
     .slice(0, limit)
     .map(run => ({
       ...run,
       nickname: nicknameMap.get(run.player_id) || 'Аноним',
     }));
+}
 
-  // Сохраняем в кэш
+// ==================== API ЛИДЕРБОРДА ====================
+
+// Получить Daily лидерборд (с кэшированием)
+export async function getDailyLeaderboard(date?: string, limit = 100): Promise<LeaderboardEntry[]> {
+  const targetDate = date || new Date().toISOString().split('T')[0];
+  const cacheKey = `daily_${targetDate}_${limit}`;
+
+  const cached = getCached<LeaderboardEntry[]>(cacheKey);
+  if (cached) return cached;
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=${limit * 3}`,
+    { headers: SUPABASE_HEADERS }
+  );
+
+  if (!res.ok) return [];
+
+  const runs: TribolabRun[] = await res.json();
+  const result = await processRuns(runs, limit);
+
   setCache(cacheKey, result);
   return result;
 }
@@ -331,119 +335,40 @@ export async function getDailyLeaderboard(date?: string, limit = 100): Promise<L
 // Получить Random лидерборд (с кэшированием)
 export async function getRandomLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
   const cacheKey = `random_${limit}`;
+
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
-  const runsRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,lives_left.desc,run_time_ms.asc&limit=${limit * 3}`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=${limit * 3}`,
+    { headers: SUPABASE_HEADERS }
   );
 
-  if (!runsRes.ok) {
-    console.error("Failed to fetch random leaderboard:", runsRes.statusText);
-    return [];
-  }
+  if (!res.ok) return [];
 
-  const runs: TribolabRun[] = await runsRes.json();
-
-  // Получаем никнеймы
-  const playerIds = [...new Set(runs.map(r => r.player_id))];
-  if (playerIds.length === 0) return [];
-
-  const profilesRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_profiles?player_id=in.(${playerIds.join(',')})&select=player_id,nickname`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
-  );
-
-  const profiles: { player_id: string; nickname: string }[] = profilesRes.ok ? await profilesRes.json() : [];
-  const nicknameMap = new Map(profiles.map(p => [p.player_id, p.nickname]));
-
-  // Лучший результат для каждого игрока
-  const bestByPlayer = new Map<string, TribolabRun>();
-  for (const run of runs) {
-    const existing = bestByPlayer.get(run.player_id);
-    if (!existing || compareRuns(run, existing) > 0) {
-      bestByPlayer.set(run.player_id, run);
-    }
-  }
-
-  const result = Array.from(bestByPlayer.values())
-    .sort((a, b) => compareRuns(b, a))
-    .slice(0, limit)
-    .map(run => ({
-      ...run,
-      nickname: nicknameMap.get(run.player_id) || 'Аноним',
-    }));
+  const runs: TribolabRun[] = await res.json();
+  const result = await processRuns(runs, limit);
 
   setCache(cacheKey, result);
   return result;
 }
 
-// Получить Random лидерборд по конкретной колоде (с кэшированием)
+// Получить Random лидерборд по конкретному набору (с кэшированием)
 export async function getRandomLeaderboardByDeck(deckKey: string, limit = 100): Promise<LeaderboardEntry[]> {
   const cacheKey = `random_deck_${deckKey}_${limit}`;
+
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
-  const runsRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&deck_key=eq.${encodeURIComponent(deckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,lives_left.desc,run_time_ms.asc&limit=${limit * 3}`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&deck_key=eq.${encodeURIComponent(deckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=${limit * 3}`,
+    { headers: SUPABASE_HEADERS }
   );
 
-  if (!runsRes.ok) {
-    console.error("Failed to fetch deck leaderboard:", runsRes.statusText);
-    return [];
-  }
+  if (!res.ok) return [];
 
-  const runs: TribolabRun[] = await runsRes.json();
-
-  const playerIds = [...new Set(runs.map(r => r.player_id))];
-  if (playerIds.length === 0) return [];
-
-  const profilesRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_profiles?player_id=in.(${playerIds.join(',')})&select=player_id,nickname`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
-  );
-
-  const profiles: { player_id: string; nickname: string }[] = profilesRes.ok ? await profilesRes.json() : [];
-  const nicknameMap = new Map(profiles.map(p => [p.player_id, p.nickname]));
-
-  // Лучший результат для каждого игрока
-  const bestByPlayer = new Map<string, TribolabRun>();
-  for (const run of runs) {
-    const existing = bestByPlayer.get(run.player_id);
-    if (!existing || compareRuns(run, existing) > 0) {
-      bestByPlayer.set(run.player_id, run);
-    }
-  }
-
-  const result = Array.from(bestByPlayer.values())
-    .sort((a, b) => compareRuns(b, a))
-    .slice(0, limit)
-    .map(run => ({
-      ...run,
-      nickname: nicknameMap.get(run.player_id) || 'Аноним',
-    }));
+  const runs: TribolabRun[] = await res.json();
+  const result = await processRuns(runs, limit);
 
   setCache(cacheKey, result);
   return result;
@@ -452,25 +377,18 @@ export async function getRandomLeaderboardByDeck(deckKey: string, limit = 100): 
 // Получить рекорды игрока (с кэшированием)
 export async function getPlayerRuns(playerId: string, limit = 50): Promise<TribolabRun[]> {
   const cacheKey = `player_${playerId}_${limit}`;
+
   const cached = getCached<TribolabRun[]>(cacheKey);
   if (cached) return cached;
 
-  const runsRes = await fetch(
+  const res = await fetch(
     `${SUPABASE_URL}/rest/v1/tribolab_runs?player_id=eq.${playerId}&select=*&order=created_at.desc&limit=${limit}`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
+    { headers: SUPABASE_HEADERS }
   );
 
-  if (!runsRes.ok) {
-    console.error("Failed to fetch player runs:", runsRes.statusText);
-    return [];
-  }
+  if (!res.ok) return [];
 
-  const result = await runsRes.json();
+  const result = await res.json();
   setCache(cacheKey, result);
   return result;
 }
