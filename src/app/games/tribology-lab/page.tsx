@@ -104,6 +104,7 @@ interface GameOverModalProps {
 function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onRestart, onMainMenu, onShowLeaderboard }: GameOverModalProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [localNickname, setLocalNickname] = useState(nickname);
+  const [nicknameSaved, setNicknameSaved] = useState(false);
 
   // Форматирование времени MM:SS
   const formatTime = (seconds: number) => {
@@ -129,10 +130,23 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
     }
   }, [isOpen]);
 
-  // Сохранение никнейма при изменении
-  const handleNicknameBlur = () => {
-    if (localNickname.trim() && localNickname !== nickname) {
+  // Сохранение никнейма
+  const saveNickname = () => {
+    if (localNickname.trim() && localNickname.trim() !== nickname) {
       onNicknameChange(localNickname.trim());
+      setNicknameSaved(true);
+      setTimeout(() => setNicknameSaved(false), 2000);
+    }
+  };
+
+  const handleNicknameBlur = () => {
+    saveNickname();
+  };
+
+  const handleNicknameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      saveNickname();
+      (e.target as HTMLInputElement).blur();
     }
   };
 
@@ -277,38 +291,40 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
 
         {/* Ввод никнейма для рейтинга */}
         <div style={{ marginBottom: '16px' }}>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '12px',
-              color: '#7A8A99',
-              marginBottom: '6px',
-            }}
-          >
-            Имя для рейтинга:
-          </label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <label style={{ fontSize: '12px', color: '#7A8A99' }}>
+              Имя для рейтинга:
+            </label>
+            {nicknameSaved && (
+              <span style={{ fontSize: '11px', color: '#22C55E' }}>
+                ✓ Сохранено
+              </span>
+            )}
+          </div>
           <input
             type="text"
             value={localNickname}
             onChange={(e) => setLocalNickname(e.target.value)}
             onBlur={handleNicknameBlur}
-            placeholder="Введите имя..."
+            onKeyDown={handleNicknameKeyDown}
+            placeholder="Введите имя и нажмите Enter..."
             maxLength={20}
             style={{
               width: '100%',
               padding: '10px 12px',
               background: '#1A202C',
-              border: '1px solid #2A3441',
+              border: nicknameSaved ? '1px solid #22C55E' : '1px solid #2A3441',
               borderRadius: '8px',
               color: '#E5E7EB',
               fontSize: '14px',
               outline: 'none',
+              transition: 'border-color 0.2s ease',
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = '#32D6FF';
+              if (!nicknameSaved) e.currentTarget.style.borderColor = '#32D6FF';
             }}
             onBlurCapture={(e) => {
-              e.currentTarget.style.borderColor = '#2A3441';
+              if (!nicknameSaved) e.currentTarget.style.borderColor = '#2A3441';
             }}
           />
         </div>
