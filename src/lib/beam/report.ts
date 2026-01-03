@@ -1613,6 +1613,7 @@ function buildTheta0Derivation(
   const xA = result.reactions.xA ?? 0;
   const xB = result.reactions.xB ?? input.L;
   const RA = result.reactions.RA ?? 0;
+  const RB = result.reactions.RB ?? 0;
   const { loads } = input;
   const hasLeftOverhang = xA > 1e-9; // Есть консоль слева
 
@@ -1640,9 +1641,30 @@ function buildTheta0Derivation(
     // Балка с консолью слева - система из двух уравнений
     // Собираем слагаемые для y(xA) и y(xB)
 
-    // Функция для сбора слагаемых в точке x
+    // Функция для сбора слагаемых в точке x (включая реакции)
     const collectTermsAt = (x: number): Array<{ symbolic: string; value: number }> => {
       const terms: Array<{ symbolic: string; value: number }> = [];
+
+      // Вклад реакции RA (если точка правее xA)
+      if (x > xA + 1e-9 && Math.abs(RA) > 1e-9) {
+        const dx = x - xA;
+        // Реакция вверх (RA > 0) создаёт положительный вклад в ∫∫M
+        const RA_term = RA * 1000 * Math.pow(dx, 3) / 6;
+        terms.push({
+          symbolic: `+\\frac{R_A \\cdot ${formatNumber(dx)}^3}{6}`,
+          value: RA_term
+        });
+      }
+
+      // Вклад реакции RB (если точка правее xB)
+      if (x > xB + 1e-9 && Math.abs(RB) > 1e-9) {
+        const dx = x - xB;
+        const RB_term = RB * 1000 * Math.pow(dx, 3) / 6;
+        terms.push({
+          symbolic: `+\\frac{R_B \\cdot ${formatNumber(dx)}^3}{6}`,
+          value: RB_term
+        });
+      }
 
       for (const load of loads) {
         if (load.type === "distributed" && load.a < x) {
@@ -1757,6 +1779,9 @@ function buildTheta0Derivation(
     const rhsPrefix = deltaSum >= 0 ? "-" : "";
     const rhsValue = Math.abs(deltaSum);
 
+    // Вычисляем θ₀ как в solver.ts
+    const computedTheta0 = -deltaSum / EI / deltaX;
+
     html += `
   <p><strong>Вычитаем (1) из (2):</strong></p>
   <div class="formula">
@@ -1766,11 +1791,14 @@ function buildTheta0Derivation(
     \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${formatNumber(deltaSum)}}{EI} = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{EI} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(EI, 0)}}\\]
+    \\[\\theta_0 = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(deltaX)} \\cdot EI} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 = ${formatNumber((result.C1 ?? 0), 6)} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
+    \\[\\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
   </div>`;
+
+    // Вычисляем y₀ как в solver.ts
+    const computedY0 = -sumAtA / EI - computedTheta0 * xA;
 
     html += `
   <p><strong>Из уравнения (1) находим \\(y_0\\):</strong></p>
@@ -1778,11 +1806,11 @@ function buildTheta0Derivation(
     \\[y_0 = -\\theta_0 \\cdot ${formatNumber(xA)} ${formatNegatedFraction(sumAtA, "EI")}\\]
   </div>
   <div class="formula">
-    \\[y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}\\]
+    \\[y_0 = ${formatNumber(computedY0 * 1000, 2)} \\text{ мм}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\[\\boxed{\\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber((result.C2 ?? 0) * 1000, 2)} \\text{ мм}}\\]
+    \\[\\boxed{\\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber(computedY0 * 1000, 2)} \\text{ мм}}\\]
   </div>`;
     return html;
   }
@@ -1865,6 +1893,9 @@ function buildTheta0Derivation(
     formulaTerms
   );
 
+  // Вычисляем θ₀ из формулы
+  const computedTheta0 = -sumTerms / (xB * EI);
+
   html += `
   <div class="formula${thetaMultiline ? " formula-multiline" : ""}">
     \\[${thetaFormula}\\]
@@ -1875,11 +1906,11 @@ function buildTheta0Derivation(
   </ul>
   <p>Сумма: \\(${formatNumber(sumTerms)}\\) Н·м³</p>
   <div class="formula">
-    \\[\\theta_0 = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot EI} = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(result.C1 ?? 0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot EI} = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber((result.C1 ?? 0) * 1000, 3)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber((result.C1 ?? 0) * 180 / Math.PI, 2)}°}\\]
+    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber(computedTheta0 * 180 / Math.PI, 2)}°}\\]
   </div>`;
 
   return html;
@@ -2036,14 +2067,14 @@ function buildCantileverRightDerivation(
     }
   }
 
-  // Вычисляем θ₀
-  const theta0 = result.C1 ?? 0;
+  // Вычисляем θ₀ из формулы
+  const computedTheta0 = -sumTheta / EI;
   const thetaRhsPrefix = sumTheta >= 0 ? "-" : "";
   const thetaRhsValue = Math.abs(sumTheta);
 
   html += `
   <div class="formula">
-    \\[\\theta_0 = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{EI} = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{${formatNumber(EI, 0)}} = ${formatNumber(theta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{EI} = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
   </div>`;
 
   html += `
@@ -2064,8 +2095,8 @@ function buildCantileverRightDerivation(
     }
   }
 
-  // Вычисляем y₀
-  const y0 = result.C2 ?? 0;
+  // Вычисляем y₀ из формулы
+  const computedY0 = -computedTheta0 * L - sumY / EI;
 
   html += `
   <p>Находим \\(y_0\\):</p>
@@ -2073,13 +2104,13 @@ function buildCantileverRightDerivation(
     \\[y_0 = -\\theta_0 \\cdot ${formatNumber(L)} - \\frac{${formatNumber(sumY)}}{EI}\\]
   </div>
   <div class="formula">
-    \\[y_0 = -${formatNumber(theta0, 6)} \\cdot ${formatNumber(L)} - \\frac{${formatNumber(sumY)}}{${formatNumber(EI, 0)}} = ${formatNumber(y0 * 1000, 2)} \\text{ мм}\\]
+    \\[y_0 = -${formatNumber(computedTheta0, 6)} \\cdot ${formatNumber(L)} - \\frac{${formatNumber(sumY)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedY0 * 1000, 2)} \\text{ мм}\\]
   </div>`;
 
   html += `
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\[\\boxed{\\theta_0 = ${formatNumber(theta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber(y0 * 1000, 2)} \\text{ мм}}\\]
+    \\[\\boxed{\\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}, \\quad y_0 = ${formatNumber(computedY0 * 1000, 2)} \\text{ мм}}\\]
   </div>`;
 
   return html;
