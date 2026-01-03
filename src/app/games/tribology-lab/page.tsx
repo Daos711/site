@@ -1755,8 +1755,8 @@ export default function TribologyLabPage() {
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
               </circle>
             </g>
-            {/* Датчик 2: верхний канал (на бортике панели карточек) */}
-            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth + 6})`}>
+            {/* Датчик 2: верхний канал (на внутреннем бортике, смотрит вниз на поле) */}
+            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth - 6}) rotate(180)`}>
               <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
               <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1s" />
@@ -2431,9 +2431,9 @@ export default function TribologyLabPage() {
           {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
           <g>
             {/* Свечение */}
-            <ellipse cx={(innerOffset + conveyorWidth) / 2 + 1} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#startGlow)" />
+            <ellipse cx={(innerOffset + conveyorWidth) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset) * 0.45} ry={12} fill="url(#startGlow)" />
             {/* Патрубок */}
-            <rect x={innerOffset + 2} y={totalHeight - 6} width={conveyorWidth - innerOffset - 4} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
+            <rect x={innerOffset} y={totalHeight - 6} width={conveyorWidth - innerOffset} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
             {/* Щель с тенью */}
             <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
             {/* Мелкие частицы */}
@@ -2442,20 +2442,12 @@ export default function TribologyLabPage() {
           </g>
 
           {/* ФИНИШ - красно-янтарная горловина (касается обводки панели) */}
-          {/* Непрозрачная подложка */}
-          <rect
-            x={totalWidth - conveyorWidth}
-            y={totalHeight - 8}
-            width={conveyorWidth - innerOffset}
-            height={30}
-            fill="#0B0F14"
-          />
           {/* Свечение с пульсацией */}
           <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
             <animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite" />
           </ellipse>
           <g>
-            {/* Горловина */}
+            {/* Горловина - непрозрачная */}
             <path
               d={`
                 M ${totalWidth - conveyorWidth + 2} ${totalHeight - 4}
@@ -2464,12 +2456,12 @@ export default function TribologyLabPage() {
                 Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 18} ${totalWidth - conveyorWidth + 5} ${totalHeight + 6}
                 Z
               `}
-              fill="#1a0f0a"
+              fill="#0B0F14"
               stroke="#8b3a2a"
               strokeWidth={1.5}
             />
-            {/* Глубокое затемнение внутри */}
-            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 6} rx={(conveyorWidth - innerOffset - 2) * 0.35} ry={6} fill="url(#finishInnerDark)" />
+            {/* Тёмный центр */}
+            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 6} rx={(conveyorWidth - innerOffset - 2) * 0.35} ry={6} fill="#050708" />
           </g>
 
           {/* Карман магазина — расширен до бортиков */}
