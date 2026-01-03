@@ -1862,8 +1862,7 @@ function buildTheta0Derivation(
   const formulaTerms = terms.map(t => t.symbolic);
   const { latex: thetaFormula, isMultiline: thetaMultiline } = formatLongFormula(
     `0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)}`,
-    formulaTerms,
-    3 // макс. 3 слагаемых на строку
+    formulaTerms
   );
 
   html += `
@@ -2448,8 +2447,7 @@ function buildSimplySupportedReactions(
   // Форматируем с переносом при большом количестве слагаемых
   const { latex: momentSymbolicLatex, isMultiline: momentSymbolicMulti } = formatLongFormula(
     `\\sum M_A = 0: \\quad`,
-    momentSymbolic.concat(["= 0"]),
-    3
+    momentSymbolic.concat(["= 0"])
   );
   // Убираем "= 0" из массива и добавляем обратно в конец
   const momentSymbolicFinal = momentSymbolicLatex.replace(/ = 0$/, " = 0");
