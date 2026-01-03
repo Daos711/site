@@ -5,6 +5,35 @@ export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Текущая версия баланса (инкремент при каждом патче)
 export const BALANCE_VERSION = 1;
 
+// ==================== КЭШИРОВАНИЕ ====================
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const cache: Map<string, CacheEntry<unknown>> = new Map();
+const CACHE_TTL = 30000; // 30 секунд
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setCache<T>(key: string, data: T): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
+// Очистить кэш (вызывать после отправки результата)
+export function clearLeaderboardCache(): void {
+  cache.clear();
+}
+
 // ==================== ТИПЫ ====================
 
 export interface TribolabProfile {
@@ -227,12 +256,21 @@ export async function submitRun(
   const data = await insertRes.json();
   console.log("Run submitted successfully:", data);
   const run = Array.isArray(data) ? data[0] : data;
+
+  // Очищаем кэш чтобы новый результат сразу появился
+  clearLeaderboardCache();
+
   return { success: true, runId: run?.id };
 }
 
-// Получить Daily лидерборд
+// Получить Daily лидерборд (с кэшированием)
 export async function getDailyLeaderboard(date?: string, limit = 100): Promise<LeaderboardEntry[]> {
   const targetDate = date || new Date().toISOString().split('T')[0];
+  const cacheKey = `daily_${targetDate}_${limit}`;
+
+  // Проверяем кэш
+  const cached = getCached<LeaderboardEntry[]>(cacheKey);
+  if (cached) return cached;
 
   // Получаем забеги
   const runsRes = await fetch(
@@ -278,17 +316,25 @@ export async function getDailyLeaderboard(date?: string, limit = 100): Promise<L
     }
   }
 
-  return Array.from(bestByPlayer.values())
+  const result = Array.from(bestByPlayer.values())
     .sort((a, b) => compareRuns(b, a))
     .slice(0, limit)
     .map(run => ({
       ...run,
       nickname: nicknameMap.get(run.player_id) || 'Аноним',
     }));
+
+  // Сохраняем в кэш
+  setCache(cacheKey, result);
+  return result;
 }
 
-// Получить Random лидерборд (общий)
+// Получить Random лидерборд (с кэшированием)
 export async function getRandomLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
+  const cacheKey = `random_${limit}`;
+  const cached = getCached<LeaderboardEntry[]>(cacheKey);
+  if (cached) return cached;
+
   const runsRes = await fetch(
     `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,lives_left.desc,run_time_ms.asc&limit=${limit * 3}`,
     {
@@ -332,17 +378,24 @@ export async function getRandomLeaderboard(limit = 100): Promise<LeaderboardEntr
     }
   }
 
-  return Array.from(bestByPlayer.values())
+  const result = Array.from(bestByPlayer.values())
     .sort((a, b) => compareRuns(b, a))
     .slice(0, limit)
     .map(run => ({
       ...run,
       nickname: nicknameMap.get(run.player_id) || 'Аноним',
     }));
+
+  setCache(cacheKey, result);
+  return result;
 }
 
-// Получить Random лидерборд по конкретной колоде
+// Получить Random лидерборд по конкретной колоде (с кэшированием)
 export async function getRandomLeaderboardByDeck(deckKey: string, limit = 100): Promise<LeaderboardEntry[]> {
+  const cacheKey = `random_deck_${deckKey}_${limit}`;
+  const cached = getCached<LeaderboardEntry[]>(cacheKey);
+  if (cached) return cached;
+
   const runsRes = await fetch(
     `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&deck_key=eq.${encodeURIComponent(deckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,lives_left.desc,run_time_ms.asc&limit=${limit * 3}`,
     {
@@ -385,17 +438,24 @@ export async function getRandomLeaderboardByDeck(deckKey: string, limit = 100): 
     }
   }
 
-  return Array.from(bestByPlayer.values())
+  const result = Array.from(bestByPlayer.values())
     .sort((a, b) => compareRuns(b, a))
     .slice(0, limit)
     .map(run => ({
       ...run,
       nickname: nicknameMap.get(run.player_id) || 'Аноним',
     }));
+
+  setCache(cacheKey, result);
+  return result;
 }
 
-// Получить рекорды игрока
+// Получить рекорды игрока (с кэшированием)
 export async function getPlayerRuns(playerId: string, limit = 50): Promise<TribolabRun[]> {
+  const cacheKey = `player_${playerId}_${limit}`;
+  const cached = getCached<TribolabRun[]>(cacheKey);
+  if (cached) return cached;
+
   const runsRes = await fetch(
     `${SUPABASE_URL}/rest/v1/tribolab_runs?player_id=eq.${playerId}&select=*&order=created_at.desc&limit=${limit}`,
     {
@@ -411,7 +471,9 @@ export async function getPlayerRuns(playerId: string, limit = 50): Promise<Tribo
     return [];
   }
 
-  return runsRes.json();
+  const result = await runsRes.json();
+  setCache(cacheKey, result);
+  return result;
 }
 
 // Роли модулей (должны совпадать с MainMenu!)
