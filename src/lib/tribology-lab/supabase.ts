@@ -318,8 +318,9 @@ export async function getDailyLeaderboard(date?: string, limit = 100): Promise<L
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
+  // Загружаем достаточно записей для Daily
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=${limit * 3}`,
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
     { headers: SUPABASE_HEADERS }
   );
 
@@ -339,8 +340,9 @@ export async function getRandomLeaderboard(limit = 100): Promise<LeaderboardEntr
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
+  // Загружаем достаточно записей чтобы покрыть лучшие результаты всех игроков
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=${limit * 3}`,
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
     { headers: SUPABASE_HEADERS }
   );
 
@@ -360,8 +362,9 @@ export async function getRandomLeaderboardByDeck(deckKey: string, limit = 100): 
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
+  // Загружаем достаточно записей для конкретного набора
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&deck_key=eq.${encodeURIComponent(deckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=${limit * 3}`,
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.random&deck_key=eq.${encodeURIComponent(deckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
     { headers: SUPABASE_HEADERS }
   );
 
