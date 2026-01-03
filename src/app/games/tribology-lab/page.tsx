@@ -1674,10 +1674,12 @@ export default function TribologyLabPage() {
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="0s" />
               </circle>
             </g>
-            {/* Датчик 2: верхний канал (выпирает в канал, прижат к краю поля) */}
-            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth - 5})`}>
-              <rect x={-8} y={-5} width={16} height={10} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
-              <circle cx={0} cy={0} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
+            {/* Датчик 2: верхний канал (нижняя часть вшита в поле, верхняя выпирает в канал) */}
+            <g transform={`translate(${totalWidth / 2}, ${conveyorWidth + 3})`}>
+              {/* height=16 чтобы после "вшивания" осталось достаточно видимой части */}
+              <rect x={-8} y={-8} width={16} height={16} rx={3} fill="#1A2430" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+              {/* LED смещён вверх - по центру ВИДИМОЙ части */}
+              <circle cx={0} cy={-5} r={2} fill="#32D6FF" style={{ filter: 'drop-shadow(0 0 6px rgba(50,214,255,0.6))' }}>
                 <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite" begin="1s" />
               </circle>
             </g>
@@ -2359,18 +2361,16 @@ export default function TribologyLabPage() {
 
           {/* ФИНИШ - красно-янтарный патрубок (непрозрачный!) */}
           <g>
-            {/* Большое свечение снизу (маскирует магазин) */}
+            {/* Мягкое свечение (не выходит за границы патрубка) */}
             <ellipse
               cx={totalWidth - (conveyorWidth + innerOffset) / 2}
-              cy={totalHeight + 8}
-              rx={(conveyorWidth - innerOffset) * 0.6}
-              ry={18}
-              fill="rgba(139, 58, 42, 0.5)"
-              style={{ filter: 'blur(8px)' }}
-            />
-            {/* Свечение вокруг патрубка */}
-            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
-              <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" />
+              cy={totalHeight}
+              rx={(conveyorWidth - innerOffset - 4) * 0.4}
+              ry={8}
+              fill="rgba(180, 74, 58, 0.3)"
+              style={{ filter: 'blur(4px)' }}
+            >
+              <animate attributeName="opacity" values="0.2;0.4;0.2" dur="3s" repeatCount="indefinite" />
             </ellipse>
             {/* Патрубок - полностью непрозрачный */}
             <rect x={totalWidth - conveyorWidth + 1} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#1A2430" stroke="#b84a3a" strokeWidth={2} />
