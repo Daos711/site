@@ -1845,44 +1845,41 @@ export default function TribologyLabPage() {
         {/* Индикатор волны в процессе + кнопка паузы */}
         {gamePhase === 'wave' && (
           <>
-            {/* Цифровой дисплей "Осталось" */}
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-sm">Осталось:</span>
+            {/* Цифровой дисплей — враги на поле */}
+            <div
+              className="relative flex items-center"
+              style={{
+                background: '#1A202C',
+                border: '1px solid #4A5568',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            >
+              {/* Внутренняя подсветка */}
               <div
-                className="relative flex items-center"
+                className="absolute inset-0 rounded-md"
                 style={{
-                  background: '#1A202C',
-                  border: '1px solid #4A5568',
-                  borderRadius: '6px',
-                  padding: '4px 12px',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                  background: isPaused
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'rgba(50, 214, 255, 0.05)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: '"Courier New", monospace',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: isPaused ? '#3B82F6' : '#32D6FF',
+                  textShadow: isPaused
+                    ? '0 0 8px rgba(59, 130, 246, 0.8)'
+                    : '0 0 8px rgba(50, 214, 255, 0.6)',
+                  letterSpacing: '0.05em',
                 }}
               >
-                {/* Внутренняя подсветка */}
-                <div
-                  className="absolute inset-0 rounded-md"
-                  style={{
-                    background: isPaused
-                      ? 'rgba(59, 130, 246, 0.1)'
-                      : 'rgba(50, 214, 255, 0.05)',
-                    pointerEvents: 'none',
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: '"Courier New", monospace',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: isPaused ? '#3B82F6' : '#32D6FF',
-                    textShadow: isPaused
-                      ? '0 0 8px rgba(59, 130, 246, 0.8)'
-                      : '0 0 8px rgba(50, 214, 255, 0.6)',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  {isPaused ? 'ПАУЗА' : String(enemies.length + spawnQueue.length).padStart(2, '0')}
-                </span>
-              </div>
+                {isPaused ? 'ПАУЗА' : String(enemies.length).padStart(2, '0')}
+              </span>
             </div>
 
             {/* Красная кнопка паузы */}
