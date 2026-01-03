@@ -12,6 +12,7 @@ import { Handbook } from './handbook';
 interface MainMenuProps {
   onStart: (seed: number, mode: GameMode, deck: ModuleType[]) => void;
   onTutorial?: () => void;
+  onShowLeaderboard?: () => void;
   hasCompletedTutorial: boolean;
 }
 
@@ -76,7 +77,7 @@ function generateDeck(seed: number): ModuleType[] {
 /**
  * MainMenu — Главное меню "Лаб-стенд"
  */
-export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenuProps) {
+export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedTutorial }: MainMenuProps) {
   const [mode, setMode] = useState<GameMode>('daily');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -340,6 +341,27 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
               }}
             >
               Как играть?
+            </button>
+          )}
+          {onShowLeaderboard && (
+            <button
+              onClick={onShowLeaderboard}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                background: 'rgba(17, 24, 36, 0.8)',
+                border: `1px solid ${THEME.border}`,
+                borderRadius: 8,
+                color: THEME.textSecondary,
+                fontSize: '13px',
+                cursor: 'pointer',
+                padding: '8px 14px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span>🏆</span>
+              РЕЙТИНГ
             </button>
           )}
           <button

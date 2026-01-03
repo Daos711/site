@@ -42,7 +42,16 @@ import { ModuleCard, FieldTile } from "@/lib/tribology-lab/components";
 import { SplashScreen } from "@/lib/tribology-lab/components/SplashScreen";
 import { MainMenu } from "@/lib/tribology-lab/components/MainMenu";
 import { Tutorial } from "@/lib/tribology-lab/components/Tutorial";
+import { LeaderboardModal } from "@/lib/tribology-lab/components/LeaderboardModal";
 import type { GameMode } from "@/lib/tribology-lab/components/ModeToggle";
+import {
+  getOrCreatePlayerId,
+  getOrCreateProfile,
+  getPlayerNickname,
+  setPlayerNickname,
+  submitRun,
+  generateDeckKey,
+} from "@/lib/tribology-lab/supabase";
 
 // Запасные модули (если не передана колода из меню)
 const FALLBACK_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet'];
@@ -85,12 +94,16 @@ interface GameOverModalProps {
   kills: number;
   leaks: number;
   gold: number;
+  nickname: string;
+  onNicknameChange: (value: string) => void;
   onRestart: () => void;
   onMainMenu: () => void;
+  onShowLeaderboard: () => void;
 }
 
-function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMainMenu }: GameOverModalProps) {
+function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onRestart, onMainMenu, onShowLeaderboard }: GameOverModalProps) {
   const [showPanel, setShowPanel] = useState(false);
+  const [localNickname, setLocalNickname] = useState(nickname);
 
   // Форматирование времени MM:SS
   const formatTime = (seconds: number) => {
@@ -98,6 +111,13 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Синхронизация никнейма при открытии
+  useEffect(() => {
+    if (isOpen) {
+      setLocalNickname(nickname);
+    }
+  }, [isOpen, nickname]);
 
   // Анимация появления панели
   useEffect(() => {
@@ -108,6 +128,13 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
       setShowPanel(false);
     }
   }, [isOpen]);
+
+  // Сохранение никнейма при изменении
+  const handleNicknameBlur = () => {
+    if (localNickname.trim() && localNickname !== nickname) {
+      onNicknameChange(localNickname.trim());
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -248,6 +275,44 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
           </div>
         </div>
 
+        {/* Ввод никнейма для рейтинга */}
+        <div style={{ marginBottom: '16px' }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '12px',
+              color: '#7A8A99',
+              marginBottom: '6px',
+            }}
+          >
+            Имя для рейтинга:
+          </label>
+          <input
+            type="text"
+            value={localNickname}
+            onChange={(e) => setLocalNickname(e.target.value)}
+            onBlur={handleNicknameBlur}
+            placeholder="Введите имя..."
+            maxLength={20}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              background: '#1A202C',
+              border: '1px solid #2A3441',
+              borderRadius: '8px',
+              color: '#E5E7EB',
+              fontSize: '14px',
+              outline: 'none',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#32D6FF';
+            }}
+            onBlurCapture={(e) => {
+              e.currentTarget.style.borderColor = '#2A3441';
+            }}
+          />
+        </div>
+
         {/* Кнопки */}
         <button
           onClick={onRestart}
@@ -276,30 +341,61 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
           Повторить испытание
         </button>
 
-        <button
-          onClick={onMainMenu}
-          className="w-full transition-all"
-          style={{
-            height: '48px',
-            background: 'transparent',
-            color: '#7A8A99',
-            fontSize: '15px',
-            fontWeight: 600,
-            border: '1px solid #2A3441',
-            borderRadius: '12px',
-            cursor: 'pointer',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#32D6FF';
-            e.currentTarget.style.color = '#C5D1DE';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#2A3441';
-            e.currentTarget.style.color = '#7A8A99';
-          }}
-        >
-          В меню
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={onMainMenu}
+            className="flex-1 transition-all"
+            style={{
+              height: '48px',
+              background: 'transparent',
+              color: '#7A8A99',
+              fontSize: '15px',
+              fontWeight: 600,
+              border: '1px solid #2A3441',
+              borderRadius: '12px',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#32D6FF';
+              e.currentTarget.style.color = '#C5D1DE';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#2A3441';
+              e.currentTarget.style.color = '#7A8A99';
+            }}
+          >
+            В меню
+          </button>
+          <button
+            onClick={onShowLeaderboard}
+            className="flex-1 transition-all"
+            style={{
+              height: '48px',
+              background: 'rgba(245, 158, 11, 0.1)',
+              color: '#F59E0B',
+              fontSize: '15px',
+              fontWeight: 600,
+              border: '1px solid #F59E0B40',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)';
+              e.currentTarget.style.borderColor = '#F59E0B';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
+              e.currentTarget.style.borderColor = '#F59E0B40';
+            }}
+          >
+            <span>🏆</span>
+            Рейтинг
+          </button>
+        </div>
 
         {/* ID стенда (мелкий текст внизу) */}
         <div
@@ -601,6 +697,11 @@ export default function TribologyLabPage() {
   const [gameOverTime, setGameOverTime] = useState(0); // Время игры при Game Over (секунды)
   const gameStartTimeRef = useRef(0); // Timestamp начала игры
 
+  // Лидерборд
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [playerId, setPlayerId] = useState<string>('');
+  const [playerNickname, setPlayerNicknameState] = useState<string>('');
+
   // Экраны: splash → menu → tutorial → game
   type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
   const [screen, setScreen] = useState<ScreenState>('splash');
@@ -613,6 +714,14 @@ export default function TribologyLabPage() {
   useEffect(() => {
     const completed = localStorage.getItem('tribolab_tutorial_completed') === 'true';
     setHasCompletedTutorial(completed);
+  }, []);
+
+  // Инициализация playerId и nickname для лидерборда
+  useEffect(() => {
+    const id = getOrCreatePlayerId();
+    setPlayerId(id);
+    const nick = getPlayerNickname();
+    setPlayerNicknameState(nick);
   }, []);
 
   // Сохраняем флаг туториала
@@ -1033,12 +1142,37 @@ export default function TribologyLabPage() {
       const finalTime = gameStartTimeRef.current > 0
         ? Math.floor((Date.now() - gameStartTimeRef.current) / 1000)
         : 0;
+      const finalTimeMs = finalTime * 1000;
       setGameOverTime(finalTime);
       // Останавливаем игру и показываем модалку
       setIsPaused(true);
       setShowGameOver(true);
+
+      // Отправляем результат в лидерборд (если есть никнейм)
+      const currentDeck = testDeck || menuDeck || FALLBACK_SHOP;
+      const nick = getPlayerNickname();
+      if (nick && playerId) {
+        // Асинхронная отправка
+        (async () => {
+          try {
+            await getOrCreateProfile(playerId, nick);
+            await submitRun(
+              playerId,
+              gameMode,
+              currentDeck,
+              wave,
+              totalKills,
+              0, // lives_left = 0 при game over
+              finalTimeMs
+            );
+            console.log('Результат отправлен в лидерборд');
+          } catch (err) {
+            console.error('Ошибка отправки результата:', err);
+          }
+        })();
+      }
     }
-  }, [lives, gameStarted, showGameOver]);
+  }, [lives, gameStarted, showGameOver, testDeck, menuDeck, playerId, gameMode, wave, totalKills]);
 
   // DEV: Спавн врага вне волны
   const devSpawnEnemy = useCallback((type: EnemyType, count: number = 1) => {
@@ -1605,11 +1739,20 @@ export default function TribologyLabPage() {
 
   if (screen === 'menu') {
     return (
-      <MainMenu
-        onStart={handleStartGame}
-        onTutorial={handleShowTutorial}
-        hasCompletedTutorial={hasCompletedTutorial}
-      />
+      <>
+        <MainMenu
+          onStart={handleStartGame}
+          onTutorial={handleShowTutorial}
+          onShowLeaderboard={() => setShowLeaderboard(true)}
+          hasCompletedTutorial={hasCompletedTutorial}
+        />
+        <LeaderboardModal
+          isOpen={showLeaderboard}
+          onClose={() => setShowLeaderboard(false)}
+          currentDeck={menuDeck || undefined}
+          highlightPlayerId={playerId}
+        />
+      </>
     );
   }
 
@@ -4552,8 +4695,22 @@ export default function TribologyLabPage() {
         kills={totalKills}
         leaks={INITIAL_LIVES}
         gold={totalGoldEarned}
+        nickname={playerNickname}
+        onNicknameChange={(value) => {
+          setPlayerNicknameState(value);
+          setPlayerNickname(value);
+        }}
         onRestart={handleGameOverRestart}
         onMainMenu={handleGameOverMainMenu}
+        onShowLeaderboard={() => setShowLeaderboard(true)}
+      />
+
+      {/* Лидерборд модалка */}
+      <LeaderboardModal
+        isOpen={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+        currentDeck={testDeck || menuDeck || undefined}
+        highlightPlayerId={playerId}
       />
     </div>
   );
