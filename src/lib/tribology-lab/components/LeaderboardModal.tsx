@@ -493,7 +493,7 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '100px 80px 1fr 60px',
+            gridTemplateColumns: '100px 80px 1fr 60px 60px',
             padding: '10px 12px',
             background: '#1A202C',
             borderBottom: '1px solid #2D3748',
@@ -504,7 +504,8 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
         >
           <div>Дата</div>
           <div>Режим</div>
-          <div>Колода</div>
+          <div style={{ textAlign: 'center' }}>Колода</div>
+          <div style={{ textAlign: 'center' }}>Убито</div>
           <div style={{ textAlign: 'right' }}>Волна</div>
         </div>
 
@@ -514,7 +515,7 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
             key={run.id}
             style={{
               display: 'grid',
-              gridTemplateColumns: '100px 80px 1fr 60px',
+              gridTemplateColumns: '100px 80px 1fr 60px 60px',
               padding: '10px 12px',
               borderBottom: '1px solid #1A202C',
               alignItems: 'center',
@@ -536,7 +537,7 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
             >
               {run.mode === 'daily' ? 'Daily' : 'Random'}
             </div>
-            <div>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
               <ModuleDeckIcons
                 modules={run.deck_modules}
                 size={18}
@@ -544,10 +545,13 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
                 showTooltip={true}
               />
             </div>
+            <div style={{ textAlign: 'center', color: '#E5E7EB' }}>
+              {run.kills}
+            </div>
             <div
               style={{
                 textAlign: 'right',
-                color: '#E5E7EB',
+                color: '#22C55E',
                 fontWeight: 600,
               }}
             >
@@ -611,7 +615,7 @@ function LeaderboardTable({
       >
         <div>#</div>
         <div>Игрок</div>
-        {showDeck && <div>Колода</div>}
+        {showDeck && <div style={{ textAlign: 'center' }}>Колода</div>}
         <div style={{ textAlign: 'center' }}>Волна</div>
         <div style={{ textAlign: 'center' }}>Убито</div>
         <div style={{ textAlign: 'right' }}>Время</div>
@@ -671,13 +675,13 @@ function LeaderboardTable({
                 {entry.nickname}
               </span>
               {isHighlighted && (
-                <span style={{ color: '#32D6FF', fontSize: 10 }}>←</span>
+                <span style={{ color: '#32D6FF', fontSize: 10 }}>(вы)</span>
               )}
             </div>
 
             {/* Колода */}
             {showDeck && (
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <ModuleDeckIcons
                   modules={entry.deck_modules}
                   size={18}

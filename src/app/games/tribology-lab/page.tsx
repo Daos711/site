@@ -260,17 +260,7 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
           </div>
           <div className="flex items-center gap-3">
             <span style={{ fontSize: '16px' }}>⚔️</span>
-            <span>Уничтожено: {kills}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <svg width="20" height="24" viewBox="0 0 20 24" className="flex-shrink-0">
-              <rect x="7" y="2" width="6" height="18" rx="3" fill="none" stroke="#6B7280" strokeWidth="1.5"/>
-              <circle cx="10" cy="20" r="3.5" fill="#DC2626"/>
-              <rect x="8.5" y="10" width="3" height="8" rx="1.5" fill="#DC2626"/>
-            </svg>
-            <span style={{ color: leaks > 0 ? '#FF6B35' : '#C5D1DE' }}>
-              Пропущено: {leaks}
-            </span>
+            <span>Уничтожено врагов: {kills}</span>
           </div>
           <div className="flex items-center gap-3">
             <svg width="20" height="20" viewBox="0 0 24 24" className="flex-shrink-0">
