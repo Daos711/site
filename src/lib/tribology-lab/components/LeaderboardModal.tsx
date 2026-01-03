@@ -66,42 +66,57 @@ export function LeaderboardModal({
     return () => clearInterval(interval);
   }, []);
 
-  // Загрузка данных
-  const loadData = useCallback(async () => {
+  // Загрузка ВСЕХ данных при открытии (параллельно)
+  const loadAllData = useCallback(async () => {
     setLoading(true);
     try {
-      if (activeTab === 'daily') {
-        const [entries, deck] = await Promise.all([
-          getDailyLeaderboard(),
-          getDailyDeck(),
-        ]);
-        setDailyEntries(entries);
-        setDailyDeck(deck);
-      } else if (activeTab === 'random') {
-        if (filterByDeck && currentDeck) {
-          const deckKey = generateDeckKey(currentDeck);
-          const entries = await getRandomLeaderboardByDeck(deckKey);
-          setRandomEntries(entries);
-        } else {
-          const entries = await getRandomLeaderboard();
-          setRandomEntries(entries);
-        }
-      } else if (activeTab === 'my_records') {
-        const runs = await getPlayerRuns(playerId);
-        setMyRuns(runs);
-      }
+      // Загружаем всё параллельно
+      const [dailyData, dailyDeckData, randomData, myData] = await Promise.all([
+        getDailyLeaderboard(),
+        getDailyDeck(),
+        getRandomLeaderboard(),
+        playerId ? getPlayerRuns(playerId) : Promise.resolve([]),
+      ]);
+
+      setDailyEntries(dailyData);
+      setDailyDeck(dailyDeckData);
+      setRandomEntries(randomData);
+      setMyRuns(myData);
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, filterByDeck, currentDeck, playerId]);
+  }, [playerId]);
 
+  // Загрузка по набору (только для фильтра Random)
+  const loadByDeck = useCallback(async () => {
+    if (!currentDeck) return;
+    setLoading(true);
+    try {
+      const deckKey = generateDeckKey(currentDeck);
+      const entries = await getRandomLeaderboardByDeck(deckKey);
+      setRandomEntries(entries);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentDeck]);
+
+  // При открытии — загружаем всё
   useEffect(() => {
     if (isOpen) {
-      loadData();
+      loadAllData();
     }
-  }, [isOpen, loadData]);
+  }, [isOpen, loadAllData]);
+
+  // При включении фильтра по набору — догружаем
+  useEffect(() => {
+    if (isOpen && filterByDeck && currentDeck) {
+      loadByDeck();
+    } else if (isOpen && !filterByDeck && activeTab === 'random') {
+      // Если фильтр выключили — показываем общий Random (уже загружен)
+    }
+  }, [isOpen, filterByDeck, currentDeck, activeTab, loadByDeck]);
 
   if (!isOpen) return null;
 
