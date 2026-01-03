@@ -412,23 +412,28 @@ export async function getPlayerRuns(playerId: string, limit = 50): Promise<Tribo
 export async function getDailyDeck(date?: string): Promise<string[] | null> {
   const targetDate = date || new Date().toISOString().split('T')[0];
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_daily_decks?date=eq.${targetDate}&select=deck_modules`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-    }
-  );
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/tribolab_daily_decks?date=eq.${targetDate}&select=deck_modules`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
 
-  if (!res.ok) {
-    console.error("Failed to fetch daily deck:", res.statusText);
+    if (!res.ok) {
+      // Таблица может не существовать или быть пустой - это нормально
+      return null;
+    }
+
+    const data = await res.json();
+    return data.length > 0 ? data[0].deck_modules : null;
+  } catch (err) {
+    // Сетевая ошибка - молча возвращаем null
     return null;
   }
-
-  const data = await res.json();
-  return data.length > 0 ? data[0].deck_modules : null;
 }
 
 // Сравнение двух забегов (для сортировки)

@@ -301,32 +301,56 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
               </span>
             )}
           </div>
-          <input
-            type="text"
-            value={localNickname}
-            onChange={(e) => setLocalNickname(e.target.value)}
-            onBlur={handleNicknameBlur}
-            onKeyDown={handleNicknameKeyDown}
-            placeholder="Введите имя и нажмите Enter..."
-            maxLength={20}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              background: '#1A202C',
-              border: nicknameSaved ? '1px solid #22C55E' : '1px solid #2A3441',
-              borderRadius: '8px',
-              color: '#E5E7EB',
-              fontSize: '14px',
-              outline: 'none',
-              transition: 'border-color 0.2s ease',
-            }}
-            onFocus={(e) => {
-              if (!nicknameSaved) e.currentTarget.style.borderColor = '#32D6FF';
-            }}
-            onBlurCapture={(e) => {
-              if (!nicknameSaved) e.currentTarget.style.borderColor = '#2A3441';
-            }}
-          />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              value={localNickname}
+              onChange={(e) => setLocalNickname(e.target.value)}
+              onKeyDown={handleNicknameKeyDown}
+              placeholder="Введите имя..."
+              maxLength={20}
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                background: '#1A202C',
+                border: nicknameSaved ? '1px solid #22C55E' : '1px solid #2A3441',
+                borderRadius: '8px',
+                color: '#E5E7EB',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'border-color 0.2s ease',
+              }}
+              onFocus={(e) => {
+                if (!nicknameSaved) e.currentTarget.style.borderColor = '#32D6FF';
+              }}
+              onBlurCapture={(e) => {
+                if (!nicknameSaved) e.currentTarget.style.borderColor = '#2A3441';
+              }}
+            />
+            <button
+              onClick={saveNickname}
+              disabled={!localNickname.trim() || localNickname.trim() === nickname}
+              style={{
+                padding: '10px 16px',
+                background: localNickname.trim() && localNickname.trim() !== nickname
+                  ? '#22C55E'
+                  : '#2A3441',
+                border: 'none',
+                borderRadius: '8px',
+                color: localNickname.trim() && localNickname.trim() !== nickname
+                  ? '#FFFFFF'
+                  : '#7A8A99',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: localNickname.trim() && localNickname.trim() !== nickname
+                  ? 'pointer'
+                  : 'default',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              OK
+            </button>
+          </div>
         </div>
 
         {/* Кнопки */}
