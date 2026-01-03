@@ -15,12 +15,32 @@ interface MainMenuProps {
   hasCompletedTutorial: boolean;
 }
 
+/**
+ * Расчёт времени до следующего дня (UTC 00:00)
+ */
+function getTimeUntilNextDayUTC(): string {
+  const now = new Date();
+  const nowUTC = Date.now();
+
+  // Следующая полночь UTC
+  const tomorrow = new Date(now);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  tomorrow.setUTCHours(0, 0, 0, 0);
+
+  const diff = tomorrow.getTime() - nowUTC;
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 // Роли модулей для правильной генерации колоды
 const MODULE_ROLES = {
-  dps: ['filter', 'magnet', 'laser', 'electrostatic'] as ModuleType[],
+  dps: ['filter', 'magnet', 'laser', 'electrostatic', 'ultrasonic'] as ModuleType[],
   control: ['cooler', 'centrifuge', 'barrier'] as ModuleType[],
-  support: ['lubricant', 'analyzer', 'inhibitor'] as ModuleType[],
-  utility: ['ultrasonic', 'demulsifier'] as ModuleType[],
+  support: ['lubricant', 'analyzer', 'inhibitor', 'demulsifier'] as ModuleType[],
 };
 
 /**
@@ -35,7 +55,7 @@ function seededRandom(seed: number): () => number {
 }
 
 /**
- * Генерация колоды по правилам: 2 DPS + 1 Control + 1 Support + 1 Utility = 5 модулей
+ * Генерация колоды по правилам: 2 DPS + 1 Control + 2 Support = 5 модулей
  */
 function generateDeck(seed: number): ModuleType[] {
   const random = seededRandom(seed);
@@ -43,14 +63,13 @@ function generateDeck(seed: number): ModuleType[] {
   const shuffledDps = [...MODULE_ROLES.dps].sort(() => random() - 0.5);
   const shuffledControl = [...MODULE_ROLES.control].sort(() => random() - 0.5);
   const shuffledSupport = [...MODULE_ROLES.support].sort(() => random() - 0.5);
-  const shuffledUtility = [...MODULE_ROLES.utility].sort(() => random() - 0.5);
 
   return [
     shuffledDps[0],      // DPS 1
     shuffledDps[1],      // DPS 2
     shuffledControl[0],  // Control
-    shuffledSupport[0],  // Support
-    shuffledUtility[0],  // Utility
+    shuffledSupport[0],  // Support 1
+    shuffledSupport[1],  // Support 2
   ];
 }
 
@@ -62,6 +81,7 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showHandbook, setShowHandbook] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
 
   // Seed и дека зависят от режима
   const seed = useMemo(() => generateSeed(mode), [mode]);
@@ -95,6 +115,23 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
       if (intervalId) clearInterval(intervalId);
     };
   }, [mode, seed]);
+
+  // Обновление таймера каждую секунду (только для daily)
+  useEffect(() => {
+    if (mode === 'daily') {
+      // Немедленно установить начальное значение
+      setTimeRemaining(getTimeUntilNextDayUTC());
+
+      // Обновлять каждую секунду
+      const interval = setInterval(() => {
+        setTimeRemaining(getTimeUntilNextDayUTC());
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setTimeRemaining('');
+    }
+  }, [mode]);
 
   const handleStart = () => {
     if (!hasCompletedTutorial && onTutorial) {
@@ -163,6 +200,32 @@ export function MainMenu({ onStart, onTutorial, hasCompletedTutorial }: MainMenu
           >
             {modeDescriptions[mode]}
           </p>
+
+          {/* ТАЙМЕР (только для daily) */}
+          {mode === 'daily' && timeRemaining && (
+            <div
+              style={{
+                fontSize: '11px',
+                color: THEME.textMuted,
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span style={{ fontSize: '14px' }}>⏱️</span>
+              Смена через:{' '}
+              <span
+                style={{
+                  color: THEME.accent,
+                  fontFamily: 'monospace',
+                  fontWeight: 600,
+                }}
+              >
+                {timeRemaining}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Превью колоды */}

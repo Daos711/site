@@ -2,20 +2,18 @@ import { ModuleType } from '../types';
 
 // ==================== РОЛИ МОДУЛЕЙ ====================
 
-export type ModuleRole = 'DPS' | 'Control' | 'Support' | 'Utility';
+export type ModuleRole = 'DPS' | 'Control' | 'Support';
 
 export const ROLE_COLORS: Record<ModuleRole, string> = {
   DPS: '#ef4444',
   Control: '#3b82f6',
   Support: '#22c55e',
-  Utility: '#a855f7',
 };
 
 export const ROLE_LABELS: Record<ModuleRole, string> = {
   DPS: 'Урон',
   Control: 'Контроль',
   Support: 'Поддержка',
-  Utility: 'Утилита',
 };
 
 export const MODULE_ROLES: Record<ModuleType, ModuleRole> = {
@@ -23,14 +21,14 @@ export const MODULE_ROLES: Record<ModuleType, ModuleRole> = {
   magnet: 'DPS',
   laser: 'DPS',
   electrostatic: 'DPS',
+  ultrasonic: 'DPS',
   cooler: 'Control',
   centrifuge: 'Control',
   barrier: 'Control',
   lubricant: 'Support',
   analyzer: 'Support',
   inhibitor: 'Support',
-  ultrasonic: 'Utility',
-  demulsifier: 'Utility',
+  demulsifier: 'Support',
 };
 
 // ==================== ТИПЫ АТАК ====================
@@ -247,7 +245,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
   },
   ultrasonic: {
     name: 'Ультразвук',
-    role: 'Utility',
+    role: 'DPS',
     attackType: 'aoe',
     description: 'Урон по площади. +20% по пыльным врагам.',
     keyEffect: null,
@@ -260,7 +258,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
   },
   demulsifier: {
     name: 'Деэмульгатор',
-    role: 'Utility',
+    role: 'Support',
     attackType: 'aoe',
     description: 'Высушивает врагов. +100% урона по влажным, снимает иммунитет к замедлению.',
     keyEffect: null,

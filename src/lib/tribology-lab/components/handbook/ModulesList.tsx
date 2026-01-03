@@ -19,7 +19,7 @@ interface ModulesListProps {
   onSelect: (id: ModuleType) => void;
 }
 
-const FILTER_OPTIONS: (ModuleRole | 'all')[] = ['all', 'DPS', 'Control', 'Support', 'Utility'];
+const FILTER_OPTIONS: (ModuleRole | 'all')[] = ['all', 'DPS', 'Control', 'Support'];
 
 export function ModulesList({ onSelect }: ModulesListProps) {
   const [filter, setFilter] = useState<ModuleRole | 'all'>('all');

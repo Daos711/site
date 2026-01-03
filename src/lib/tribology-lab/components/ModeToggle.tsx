@@ -66,15 +66,15 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
 
 /**
  * Генерация seed на основе режима
- * Daily: seed = текущая дата (YYYYMMDD)
+ * Daily: seed = текущая дата UTC (YYYYMMDD)
  * Random: seed = случайное число
  */
 export function generateSeed(mode: GameMode): number {
   if (mode === 'daily') {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
     return parseInt(`${year}${month}${day}`, 10);
   }
   return Math.floor(Math.random() * 1000000);
