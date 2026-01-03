@@ -42,7 +42,6 @@ import { ModuleCard, FieldTile } from "@/lib/tribology-lab/components";
 import { SplashScreen } from "@/lib/tribology-lab/components/SplashScreen";
 import { MainMenu } from "@/lib/tribology-lab/components/MainMenu";
 import { Tutorial } from "@/lib/tribology-lab/components/Tutorial";
-import { StartZone, FinishZone, ChannelZonesGradients } from "@/lib/tribology-lab/components/ChannelZones";
 import type { GameMode } from "@/lib/tribology-lab/components/ModeToggle";
 
 // Запасные модули (если не передана колода из меню)
@@ -122,10 +121,6 @@ export default function TribologyLabPage() {
   // Модальное окно выхода
   const [showExitModal, setShowExitModal] = useState(false);
   const wasPausedBeforeModal = useRef(false);
-
-  // Анимации START/FINISH зон
-  const [isSpawning, setIsSpawning] = useState(false);
-  const [isDamaged, setIsDamaged] = useState(false);
 
   // Экраны: splash → menu → tutorial → game
   type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
@@ -516,9 +511,6 @@ export default function TribologyLabPage() {
         spawnedIdsRef.current.add(toSpawn.id);
         const newEnemy = createEnemy(toSpawn.type as any, wave);
         updated.push(newEnemy);
-        // Триггер анимации START
-        setIsSpawning(true);
-        setTimeout(() => setIsSpawning(false), 400);
       }
 
       // 2. Движение врагов
@@ -709,9 +701,6 @@ export default function TribologyLabPage() {
 
       if (livesLost > 0) {
         setLives(l => Math.max(0, l - livesLost));
-        // Триггер анимации FINISH
-        setIsDamaged(true);
-        setTimeout(() => setIsDamaged(false), 500);
       }
 
       if (goldEarned > 0) {
@@ -1296,9 +1285,6 @@ export default function TribologyLabPage() {
           style={{ overflow: 'visible' }}
         >
           <defs>
-            {/* Градиенты для START/FINISH зон */}
-            <ChannelZonesGradients />
-
             {/* Градиент для масляной плёнки с "живостью" */}
             <linearGradient id="oilGradientMain" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#0a1520" />
@@ -2365,19 +2351,41 @@ export default function TribologyLabPage() {
           })}
           </g>
 
-          {/* СТАРТ - маркер входа (стрелка вверх ↑) */}
-          <StartZone
-            cx={innerOffset + (conveyorWidth - innerOffset) / 2}
-            cy={totalHeight}
-            isSpawning={isSpawning}
-          />
+          {/* СТАРТ - бирюзовый патрубок (касается обводки панели) */}
+          <g>
+            {/* Свечение */}
+            <ellipse cx={(innerOffset + conveyorWidth - 2) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#startGlow)" />
+            {/* Патрубок */}
+            <rect x={innerOffset} y={totalHeight - 6} width={conveyorWidth - innerOffset - 2} height={12} rx={3} fill="#0a2e2a" stroke="#0d9488" strokeWidth={1.5} />
+            {/* Щель с тенью */}
+            <rect x={innerOffset + 8} y={totalHeight - 2} width={conveyorWidth - innerOffset - 18} height={4} rx={2} fill="#051515" style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))' }} />
+            {/* Мелкие частицы */}
+            <circle cx={(innerOffset + conveyorWidth - 2) / 2 - 15} cy={totalHeight - 18} r={2} fill="rgba(20, 184, 166, 0.4)" />
+            <circle cx={(innerOffset + conveyorWidth - 2) / 2 + 20} cy={totalHeight - 30} r={1.5} fill="rgba(20, 184, 166, 0.3)" />
+          </g>
 
-          {/* ФИНИШ - маркер выхода (стрелка вниз ↓) */}
-          <FinishZone
-            cx={totalWidth - innerOffset - (conveyorWidth - innerOffset) / 2}
-            cy={totalHeight}
-            isDamaged={isDamaged}
-          />
+          {/* ФИНИШ - красно-янтарная горловина (касается обводки панели) */}
+          {/* Свечение с пульсацией */}
+          <ellipse cx={totalWidth - (conveyorWidth + innerOffset + 2) / 2} cy={totalHeight + 3} rx={(conveyorWidth - innerOffset - 2) * 0.45} ry={12} fill="url(#finishGlow)">
+            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite" />
+          </ellipse>
+          <g>
+            {/* Горловина */}
+            <path
+              d={`
+                M ${totalWidth - conveyorWidth + 2} ${totalHeight - 4}
+                Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 8} ${totalWidth - innerOffset} ${totalHeight - 4}
+                L ${totalWidth - innerOffset - 3} ${totalHeight + 6}
+                Q ${totalWidth - (conveyorWidth + innerOffset) / 2} ${totalHeight + 18} ${totalWidth - conveyorWidth + 5} ${totalHeight + 6}
+                Z
+              `}
+              fill="#1a0f0a"
+              stroke="#8b3a2a"
+              strokeWidth={1.5}
+            />
+            {/* Глубокое затемнение внутри */}
+            <ellipse cx={totalWidth - (conveyorWidth + innerOffset) / 2} cy={totalHeight + 6} rx={(conveyorWidth - innerOffset - 2) * 0.35} ry={6} fill="url(#finishInnerDark)" />
+          </g>
 
           {/* Карман магазина — расширен до бортиков */}
           <rect
