@@ -48,7 +48,8 @@ export function LeaderboardModal({
     const updateTimer = () => {
       const now = new Date();
       const tomorrow = new Date(now);
-      tomorrow.setUTCHours(24, 0, 0, 0);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setUTCHours(0, 0, 0, 0);
       const diff = tomorrow.getTime() - now.getTime();
 
       const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -119,8 +120,8 @@ export function LeaderboardModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(0, 0, 0, 0.8)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(0, 0, 0, 0.95)',
+        backdropFilter: 'blur(8px)',
       }}
       onClick={onClose}
     >

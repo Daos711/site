@@ -254,7 +254,6 @@ export async function submitRun(
   }
 
   const data = await insertRes.json();
-  console.log("Run submitted successfully:", data);
   const run = Array.isArray(data) ? data[0] : data;
 
   // Очищаем кэш чтобы новый результат сразу появился
