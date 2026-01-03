@@ -99,14 +99,6 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Подсказка по волне
-  const getTip = () => {
-    if (wave >= 20) return "Не хватает DPS — добавь Лазер или Сепаратор";
-    if (wave >= 15) return "Коррозия режет урон — Ингибитор рядом с модулями";
-    if (wave >= 10) return "Волна 10+ содержит влагу — попробуй Деэмульгатор";
-    return "Улучшай модули до L3+ для большего урона";
-  };
-
   // Анимация появления панели
   useEffect(() => {
     if (isOpen) {
@@ -241,24 +233,6 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
           </div>
         </div>
 
-        {/* Рекомендации */}
-        <div
-          className="mb-6"
-          style={{
-            padding: '12px',
-            background: 'rgba(50,214,255,0.05)',
-            borderLeft: '3px solid #32D6FF',
-            borderRadius: '4px',
-          }}
-        >
-          <div style={{ fontSize: '14px', color: '#32D6FF', marginBottom: '8px' }}>
-            💡 Рекомендации
-          </div>
-          <p style={{ fontSize: '13px', color: '#C5D1DE' }}>
-            {getTip()}
-          </p>
-        </div>
-
         {/* Кнопки */}
         <button
           onClick={onRestart}
@@ -345,6 +319,218 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, onRestart, onMa
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PAUSE MODAL — Испытание приостановлено
+// ═══════════════════════════════════════════════════════════════════════════
+interface PauseModalProps {
+  isOpen: boolean;
+  onResume: () => void;
+  onMainMenu: () => void;
+}
+
+function PauseModal({ isOpen, onResume, onMainMenu }: PauseModalProps) {
+  const [showPanel, setShowPanel] = useState(false);
+
+  // Анимация появления панели
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setShowPanel(true), 100);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPanel(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{
+        zIndex: 95,
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(12px)',
+        // Шум/сканер эффект
+        backgroundImage: `
+          linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(50, 214, 255, 0.03) 2px,
+            rgba(50, 214, 255, 0.03) 4px
+          )
+        `,
+        animation: 'pause-scanlines 60s linear infinite',
+      }}
+    >
+      {/* Центральная панель */}
+      <div
+        className="relative"
+        style={{
+          width: 'min(420px, 85vw)',
+          padding: '32px',
+          background: '#0F1419',
+          border: '2px solid #32D6FF',
+          borderRadius: '16px',
+          boxShadow: '0 12px 48px rgba(0,0,0,0.8), 0 0 30px rgba(50,214,255,0.15)',
+          transform: showPanel ? 'scale(1)' : 'scale(0.9)',
+          opacity: showPanel ? 1 : 0,
+          transition: 'transform 0.3s ease-out, opacity 0.3s ease-out',
+        }}
+      >
+        {/* Штамп PAUSED (фоновый) */}
+        <div
+          className="absolute pointer-events-none select-none"
+          style={{
+            top: '20px',
+            right: '20px',
+            fontSize: '14px',
+            fontWeight: 900,
+            color: 'rgba(50,214,255,0.08)',
+            letterSpacing: '0.2em',
+            transform: 'rotate(-12deg)',
+          }}
+        >
+          PAUSED
+        </div>
+
+        {/* LED индикатор + заголовок */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#FF6B35',
+              boxShadow: '0 0 12px rgba(255,107,53,0.7)',
+              animation: 'paused-blink 1.5s ease-in-out infinite',
+            }}
+          />
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              color: '#7A8A99',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+            }}
+          >
+            PAUSED
+          </span>
+        </div>
+
+        {/* Иконка паузы */}
+        <div className="flex justify-center mb-8">
+          <svg
+            width="80"
+            height="80"
+            viewBox="0 0 80 80"
+            style={{ color: 'rgba(50,214,255,0.15)' }}
+          >
+            <rect x="20" y="15" width="15" height="50" fill="currentColor" rx="3"/>
+            <rect x="45" y="15" width="15" height="50" fill="currentColor" rx="3"/>
+          </svg>
+        </div>
+
+        {/* Заголовок */}
+        <h2
+          className="text-center mb-10"
+          style={{
+            fontSize: '20px',
+            fontWeight: 700,
+            color: '#32D6FF',
+            letterSpacing: '0.08em',
+          }}
+        >
+          ИСПЫТАНИЕ ПРИОСТАНОВЛЕНО
+        </h2>
+
+        {/* Кнопка "Возобновить" */}
+        <button
+          onClick={onResume}
+          className="w-full mb-3 transition-all"
+          style={{
+            height: '56px',
+            background: '#32D6FF',
+            color: '#0B0F14',
+            fontSize: '16px',
+            fontWeight: 700,
+            border: 'none',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            animation: 'pulse-resume 2s ease-in-out infinite',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#7dd3fc';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(50,214,255,0.4)';
+            e.currentTarget.style.animation = 'none';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#32D6FF';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.animation = 'pulse-resume 2s ease-in-out infinite';
+          }}
+        >
+          Возобновить испытание
+        </button>
+
+        {/* Кнопка "В меню" */}
+        <button
+          onClick={onMainMenu}
+          className="w-full mb-6 transition-all"
+          style={{
+            height: '48px',
+            background: 'transparent',
+            color: '#7A8A99',
+            fontSize: '15px',
+            fontWeight: 600,
+            border: '1px solid #2A3441',
+            borderRadius: '12px',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#32D6FF';
+            e.currentTarget.style.color = '#C5D1DE';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#2A3441';
+            e.currentTarget.style.color = '#7A8A99';
+          }}
+        >
+          В меню
+        </button>
+
+        {/* Подсказка ESC */}
+        <p
+          className="text-center"
+          style={{ fontSize: '12px', color: '#7A8A99' }}
+        >
+          Нажми ESC чтобы продолжить
+        </p>
+      </div>
+
+      {/* CSS анимации */}
+      <style jsx>{`
+        @keyframes paused-blink {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1.0; }
+        }
+        @keyframes pulse-resume {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+        @keyframes pause-scanlines {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 100vh; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function TribologyLabPage() {
   const [wave, setWave] = useState(1);
   const [lives, setLives] = useState(INITIAL_LIVES);
@@ -379,6 +565,7 @@ export default function TribologyLabPage() {
   // DEBUG: Скорость игры (1 = нормальная, 5 = быстрая)
   const [gameSpeed, setGameSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
+  const [showPauseModal, setShowPauseModal] = useState(false);
   const pauseTimeRef = useRef(0);      // Накопленное время на паузе
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
@@ -449,6 +636,8 @@ export default function TribologyLabPage() {
     setGamePhase('preparing');
     activeBarriersRef.current = [];
     setActiveBarriers([]);
+    setAttackEffects([]);
+    setDeathEffects([]);
     setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
@@ -503,6 +692,37 @@ export default function TribologyLabPage() {
     setGamePhase('preparing');
     activeBarriersRef.current = [];
     setActiveBarriers([]);
+    setAttackEffects([]);
+    setDeathEffects([]);
+    setGameStarted(false);
+    setNextWaveCountdown(0);
+    spawnedIdsRef.current.clear();
+    // Возврат в главное меню
+    setScreen('menu');
+  }, []);
+
+  // Pause Modal: Возобновить игру
+  const handlePauseResume = useCallback(() => {
+    setShowPauseModal(false);
+    setIsPaused(false);
+  }, []);
+
+  // Pause Modal: В меню
+  const handlePauseMainMenu = useCallback(() => {
+    setShowPauseModal(false);
+    setIsPaused(false);
+    // Полный сброс состояния
+    setWave(1);
+    setLives(INITIAL_LIVES);
+    setGold(INITIAL_GOLD);
+    setModules([]);
+    setEnemies([]);
+    enemiesRef.current = [];
+    setGamePhase('preparing');
+    activeBarriersRef.current = [];
+    setActiveBarriers([]);
+    setAttackEffects([]);
+    setDeathEffects([]);
     setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
@@ -524,6 +744,8 @@ export default function TribologyLabPage() {
     setGamePhase('preparing');
     activeBarriersRef.current = [];
     setActiveBarriers([]);
+    setAttackEffects([]);
+    setDeathEffects([]);
     setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
@@ -556,6 +778,8 @@ export default function TribologyLabPage() {
     setGamePhase('preparing');
     activeBarriersRef.current = [];
     setActiveBarriers([]);
+    setAttackEffects([]);
+    setDeathEffects([]);
     setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
@@ -743,18 +967,31 @@ export default function TribologyLabPage() {
     spawnQueueRef.current = spawnQueue;
   }, [spawnQueue]);
 
-  // Обработчик клавиши D для Dev-панели
+  // Обработчик клавиши D для Dev-панели и ESC для паузы
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // D — dev-панель
       if (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') {
         // Не активируем если фокус в input
         if (document.activeElement?.tagName === 'INPUT') return;
         setDevMode(prev => !prev);
       }
+      // ESC — пауза (только во время игры)
+      if (e.key === 'Escape' && screen === 'game' && gamePhase === 'wave' && !showGameOver && !showExitModal) {
+        if (showPauseModal) {
+          // Закрыть паузу
+          setShowPauseModal(false);
+          setIsPaused(false);
+        } else {
+          // Открыть паузу
+          setIsPaused(true);
+          setShowPauseModal(true);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [screen, gamePhase, showGameOver, showExitModal, showPauseModal]);
 
   // Парсинг URL параметра ?deck= для тестовой колоды
   useEffect(() => {
@@ -1156,6 +1393,9 @@ export default function TribologyLabPage() {
 
   // Начало перетаскивания из магазина
   const handleShopDragStart = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+    // Блокировка на паузе
+    if (isPaused) return;
+
     const moduleType = shop[index];
     const config = MODULES[moduleType];
     if (gold < config.basePrice) return;
@@ -1176,6 +1416,9 @@ export default function TribologyLabPage() {
 
   // Начало перетаскивания с поля
   const handleFieldDragStart = (e: React.MouseEvent | React.TouchEvent, module: Module) => {
+    // Блокировка на паузе
+    if (isPaused) return;
+
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
@@ -1555,7 +1798,17 @@ export default function TribologyLabPage() {
               {isPaused ? '⏸️ ПАУЗА' : `🔥 Осталось: ${enemies.length + spawnQueue.length}`}
             </div>
             <button
-              onClick={() => setIsPaused(p => !p)}
+              onClick={() => {
+                if (isPaused) {
+                  // Возобновить игру
+                  setShowPauseModal(false);
+                  setIsPaused(false);
+                } else {
+                  // Поставить на паузу
+                  setIsPaused(true);
+                  setShowPauseModal(true);
+                }
+              }}
               className="px-3 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-sm"
               style={{
                 background: isPaused
@@ -4013,7 +4266,15 @@ export default function TribologyLabPage() {
                 🗑️ Очистить поле
               </button>
               <button
-                onClick={() => setIsPaused(p => !p)}
+                onClick={() => {
+                  if (isPaused) {
+                    setShowPauseModal(false);
+                    setIsPaused(false);
+                  } else {
+                    setIsPaused(true);
+                    setShowPauseModal(true);
+                  }
+                }}
                 className={`p-2 rounded-lg border transition-all text-sm ${
                   isPaused
                     ? 'bg-green-900/30 border-green-600/30 text-green-400'
@@ -4145,6 +4406,13 @@ export default function TribologyLabPage() {
           </div>
         </div>
       )}
+
+      {/* Pause модалка */}
+      <PauseModal
+        isOpen={showPauseModal}
+        onResume={handlePauseResume}
+        onMainMenu={handlePauseMainMenu}
+      />
 
       {/* Game Over модалка */}
       <GameOverModal
