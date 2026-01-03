@@ -145,7 +145,7 @@ export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedT
   // Описания режимов
   const modeDescriptions: Record<GameMode, string> = {
     daily: 'Один набор на сегодня для всех',
-    random: 'Случайная колода каждый запуск',
+    random: 'Случайный набор каждый запуск',
   };
 
   return (

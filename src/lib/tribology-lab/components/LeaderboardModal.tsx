@@ -312,7 +312,7 @@ function DailyTab({
         </div>
         {dailyDeck && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: '#9CA3AF', fontSize: 12 }}>Колода дня:</span>
+            <span style={{ color: '#9CA3AF', fontSize: 12 }}>Набор дня:</span>
             <ModuleDeckIconsLarge modules={dailyDeck} />
           </div>
         )}
@@ -385,7 +385,7 @@ function RandomTab({
               gap: 6,
             }}
           >
-            <span>Моя колода</span>
+            <span>Мой набор</span>
             <ModuleDeckIcons modules={currentDeck} size={14} gap={2} showTooltip={false} />
           </button>
         )}
@@ -504,7 +504,7 @@ function MyRecordsTab({ runs }: { runs: TribolabRun[] }) {
         >
           <div>Дата</div>
           <div>Режим</div>
-          <div style={{ textAlign: 'center' }}>Колода</div>
+          <div style={{ textAlign: 'center' }}>Набор</div>
           <div style={{ textAlign: 'center' }}>Убито</div>
           <div style={{ textAlign: 'right' }}>Волна</div>
         </div>
@@ -615,7 +615,7 @@ function LeaderboardTable({
       >
         <div>#</div>
         <div>Игрок</div>
-        {showDeck && <div style={{ textAlign: 'center' }}>Колода</div>}
+        {showDeck && <div style={{ textAlign: 'center' }}>Набор</div>}
         <div style={{ textAlign: 'center' }}>Волна</div>
         <div style={{ textAlign: 'center' }}>Убито</div>
         <div style={{ textAlign: 'right' }}>Время</div>
@@ -679,7 +679,7 @@ function LeaderboardTable({
               )}
             </div>
 
-            {/* Колода */}
+            {/* Набор */}
             {showDeck && (
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <ModuleDeckIcons
