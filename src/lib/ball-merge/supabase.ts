@@ -152,3 +152,46 @@ export function setPlayerName(name: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem("ballMergePlayerName", name);
 }
+
+// ==================== PENDING RESULT (для OAuth) ====================
+
+export interface PendingBallMergeResult {
+  score: number;
+  timestamp: number; // для проверки актуальности
+}
+
+const PENDING_RESULT_KEY = 'ballmerge_pending_result';
+const PENDING_RESULT_MAX_AGE = 5 * 60 * 1000; // 5 минут
+
+export function savePendingResult(score: number): void {
+  if (typeof window === 'undefined') return;
+  const data: PendingBallMergeResult = {
+    score,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(data));
+}
+
+export function getPendingResult(): PendingBallMergeResult | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(PENDING_RESULT_KEY);
+  if (!raw) return null;
+
+  try {
+    const data: PendingBallMergeResult = JSON.parse(raw);
+    // Проверяем актуальность (не старше 5 минут)
+    if (Date.now() - data.timestamp > PENDING_RESULT_MAX_AGE) {
+      clearPendingResult();
+      return null;
+    }
+    return data;
+  } catch {
+    clearPendingResult();
+    return null;
+  }
+}
+
+export function clearPendingResult(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PENDING_RESULT_KEY);
+}

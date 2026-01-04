@@ -54,6 +54,9 @@ import {
   setPlayerNickname,
   submitRun,
   generateDeckKey,
+  savePendingResult,
+  getPendingResult,
+  clearPendingResult,
 } from "@/lib/tribology-lab/supabase";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -105,9 +108,12 @@ interface GameOverModalProps {
   onShowLeaderboard: () => void;
   isAuthenticated: boolean;
   onSignIn: () => void;
+  // Для сохранения pending result перед OAuth
+  gameMode: 'daily' | 'random';
+  deck: string[];
 }
 
-function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onRestart, onMainMenu, onShowLeaderboard, isAuthenticated, onSignIn }: GameOverModalProps) {
+function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onRestart, onMainMenu, onShowLeaderboard, isAuthenticated, onSignIn, gameMode, deck }: GameOverModalProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [localNickname, setLocalNickname] = useState(nickname);
   const [nicknameSaved, setNicknameSaved] = useState(false);
@@ -362,7 +368,18 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
               Войдите, чтобы сохранить результат в рейтинг
             </p>
             <button
-              onClick={onSignIn}
+              onClick={() => {
+                // Сохраняем результат перед OAuth редиректом
+                savePendingResult({
+                  gameMode,
+                  deck,
+                  wave,
+                  kills,
+                  livesLeft: 0,
+                  timeMs: time * 1000,
+                });
+                onSignIn();
+              }}
               style={{
                 padding: '10px 24px',
                 background: '#FFFFFF',
@@ -809,6 +826,9 @@ export default function TribologyLabPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [playerNickname, setPlayerNicknameState] = useState<string>('');
 
+  // Уведомление о сохранении pending result после OAuth
+  const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
+
   // Авторизация (из общего контекста)
   const { user: authUser, loading: authLoading, playerId, signIn, signOut: handleSignOut } = useAuth();
 
@@ -831,6 +851,41 @@ export default function TribologyLabPage() {
     const nick = getPlayerNickname();
     setPlayerNicknameState(nick);
   }, []);
+
+  // Проверка и отправка pending result после OAuth
+  useEffect(() => {
+    if (authUser && !authLoading && playerId) {
+      const pending = getPendingResult();
+      if (pending) {
+        const nick = getPlayerNickname();
+        if (nick) {
+          (async () => {
+            try {
+              await getOrCreateProfile(playerId, nick);
+              await submitRun(
+                playerId,
+                pending.gameMode,
+                pending.deck,
+                pending.wave,
+                pending.kills,
+                pending.livesLeft,
+                pending.timeMs
+              );
+              clearPendingResult();
+              setPendingResultMessage(`Результат сохранён! Волна ${pending.wave}, ${pending.kills} врагов`);
+              // Автоматически скрываем через 5 секунд
+              setTimeout(() => setPendingResultMessage(null), 5000);
+            } catch (err) {
+              console.error('Ошибка отправки pending result:', err);
+              clearPendingResult();
+              setPendingResultMessage('Ошибка сохранения результата');
+              setTimeout(() => setPendingResultMessage(null), 5000);
+            }
+          })();
+        }
+      }
+    }
+  }, [authUser, authLoading, playerId]);
 
   // Сохраняем флаг туториала
   const markTutorialCompleted = useCallback(() => {
@@ -1881,6 +1936,30 @@ export default function TribologyLabPage() {
           playerId={playerId}
           highlightPlayerId={playerId}
         />
+        {/* Уведомление о сохранении pending result */}
+        {pendingResultMessage && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 200,
+              background: pendingResultMessage.includes('Ошибка')
+                ? 'rgba(255, 59, 77, 0.95)'
+                : 'rgba(46, 204, 113, 0.95)',
+              color: '#fff',
+              padding: '12px 24px',
+              borderRadius: 12,
+              fontWeight: 600,
+              fontSize: 14,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              animation: 'slideDown 0.3s ease-out',
+            }}
+          >
+            {pendingResultMessage}
+          </div>
+        )}
       </>
     );
   }
@@ -4831,6 +4910,8 @@ export default function TribologyLabPage() {
         onShowLeaderboard={() => setShowLeaderboard(true)}
         isAuthenticated={!!authUser}
         onSignIn={signIn}
+        gameMode={gameMode}
+        deck={testDeck || menuDeck || FALLBACK_SHOP}
       />
 
       {/* Лидерборд модалка */}
@@ -4841,6 +4922,31 @@ export default function TribologyLabPage() {
         playerId={playerId}
         highlightPlayerId={playerId}
       />
+
+      {/* Уведомление о сохранении pending result */}
+      {pendingResultMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: pendingResultMessage.includes('Ошибка')
+              ? 'rgba(255, 59, 77, 0.95)'
+              : 'rgba(46, 204, 113, 0.95)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: 12,
+            fontWeight: 600,
+            fontSize: 14,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            animation: 'slideDown 0.3s ease-out',
+          }}
+        >
+          {pendingResultMessage}
+        </div>
+      )}
 
     </div>
   );

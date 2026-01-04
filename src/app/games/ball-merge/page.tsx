@@ -28,6 +28,9 @@ import {
   getPlayerName,
   setPlayerName,
   BallMergeScore,
+  savePendingResult,
+  getPendingResult,
+  clearPendingResult,
 } from "@/lib/ball-merge/supabase";
 import { useAuth } from "@/components/AuthProvider";
 
@@ -281,6 +284,9 @@ export default function BallMergePage() {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [isNewRecord, setIsNewRecord] = useState(false);
 
+  // Уведомление о сохранении pending result после OAuth
+  const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
+
   // Загрузка имени игрока и таблицы лидеров
   useEffect(() => {
     const savedName = getPlayerName();
@@ -289,6 +295,38 @@ export default function BallMergePage() {
     }
     fetchLeaderboard();
   }, []);
+
+  // Проверка и отправка pending result после OAuth
+  useEffect(() => {
+    if (authUser && playerId) {
+      const pending = getPendingResult();
+      if (pending) {
+        const name = getPlayerName();
+        if (name) {
+          (async () => {
+            try {
+              const result = await submitBallMergeScore(playerId, name, pending.score);
+              clearPendingResult();
+              if (result.success) {
+                setPendingResultMessage(result.isNewRecord
+                  ? `Новый рекорд сохранён! ${pending.score} очков`
+                  : `Результат сохранён! ${pending.score} очков`);
+                await fetchLeaderboard();
+              } else {
+                setPendingResultMessage('Ошибка сохранения результата');
+              }
+              setTimeout(() => setPendingResultMessage(null), 5000);
+            } catch (err) {
+              console.error('Ошибка отправки pending result:', err);
+              clearPendingResult();
+              setPendingResultMessage('Ошибка сохранения результата');
+              setTimeout(() => setPendingResultMessage(null), 5000);
+            }
+          })();
+        }
+      }
+    }
+  }, [authUser, playerId]);
 
   const fetchLeaderboard = async () => {
     setLeaderboardLoading(true);
@@ -925,7 +963,11 @@ export default function BallMergePage() {
                       Войдите, чтобы сохранить результат в рейтинг
                     </p>
                     <button
-                      onClick={() => signIn()}
+                      onClick={() => {
+                        // Сохраняем результат перед OAuth редиректом
+                        savePendingResult(score);
+                        signIn();
+                      }}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 rounded-lg text-gray-900 font-medium transition-colors"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24">
@@ -1038,6 +1080,30 @@ export default function BallMergePage() {
           </div>
         </div>
       </div>
+
+      {/* Уведомление о сохранении pending result */}
+      {pendingResultMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: pendingResultMessage.includes('Ошибка')
+              ? 'rgba(255, 59, 77, 0.95)'
+              : 'rgba(46, 204, 113, 0.95)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: 12,
+            fontWeight: 600,
+            fontSize: 14,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          }}
+        >
+          {pendingResultMessage}
+        </div>
+      )}
     </div>
   );
 }
