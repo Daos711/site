@@ -19,7 +19,8 @@ export function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const { user, loading, signIn, signOut } = useAuth();
 
   const handleSignIn = () => {
@@ -38,7 +39,12 @@ export function Navigation() {
   // Закрыть меню при клике вне его
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isOutsideDesktop = desktopMenuRef.current && !desktopMenuRef.current.contains(target);
+      const isOutsideMobile = mobileMenuRef.current && !mobileMenuRef.current.contains(target);
+
+      // Закрываем только если клик вне обоих меню
+      if (isOutsideDesktop && isOutsideMobile) {
         setUserMenuOpen(false);
       }
     };
@@ -81,7 +87,7 @@ export function Navigation() {
             })}
 
             {/* Auth button */}
-            <div className="ml-2 pl-2 border-l border-border relative" ref={userMenuRef}>
+            <div className="ml-2 pl-2 border-l border-border relative" ref={desktopMenuRef}>
               {loading ? (
                 <div className="w-8 h-8 rounded-full bg-card animate-pulse" />
               ) : user ? (
@@ -110,7 +116,10 @@ export function Navigation() {
                         </div>
                       </div>
                       <button
-                        onClick={handleSignOut}
+                        onClick={() => {
+                          console.log('Sign out button clicked!');
+                          handleSignOut();
+                        }}
                         className="w-full px-3 py-2 text-left text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors flex items-center gap-2"
                       >
                         <LogOut size={16} />
@@ -134,7 +143,7 @@ export function Navigation() {
           {/* Mobile: Auth + Menu button */}
           <div className="md:hidden flex items-center gap-2">
             {/* Mobile Auth button */}
-            <div className="relative" ref={userMenuRef}>
+            <div className="relative" ref={mobileMenuRef}>
               {loading ? (
                 <div className="w-8 h-8 rounded-full bg-card animate-pulse" />
               ) : user ? (
@@ -163,7 +172,10 @@ export function Navigation() {
                         </div>
                       </div>
                       <button
-                        onClick={handleSignOut}
+                        onClick={() => {
+                          console.log('Sign out button clicked!');
+                          handleSignOut();
+                        }}
                         className="w-full px-3 py-2 text-left text-sm text-muted hover:text-foreground hover:bg-card-hover transition-colors flex items-center gap-2"
                       >
                         <LogOut size={16} />
