@@ -46,6 +46,7 @@ export function ModuleCard({
         '--module-accent': palette.light,
         '--module-glow': palette.glow,
         '--module-dark': palette.dark,
+        touchAction: 'none',  // Предотвращаем скролл при перетаскивании на touch
       } as React.CSSProperties}
     >
       {/* Текстура — диагональная насечка */}

@@ -1768,6 +1768,10 @@ export default function TribologyLabPage() {
     if (!dragState) return;
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
+      // Блокируем скролл страницы при перетаскивании на touch-устройствах
+      if ('touches' in e) {
+        e.preventDefault();
+      }
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       setDragState(prev => prev ? { ...prev, currentX: clientX, currentY: clientY } : null);
@@ -1846,7 +1850,8 @@ export default function TribologyLabPage() {
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchmove', handleMove);
+    // passive: false нужен для preventDefault() на touch-событиях
+    window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
 
     return () => {
@@ -1978,10 +1983,12 @@ export default function TribologyLabPage() {
   // screen === 'game' — основной игровой интерфейс
   return (
     <div
-      className="flex flex-col items-center gap-3 py-4"
+      className="flex flex-col items-center gap-2 sm:gap-3 py-2 sm:py-4"
       style={{
         position: 'relative',
         minHeight: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}
     >
       {/* SVG фон — приглушённая гексагональная сетка (ПОД всем контентом) */}
@@ -2126,16 +2133,16 @@ export default function TribologyLabPage() {
       </div>
 
       {/* Заголовок с кнопкой выхода */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={handleOpenExitModal}
-          className="flex items-center gap-1.5 rounded transition-all"
+          className="flex items-center gap-1 sm:gap-1.5 rounded transition-all"
           style={{
-            padding: '3px 8px',
+            padding: '2px 6px',
             background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
             border: '1px solid #30363d',
             color: '#9CA3AF',
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 500,
           }}
           onMouseEnter={(e) => {
@@ -2153,13 +2160,13 @@ export default function TribologyLabPage() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          <span>Выйти</span>
+          <span className="hidden sm:inline">Выйти</span>
         </button>
-        <h1 className="text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
+        <h1 className="text-xl sm:text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
       </div>
 
       {/* Статус-бар */}
-      <div className="flex items-center gap-6 text-xl mb-2">
+      <div className="flex items-center gap-3 sm:gap-6 text-base sm:text-xl mb-1 sm:mb-2">
         <div className="flex items-center gap-2">
           <span className="text-gray-400">Волна:</span>
           <span className="font-bold text-white">{wave}</span>
@@ -2294,7 +2301,7 @@ export default function TribologyLabPage() {
       </div>
 
       {/* DEBUG: Панель отладки */}
-      <div className="flex items-center gap-3 text-sm mb-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
+      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm mb-1 sm:mb-2 bg-gray-800/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg">
         <span className="text-gray-400">⚡ Скорость игры:</span>
         {[1, 3, 5, 10].map(speed => (
           <button
@@ -3666,6 +3673,7 @@ export default function TribologyLabPage() {
                     {module && !isDraggingThis && (
                       <div
                         className={`absolute inset-0 cursor-grab active:cursor-grabbing ${isMerging ? 'animate-merge' : ''}`}
+                        style={{ touchAction: 'none' }}
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
