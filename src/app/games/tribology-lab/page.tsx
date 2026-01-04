@@ -1273,11 +1273,11 @@ export default function TribologyLabPage() {
     spawnQueueRef.current = spawnQueue;
   }, [spawnQueue]);
 
-  // Обработчик клавиши D для Dev-панели и ESC для паузы
+  // Обработчик клавиши D для Dev-панели (только dev) и ESC для паузы
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // D — dev-панель
-      if (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') {
+      // D — dev-панель (только в development)
+      if (process.env.NODE_ENV === 'development' && (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В')) {
         // Не активируем если фокус в input
         if (document.activeElement?.tagName === 'INPUT') return;
         setDevMode(prev => !prev);
@@ -2305,8 +2305,8 @@ export default function TribologyLabPage() {
             {speed}x
           </button>
         ))}
-        {/* Кнопки волн скрыты по умолчанию, видны только в devMode */}
-        {devMode && (
+        {/* Кнопки волн скрыты по умолчанию, видны только в devMode (только dev) */}
+        {process.env.NODE_ENV === 'development' && devMode && (
           <>
             <span className="text-gray-500 mx-2">|</span>
             <span className="text-gray-400">Волна:</span>
@@ -3638,8 +3638,8 @@ export default function TribologyLabPage() {
                   return dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
                 })();
 
-                // DEV: Подсветка для выбранного модуля
-                const isDevTarget = devMode && selectedDevModule && !module;
+                // DEV: Подсветка для выбранного модуля (только dev)
+                const isDevTarget = process.env.NODE_ENV === 'development' && devMode && selectedDevModule && !module;
 
                 return (
                   <div
@@ -3658,7 +3658,7 @@ export default function TribologyLabPage() {
                       boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.9), inset 0 -1px 0 rgba(255,255,255,0.02)',
                     }}
                     onClick={() => {
-                      if (devMode && selectedDevModule) {
+                      if (process.env.NODE_ENV === 'development' && devMode && selectedDevModule) {
                         devPlaceModule(x, y);
                       }
                     }}
@@ -4598,7 +4598,6 @@ export default function TribologyLabPage() {
       {/* Подсказка */}
       <p className="text-gray-500 text-sm text-center max-w-lg mt-2">
         Перетащи модуль из магазина на поле. Два одинаковых модуля одного уровня можно объединить.
-        <span className="text-gray-600 ml-2">(D — dev-панель)</span>
       </p>
 
       {/* ═══════════════════════════════════════════════════════════════
