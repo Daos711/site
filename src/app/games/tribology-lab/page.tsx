@@ -1714,6 +1714,8 @@ export default function TribologyLabPage() {
     const config = MODULES[moduleType];
     if (gold < config.basePrice) return;
 
+    playUIClick(); // Звук при взятии модуля
+
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
@@ -2216,6 +2218,7 @@ export default function TribologyLabPage() {
             {/* Кнопка паузы — cyan в стиле лаборатории */}
             <button
               onClick={() => {
+                playUIClick();
                 if (isPaused) {
                   setShowPauseModal(false);
                   setIsPaused(false);
@@ -4509,6 +4512,7 @@ export default function TribologyLabPage() {
             prepTime={nextWaveCountdown}
             nextWave={wave}
             onStart={startWave}
+            onUIClick={playUIClick}
             totalWidth={totalWidth}
             conveyorWidth={conveyorWidth}
           />

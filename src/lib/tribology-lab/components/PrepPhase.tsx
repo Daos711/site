@@ -6,12 +6,13 @@ interface PrepPhaseProps {
   prepTime: number;
   nextWave: number;
   onStart: () => void;
+  onUIClick?: () => void;
   // Позиционирование на горизонтальном участке канала
   totalWidth: number;
   conveyorWidth: number;
 }
 
-export function PrepPhase({ prepTime, nextWave, onStart, totalWidth, conveyorWidth }: PrepPhaseProps) {
+export function PrepPhase({ prepTime, nextWave, onStart, onUIClick, totalWidth, conveyorWidth }: PrepPhaseProps) {
   const isBossWave = nextWave % 5 === 0 && nextWave > 0;
   const accentColor = isBossWave ? '#FF6B35' : '#32D6FF';
 
@@ -56,7 +57,7 @@ export function PrepPhase({ prepTime, nextWave, onStart, totalWidth, conveyorWid
 
       {/* Кнопка СТАРТ */}
       <button
-        onClick={onStart}
+        onClick={() => { onUIClick?.(); onStart(); }}
         style={{
           padding: '10px 24px',
           background: `linear-gradient(135deg, ${accentColor}, ${isBossWave ? '#ff9d7a' : '#7dd3fc'})`,
