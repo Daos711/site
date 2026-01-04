@@ -7,11 +7,19 @@ interface WaveOverlayProps {
   mode: 'daily' | 'random';
   labStandId: number;
   onComplete: () => void;
+  // Позиция и размеры сетки карточек для центрирования
+  gridX: number;
+  gridY: number;
+  gridWidth: number;
+  gridHeight: number;
 }
 
-export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayProps) {
+export function WaveOverlay({ wave, mode, labStandId, onComplete, gridX, gridY, gridWidth, gridHeight }: WaveOverlayProps) {
   const [phase, setPhase] = useState<'enter' | 'hold' | 'exit'>('enter');
   const isBoss = wave % 5 === 0 && wave > 0;
+
+  // Размер шрифта пропорционален размеру сетки
+  const fontSize = Math.min(gridWidth * 0.15, gridHeight * 0.25, 80);
 
   useEffect(() => {
     // Анимация: enter (300ms) → hold (2000ms) → exit (400ms) = 2.7 сек
@@ -33,12 +41,16 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
 
   return (
     <>
-      {/* Фон — лёгкое затемнение (БЕЗ blur!) */}
+      {/* Затемнение — только на области сетки карточек */}
       <div
         style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
+          position: 'absolute',
+          top: gridY,
+          left: gridX,
+          width: gridWidth,
+          height: gridHeight,
+          background: 'rgba(0, 0, 0, 0.5)',
+          borderRadius: 8,
           pointerEvents: 'none',
           zIndex: 80,
           opacity: phase === 'exit' ? 0 : 1,
@@ -46,12 +58,12 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
         }}
       />
 
-      {/* Контейнер текста — БЕЗ РАМКИ, БЕЗ КАРТОЧКИ */}
+      {/* Контейнер текста — в центре сетки карточек */}
       <div
         style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
+          position: 'absolute',
+          top: gridY + gridHeight / 2,
+          left: gridX + gridWidth / 2,
           transform: `translate(-50%, ${phase === 'exit' ? '-60%' : '-50%'}) scale(${phase === 'enter' ? 0.95 : 1})`,
           textAlign: 'center',
           pointerEvents: 'none',
@@ -60,38 +72,52 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
           transition: phase === 'exit'
             ? 'opacity 0.3s ease, transform 0.3s ease'
             : 'opacity 0.2s ease, transform 0.2s ease',
+          // Ограничиваем ширину текста размером сетки
+          maxWidth: gridWidth - 20,
         }}
       >
-        {/* Заголовок — КРУПНЫЙ, ЧЁТКИЙ, БЕЗ BLUR */}
+        {/* Заголовок — размер пропорционален сетке */}
         <h1
           style={{
             margin: 0,
-            fontSize: 'clamp(56px, 12vw, 80px)',
+            fontSize: fontSize,
             fontWeight: 900,
             color: isBoss ? '#FF6B35' : '#FFFFFF',
-            letterSpacing: '0.15em',
+            letterSpacing: '0.1em',
             textShadow: `0 0 30px ${glowColor}, 0 0 60px ${glowColorMid}, 0 0 90px ${glowColorWeak}`,
-            // КРИТИЧНО: БЕЗ filter, БЕЗ backdrop-filter
+            whiteSpace: 'nowrap',
           }}
         >
-          ВОЛНА {wave}{isBoss && ' • БОСС'}
+          ВОЛНА {wave}
         </h1>
 
-        {/* Подзаголовок — мелкий, серый, БЕЗ эффектов */}
+        {isBoss && (
+          <p
+            style={{
+              margin: '8px 0 0 0',
+              fontSize: fontSize * 0.4,
+              fontWeight: 700,
+              color: '#FF6B35',
+              letterSpacing: '0.2em',
+              textShadow: `0 0 20px ${glowColor}`,
+            }}
+          >
+            БОСС
+          </p>
+        )}
+
+        {/* Подзаголовок — мелкий, серый */}
         <p
           style={{
-            marginTop: 24,
-            fontSize: 'clamp(14px, 2vw, 16px)',
+            marginTop: 16,
+            fontSize: Math.max(12, fontSize * 0.2),
             fontWeight: 500,
             color: '#A0AEC0',
             letterSpacing: '0.05em',
-            lineHeight: 1.8,
-            // БЕЗ text-shadow!
+            lineHeight: 1.6,
           }}
         >
-          Режим: {mode === 'daily' ? 'Ежедневный' : 'Случайный набор'}
-          <br />
-          Лаб-стенд №{labStandId}
+          {mode === 'daily' ? 'Ежедневный' : 'Случайный'} • Стенд №{labStandId}
         </p>
       </div>
     </>

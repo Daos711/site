@@ -1004,6 +1004,10 @@ export default function TribologyLabPage() {
   const totalWidth = gridWidth + panelPadding * 2 + conveyorWidth * 2;
   const totalHeight = gridHeight + panelPadding * 2 + conveyorWidth;
 
+  // Позиция сетки карточек внутри поля
+  const gridStartX = conveyorWidth + panelPadding;
+  const gridStartY = conveyorWidth + panelPadding;
+
   // Путь для врагов
   const innerOffset = 8;
   const enemyPath = generatePath(totalWidth, totalHeight, conveyorWidth, innerOffset, cornerRadius);
@@ -1848,7 +1852,7 @@ export default function TribologyLabPage() {
         minHeight: '100vh',
       }}
     >
-      {/* SVG фон — приглушённая гексагональная сетка */}
+      {/* SVG фон — приглушённая гексагональная сетка (ПОД всем контентом) */}
       <svg
         style={{
           position: 'fixed',
@@ -1857,7 +1861,7 @@ export default function TribologyLabPage() {
           height: '100%',
           opacity: 0.35,
           pointerEvents: 'none',
-          zIndex: 0,
+          zIndex: -1,
         }}
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -4423,6 +4427,20 @@ export default function TribologyLabPage() {
             conveyorWidth={conveyorWidth}
           />
         )}
+
+        {/* Оверлей "ВОЛНА N" — внутри поля, по центру сетки карточек */}
+        {gamePhase === 'intro_wave' && (
+          <WaveOverlay
+            wave={wave}
+            mode={gameMode}
+            labStandId={labStandId.current}
+            onComplete={startWaveActual}
+            gridX={gridStartX}
+            gridY={gridStartY}
+            gridWidth={gridWidth}
+            gridHeight={gridHeight}
+          />
+        )}
       </div>
 
       {/* Перетаскиваемый модуль */}
@@ -4772,16 +4790,6 @@ export default function TribologyLabPage() {
         currentDeck={testDeck || menuDeck || undefined}
         highlightPlayerId={playerId}
       />
-
-      {/* Оверлей "ВОЛНА N" — ТОЛЬКО в фазе intro_wave */}
-      {gamePhase === 'intro_wave' && (
-        <WaveOverlay
-          wave={wave}
-          mode={gameMode}
-          labStandId={labStandId.current}
-          onComplete={startWaveActual}
-        />
-      )}
 
     </div>
   );
