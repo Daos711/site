@@ -1182,7 +1182,8 @@ export default function TribologyLabPage() {
         : 0;
       const finalTimeMs = finalTime * 1000;
       setGameOverTime(finalTime);
-      // Останавливаем игру и показываем модалку
+      // ПОЛНОСТЬЮ останавливаем игру
+      setGamePhase('defeat');  // Останавливает game loop
       setIsPaused(true);
       setShowGameOver(true);
 
