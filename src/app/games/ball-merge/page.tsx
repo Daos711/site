@@ -873,6 +873,7 @@ export default function BallMergePage() {
             >
               <div
                 className="rounded-full"
+                suppressHydrationWarning
                 style={{
                   width: `${Math.round(Math.min(ball.radius * 0.3, 30))}px`,
                   height: `${Math.round(Math.min(ball.radius * 0.3, 30))}px`,
