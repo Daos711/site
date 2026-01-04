@@ -1983,7 +1983,7 @@ export default function TribologyLabPage() {
   // screen === 'game' — основной игровой интерфейс
   return (
     <div
-      className="flex flex-col items-center gap-2 sm:gap-3 py-2 sm:py-4"
+      className="game-container flex flex-col items-center gap-2 sm:gap-3 py-2 sm:py-4"
       style={{
         position: 'relative',
         minHeight: '100vh',
@@ -1991,6 +1991,21 @@ export default function TribologyLabPage() {
         overflowX: 'hidden',
       }}
     >
+      {/* CSS для адаптивного масштабирования на планшетах в альбомном режиме */}
+      <style jsx>{`
+        @media (max-height: 700px) and (orientation: landscape) {
+          .game-container {
+            transform: scale(0.85);
+            transform-origin: top center;
+          }
+        }
+        @media (max-height: 600px) and (orientation: landscape) {
+          .game-container {
+            transform: scale(0.75);
+            transform-origin: top center;
+          }
+        }
+      `}</style>
       {/* SVG фон — приглушённая гексагональная сетка (ПОД всем контентом) */}
       <svg
         style={{
