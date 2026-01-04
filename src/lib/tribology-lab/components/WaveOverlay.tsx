@@ -14,10 +14,10 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
   const isBoss = wave % 5 === 0 && wave > 0;
 
   useEffect(() => {
-    // Анимация: enter (200ms) → hold (800ms) → exit (300ms)
-    const enterTimer = setTimeout(() => setPhase('hold'), 200);
-    const exitTimer = setTimeout(() => setPhase('exit'), 1000);
-    const completeTimer = setTimeout(onComplete, 1300);
+    // Анимация: enter (300ms) → hold (2000ms) → exit (400ms) = 2.7 сек
+    const enterTimer = setTimeout(() => setPhase('hold'), 300);
+    const exitTimer = setTimeout(() => setPhase('exit'), 2300);
+    const completeTimer = setTimeout(onComplete, 2700);
 
     return () => {
       clearTimeout(enterTimer);

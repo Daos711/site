@@ -13,125 +13,87 @@ export function PrepPhase({ prepTime, nextWave, onStart }: PrepPhaseProps) {
   const accentColor = isBossWave ? '#FF6B35' : '#32D6FF';
 
   return (
+    // Компактная панель ВНИЗУ экрана — НЕ закрывает игровое поле
     <div
       style={{
         position: 'fixed',
-        top: '50%',
+        bottom: 20,
         left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 'min(360px, 85%)',
-        padding: '40px 32px',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '12px 24px',
         background: 'rgba(11, 15, 20, 0.95)',
         border: `2px solid ${accentColor}`,
-        borderRadius: 16,
-        boxShadow: `0 12px 48px rgba(0,0,0,0.8), 0 0 40px ${accentColor}30`,
-        textAlign: 'center',
+        borderRadius: 12,
+        boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 20px ${accentColor}30`,
         zIndex: 85,
       }}
     >
-      {/* Заголовок */}
-      <h2
-        style={{
-          margin: 0,
-          fontSize: 18,
-          fontWeight: 700,
-          color: accentColor,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-        }}
-      >
-        {isBossWave ? '⚠️ Босс-волна!' : 'Подготовка'}
-      </h2>
-
-      {/* Номер волны */}
-      <div
-        style={{
-          margin: '16px 0',
-          fontSize: 14,
-          color: '#9CA3AF',
-        }}
-      >
-        Следующая: <span style={{ color: '#E5E7EB', fontWeight: 600 }}>Волна {nextWave}</span>
+      {/* Инфо о волне */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {isBossWave && (
+          <span style={{ fontSize: 18 }}>⚠️</span>
+        )}
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: '#9CA3AF',
+          }}
+        >
+          Волна {nextWave}
+        </span>
       </div>
 
       {/* Кнопка СТАРТ */}
       <button
         onClick={onStart}
         style={{
-          width: '100%',
-          maxWidth: 240,
-          height: 64,
+          padding: '10px 24px',
           background: `linear-gradient(135deg, ${accentColor}, ${isBossWave ? '#ff9d7a' : '#7dd3fc'})`,
           color: '#0B0F14',
-          fontSize: 18,
+          fontSize: 15,
           fontWeight: 700,
           border: 'none',
-          borderRadius: 12,
+          borderRadius: 8,
           cursor: 'pointer',
-          boxShadow: `0 4px 16px ${accentColor}60`,
-          transition: 'all 0.2s ease',
-          animation: 'pulseStart 2s ease-in-out infinite',
+          boxShadow: `0 2px 12px ${accentColor}50`,
+          transition: 'all 0.15s ease',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.boxShadow = `0 6px 24px ${accentColor}80`;
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = `0 4px 16px ${accentColor}60`;
         }}
       >
-        СТАРТ ВОЛНЫ
+        СТАРТ
       </button>
 
-      {/* Таймер автостарта */}
-      <p
-        style={{
-          marginTop: 16,
-          fontSize: 14,
-          color: '#7A8A99',
-        }}
-      >
-        Автостарт через{' '}
-        <span
-          style={{
-            color: accentColor,
-            fontWeight: 700,
-            fontSize: 16,
-          }}
-        >
-          {prepTime}с
-        </span>
-      </p>
-
-      {/* Прогресс-бар */}
+      {/* Таймер */}
       <div
         style={{
-          marginTop: 12,
-          height: 4,
-          background: '#2D3748',
-          borderRadius: 2,
-          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
         }}
       >
-        <div
+        <span style={{ fontSize: 13, color: '#7A8A99' }}>или через</span>
+        <span
           style={{
-            height: '100%',
-            width: `${(prepTime / 5) * 100}%`,
-            background: accentColor,
-            borderRadius: 2,
-            transition: 'width 1s linear',
+            fontSize: 20,
+            fontWeight: 700,
+            color: accentColor,
+            minWidth: 24,
+            textAlign: 'center',
           }}
-        />
+        >
+          {prepTime}
+        </span>
+        <span style={{ fontSize: 13, color: '#7A8A99' }}>сек</span>
       </div>
-
-      {/* CSS анимации */}
-      <style jsx>{`
-        @keyframes pulseStart {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-        }
-      `}</style>
     </div>
   );
 }
