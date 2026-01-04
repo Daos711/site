@@ -1,9 +1,79 @@
 // Supabase конфигурация для Tribology Lab
+import { createClient, User } from '@supabase/supabase-js';
+
 export const SUPABASE_URL = "https://tuskcdlcbasehlrsrsoe.supabase.co";
 export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1c2tjZGxjYmFzZWhscnNyc29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTM4NzcsImV4cCI6MjA4MTg2OTg3N30.VdfhknWL4SgbMUOxFZKsnAsjI3SUbcyoYXDiONjOjao";
 
+// Supabase клиент для авторизации
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // Текущая версия баланса (инкремент при каждом патче)
 export const BALANCE_VERSION = 2;
+
+// ==================== АВТОРИЗАЦИЯ ====================
+
+export interface AuthUser {
+  id: string;
+  email: string | undefined;
+  name: string | undefined;
+  avatar: string | undefined;
+}
+
+// Вход через Google
+export async function signInWithGoogle(): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: typeof window !== 'undefined' ? window.location.origin + '/games/tribology-lab' : undefined,
+    },
+  });
+  if (error) {
+    console.error('Google sign in error:', error);
+    throw error;
+  }
+}
+
+// Выход
+export async function signOut(): Promise<void> {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('Sign out error:', error);
+    throw error;
+  }
+  // Очищаем кэш лидерборда после выхода
+  clearLeaderboardCache();
+}
+
+// Получить текущего пользователя
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.user_metadata?.full_name || user.user_metadata?.name,
+    avatar: user.user_metadata?.avatar_url,
+  };
+}
+
+// Подписка на изменения авторизации
+export function onAuthStateChange(callback: (user: AuthUser | null) => void): () => void {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      callback({
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+        avatar: session.user.user_metadata?.avatar_url,
+      });
+    } else {
+      callback(null);
+    }
+  });
+
+  return () => subscription.unsubscribe();
+}
 
 // ==================== КЭШИРОВАНИЕ ====================
 
@@ -68,7 +138,7 @@ export function generateDeckKey(modules: string[]): string {
   return modules.slice().sort().join('|');
 }
 
-// Генерация/получение уникального ID игрока
+// Генерация/получение уникального ID игрока (анонимный)
 export function getOrCreatePlayerId(): string {
   const key = "tribolabPlayerId";
   let playerId = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
@@ -79,6 +149,14 @@ export function getOrCreatePlayerId(): string {
     }
   }
   return playerId;
+}
+
+// Получить ID игрока (auth user ID если залогинен, иначе анонимный)
+export function getPlayerId(authUser: AuthUser | null): string {
+  if (authUser) {
+    return authUser.id;
+  }
+  return getOrCreatePlayerId();
 }
 
 // Сохранение/получение никнейма

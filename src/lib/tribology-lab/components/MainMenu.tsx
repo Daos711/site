@@ -8,12 +8,18 @@ import { ModeToggle, GameMode, generateSeed } from './ModeToggle';
 import { MODULES, MODULE_PALETTE, ModuleType } from '../types';
 import { ModuleIcon } from './ModuleIcons';
 import { Handbook } from './handbook';
+import { AuthUser } from '../supabase';
 
 interface MainMenuProps {
   onStart: (seed: number, mode: GameMode, deck: ModuleType[]) => void;
   onTutorial?: () => void;
   onShowLeaderboard?: () => void;
   hasCompletedTutorial: boolean;
+  // Авторизация
+  authUser?: AuthUser | null;
+  onSignIn?: () => void;
+  onSignOut?: () => void;
+  authLoading?: boolean;
 }
 
 /**
@@ -77,7 +83,16 @@ function generateDeck(seed: number): ModuleType[] {
 /**
  * MainMenu — Главное меню "Лаб-стенд"
  */
-export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedTutorial }: MainMenuProps) {
+export function MainMenu({
+  onStart,
+  onTutorial,
+  onShowLeaderboard,
+  hasCompletedTutorial,
+  authUser,
+  onSignIn,
+  onSignOut,
+  authLoading,
+}: MainMenuProps) {
   const [mode, setMode] = useState<GameMode>('daily');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -150,6 +165,106 @@ export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedT
 
   return (
     <LabBackground>
+      {/* Кнопка авторизации — правый верхний угол */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 10,
+        }}
+      >
+        {authLoading ? (
+          <div
+            style={{
+              padding: '8px 16px',
+              background: 'rgba(17, 24, 36, 0.8)',
+              border: `1px solid ${THEME.border}`,
+              borderRadius: 8,
+              color: THEME.textMuted,
+              fontSize: 13,
+            }}
+          >
+            Загрузка...
+          </div>
+        ) : authUser ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {authUser.avatar && (
+              <img
+                src={authUser.avatar}
+                alt=""
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  border: `2px solid ${THEME.accent}`,
+                }}
+              />
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <span style={{ fontSize: 12, color: THEME.textPrimary, fontWeight: 500 }}>
+                {authUser.name || authUser.email || 'Игрок'}
+              </span>
+              <button
+                onClick={onSignOut}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: THEME.textMuted,
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textDecoration: 'underline',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = THEME.danger;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = THEME.textMuted;
+                }}
+              >
+                Выйти
+              </button>
+            </div>
+          </div>
+        ) : onSignIn ? (
+          <button
+            onClick={onSignIn}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 14px',
+              background: 'rgba(17, 24, 36, 0.8)',
+              border: `1px solid ${THEME.border}`,
+              borderRadius: 8,
+              color: THEME.textSecondary,
+              fontSize: 13,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = THEME.accent;
+              e.currentTarget.style.color = THEME.textPrimary;
+              e.currentTarget.style.boxShadow = '0 0 12px rgba(50, 214, 255, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = THEME.border;
+              e.currentTarget.style.color = THEME.textSecondary;
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Войти
+          </button>
+        ) : null}
+      </div>
+
       <div
         style={{
           position: 'absolute',

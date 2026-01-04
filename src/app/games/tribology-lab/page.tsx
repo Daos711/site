@@ -54,6 +54,12 @@ import {
   setPlayerNickname,
   submitRun,
   generateDeckKey,
+  signInWithGoogle,
+  signOut,
+  getCurrentUser,
+  onAuthStateChange,
+  getPlayerId,
+  AuthUser,
 } from "@/lib/tribology-lab/supabase";
 
 // Запасные модули (если не передана колода из меню)
@@ -768,6 +774,10 @@ export default function TribologyLabPage() {
   const [playerId, setPlayerId] = useState<string>('');
   const [playerNickname, setPlayerNicknameState] = useState<string>('');
 
+  // Авторизация
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   // Экраны: splash → menu → tutorial → game
   type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
   const [screen, setScreen] = useState<ScreenState>('splash');
@@ -784,10 +794,23 @@ export default function TribologyLabPage() {
 
   // Инициализация playerId и nickname для лидерборда
   useEffect(() => {
-    const id = getOrCreatePlayerId();
-    setPlayerId(id);
     const nick = getPlayerNickname();
     setPlayerNicknameState(nick);
+
+    // Проверяем авторизацию
+    getCurrentUser().then((user) => {
+      setAuthUser(user);
+      setPlayerId(getPlayerId(user));
+      setAuthLoading(false);
+    });
+
+    // Подписываемся на изменения авторизации
+    const unsubscribe = onAuthStateChange((user) => {
+      setAuthUser(user);
+      setPlayerId(getPlayerId(user));
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Сохраняем флаг туториала
@@ -806,6 +829,23 @@ export default function TribologyLabPage() {
   const [deckControl, setDeckControl] = useState<ModuleType>('cooler');
   const [deckSupport, setDeckSupport] = useState<ModuleType>('lubricant');
   const [deckUtility, setDeckUtility] = useState<ModuleType>('ultrasonic');
+
+  // Обработчики авторизации
+  const handleSignIn = useCallback(async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    }
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
+  }, []);
 
   // Обработчики экранов
   const handleSplashComplete = useCallback(() => {
@@ -1822,6 +1862,10 @@ export default function TribologyLabPage() {
           onTutorial={handleShowTutorial}
           onShowLeaderboard={() => setShowLeaderboard(true)}
           hasCompletedTutorial={hasCompletedTutorial}
+          authUser={authUser}
+          onSignIn={handleSignIn}
+          onSignOut={handleSignOut}
+          authLoading={authLoading}
         />
         <LeaderboardModal
           isOpen={showLeaderboard}
