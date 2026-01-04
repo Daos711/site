@@ -764,34 +764,62 @@ export default function TribologyLabPage() {
   const gameStartTimeRef = useRef(0); // Timestamp начала игры
 
   // Звуки — пул аудио-элементов для одновременного воспроизведения
-  const SOUND_POOL_SIZE = 8;
+  const DEATH_SOUND_POOL_SIZE = 12; // Увеличен пул для быстрых волн
   const deathSoundPoolRef = useRef<HTMLAudioElement[]>([]);
   const deathSoundIndexRef = useRef(0);
   const buySoundRef = useRef<HTMLAudioElement | null>(null);
   const lifeLostSoundRef = useRef<HTMLAudioElement | null>(null);
   const uiClickSoundRef = useRef<HTMLAudioElement | null>(null);
+  const soundsUnlockedRef = useRef(false);
+
+  // Создаём аудио с предзагрузкой
+  const createAudio = (src: string, volume: number) => {
+    const audio = new Audio(src);
+    audio.preload = 'auto';
+    audio.volume = volume;
+    return audio;
+  };
 
   useEffect(() => {
     // Пул для звуков смерти (много одновременно)
-    deathSoundPoolRef.current = Array.from({ length: SOUND_POOL_SIZE }, () => {
-      const audio = new Audio('/sounds/tribology-lab/enemy-death.wav');
-      audio.volume = 0.3;
-      return audio;
-    });
+    deathSoundPoolRef.current = Array.from({ length: DEATH_SOUND_POOL_SIZE }, () =>
+      createAudio('/sounds/tribology-lab/enemy-death.wav', 0.3)
+    );
     // Одиночные звуки
-    buySoundRef.current = new Audio('/sounds/tribology-lab/buy-module.wav');
-    buySoundRef.current.volume = 0.4;
-    lifeLostSoundRef.current = new Audio('/sounds/tribology-lab/lose-life.wav');
-    lifeLostSoundRef.current.volume = 0.5;
-    uiClickSoundRef.current = new Audio('/sounds/tribology-lab/ui-click.wav');
-    uiClickSoundRef.current.volume = 0.25;
+    buySoundRef.current = createAudio('/sounds/tribology-lab/buy-module.wav', 0.4);
+    lifeLostSoundRef.current = createAudio('/sounds/tribology-lab/lose-life.wav', 0.5);
+    uiClickSoundRef.current = createAudio('/sounds/tribology-lab/ui-click.wav', 0.25);
   }, []);
+
+  // Разблокировка звуков при первом клике (требуется для браузеров)
+  const unlockSounds = () => {
+    if (soundsUnlockedRef.current) return;
+    soundsUnlockedRef.current = true;
+    // Пробуем "разбудить" все аудио-элементы
+    const allSounds = [
+      ...deathSoundPoolRef.current,
+      buySoundRef.current,
+      lifeLostSoundRef.current,
+      uiClickSoundRef.current,
+    ].filter(Boolean) as HTMLAudioElement[];
+    allSounds.forEach(audio => {
+      audio.volume = 0;
+      audio.play().then(() => audio.pause()).catch(() => {});
+    });
+    // Восстанавливаем громкость
+    setTimeout(() => {
+      deathSoundPoolRef.current.forEach(a => a.volume = 0.3);
+      if (buySoundRef.current) buySoundRef.current.volume = 0.4;
+      if (lifeLostSoundRef.current) lifeLostSoundRef.current.volume = 0.5;
+      if (uiClickSoundRef.current) uiClickSoundRef.current.volume = 0.25;
+    }, 50);
+  };
 
   const playDeathSound = () => {
     const pool = deathSoundPoolRef.current;
     if (pool.length === 0) return;
     const sound = pool[deathSoundIndexRef.current];
-    deathSoundIndexRef.current = (deathSoundIndexRef.current + 1) % SOUND_POOL_SIZE;
+    deathSoundIndexRef.current = (deathSoundIndexRef.current + 1) % DEATH_SOUND_POOL_SIZE;
     sound.currentTime = 0;
     sound.play().catch(() => {});
   };
@@ -1137,6 +1165,9 @@ export default function TribologyLabPage() {
   // Начало волны — показ intro_wave (1.3 сек), потом переход в wave
   const startWave = useCallback(() => {
     if (gamePhase !== 'preparing') return;
+
+    // Разблокируем звуки при первом взаимодействии
+    unlockSounds();
 
     // Сначала показываем intro_wave (оверлей "ВОЛНА N")
     setNextWaveCountdown(0);       // Сбрасываем обратный отсчёт
