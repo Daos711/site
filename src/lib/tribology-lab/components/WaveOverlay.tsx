@@ -26,17 +26,19 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
     };
   }, [onComplete]);
 
-  const accentColor = isBoss ? '#FF6B35' : '#32D6FF';
+  // Цвета для свечения
   const glowColor = isBoss ? 'rgba(255, 107, 53, 0.8)' : 'rgba(50, 214, 255, 0.8)';
+  const glowColorMid = isBoss ? 'rgba(255, 107, 53, 0.4)' : 'rgba(50, 214, 255, 0.4)';
+  const glowColorWeak = isBoss ? 'rgba(255, 107, 53, 0.2)' : 'rgba(50, 214, 255, 0.2)';
 
   return (
     <>
-      {/* Фон (лёгкая виньетка) */}
+      {/* Фон — лёгкое затемнение (БЕЗ blur!) */}
       <div
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 100%)',
+          background: 'rgba(0, 0, 0, 0.3)',
           pointerEvents: 'none',
           zIndex: 80,
           opacity: phase === 'exit' ? 0 : 1,
@@ -44,68 +46,47 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
         }}
       />
 
-      {/* Скан-линия */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 2,
-          background: `linear-gradient(90deg, transparent, ${accentColor}40, transparent)`,
-          pointerEvents: 'none',
-          zIndex: 81,
-          animation: 'scanMove 1.3s linear',
-        }}
-      />
-
-      {/* Центральная панель */}
+      {/* Контейнер текста — БЕЗ РАМКИ, БЕЗ КАРТОЧКИ */}
       <div
         style={{
           position: 'fixed',
           top: '50%',
           left: '50%',
-          transform: `translate(-50%, -50%) scale(${phase === 'enter' ? 0.98 : 1})`,
-          width: 'min(400px, 85%)',
-          padding: '48px 32px',
-          background: 'rgba(11, 15, 20, 0.92)',
-          border: `2px solid ${accentColor}`,
-          borderRadius: 12,
-          boxShadow: `0 12px 48px rgba(0,0,0,0.8), 0 0 60px ${glowColor}40`,
+          transform: `translate(-50%, ${phase === 'exit' ? '-60%' : '-50%'}) scale(${phase === 'enter' ? 0.95 : 1})`,
           textAlign: 'center',
           pointerEvents: 'none',
           zIndex: 85,
-          opacity: phase === 'exit' ? 0 : phase === 'enter' ? 0.5 : 1,
-          filter: phase === 'enter' ? 'brightness(1.5) blur(2px)' : 'brightness(1) blur(0)',
+          opacity: phase === 'exit' ? 0 : phase === 'enter' ? 0 : 1,
           transition: phase === 'exit'
             ? 'opacity 0.3s ease, transform 0.3s ease'
-            : 'opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease',
+            : 'opacity 0.2s ease, transform 0.2s ease',
         }}
       >
-        {/* Заголовок */}
+        {/* Заголовок — КРУПНЫЙ, ЧЁТКИЙ, БЕЗ BLUR */}
         <h1
           style={{
             margin: 0,
-            fontSize: 'clamp(36px, 8vw, 48px)',
-            fontWeight: 800,
+            fontSize: 'clamp(56px, 12vw, 80px)',
+            fontWeight: 900,
             color: isBoss ? '#FF6B35' : '#FFFFFF',
-            letterSpacing: '0.1em',
-            textShadow: `0 0 20px ${glowColor}`,
-            animation: isBoss ? 'bossPulse 0.8s ease-in-out' : undefined,
+            letterSpacing: '0.15em',
+            textShadow: `0 0 30px ${glowColor}, 0 0 60px ${glowColorMid}, 0 0 90px ${glowColorWeak}`,
+            // КРИТИЧНО: БЕЗ filter, БЕЗ backdrop-filter
           }}
         >
           ВОЛНА {wave}{isBoss && ' • БОСС'}
         </h1>
 
-        {/* Подзаголовок */}
+        {/* Подзаголовок — мелкий, серый, БЕЗ эффектов */}
         <p
           style={{
-            marginTop: 16,
-            fontSize: 14,
+            marginTop: 24,
+            fontSize: 'clamp(14px, 2vw, 16px)',
             fontWeight: 500,
-            color: '#7A8A99',
+            color: '#A0AEC0',
             letterSpacing: '0.05em',
-            lineHeight: 1.6,
+            lineHeight: 1.8,
+            // БЕЗ text-shadow!
           }}
         >
           Режим: {mode === 'daily' ? 'Ежедневный' : 'Случайный набор'}
@@ -113,18 +94,6 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete }: WaveOverlayP
           Лаб-стенд №{labStandId}
         </p>
       </div>
-
-      {/* CSS анимации */}
-      <style jsx>{`
-        @keyframes scanMove {
-          from { transform: translateY(0); }
-          to { transform: translateY(100vh); }
-        }
-        @keyframes bossPulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-      `}</style>
     </>
   );
 }

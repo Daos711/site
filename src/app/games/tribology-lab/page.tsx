@@ -84,7 +84,7 @@ interface DeathEffect {
   ringCount: number;      // 1 обычные, 2 боссы
 }
 
-type GamePhase = 'preparing' | 'wave' | 'victory' | 'defeat';
+type GamePhase = 'intro_wave' | 'preparing' | 'wave' | 'victory' | 'defeat';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // GAME OVER MODAL — Аварийная остановка стенда
@@ -713,7 +713,6 @@ export default function TribologyLabPage() {
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
   const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
-  const [showWaveOverlay, setShowWaveOverlay] = useState(false);  // Оверлей "ВОЛНА N"
   const labStandId = useRef(Math.floor(Math.random() * 900) + 100);  // Лаб-стенд №XXX
 
   // DEV-панель для тестирования
@@ -1042,10 +1041,18 @@ export default function TribologyLabPage() {
     });
   }, [enemies, enemyPath]);
 
-  // Начало волны
+  // Начало волны — показ intro_wave (1.3 сек), потом переход в wave
   const startWave = useCallback(() => {
     if (gamePhase !== 'preparing') return;
 
+    // Сначала показываем intro_wave (оверлей "ВОЛНА N")
+    setNextWaveCountdown(0);       // Сбрасываем обратный отсчёт
+    setGameStarted(true);          // Игра началась
+    setGamePhase('intro_wave');    // Показываем оверлей
+  }, [gamePhase]);
+
+  // После intro_wave (1.3 сек) → переход в wave
+  const startWaveActual = useCallback(() => {
     const config = getWaveConfig(wave);
     const queue: { id: string; type: string; spawnAt: number }[] = [];
     let currentTime = 0;
@@ -1065,19 +1072,16 @@ export default function TribologyLabPage() {
     pauseTimeRef.current = 0;      // Сбрасываем время паузы
     pauseStartRef.current = 0;     // Сбрасываем начало паузы
     setIsPaused(false);            // Снимаем паузу
-    setNextWaveCountdown(0);       // Сбрасываем обратный отсчёт
-    setGameStarted(true);          // Игра началась
     // Записываем время начала игры (только при первой волне)
     if (gameStartTimeRef.current === 0) {
       gameStartTimeRef.current = Date.now();
     }
     setSpawnQueue(queue);
     setWaveStartTime(performance.now());
-    setGamePhase('wave');
-    setShowWaveOverlay(true);  // Показываем оверлей "ВОЛНА N"
+    setGamePhase('wave');          // Теперь волна идёт
     lastUpdateRef.current = performance.now();
     waveEndingRef.current = false; // Сбрасываем флаг
-  }, [gamePhase, wave]);
+  }, [wave]);
 
   // Конец волны
   const endWave = useCallback(() => {
@@ -4681,17 +4685,17 @@ export default function TribologyLabPage() {
         highlightPlayerId={playerId}
       />
 
-      {/* Оверлей "ВОЛНА N" при старте волны */}
-      {showWaveOverlay && (
+      {/* Оверлей "ВОЛНА N" — ТОЛЬКО в фазе intro_wave */}
+      {gamePhase === 'intro_wave' && (
         <WaveOverlay
           wave={wave}
           mode={gameMode}
           labStandId={labStandId.current}
-          onComplete={() => setShowWaveOverlay(false)}
+          onComplete={startWaveActual}
         />
       )}
 
-      {/* Панель подготовки между волнами */}
+      {/* Панель подготовки — ТОЛЬКО в фазе preparing */}
       {gamePhase === 'preparing' && gameStarted && nextWaveCountdown > 0 && (
         <PrepPhase
           prepTime={nextWaveCountdown}
