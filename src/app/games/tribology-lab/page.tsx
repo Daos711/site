@@ -1873,30 +1873,22 @@ export default function TribologyLabPage() {
             <path
               d="M28 0 L56 16.6 L56 50 L28 66.6 L0 50 L0 16.6 Z"
               fill="none"
-              stroke="#1a2332"
+              stroke="#1c1f24"
               strokeWidth="1"
             />
             <path
               d="M28 66.6 L56 83.2 L56 116.6 L28 133.2 L0 116.6 L0 83.2 Z"
               fill="none"
-              stroke="#1a2332"
+              stroke="#1c1f24"
               strokeWidth="1"
               transform="translate(28, -33.3)"
             />
           </pattern>
 
-          {/* Радиальная виньетка */}
-          <radialGradient id="gameVignette" cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stopColor="transparent" />
-            <stop offset="100%" stopColor="#0a0d12" stopOpacity="0.85" />
-          </radialGradient>
         </defs>
 
-        {/* Гексагональная сетка */}
+        {/* Гексагональная сетка — равномерно по всему экрану */}
         <rect width="100%" height="100%" fill="url(#gameHexGrid)" />
-
-        {/* Виньетка */}
-        <rect width="100%" height="100%" fill="url(#gameVignette)" />
 
         {/* Декоративные угловые линии */}
         <g stroke="#32D6FF" strokeWidth="2" strokeOpacity="0.08" fill="none">
@@ -2248,13 +2240,13 @@ export default function TribologyLabPage() {
           style={{ overflow: 'visible' }}
         >
           <defs>
-            {/* Градиент для масляной плёнки — нейтральный тёмный */}
+            {/* Градиент для масляной плёнки с "живостью" */}
             <linearGradient id="oilGradientMain" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#080a0e" />
-              <stop offset="25%" stopColor="#0a0d12" />
-              <stop offset="50%" stopColor="#0c1015" />
-              <stop offset="75%" stopColor="#0a0d12" />
-              <stop offset="100%" stopColor="#080a0e" />
+              <stop offset="0%" stopColor="#0a1520" />
+              <stop offset="25%" stopColor="#0f1f30" />
+              <stop offset="50%" stopColor="#132740" />
+              <stop offset="75%" stopColor="#0f1f30" />
+              <stop offset="100%" stopColor="#0a1520" />
             </linearGradient>
 
             {/* Градиент для металлических бортиков (приглушённый) */}
@@ -2325,11 +2317,11 @@ export default function TribologyLabPage() {
               );
             })()}
 
-            {/* Анимированный блик масла — нейтральный */}
+            {/* Анимированный блик масла */}
             <linearGradient id={`oilSheen-${gameSpeed}`} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="transparent" />
               <stop offset="45%" stopColor="transparent" />
-              <stop offset="50%" stopColor="rgba(150, 160, 170, 0.06)" />
+              <stop offset="50%" stopColor="rgba(100, 150, 200, 0.08)" />
               <stop offset="55%" stopColor="transparent" />
               <stop offset="100%" stopColor="transparent" />
               <animate
