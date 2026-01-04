@@ -22,9 +22,6 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
     provider: 'google',
     options: {
       redirectTo: redirectTo || (typeof window !== 'undefined' ? window.location.href : undefined),
-      queryParams: {
-        prompt: 'select_account', // Всегда показывать выбор аккаунта
-      },
     },
   });
   if (error) {
