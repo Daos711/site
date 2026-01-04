@@ -1843,26 +1843,69 @@ export default function TribologyLabPage() {
     <div
       className="flex flex-col items-center gap-3 py-4"
       style={{
-        background: `
-          repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 39px,
-            rgba(255, 255, 255, 0.03) 39px,
-            rgba(255, 255, 255, 0.03) 40px
-          ),
-          repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 39px,
-            rgba(255, 255, 255, 0.03) 39px,
-            rgba(255, 255, 255, 0.03) 40px
-          ),
-          radial-gradient(ellipse at center, #0d1117 0%, #050608 70%, #020304 100%)
-        `,
+        position: 'relative',
+        background: '#0a0d12',
         minHeight: '100vh',
       }}
     >
+      {/* SVG фон — приглушённая гексагональная сетка */}
+      <svg
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          opacity: 0.35,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          {/* Гексагональный паттерн */}
+          <pattern
+            id="gameHexGrid"
+            width="56"
+            height="100"
+            patternUnits="userSpaceOnUse"
+            patternTransform="scale(1.2)"
+          >
+            <path
+              d="M28 0 L56 16.6 L56 50 L28 66.6 L0 50 L0 16.6 Z"
+              fill="none"
+              stroke="#1a2332"
+              strokeWidth="1"
+            />
+            <path
+              d="M28 66.6 L56 83.2 L56 116.6 L28 133.2 L0 116.6 L0 83.2 Z"
+              fill="none"
+              stroke="#1a2332"
+              strokeWidth="1"
+              transform="translate(28, -33.3)"
+            />
+          </pattern>
+
+          {/* Радиальная виньетка */}
+          <radialGradient id="gameVignette" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="100%" stopColor="#0a0d12" stopOpacity="0.85" />
+          </radialGradient>
+        </defs>
+
+        {/* Гексагональная сетка */}
+        <rect width="100%" height="100%" fill="url(#gameHexGrid)" />
+
+        {/* Виньетка */}
+        <rect width="100%" height="100%" fill="url(#gameVignette)" />
+
+        {/* Декоративные угловые линии */}
+        <g stroke="#32D6FF" strokeWidth="2" strokeOpacity="0.08" fill="none">
+          <path d="M 0 50 L 0 0 L 50 0" />
+          <path d="M 100% 50 L 100% 0 L calc(100% - 50px) 0" />
+          <path d="M 0 calc(100% - 50px) L 0 100% L 50 100%" />
+          <path d="M 100% calc(100% - 50px) L 100% 100% L calc(100% - 50px) 100%" />
+        </g>
+      </svg>
       <style jsx>{`
         @keyframes oilFlow {
           0% { transform: translateY(0); }
