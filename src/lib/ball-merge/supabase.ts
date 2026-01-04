@@ -157,16 +157,18 @@ export function setPlayerName(name: string): void {
 
 export interface PendingBallMergeResult {
   score: number;
+  name: string;
   timestamp: number; // для проверки актуальности
 }
 
 const PENDING_RESULT_KEY = 'ballmerge_pending_result';
 const PENDING_RESULT_MAX_AGE = 5 * 60 * 1000; // 5 минут
 
-export function savePendingResult(score: number): void {
+export function savePendingResult(score: number, name: string): void {
   if (typeof window === 'undefined') return;
   const data: PendingBallMergeResult = {
     score,
+    name,
     timestamp: Date.now(),
   };
   localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(data));
