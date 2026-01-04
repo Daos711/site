@@ -2248,13 +2248,13 @@ export default function TribologyLabPage() {
           style={{ overflow: 'visible' }}
         >
           <defs>
-            {/* Градиент для масляной плёнки с "живостью" */}
+            {/* Градиент для масляной плёнки — нейтральный тёмный */}
             <linearGradient id="oilGradientMain" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0a1520" />
-              <stop offset="25%" stopColor="#0f1f30" />
-              <stop offset="50%" stopColor="#132740" />
-              <stop offset="75%" stopColor="#0f1f30" />
-              <stop offset="100%" stopColor="#0a1520" />
+              <stop offset="0%" stopColor="#080a0e" />
+              <stop offset="25%" stopColor="#0a0d12" />
+              <stop offset="50%" stopColor="#0c1015" />
+              <stop offset="75%" stopColor="#0a0d12" />
+              <stop offset="100%" stopColor="#080a0e" />
             </linearGradient>
 
             {/* Градиент для металлических бортиков (приглушённый) */}
@@ -2325,11 +2325,11 @@ export default function TribologyLabPage() {
               );
             })()}
 
-            {/* Анимированный блик масла */}
+            {/* Анимированный блик масла — нейтральный */}
             <linearGradient id={`oilSheen-${gameSpeed}`} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="transparent" />
               <stop offset="45%" stopColor="transparent" />
-              <stop offset="50%" stopColor="rgba(100, 150, 200, 0.08)" />
+              <stop offset="50%" stopColor="rgba(150, 160, 170, 0.06)" />
               <stop offset="55%" stopColor="transparent" />
               <stop offset="100%" stopColor="transparent" />
               <animate
