@@ -471,10 +471,9 @@ interface PauseModalProps {
   onResume: () => void;
   onMainMenu: () => void;
   onHandbook: () => void;
-  onUIClick?: () => void;
 }
 
-function PauseModal({ isOpen, onResume, onMainMenu, onHandbook, onUIClick }: PauseModalProps) {
+function PauseModal({ isOpen, onResume, onMainMenu, onHandbook }: PauseModalProps) {
   const [showPanel, setShowPanel] = useState(false);
 
   // Анимация появления панели
@@ -594,7 +593,7 @@ function PauseModal({ isOpen, onResume, onMainMenu, onHandbook, onUIClick }: Pau
 
         {/* Кнопка "Возобновить" */}
         <button
-          onClick={() => { onUIClick?.(); onResume(); }}
+          onClick={onResume}
           className="w-full mb-3 transition-all"
           style={{
             height: '56px',
@@ -625,7 +624,7 @@ function PauseModal({ isOpen, onResume, onMainMenu, onHandbook, onUIClick }: Pau
 
         {/* Кнопка "В меню" */}
         <button
-          onClick={() => { onUIClick?.(); onMainMenu(); }}
+          onClick={onMainMenu}
           className="w-full mb-3 transition-all"
           style={{
             height: '48px',
@@ -651,7 +650,7 @@ function PauseModal({ isOpen, onResume, onMainMenu, onHandbook, onUIClick }: Pau
 
         {/* Кнопка "Справочник" */}
         <button
-          onClick={() => { onUIClick?.(); onHandbook(); }}
+          onClick={onHandbook}
           className="w-full mb-6 transition-all"
           style={{
             height: '48px',
@@ -763,65 +762,6 @@ export default function TribologyLabPage() {
   const [totalGoldEarned, setTotalGoldEarned] = useState(0);
   const [gameOverTime, setGameOverTime] = useState(0); // Время игры при Game Over (секунды)
   const gameStartTimeRef = useRef(0); // Timestamp начала игры
-
-  // Звуки — Web Audio API для минимальной задержки
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const soundBuffersRef = useRef<{
-    death: AudioBuffer | null;
-    buy: AudioBuffer | null;
-    lifeLost: AudioBuffer | null;
-    uiClick: AudioBuffer | null;
-  }>({ death: null, buy: null, lifeLost: null, uiClick: null });
-  const soundVolumes = { death: 0.3, buy: 0.4, lifeLost: 0.5, uiClick: 0.25 };
-
-  useEffect(() => {
-    // Создаём AudioContext и загружаем звуки
-    const loadSound = async (url: string): Promise<AudioBuffer | null> => {
-      try {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-        }
-        return await audioContextRef.current.decodeAudioData(arrayBuffer);
-      } catch {
-        return null;
-      }
-    };
-
-    const loadAllSounds = async () => {
-      const [death, buy, lifeLost, uiClick] = await Promise.all([
-        loadSound('/sounds/tribology-lab/enemy-death.wav'),
-        loadSound('/sounds/tribology-lab/buy-module.wav'),
-        loadSound('/sounds/tribology-lab/lose-life.wav'),
-        loadSound('/sounds/tribology-lab/ui-click.wav'),
-      ]);
-      soundBuffersRef.current = { death, buy, lifeLost, uiClick };
-    };
-
-    loadAllSounds();
-  }, []);
-
-  // Воспроизведение звука через Web Audio API (мгновенно)
-  const playSound = (buffer: AudioBuffer | null, volume: number) => {
-    if (!buffer || !audioContextRef.current) return;
-    // Возобновляем контекст если он приостановлен (требуется для браузеров)
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-    const source = audioContextRef.current.createBufferSource();
-    const gainNode = audioContextRef.current.createGain();
-    source.buffer = buffer;
-    gainNode.gain.value = volume;
-    source.connect(gainNode);
-    gainNode.connect(audioContextRef.current.destination);
-    source.start(0);
-  };
-
-  const playDeathSound = () => playSound(soundBuffersRef.current.death, soundVolumes.death);
-  const playBuySound = () => playSound(soundBuffersRef.current.buy, soundVolumes.buy);
-  const playLifeLostSound = () => playSound(soundBuffersRef.current.lifeLost, soundVolumes.lifeLost);
-  const playUIClick = () => playSound(soundBuffersRef.current.uiClick, soundVolumes.uiClick);
 
   // Лидерборд
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -1570,8 +1510,6 @@ export default function TribologyLabPage() {
       // Добавляем эффекты смерти
       if (newDeathEffects.length > 0) {
         setDeathEffects(prev => [...prev, ...newDeathEffects]);
-        // Воспроизводим звук смерти
-        playDeathSound();
       }
 
       // Удаляем эффекты анализатора, нацеленные на мёртвых врагов
@@ -1587,7 +1525,6 @@ export default function TribologyLabPage() {
 
       if (livesLost > 0) {
         setLives(l => Math.max(0, l - livesLost));
-        playLifeLostSound();
       }
 
       if (goldEarned > 0) {
@@ -1689,8 +1626,6 @@ export default function TribologyLabPage() {
     const config = MODULES[moduleType];
     if (gold < config.basePrice) return;
 
-    playUIClick(); // Звук при взятии модуля
-
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
@@ -1760,7 +1695,6 @@ export default function TribologyLabPage() {
               };
               setModules(prev => [...prev, newModule]);
               setGold(prev => prev - config.basePrice);
-              playBuySound();
             }
           } else if (
             existingModule.type === dragState.moduleType &&
@@ -1776,7 +1710,6 @@ export default function TribologyLabPage() {
               m.id === existingModule.id ? { ...m, level: m.level + 1 } : m
             ));
             setGold(prev => prev - config.basePrice);
-            playBuySound();
           }
         } else if (dragState.type === 'field' && dragState.moduleId) {
           // ХАРДКОР: модули с поля НЕЛЬЗЯ перемещать, только merge!
@@ -1889,7 +1822,6 @@ export default function TribologyLabPage() {
           onTutorial={handleShowTutorial}
           onShowLeaderboard={() => setShowLeaderboard(true)}
           hasCompletedTutorial={hasCompletedTutorial}
-          onUIClick={playUIClick}
         />
         <LeaderboardModal
           isOpen={showLeaderboard}
@@ -2194,7 +2126,6 @@ export default function TribologyLabPage() {
             {/* Кнопка паузы — cyan в стиле лаборатории */}
             <button
               onClick={() => {
-                playUIClick();
                 if (isPaused) {
                   setShowPauseModal(false);
                   setIsPaused(false);
@@ -4488,7 +4419,6 @@ export default function TribologyLabPage() {
             prepTime={nextWaveCountdown}
             nextWave={wave}
             onStart={startWave}
-            onUIClick={playUIClick}
             totalWidth={totalWidth}
             conveyorWidth={conveyorWidth}
           />
@@ -4818,7 +4748,6 @@ export default function TribologyLabPage() {
           setShowPauseModal(false);
           setShowHandbookFromPause(true);
         }}
-        onUIClick={playUIClick}
       />
 
       {/* Справочник из паузы */}
