@@ -816,6 +816,7 @@ export default function TribologyLabPage() {
   };
 
   const playDeathSound = () => {
+    unlockSounds();
     const pool = deathSoundPoolRef.current;
     if (pool.length === 0) return;
     const sound = pool[deathSoundIndexRef.current];
@@ -825,6 +826,7 @@ export default function TribologyLabPage() {
   };
 
   const playBuySound = () => {
+    unlockSounds();
     if (buySoundRef.current) {
       buySoundRef.current.currentTime = 0;
       buySoundRef.current.play().catch(() => {});
@@ -832,6 +834,7 @@ export default function TribologyLabPage() {
   };
 
   const playLifeLostSound = () => {
+    unlockSounds();
     if (lifeLostSoundRef.current) {
       lifeLostSoundRef.current.currentTime = 0;
       lifeLostSoundRef.current.play().catch(() => {});
@@ -839,6 +842,7 @@ export default function TribologyLabPage() {
   };
 
   const playUIClick = () => {
+    unlockSounds(); // Разблокируем при любом взаимодействии
     if (uiClickSoundRef.current) {
       uiClickSoundRef.current.currentTime = 0;
       uiClickSoundRef.current.play().catch(() => {});
