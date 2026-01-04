@@ -1927,7 +1927,7 @@ export default function TribologyLabPage() {
           onClick={handleOpenExitModal}
           className="flex items-center gap-1.5 rounded transition-all"
           style={{
-            padding: '4px 10px',
+            padding: '3px 8px',
             background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
             border: '1px solid #30363d',
             color: '#9CA3AF',
