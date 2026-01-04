@@ -2132,83 +2132,173 @@ export default function TribologyLabPage() {
 
       </div>
 
-      {/* Фиксированная шапка для планшетов */}
-      <div
-        className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center gap-1 py-1 sm:py-2 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700/50"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        {/* Заголовок с кнопкой выхода */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            onClick={handleOpenExitModal}
-            className="flex items-center gap-1 sm:gap-1.5 rounded transition-all"
-            style={{
-              padding: '2px 6px',
-              background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
-              border: '1px solid #30363d',
-              color: '#9CA3AF',
-              fontSize: 11,
-              fontWeight: 500,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#f87171';
-              e.currentTarget.style.boxShadow = '0 0 12px rgba(248, 113, 113, 0.25)';
-              e.currentTarget.style.color = '#f87171';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#30363d';
-              e.currentTarget.style.boxShadow = 'none';
-              e.currentTarget.style.color = '#9CA3AF';
-            }}
-            title="Покинуть испытание"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            <span className="hidden sm:inline">Выйти</span>
-          </button>
-          <h1 className="text-lg sm:text-2xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
-
-          {/* Статус — волна, жизни, золото — в одной строке */}
-          <div className="flex items-center gap-2 sm:gap-4 text-sm sm:text-base ml-2 sm:ml-4">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400 text-xs">Волна</span>
-              <span className="font-bold text-white">{wave}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-red-400">❤</span>
-              <span className="font-bold text-white">{lives}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-yellow-400">⚙</span>
-              <span className="font-bold text-white">{gold}</span>
-            </div>
-            {gamePhase === 'wave' && (
-              <button
-                onClick={() => {
-                  if (isPaused) {
-                    setShowPauseModal(false);
-                    setIsPaused(false);
-                  } else {
-                    setIsPaused(true);
-                    setShowPauseModal(true);
-                  }
-                }}
-                className="px-2 py-0.5 rounded text-xs font-bold"
-                style={{
-                  background: isPaused ? '#22C55E' : '#32D6FF',
-                  color: isPaused ? '#fff' : '#0B1622',
-                }}
-              >
-                {isPaused ? '▶' : '⏸'}
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Заголовок с кнопкой выхода */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          onClick={handleOpenExitModal}
+          className="flex items-center gap-1 sm:gap-1.5 rounded transition-all"
+          style={{
+            padding: '2px 6px',
+            background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
+            border: '1px solid #30363d',
+            color: '#9CA3AF',
+            fontSize: 11,
+            fontWeight: 500,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#f87171';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(248, 113, 113, 0.25)';
+            e.currentTarget.style.color = '#f87171';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#30363d';
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.color = '#9CA3AF';
+          }}
+          title="Покинуть испытание"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span className="hidden sm:inline">Выйти</span>
+        </button>
+        <h1 className="text-xl sm:text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
       </div>
 
-      {/* Отступ под фиксированную шапку */}
-      <div className="h-12 sm:h-14" />
+      {/* Статус-бар */}
+      <div className="flex items-center gap-3 sm:gap-6 text-base sm:text-xl mb-1 sm:mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-400">Волна:</span>
+          <span className="font-bold text-white">{wave}</span>
+        </div>
+
+        {/* Жизни — Термометр */}
+        <div className="flex items-center gap-2">
+          <svg width="20" height="24" viewBox="0 0 20 24" className="flex-shrink-0">
+            <defs>
+              <linearGradient id="tempGradHeader" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={lives <= 3 ? '#DC2626' : lives <= 6 ? '#F97316' : '#F59E0B'}/>
+                <stop offset="100%" stopColor="#DC2626"/>
+              </linearGradient>
+            </defs>
+            {/* Колба термометра */}
+            <rect x="7" y="2" width="6" height="16" rx="3"
+                  fill="#2D3748" stroke="#4A5568" strokeWidth="1"/>
+            {/* Шарик снизу */}
+            <circle cx="10" cy="20" r="3.5"
+                    fill={lives <= 3 ? '#DC2626' : lives <= 6 ? '#F97316' : '#F59E0B'}
+                    stroke="#991B1B" strokeWidth="1"
+                    style={lives <= 3 ? { animation: 'thermoBlink 0.5s ease-in-out infinite' } : undefined}/>
+            {/* Жидкость (столбик, высота зависит от жизней) */}
+            <rect x="8.5" y={4 + 14 * (1 - lives / 10)} width="3"
+                  height={14 * (lives / 10)} rx="1.5"
+                  fill="url(#tempGradHeader)"/>
+            {/* Штрихи разметки */}
+            <line x1="13" y1="6" x2="15" y2="6" stroke="#6B7280" strokeWidth="0.5"/>
+            <line x1="13" y1="10" x2="15" y2="10" stroke="#6B7280" strokeWidth="0.5"/>
+            <line x1="13" y1="14" x2="15" y2="14" stroke="#6B7280" strokeWidth="0.5"/>
+          </svg>
+          <span className="font-bold text-white">{lives}</span>
+        </div>
+
+        {/* Золото — Шестерёнки */}
+        <div className="flex items-center gap-2">
+          <svg width="24" height="24" viewBox="0 0 24 24" className="flex-shrink-0" style={{ animation: 'gearSpin 60s linear infinite' }}>
+            <defs>
+              <radialGradient id="metalGradHeader">
+                <stop offset="0%" stopColor="#A8B2C1"/>
+                <stop offset="100%" stopColor="#6B7280"/>
+              </radialGradient>
+            </defs>
+            {/* Зубчатое колесо */}
+            <path d="M12,1 L13.5,4 L16,3.5 L17,6 L20,6 L19.5,9 L22,10.5 L20,12 L22,13.5 L19.5,15 L20,18 L17,18 L16,20.5 L13.5,20 L12,23 L10.5,20 L8,20.5 L7,18 L4,18 L4.5,15 L2,13.5 L4,12 L2,10.5 L4.5,9 L4,6 L7,6 L8,3.5 L10.5,4 Z"
+                  fill="url(#metalGradHeader)"
+                  stroke="#4A5568"
+                  strokeWidth="0.5"/>
+            {/* Центральное отверстие */}
+            <circle cx="12" cy="12" r="4" fill="#2D3748"/>
+            <circle cx="12" cy="12" r="3" fill="#1A202C"/>
+            {/* Блик */}
+            <ellipse cx="9" cy="9" rx="2" ry="1.5" fill="rgba(255,255,255,0.25)"/>
+          </svg>
+          <span className="font-bold" style={{ color: '#E5E7EB' }}>{gold}</span>
+        </div>
+
+        {/* Индикатор волны в процессе + кнопка паузы */}
+        {gamePhase === 'wave' && (
+          <>
+            {/* Цифровой дисплей — враги на поле */}
+            <div
+              className="relative flex items-center justify-center"
+              style={{
+                background: '#1A202C',
+                border: '1px solid #4A5568',
+                borderRadius: '6px',
+                padding: '4px 12px',
+                minWidth: '40px',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            >
+              {/* Внутренняя подсветка */}
+              <div
+                className="absolute inset-0 rounded-md"
+                style={{
+                  background: isPaused
+                    ? 'rgba(59, 130, 246, 0.1)'
+                    : 'rgba(50, 214, 255, 0.05)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: isPaused ? '#3B82F6' : '#32D6FF',
+                  textShadow: isPaused
+                    ? '0 0 8px rgba(59, 130, 246, 0.8)'
+                    : '0 0 8px rgba(50, 214, 255, 0.6)',
+                }}
+              >
+                {isPaused ? 'ПАУЗА' : enemies.length}
+              </span>
+            </div>
+
+            {/* Кнопка паузы — cyan в стиле лаборатории */}
+            <button
+              onClick={() => {
+                if (isPaused) {
+                  setShowPauseModal(false);
+                  setIsPaused(false);
+                } else {
+                  setIsPaused(true);
+                  setShowPauseModal(true);
+                }
+              }}
+              className="flex items-center justify-center transition-all active:scale-95 hover:scale-105"
+              style={{
+                height: '30px',
+                padding: '0 10px',
+                background: isPaused
+                  ? 'linear-gradient(145deg, #22C55E 0%, #16A34A 100%)'
+                  : 'linear-gradient(145deg, #32D6FF 0%, #0EA5E9 100%)',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                boxShadow: isPaused
+                  ? '0 2px 8px rgba(34, 197, 94, 0.4)'
+                  : '0 2px 8px rgba(50, 214, 255, 0.4)',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: isPaused ? '#FFFFFF' : '#0B1622',
+                letterSpacing: '0.05em',
+              }}
+              title={isPaused ? 'Возобновить' : 'Пауза'}
+            >
+              {isPaused ? '▶' : 'ПАУЗА'}
+            </button>
+          </>
+        )}
+      </div>
 
       {/* DEBUG: Панель отладки */}
       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm mb-1 sm:mb-2 bg-gray-800/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg">
