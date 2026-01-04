@@ -790,12 +790,10 @@ export default function TribologyLabPage() {
     setModules([]);
     setEnemies([]);
     enemiesRef.current = [];
-    setGamePhase('preparing');
     activeBarriersRef.current = [];
     setActiveBarriers([]);
     setAttackEffects([]);
     setDeathEffects([]);
-    setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
     // Сбрасываем статистику для Game Over
@@ -803,11 +801,14 @@ export default function TribologyLabPage() {
     setTotalGoldEarned(0);
     setShowGameOver(false);
     setGameOverTime(0);
-    gameStartTimeRef.current = 0; // Обнулим, установим при первом startWave
+    gameStartTimeRef.current = 0;
     // Устанавливаем магазин из меню (testDeck приоритетнее)
     if (!testDeck) {
       setShop([...deck]);
     }
+    // Сразу запускаем игру — показываем оверлей "ВОЛНА 1"
+    setGameStarted(true);
+    setGamePhase('intro_wave');
     setScreen('game');
   }, [testDeck]);
 
@@ -898,12 +899,10 @@ export default function TribologyLabPage() {
     setModules([]);
     setEnemies([]);
     enemiesRef.current = [];
-    setGamePhase('preparing');
     activeBarriersRef.current = [];
     setActiveBarriers([]);
     setAttackEffects([]);
     setDeathEffects([]);
-    setGameStarted(false);
     setNextWaveCountdown(0);
     spawnedIdsRef.current.clear();
     // Сбрасываем статистику
@@ -919,6 +918,9 @@ export default function TribologyLabPage() {
     } else {
       setShop(FALLBACK_SHOP);
     }
+    // Сразу запускаем игру — показываем оверлей "ВОЛНА 1"
+    setGameStarted(true);
+    setGamePhase('intro_wave');
   }, [testDeck, menuDeck]);
 
   // Game Over: В меню
@@ -2005,20 +2007,6 @@ export default function TribologyLabPage() {
           </svg>
           <span className="font-bold" style={{ color: '#E5E7EB' }}>{gold}</span>
         </div>
-
-        {/* Кнопка Начать волну (только для первой волны, до gameStarted) */}
-        {gamePhase === 'preparing' && !gameStarted && (
-          <button
-            onClick={startWave}
-            className="px-4 py-1.5 rounded-lg font-bold text-white transition-all hover:scale-105 active:scale-95 text-base"
-            style={{
-              background: 'linear-gradient(145deg, #22c55e 0%, #16a34a 100%)',
-              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), 0 2px 0 #15803d',
-            }}
-          >
-            ▶ Старт
-          </button>
-        )}
 
         {/* Индикатор волны в процессе + кнопка паузы */}
         {gamePhase === 'wave' && (
