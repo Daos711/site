@@ -6,29 +6,36 @@ interface PrepPhaseProps {
   prepTime: number;
   nextWave: number;
   onStart: () => void;
+  // Позиционирование на горизонтальном участке канала
+  totalWidth: number;
+  conveyorWidth: number;
 }
 
-export function PrepPhase({ prepTime, nextWave, onStart }: PrepPhaseProps) {
+export function PrepPhase({ prepTime, nextWave, onStart, totalWidth, conveyorWidth }: PrepPhaseProps) {
   const isBossWave = nextWave % 5 === 0 && nextWave > 0;
   const accentColor = isBossWave ? '#FF6B35' : '#32D6FF';
 
+  // Центр горизонтального канала (верхний участок)
+  const channelCenterY = conveyorWidth / 2;
+
   return (
-    // Компактная панель ВНИЗУ экрана — НЕ закрывает игровое поле
+    // Панель НА горизонтальном участке канала — между волнами там пусто
     <div
       style={{
-        position: 'fixed',
-        bottom: 20,
-        left: '50%',
-        transform: 'translateX(-50%)',
+        position: 'absolute',
+        top: channelCenterY,
+        left: totalWidth / 2,
+        transform: 'translate(-50%, -50%)',
         display: 'flex',
         alignItems: 'center',
-        gap: 16,
-        padding: '12px 24px',
+        gap: 12,
+        padding: '8px 16px',
         background: 'rgba(11, 15, 20, 0.95)',
         border: `2px solid ${accentColor}`,
-        borderRadius: 12,
-        boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 20px ${accentColor}30`,
+        borderRadius: 10,
+        boxShadow: `0 4px 20px rgba(0,0,0,0.6), 0 0 15px ${accentColor}30`,
         zIndex: 85,
+        whiteSpace: 'nowrap',
       }}
     >
       {/* Инфо о волне */}

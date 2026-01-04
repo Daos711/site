@@ -4350,6 +4350,17 @@ export default function TribologyLabPage() {
             </div>
           </div>
         )}
+
+        {/* Панель подготовки — на горизонтальном участке канала */}
+        {gamePhase === 'preparing' && gameStarted && nextWaveCountdown > 0 && (
+          <PrepPhase
+            prepTime={nextWaveCountdown}
+            nextWave={wave}
+            onStart={startWave}
+            totalWidth={totalWidth}
+            conveyorWidth={conveyorWidth}
+          />
+        )}
       </div>
 
       {/* Перетаскиваемый модуль */}
@@ -4695,14 +4706,6 @@ export default function TribologyLabPage() {
         />
       )}
 
-      {/* Панель подготовки — ТОЛЬКО в фазе preparing */}
-      {gamePhase === 'preparing' && gameStarted && nextWaveCountdown > 0 && (
-        <PrepPhase
-          prepTime={nextWaveCountdown}
-          nextWave={wave}
-          onStart={startWave}
-        />
-      )}
     </div>
   );
 }
