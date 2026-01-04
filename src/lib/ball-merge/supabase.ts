@@ -1,6 +1,6 @@
-// Supabase конфигурация для Ball Merge
-export const SUPABASE_URL = "https://tuskcdlcbasehlrsrsoe.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1c2tjZGxjYmFzZWhscnNyc29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTM4NzcsImV4cCI6MjA4MTg2OTg3N30.VdfhknWL4SgbMUOxFZKsnAsjI3SUbcyoYXDiONjOjao";
+// Supabase конфигурация для Ball Merge (из общих env)
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export interface BallMergeScore {
   id: string;
@@ -132,6 +132,7 @@ export async function submitBallMergeScore(
 
 // Генерация уникального ID игрока
 export function getOrCreatePlayerId(): string {
+  if (typeof window === 'undefined') return '';
   const key = "ballMergePlayerId";
   let playerId = localStorage.getItem(key);
   if (!playerId) {
@@ -143,9 +144,11 @@ export function getOrCreatePlayerId(): string {
 
 // Сохранение/получение имени игрока
 export function getPlayerName(): string {
+  if (typeof window === 'undefined') return '';
   return localStorage.getItem("ballMergePlayerName") || "";
 }
 
 export function setPlayerName(name: string): void {
+  if (typeof window === 'undefined') return;
   localStorage.setItem("ballMergePlayerName", name);
 }

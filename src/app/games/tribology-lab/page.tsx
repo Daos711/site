@@ -4480,9 +4480,9 @@ export default function TribologyLabPage() {
       </p>
 
       {/* ═══════════════════════════════════════════════════════════════
-          DEV-ПАНЕЛЬ
+          DEV-ПАНЕЛЬ (только в development)
           ═══════════════════════════════════════════════════════════════ */}
-      {devMode && (
+      {process.env.NODE_ENV === 'development' && devMode && (
         <div
           className="fixed right-4 top-4 bg-black/90 border border-cyan-500/30 rounded-xl p-4 z-[200] max-h-[90vh] overflow-y-auto"
           style={{ width: 320 }}
@@ -4653,8 +4653,8 @@ export default function TribologyLabPage() {
         </div>
       )}
 
-      {/* Кнопка активации DEV-панели */}
-      {!devMode && (
+      {/* Кнопка активации DEV-панели (только в development) */}
+      {process.env.NODE_ENV === 'development' && !devMode && (
         <button
           onClick={() => setDevMode(true)}
           className="fixed right-4 bottom-4 w-10 h-10 rounded-full bg-gray-800/50 border border-gray-700 text-gray-500 hover:text-cyan-400 hover:border-cyan-500/50 transition-all z-50 flex items-center justify-center"
