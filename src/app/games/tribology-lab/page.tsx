@@ -2094,7 +2094,7 @@ export default function TribologyLabPage() {
                 background: '#1A202C',
                 border: '1px solid #4A5568',
                 borderRadius: '6px',
-                padding: '4px 12px',
+                padding: '3px 12px',
                 minWidth: '40px',
                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
               }}
@@ -2113,6 +2113,7 @@ export default function TribologyLabPage() {
                 style={{
                   fontSize: '16px',
                   fontWeight: 700,
+                  lineHeight: 1,
                   color: isPaused ? '#3B82F6' : '#32D6FF',
                   textShadow: isPaused
                     ? '0 0 8px rgba(59, 130, 246, 0.8)'
@@ -2164,7 +2165,7 @@ export default function TribologyLabPage() {
 
       {/* DEBUG: Панель отладки */}
       <div className="flex items-center gap-3 text-sm mb-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
-        <span className="text-gray-400">⚡ Скорость:</span>
+        <span className="text-gray-400">⚡ Скорость игры:</span>
         {[1, 3, 5, 10].map(speed => (
           <button
             key={speed}
@@ -4623,7 +4624,7 @@ export default function TribologyLabPage() {
           {/* Скорость игры */}
           <div className="mt-3 pt-3 border-t border-gray-700">
             <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">Скорость: {gameSpeed}x</span>
+              <span className="text-gray-400 text-sm">Скорость игры: {gameSpeed}x</span>
               <div className="flex gap-1">
                 {[1, 2, 5, 10].map(speed => (
                   <button
