@@ -13,7 +13,6 @@ import {
   getDailyDeck,
   formatTimeMs,
   generateDeckKey,
-  getOrCreatePlayerId,
 } from '../supabase';
 
 type TabType = 'daily' | 'random' | 'my_records';
@@ -22,6 +21,7 @@ interface LeaderboardModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentDeck?: ModuleType[];
+  playerId: string; // Текущий playerId (auth или анонимный)
   highlightPlayerId?: string;
 }
 
@@ -29,6 +29,7 @@ export function LeaderboardModal({
   isOpen,
   onClose,
   currentDeck,
+  playerId,
   highlightPlayerId,
 }: LeaderboardModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('daily');
@@ -40,7 +41,6 @@ export function LeaderboardModal({
   const [filterByDeck, setFilterByDeck] = useState(false);
   const [timeUntilReset, setTimeUntilReset] = useState('');
 
-  const playerId = typeof window !== 'undefined' ? getOrCreatePlayerId() : '';
   const effectiveHighlightId = highlightPlayerId || playerId;
 
   // Таймер до сброса Daily

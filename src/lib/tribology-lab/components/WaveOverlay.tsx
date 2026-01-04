@@ -82,9 +82,9 @@ export function WaveOverlay({ wave, mode, labStandId, onComplete, gridX, gridY, 
             margin: 0,
             fontSize: fontSize,
             fontWeight: 900,
-            color: isBoss ? '#FF6B35' : '#FFFFFF',
+            color: isBoss ? '#FF6B35' : '#C5D1DE',
             letterSpacing: '0.1em',
-            textShadow: `0 0 30px ${glowColor}, 0 0 60px ${glowColorMid}, 0 0 90px ${glowColorWeak}`,
+            textShadow: `0 0 20px ${glowColorMid}, 0 0 40px ${glowColorWeak}`,
             whiteSpace: 'nowrap',
           }}
         >

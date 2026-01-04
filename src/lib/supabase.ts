@@ -22,6 +22,9 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
     provider: 'google',
     options: {
       redirectTo: redirectTo || (typeof window !== 'undefined' ? window.location.href : undefined),
+      queryParams: {
+        prompt: 'select_account', // Всегда показывать выбор аккаунта
+      },
     },
   });
   if (error) {
@@ -32,7 +35,7 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
 
 // Выход
 export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: 'global' });
   if (error) {
     console.error('Sign out error:', error);
     throw error;

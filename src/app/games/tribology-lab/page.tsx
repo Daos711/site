@@ -1837,6 +1837,7 @@ export default function TribologyLabPage() {
           isOpen={showLeaderboard}
           onClose={() => setShowLeaderboard(false)}
           currentDeck={menuDeck || undefined}
+          playerId={playerId}
           highlightPlayerId={playerId}
         />
       </>
@@ -4794,6 +4795,7 @@ export default function TribologyLabPage() {
         isOpen={showLeaderboard}
         onClose={() => setShowLeaderboard(false)}
         currentDeck={testDeck || menuDeck || undefined}
+        playerId={playerId}
         highlightPlayerId={playerId}
       />
 
