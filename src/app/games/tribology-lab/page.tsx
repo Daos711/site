@@ -2225,7 +2225,7 @@ export default function TribologyLabPage() {
         className="relative select-none"
         style={{ width: totalWidth, height: totalHeight + 130 }}
       >
-        {/* Фон поля */}
+        {/* Фон поля — прозрачный, чтобы виден был общий гекс-паттерн */}
         <div
           className="absolute"
           style={{
@@ -2233,10 +2233,10 @@ export default function TribologyLabPage() {
             left: 0,
             width: totalWidth,
             height: totalHeight + 130,
-            background: 'linear-gradient(145deg, #0d1117 0%, #161b22 100%)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
+            background: 'rgba(10, 13, 18, 0.6)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
             borderRadius: `${cornerRadius}px ${cornerRadius}px 16px 16px`,
-            border: '2px solid #21262d',
+            border: '2px solid rgba(33, 38, 45, 0.5)',
           }}
         />
 
