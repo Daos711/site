@@ -763,12 +763,27 @@ export default function TribologyLabPage() {
   const [gameOverTime, setGameOverTime] = useState(0); // Время игры при Game Over (секунды)
   const gameStartTimeRef = useRef(0); // Timestamp начала игры
 
-  // Звуки
-  const enemyDeathSoundRef = useRef<HTMLAudioElement | null>(null);
+  // Звуки — пул аудио-элементов для одновременного воспроизведения
+  const SOUND_POOL_SIZE = 8;
+  const deathSoundPoolRef = useRef<HTMLAudioElement[]>([]);
+  const deathSoundIndexRef = useRef(0);
   useEffect(() => {
-    enemyDeathSoundRef.current = new Audio('/sounds/tribology-lab/enemy-death.wav');
-    enemyDeathSoundRef.current.volume = 0.3;
+    // Создаём пул аудио-элементов
+    deathSoundPoolRef.current = Array.from({ length: SOUND_POOL_SIZE }, () => {
+      const audio = new Audio('/sounds/tribology-lab/enemy-death.wav');
+      audio.volume = 0.3;
+      return audio;
+    });
   }, []);
+
+  const playDeathSound = () => {
+    const pool = deathSoundPoolRef.current;
+    if (pool.length === 0) return;
+    const sound = pool[deathSoundIndexRef.current];
+    deathSoundIndexRef.current = (deathSoundIndexRef.current + 1) % SOUND_POOL_SIZE;
+    sound.currentTime = 0;
+    sound.play().catch(() => {});
+  };
 
   // Лидерборд
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -1518,11 +1533,7 @@ export default function TribologyLabPage() {
       if (newDeathEffects.length > 0) {
         setDeathEffects(prev => [...prev, ...newDeathEffects]);
         // Воспроизводим звук смерти
-        if (enemyDeathSoundRef.current) {
-          const sound = enemyDeathSoundRef.current.cloneNode() as HTMLAudioElement;
-          sound.volume = 0.3;
-          sound.play().catch(() => {});
-        }
+        playDeathSound();
       }
 
       // Удаляем эффекты анализатора, нацеленные на мёртвых врагов
