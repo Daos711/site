@@ -26,9 +26,13 @@ export function Navigation() {
     signIn(window.location.href);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setUserMenuOpen(false);
-    signOut();
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   // Закрыть меню при клике вне его

@@ -37,7 +37,7 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
 
 // Выход
 export async function signOut(): Promise<void> {
-  const { error } = await supabase.auth.signOut({ scope: 'global' });
+  const { error } = await supabase.auth.signOut();
   if (error) {
     console.error('Sign out error:', error);
     throw error;
