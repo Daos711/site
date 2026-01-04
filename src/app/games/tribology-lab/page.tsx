@@ -54,13 +54,8 @@ import {
   setPlayerNickname,
   submitRun,
   generateDeckKey,
-  signInWithGoogle,
-  signOut,
-  getCurrentUser,
-  onAuthStateChange,
-  getPlayerId,
-  AuthUser,
 } from "@/lib/tribology-lab/supabase";
+import { useAuth } from "@/components/AuthProvider";
 
 // Запасные модули (если не передана колода из меню)
 const FALLBACK_SHOP: ModuleType[] = ['magnet', 'cooler', 'filter', 'lubricant', 'magnet'];
@@ -771,12 +766,10 @@ export default function TribologyLabPage() {
 
   // Лидерборд
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [playerId, setPlayerId] = useState<string>('');
   const [playerNickname, setPlayerNicknameState] = useState<string>('');
 
-  // Авторизация
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Авторизация (из общего контекста)
+  const { user: authUser, loading: authLoading, playerId, signIn, signOut: handleSignOut } = useAuth();
 
   // Экраны: splash → menu → tutorial → game
   type ScreenState = 'splash' | 'menu' | 'tutorial' | 'game';
@@ -792,25 +785,10 @@ export default function TribologyLabPage() {
     setHasCompletedTutorial(completed);
   }, []);
 
-  // Инициализация playerId и nickname для лидерборда
+  // Инициализация nickname для лидерборда
   useEffect(() => {
     const nick = getPlayerNickname();
     setPlayerNicknameState(nick);
-
-    // Проверяем авторизацию
-    getCurrentUser().then((user) => {
-      setAuthUser(user);
-      setPlayerId(getPlayerId(user));
-      setAuthLoading(false);
-    });
-
-    // Подписываемся на изменения авторизации
-    const unsubscribe = onAuthStateChange((user) => {
-      setAuthUser(user);
-      setPlayerId(getPlayerId(user));
-    });
-
-    return () => unsubscribe();
   }, []);
 
   // Сохраняем флаг туториала
@@ -830,22 +808,10 @@ export default function TribologyLabPage() {
   const [deckSupport, setDeckSupport] = useState<ModuleType>('lubricant');
   const [deckUtility, setDeckUtility] = useState<ModuleType>('ultrasonic');
 
-  // Обработчики авторизации
-  const handleSignIn = useCallback(async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    }
-  }, []);
-
-  const handleSignOut = useCallback(async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Sign out failed:', error);
-    }
-  }, []);
+  // Обработчик входа (с редиректом обратно на игру)
+  const handleSignIn = useCallback(() => {
+    signIn(window.location.origin + '/games/tribology-lab');
+  }, [signIn]);
 
   // Обработчики экранов
   const handleSplashComplete = useCallback(() => {
