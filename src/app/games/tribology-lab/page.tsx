@@ -471,9 +471,10 @@ interface PauseModalProps {
   onResume: () => void;
   onMainMenu: () => void;
   onHandbook: () => void;
+  onUIClick?: () => void;
 }
 
-function PauseModal({ isOpen, onResume, onMainMenu, onHandbook }: PauseModalProps) {
+function PauseModal({ isOpen, onResume, onMainMenu, onHandbook, onUIClick }: PauseModalProps) {
   const [showPanel, setShowPanel] = useState(false);
 
   // Анимация появления панели
@@ -593,7 +594,7 @@ function PauseModal({ isOpen, onResume, onMainMenu, onHandbook }: PauseModalProp
 
         {/* Кнопка "Возобновить" */}
         <button
-          onClick={onResume}
+          onClick={() => { onUIClick?.(); onResume(); }}
           className="w-full mb-3 transition-all"
           style={{
             height: '56px',
@@ -624,7 +625,7 @@ function PauseModal({ isOpen, onResume, onMainMenu, onHandbook }: PauseModalProp
 
         {/* Кнопка "В меню" */}
         <button
-          onClick={onMainMenu}
+          onClick={() => { onUIClick?.(); onMainMenu(); }}
           className="w-full mb-3 transition-all"
           style={{
             height: '48px',
@@ -650,7 +651,7 @@ function PauseModal({ isOpen, onResume, onMainMenu, onHandbook }: PauseModalProp
 
         {/* Кнопка "Справочник" */}
         <button
-          onClick={onHandbook}
+          onClick={() => { onUIClick?.(); onHandbook(); }}
           className="w-full mb-6 transition-all"
           style={{
             height: '48px',
@@ -795,24 +796,14 @@ export default function TribologyLabPage() {
   const unlockSounds = () => {
     if (soundsUnlockedRef.current) return;
     soundsUnlockedRef.current = true;
-    // Пробуем "разбудить" все аудио-элементы
+    // Просто загружаем все аудио (без воспроизведения)
     const allSounds = [
       ...deathSoundPoolRef.current,
       buySoundRef.current,
       lifeLostSoundRef.current,
       uiClickSoundRef.current,
     ].filter(Boolean) as HTMLAudioElement[];
-    allSounds.forEach(audio => {
-      audio.volume = 0;
-      audio.play().then(() => audio.pause()).catch(() => {});
-    });
-    // Восстанавливаем громкость
-    setTimeout(() => {
-      deathSoundPoolRef.current.forEach(a => a.volume = 0.3);
-      if (buySoundRef.current) buySoundRef.current.volume = 0.4;
-      if (lifeLostSoundRef.current) lifeLostSoundRef.current.volume = 0.5;
-      if (uiClickSoundRef.current) uiClickSoundRef.current.volume = 0.25;
-    }, 50);
+    allSounds.forEach(audio => audio.load());
   };
 
   const playDeathSound = () => {
@@ -1918,6 +1909,7 @@ export default function TribologyLabPage() {
           onTutorial={handleShowTutorial}
           onShowLeaderboard={() => setShowLeaderboard(true)}
           hasCompletedTutorial={hasCompletedTutorial}
+          onUIClick={playUIClick}
         />
         <LeaderboardModal
           isOpen={showLeaderboard}
@@ -4846,6 +4838,7 @@ export default function TribologyLabPage() {
           setShowPauseModal(false);
           setShowHandbookFromPause(true);
         }}
+        onUIClick={playUIClick}
       />
 
       {/* Справочник из паузы */}

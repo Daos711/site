@@ -14,6 +14,7 @@ interface MainMenuProps {
   onTutorial?: () => void;
   onShowLeaderboard?: () => void;
   hasCompletedTutorial: boolean;
+  onUIClick?: () => void;
 }
 
 /**
@@ -77,7 +78,7 @@ function generateDeck(seed: number): ModuleType[] {
 /**
  * MainMenu — Главное меню "Лаб-стенд"
  */
-export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedTutorial }: MainMenuProps) {
+export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedTutorial, onUIClick }: MainMenuProps) {
   const [mode, setMode] = useState<GameMode>('daily');
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -135,6 +136,7 @@ export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedT
   }, [mode]);
 
   const handleStart = () => {
+    onUIClick?.();
     if (!hasCompletedTutorial && onTutorial) {
       onTutorial();
     } else {
