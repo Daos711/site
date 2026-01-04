@@ -338,6 +338,13 @@ export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedT
                 padding: '8px 16px',
                 textDecoration: 'underline',
                 textUnderlineOffset: '4px',
+                transition: 'color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = THEME.accent;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = THEME.textMuted;
               }}
             >
               Как играть?
@@ -359,6 +366,16 @@ export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedT
                 padding: '8px 14px',
                 transition: 'all 0.15s ease',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = THEME.accent;
+                e.currentTarget.style.color = THEME.textPrimary;
+                e.currentTarget.style.boxShadow = `0 0 12px rgba(50, 214, 255, 0.3)`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = THEME.border;
+                e.currentTarget.style.color = THEME.textSecondary;
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
               <span>🏆</span>
               РЕЙТИНГ
@@ -378,6 +395,16 @@ export function MainMenu({ onStart, onTutorial, onShowLeaderboard, hasCompletedT
               cursor: 'pointer',
               padding: '8px 14px',
               transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = THEME.accent;
+              e.currentTarget.style.color = THEME.textPrimary;
+              e.currentTarget.style.boxShadow = `0 0 12px rgba(50, 214, 255, 0.3)`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = THEME.border;
+              e.currentTarget.style.color = THEME.textSecondary;
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <span>📒</span>
