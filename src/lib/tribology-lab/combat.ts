@@ -841,11 +841,15 @@ export function processModuleAttack(
     const scaledDuration = getEffectDuration(baseDuration, module.level);
     const barrierId = `barrier-${module.id}-${currentTime}`;
 
+    // pathProgress = максимальный прогресс среди врагов перед барьером (ближайший к барьеру)
+    const barrierPathProgress = Math.max(...enemiesReadyForBarrier.map(e => e.progress));
+
     const newBarrier: ActiveBarrier = {
       id: barrierId,
       moduleId: module.id,
       x: barrierPos.x,
       y: barrierPos.y,
+      pathProgress: barrierPathProgress,
       duration: scaledDuration,
       maxDuration: scaledDuration,
       createdAt: currentTime,

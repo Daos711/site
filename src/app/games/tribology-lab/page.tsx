@@ -1499,12 +1499,12 @@ export default function TribologyLabPage() {
                   };
                 }
 
-                // Если враг ДО барьера — ОТКАТЫВАЕМ и держим
+                // Если враг ДО барьера — ФИКСИРУЕМ на позиции барьера
                 if (isBeforeBarrier) {
-                  // Минимальный откат — враг стоит на месте без вибрации
+                  // Останавливаем врага НА позиции барьера (не откатываем далеко!)
                   return {
                     ...enemy,
-                    progress: Math.max(0, enemy.progress - 0.0005),
+                    progress: barrier.pathProgress - 0.003,
                   };
                 }
               }
