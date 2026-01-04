@@ -2094,7 +2094,7 @@ export default function TribologyLabPage() {
                 background: '#1A202C',
                 border: '1px solid #4A5568',
                 borderRadius: '6px',
-                padding: '5px 12px 4px 12px',
+                padding: '4px 12px',
                 minWidth: '40px',
                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
               }}
@@ -2113,12 +2113,10 @@ export default function TribologyLabPage() {
                 style={{
                   fontSize: '16px',
                   fontWeight: 700,
-                  lineHeight: 1,
                   color: isPaused ? '#3B82F6' : '#32D6FF',
                   textShadow: isPaused
                     ? '0 0 8px rgba(59, 130, 246, 0.8)'
                     : '0 0 8px rgba(50, 214, 255, 0.6)',
-                  letterSpacing: '0.05em',
                 }}
               >
                 {isPaused ? 'ПАУЗА' : enemies.length}
