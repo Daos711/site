@@ -13,6 +13,7 @@ import { ModuleType } from '../../types';
 
 interface HandbookProps {
   onClose: () => void;
+  closeLabel?: string; // По умолчанию "← В меню"
 }
 
 type ViewState =
@@ -21,7 +22,7 @@ type ViewState =
   | { view: 'enemy'; id: string }
   | { view: 'effect'; id: string };
 
-export function Handbook({ onClose }: HandbookProps) {
+export function Handbook({ onClose, closeLabel = '← В меню' }: HandbookProps) {
   const [activeTab, setActiveTab] = useState<TabType>('modules');
   const [viewState, setViewState] = useState<ViewState>({ view: 'list' });
 
@@ -97,7 +98,7 @@ export function Handbook({ onClose }: HandbookProps) {
           zIndex: 10,
         }}
       >
-        {/* Кнопка "В меню" */}
+        {/* Кнопка "Назад" */}
         <button
           onClick={onClose}
           style={{
@@ -112,7 +113,7 @@ export function Handbook({ onClose }: HandbookProps) {
             padding: '8px 0',
           }}
         >
-          ← В меню
+          {closeLabel}
         </button>
 
         <h1

@@ -45,6 +45,7 @@ import { Tutorial } from "@/lib/tribology-lab/components/Tutorial";
 import { LeaderboardModal } from "@/lib/tribology-lab/components/LeaderboardModal";
 import { WaveOverlay } from "@/lib/tribology-lab/components/WaveOverlay";
 import { PrepPhase } from "@/lib/tribology-lab/components/PrepPhase";
+import { Handbook } from "@/lib/tribology-lab/components/handbook";
 import type { GameMode } from "@/lib/tribology-lab/components/ModeToggle";
 import {
   getOrCreatePlayerId,
@@ -469,9 +470,10 @@ interface PauseModalProps {
   isOpen: boolean;
   onResume: () => void;
   onMainMenu: () => void;
+  onHandbook: () => void;
 }
 
-function PauseModal({ isOpen, onResume, onMainMenu }: PauseModalProps) {
+function PauseModal({ isOpen, onResume, onMainMenu, onHandbook }: PauseModalProps) {
   const [showPanel, setShowPanel] = useState(false);
 
   // Анимация появления панели
@@ -623,7 +625,7 @@ function PauseModal({ isOpen, onResume, onMainMenu }: PauseModalProps) {
         {/* Кнопка "В меню" */}
         <button
           onClick={onMainMenu}
-          className="w-full mb-6 transition-all"
+          className="w-full mb-3 transition-all"
           style={{
             height: '48px',
             background: 'transparent',
@@ -644,6 +646,36 @@ function PauseModal({ isOpen, onResume, onMainMenu }: PauseModalProps) {
           }}
         >
           В меню
+        </button>
+
+        {/* Кнопка "Справочник" */}
+        <button
+          onClick={onHandbook}
+          className="w-full mb-6 transition-all"
+          style={{
+            height: '48px',
+            background: 'transparent',
+            color: '#7A8A99',
+            fontSize: '15px',
+            fontWeight: 600,
+            border: '1px solid #2A3441',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#32D6FF';
+            e.currentTarget.style.color = '#C5D1DE';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#2A3441';
+            e.currentTarget.style.color = '#7A8A99';
+          }}
+        >
+          <span>📖</span> Справочник
         </button>
 
         {/* Подсказка ESC */}
@@ -709,6 +741,7 @@ export default function TribologyLabPage() {
   const [gameSpeed, setGameSpeed] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
+  const [showHandbookFromPause, setShowHandbookFromPause] = useState(false);
   const pauseTimeRef = useRef(0);      // Накопленное время на паузе
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
@@ -4662,7 +4695,22 @@ export default function TribologyLabPage() {
         isOpen={showPauseModal}
         onResume={handlePauseResume}
         onMainMenu={handlePauseMainMenu}
+        onHandbook={() => {
+          setShowPauseModal(false);
+          setShowHandbookFromPause(true);
+        }}
       />
+
+      {/* Справочник из паузы */}
+      {showHandbookFromPause && (
+        <Handbook
+          onClose={() => {
+            setShowHandbookFromPause(false);
+            setShowPauseModal(true);
+          }}
+          closeLabel="← Назад"
+        />
+      )}
 
       {/* Game Over модалка */}
       <GameOverModal

@@ -174,11 +174,12 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     name: 'Центрифуга',
     role: 'Control',
     attackType: 'aoe',
-    description: 'Откатывает врагов назад, давая больше времени.',
+    description: 'Откатывает врагов в радиусе назад, давая больше времени.',
     keyEffect: null,
     synergies: [],
     notes: [
-      'L1: 8%, L5: 16% отката',
+      'AOE радиус: 60 px (L1) → 96 px (L5)',
+      'Откат: 8% (L1) → 16% (L5)',
       'Элитные: 50% эффективности',
       'Боссы: 20% эффективности',
       'Кулдаун между откатами: 1.5 сек',
@@ -192,8 +193,10 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     keyEffect: null,
     synergies: [],
     notes: [
-      'Длительность: 3 сек (растёт с уровнем)',
-      'Кулдаун: 11 сек',
+      'Длительность: 5 сек (L1) → 7 сек (L5)',
+      'Кулдаун: 9 сек (L1) → 7 сек (L5)',
+      'Элитные: 70% длительности',
+      'Боссы: 35% длительности',
     ],
   },
   lubricant: {
@@ -251,7 +254,7 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     keyEffect: null,
     synergies: [],
     notes: [
-      'Радиус поражения: 80',
+      'Радиус поражения: 120 px (L1) → 192 px (L5)',
       '+20% урона по пыльным',
       'Урон падает с расстоянием (мин. 50%)',
     ],
