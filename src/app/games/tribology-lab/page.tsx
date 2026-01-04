@@ -828,6 +828,7 @@ export default function TribologyLabPage() {
 
   // Уведомление о сохранении pending result после OAuth
   const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
+  const pendingResultSubmittedRef = useRef(false);
 
   // Авторизация (из общего контекста)
   const { user: authUser, loading: authLoading, playerId, signIn, signOut: handleSignOut } = useAuth();
@@ -852,13 +853,15 @@ export default function TribologyLabPage() {
     setPlayerNicknameState(nick);
   }, []);
 
-  // Проверка и отправка pending result после OAuth
+  // Проверка и отправка pending result после OAuth (только один раз)
   useEffect(() => {
+    if (pendingResultSubmittedRef.current) return;
     if (authUser && !authLoading && playerId) {
       const pending = getPendingResult();
       if (pending) {
         const nick = getPlayerNickname();
         if (nick) {
+          pendingResultSubmittedRef.current = true;
           (async () => {
             try {
               await getOrCreateProfile(playerId, nick);
@@ -873,7 +876,6 @@ export default function TribologyLabPage() {
               );
               clearPendingResult();
               setPendingResultMessage(`Результат сохранён! Волна ${pending.wave}, ${pending.kills} врагов`);
-              // Автоматически скрываем через 5 секунд
               setTimeout(() => setPendingResultMessage(null), 5000);
             } catch (err) {
               console.error('Ошибка отправки pending result:', err);

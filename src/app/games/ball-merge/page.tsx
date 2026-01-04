@@ -286,6 +286,7 @@ export default function BallMergePage() {
 
   // Уведомление о сохранении pending result после OAuth
   const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
+  const pendingResultSubmittedRef = useRef(false);
 
   // Загрузка имени игрока и таблицы лидеров
   useEffect(() => {
@@ -296,12 +297,14 @@ export default function BallMergePage() {
     fetchLeaderboard();
   }, []);
 
-  // Проверка и отправка pending result после OAuth
+  // Проверка и отправка pending result после OAuth (только один раз)
   useEffect(() => {
+    if (pendingResultSubmittedRef.current) return;
     if (authUser && playerId) {
       const pending = getPendingResult();
       // Проверяем что pending result валиден и содержит имя и score > 0
       if (pending && pending.name && pending.name.trim() && pending.score > 0) {
+        pendingResultSubmittedRef.current = true;
         (async () => {
           try {
             console.log('Отправка pending result:', { playerId, name: pending.name, score: pending.score });
