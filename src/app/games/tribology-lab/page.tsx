@@ -1768,6 +1768,10 @@ export default function TribologyLabPage() {
     if (!dragState) return;
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
+      // Блокируем скролл страницы при перетаскивании на touch-устройствах
+      if ('touches' in e) {
+        e.preventDefault();
+      }
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       setDragState(prev => prev ? { ...prev, currentX: clientX, currentY: clientY } : null);
@@ -1846,7 +1850,8 @@ export default function TribologyLabPage() {
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchmove', handleMove);
+    // passive: false нужен для preventDefault() на touch-событиях
+    window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
 
     return () => {
@@ -3666,6 +3671,7 @@ export default function TribologyLabPage() {
                     {module && !isDraggingThis && (
                       <div
                         className={`absolute inset-0 cursor-grab active:cursor-grabbing ${isMerging ? 'animate-merge' : ''}`}
+                        style={{ touchAction: 'none' }}
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
