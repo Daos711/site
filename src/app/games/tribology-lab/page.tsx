@@ -1925,26 +1925,31 @@ export default function TribologyLabPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleOpenExitModal}
-          className="flex items-center justify-center rounded transition-all"
+          className="flex items-center gap-2 rounded-lg transition-all"
           style={{
-            width: 28,
-            height: 28,
-            background: '#161b22',
+            padding: '6px 12px',
+            background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
             border: '1px solid #30363d',
+            color: '#9CA3AF',
+            fontSize: 13,
+            fontWeight: 500,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#22d3ee';
-            e.currentTarget.style.boxShadow = '0 0 12px rgba(34, 211, 238, 0.25)';
+            e.currentTarget.style.borderColor = '#f87171';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(248, 113, 113, 0.25)';
+            e.currentTarget.style.color = '#f87171';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = '#30363d';
             e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.color = '#9CA3AF';
           }}
-          title="Выход в меню"
+          title="Покинуть испытание"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
+          <span>Выйти</span>
         </button>
         <h1 className="text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
       </div>
