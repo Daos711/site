@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, LogOut } from "lucide-react";
+import { useAuth } from "./AuthProvider";
 
 const navItems = [
   { href: "/", label: "Главная" },
@@ -17,6 +18,11 @@ const navItems = [
 export function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading, signIn, signOut } = useAuth();
+
+  const handleSignIn = () => {
+    signIn(window.location.href);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
@@ -45,16 +51,71 @@ export function Navigation() {
                 </a>
               );
             })}
+
+            {/* Auth button */}
+            <div className="ml-2 pl-2 border-l border-border">
+              {loading ? (
+                <div className="w-8 h-8 rounded-full bg-card animate-pulse" />
+              ) : user ? (
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+                  title={`Выйти (${user.email || user.name})`}
+                >
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="" className="w-6 h-6 rounded-full" />
+                  ) : (
+                    <LogOut size={18} />
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleSignIn}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-muted hover:text-foreground hover:bg-card-hover transition-colors"
+                  title="Войти через Google"
+                >
+                  <LogIn size={18} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="md:hidden p-2 rounded-md text-muted hover:text-foreground hover:bg-card-hover"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Mobile: Auth + Menu button */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Auth button */}
+            {loading ? (
+              <div className="w-8 h-8 rounded-full bg-card animate-pulse" />
+            ) : user ? (
+              <button
+                onClick={signOut}
+                className="p-2 rounded-md text-muted hover:text-foreground hover:bg-card-hover"
+                title={`Выйти (${user.email || user.name})`}
+              >
+                {user.avatar ? (
+                  <img src={user.avatar} alt="" className="w-6 h-6 rounded-full" />
+                ) : (
+                  <LogOut size={20} />
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="p-2 rounded-md text-muted hover:text-foreground hover:bg-card-hover"
+                title="Войти через Google"
+              >
+                <LogIn size={20} />
+              </button>
+            )}
+
+            {/* Mobile menu button */}
+            <button
+              className="p-2 rounded-md text-muted hover:text-foreground hover:bg-card-hover"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
