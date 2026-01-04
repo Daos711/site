@@ -344,10 +344,10 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 170,
     attackSpeed: 0.35,
     color: '#FF9F43',
-    description: 'Откатывает врагов в радиусе 80px',
+    description: 'Откатывает врагов в радиусе 60px',
     attackType: 'aoe',
-    aoeRadius: 80,     // радиус AOE отката (было только первый враг)
-    effectStrength: 12, // Базовый откат 12% (было 8%), масштабируется с уровнем
+    aoeRadius: 60,     // радиус AOE отката
+    effectStrength: 8, // Базовый откат 8%, масштабируется с уровнем
   },
   electrostatic: {
     id: 'electrostatic',

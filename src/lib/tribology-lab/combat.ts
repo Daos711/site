@@ -972,7 +972,7 @@ export function processModuleAttack(
         }
 
         // Центрифуга: AOE откат врагов назад (масштабируется с уровнем)
-        // Теперь откатывает ВСЕХ врагов в радиусе 80px (через aoeRadius)
+        // Откатывает ВСЕХ врагов в радиусе 60px (через aoeRadius)
         if (module.type === 'centrifuge') {
           const hasAntiPush = updatedEnemies[index].effects.some(e => e.type === 'antiPush');
           const hasPushback = updatedEnemies[index].effects.some(e => e.type === 'pushback');
@@ -980,8 +980,8 @@ export function processModuleAttack(
             const isBoss = target.type.startsWith('boss_');
             const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
 
-            // Базовый откат 12%, +2% за уровень (L1=12%, L2=14%, L3=16%, L4=18%, L5=20%)
-            const baseStrength = config.effectStrength || 12;
+            // Базовый откат 8%, +2% за уровень (L1=8%, L2=10%, L3=12%, L4=14%, L5=16%)
+            const baseStrength = config.effectStrength || 8;
             const scaledStrength = getEffectStrength(baseStrength, module.level);
             let pushAmount = scaledStrength / 100; // В десятичную дробь
 
