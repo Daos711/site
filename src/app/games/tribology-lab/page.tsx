@@ -1848,7 +1848,6 @@ export default function TribologyLabPage() {
       className="flex flex-col items-center gap-3 py-4"
       style={{
         position: 'relative',
-        background: '#0a0d12',
         minHeight: '100vh',
       }}
     >
