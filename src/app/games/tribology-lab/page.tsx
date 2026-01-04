@@ -763,6 +763,13 @@ export default function TribologyLabPage() {
   const [gameOverTime, setGameOverTime] = useState(0); // Время игры при Game Over (секунды)
   const gameStartTimeRef = useRef(0); // Timestamp начала игры
 
+  // Звуки
+  const enemyDeathSoundRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    enemyDeathSoundRef.current = new Audio('/sounds/tribology-lab/enemy-death.wav');
+    enemyDeathSoundRef.current.volume = 0.3;
+  }, []);
+
   // Лидерборд
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [playerId, setPlayerId] = useState<string>('');
@@ -1510,6 +1517,12 @@ export default function TribologyLabPage() {
       // Добавляем эффекты смерти
       if (newDeathEffects.length > 0) {
         setDeathEffects(prev => [...prev, ...newDeathEffects]);
+        // Воспроизводим звук смерти
+        if (enemyDeathSoundRef.current) {
+          const sound = enemyDeathSoundRef.current.cloneNode() as HTMLAudioElement;
+          sound.volume = 0.3;
+          sound.play().catch(() => {});
+        }
       }
 
       // Удаляем эффекты анализатора, нацеленные на мёртвых врагов
