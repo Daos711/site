@@ -182,20 +182,30 @@ export function LeaderboardModal({
             style={{
               width: 32,
               height: 32,
-              background: 'transparent',
+              background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
               border: '1px solid #4A5568',
               borderRadius: 6,
               color: '#9CA3AF',
-              fontSize: 18,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              lineHeight: 1,
-              paddingBottom: 2,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#f87171';
+              e.currentTarget.style.boxShadow = '0 0 12px rgba(248, 113, 113, 0.25)';
+              e.currentTarget.style.color = '#f87171';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#4A5568';
+              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.color = '#9CA3AF';
             }}
           >
-            ×
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
           </button>
         </div>
 

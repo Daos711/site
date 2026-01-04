@@ -1925,13 +1925,13 @@ export default function TribologyLabPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleOpenExitModal}
-          className="flex items-center gap-2 rounded-lg transition-all"
+          className="flex items-center gap-1.5 rounded transition-all"
           style={{
-            padding: '6px 12px',
+            padding: '4px 10px',
             background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
             border: '1px solid #30363d',
             color: '#9CA3AF',
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 500,
           }}
           onMouseEnter={(e) => {
@@ -1946,7 +1946,7 @@ export default function TribologyLabPage() {
           }}
           title="Покинуть испытание"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
           <span>Выйти</span>
