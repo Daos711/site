@@ -18,10 +18,15 @@ export interface AuthUser {
 
 // Вход через Google
 export async function signInWithGoogle(redirectTo?: string): Promise<void> {
+  // Используем origin + путь, без query params
+  const baseRedirect = typeof window !== 'undefined'
+    ? window.location.origin + window.location.pathname
+    : undefined;
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: redirectTo || (typeof window !== 'undefined' ? window.location.href : undefined),
+      redirectTo: redirectTo || baseRedirect,
     },
   });
   if (error) {
