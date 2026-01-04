@@ -767,13 +767,24 @@ export default function TribologyLabPage() {
   const SOUND_POOL_SIZE = 8;
   const deathSoundPoolRef = useRef<HTMLAudioElement[]>([]);
   const deathSoundIndexRef = useRef(0);
+  const buySoundRef = useRef<HTMLAudioElement | null>(null);
+  const lifeLostSoundRef = useRef<HTMLAudioElement | null>(null);
+  const uiClickSoundRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
-    // Создаём пул аудио-элементов
+    // Пул для звуков смерти (много одновременно)
     deathSoundPoolRef.current = Array.from({ length: SOUND_POOL_SIZE }, () => {
       const audio = new Audio('/sounds/tribology-lab/enemy-death.wav');
       audio.volume = 0.3;
       return audio;
     });
+    // Одиночные звуки
+    buySoundRef.current = new Audio('/sounds/tribology-lab/buy-module.wav');
+    buySoundRef.current.volume = 0.4;
+    lifeLostSoundRef.current = new Audio('/sounds/tribology-lab/lose-life.wav');
+    lifeLostSoundRef.current.volume = 0.5;
+    uiClickSoundRef.current = new Audio('/sounds/tribology-lab/ui-click.wav');
+    uiClickSoundRef.current.volume = 0.25;
   }, []);
 
   const playDeathSound = () => {
@@ -783,6 +794,27 @@ export default function TribologyLabPage() {
     deathSoundIndexRef.current = (deathSoundIndexRef.current + 1) % SOUND_POOL_SIZE;
     sound.currentTime = 0;
     sound.play().catch(() => {});
+  };
+
+  const playBuySound = () => {
+    if (buySoundRef.current) {
+      buySoundRef.current.currentTime = 0;
+      buySoundRef.current.play().catch(() => {});
+    }
+  };
+
+  const playLifeLostSound = () => {
+    if (lifeLostSoundRef.current) {
+      lifeLostSoundRef.current.currentTime = 0;
+      lifeLostSoundRef.current.play().catch(() => {});
+    }
+  };
+
+  const playUIClick = () => {
+    if (uiClickSoundRef.current) {
+      uiClickSoundRef.current.currentTime = 0;
+      uiClickSoundRef.current.play().catch(() => {});
+    }
   };
 
   // Лидерборд
@@ -1549,6 +1581,7 @@ export default function TribologyLabPage() {
 
       if (livesLost > 0) {
         setLives(l => Math.max(0, l - livesLost));
+        playLifeLostSound();
       }
 
       if (goldEarned > 0) {
@@ -1719,6 +1752,7 @@ export default function TribologyLabPage() {
               };
               setModules(prev => [...prev, newModule]);
               setGold(prev => prev - config.basePrice);
+              playBuySound();
             }
           } else if (
             existingModule.type === dragState.moduleType &&
@@ -1734,6 +1768,7 @@ export default function TribologyLabPage() {
               m.id === existingModule.id ? { ...m, level: m.level + 1 } : m
             ));
             setGold(prev => prev - config.basePrice);
+            playBuySound();
           }
         } else if (dragState.type === 'field' && dragState.moduleId) {
           // ХАРДКОР: модули с поля НЕЛЬЗЯ перемещать, только merge!
