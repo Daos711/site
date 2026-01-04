@@ -268,11 +268,11 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 200,       // большой радиус для AOE
     attackSpeed: 0.4,
     color: '#2dd4bf',  // бирюзовый
-    description: 'AOE урон',
+    description: 'AOE урон в радиусе 120px',
     attackType: 'aoe',
-    aoeRadius: 80,    // базовый радиус AOE от первого врага (80 → 92 → 106 → 122 → 140px)
+    aoeRadius: 120,   // базовый радиус AOE (было 80 → теперь 120 → 138 → 159 → 183 → 210px)
     tagBonuses: { dusty: 1.2 },  // +20% по пыльным
-    // Особенность: урон растёт от количества врагов
+    // Особенность: урон растёт от количества врагов (+10% за каждого, макс +50%)
   },
   laser: {
     id: 'laser',
@@ -344,9 +344,10 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     range: 170,
     attackSpeed: 0.35,
     color: '#FF9F43',
-    description: 'Откатывает врагов назад',
+    description: 'Откатывает врагов в радиусе 80px',
     attackType: 'aoe',
-    effectStrength: 8, // Базовый откат 8%, масштабируется с уровнем
+    aoeRadius: 80,     // радиус AOE отката (было только первый враг)
+    effectStrength: 12, // Базовый откат 12% (было 8%), масштабируется с уровнем
   },
   electrostatic: {
     id: 'electrostatic',
@@ -368,11 +369,11 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     basePrice: 115,
     baseDamage: 0,
     range: 150,
-    attackSpeed: 0.09,  // ~11 сек cooldown
+    attackSpeed: 0.09,  // кулдаун через getBarrierCooldown (9 сек L1)
     color: '#FFD166',
-    description: 'Создаёт перегородку на 3 сек',
+    description: 'Создаёт перегородку на 5 сек',
     attackType: 'barrier',
-    effectDuration: 3000,  // длительность перегородки
+    effectDuration: 5000,  // длительность перегородки (было 3000)
   },
 };
 

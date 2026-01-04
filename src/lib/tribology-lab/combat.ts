@@ -153,10 +153,11 @@ export function getBarrierPosition(
 
 /**
  * Рассчитывает cooldown барьера по уровню
- * Формула: 11 - (level - 1) * 0.75 сек
+ * Формула: 9 - (level - 1) * 0.5 сек
+ * L1: 9с, L2: 8.5с, L3: 8с, L4: 7.5с, L5: 7с
  */
 export function getBarrierCooldown(level: number): number {
-  const seconds = 11 - (level - 1) * 0.75;
+  const seconds = 9 - (level - 1) * 0.5;
   return seconds * 1000; // в мс
 }
 
@@ -970,7 +971,8 @@ export function processModuleAttack(
           }
         }
 
-        // Центрифуга: плавный откат врагов назад (масштабируется с уровнем)
+        // Центрифуга: AOE откат врагов назад (масштабируется с уровнем)
+        // Теперь откатывает ВСЕХ врагов в радиусе 80px (через aoeRadius)
         if (module.type === 'centrifuge') {
           const hasAntiPush = updatedEnemies[index].effects.some(e => e.type === 'antiPush');
           const hasPushback = updatedEnemies[index].effects.some(e => e.type === 'pushback');
@@ -978,8 +980,8 @@ export function processModuleAttack(
             const isBoss = target.type.startsWith('boss_');
             const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
 
-            // Базовый откат 8%, +2% за уровень (L1=8%, L2=10%, L3=12%, L4=14%, L5=16%)
-            const baseStrength = config.effectStrength || 8;
+            // Базовый откат 12%, +2% за уровень (L1=12%, L2=14%, L3=16%, L4=18%, L5=20%)
+            const baseStrength = config.effectStrength || 12;
             const scaledStrength = getEffectStrength(baseStrength, module.level);
             let pushAmount = scaledStrength / 100; // В десятичную дробь
 
