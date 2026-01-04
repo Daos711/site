@@ -2111,7 +2111,6 @@ export default function TribologyLabPage() {
               />
               <span
                 style={{
-                  fontFamily: '"Courier New", monospace',
                   fontSize: '16px',
                   fontWeight: 700,
                   color: isPaused ? '#3B82F6' : '#32D6FF',
