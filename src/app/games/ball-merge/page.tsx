@@ -300,10 +300,12 @@ export default function BallMergePage() {
   useEffect(() => {
     if (authUser && playerId) {
       const pending = getPendingResult();
-      if (pending && pending.name) {
+      // Проверяем что pending result валиден и содержит имя и score > 0
+      if (pending && pending.name && pending.name.trim() && pending.score > 0) {
         (async () => {
           try {
-            const result = await submitBallMergeScore(playerId, pending.name, pending.score);
+            console.log('Отправка pending result:', { playerId, name: pending.name, score: pending.score });
+            const result = await submitBallMergeScore(playerId, pending.name.trim(), pending.score);
             clearPendingResult();
             if (result.success) {
               setPendingResultMessage(result.isNewRecord
@@ -321,6 +323,10 @@ export default function BallMergePage() {
             setTimeout(() => setPendingResultMessage(null), 5000);
           }
         })();
+      } else if (pending) {
+        // Невалидный pending result — очищаем
+        console.warn('Невалидный pending result, очищаем:', pending);
+        clearPendingResult();
       }
     }
   }, [authUser, playerId]);
@@ -868,8 +874,8 @@ export default function BallMergePage() {
               <div
                 className="rounded-full"
                 style={{
-                  width: Math.round(Math.min(ball.radius * 0.3, 30)),
-                  height: Math.round(Math.min(ball.radius * 0.3, 30)),
+                  width: `${Math.round(Math.min(ball.radius * 0.3, 30))}px`,
+                  height: `${Math.round(Math.min(ball.radius * 0.3, 30))}px`,
                   background: `radial-gradient(circle at 30% 30%, ${ball.glowColor}, ${ball.color})`,
                   boxShadow: `0 2px 4px rgba(0,0,0,0.3)`,
                 }}

@@ -122,7 +122,8 @@ export async function submitBallMergeScore(
     );
 
     if (!insertRes.ok) {
-      console.error("Failed to insert score:", insertRes.statusText);
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert score:", insertRes.status, insertRes.statusText, errorBody);
       return { success: false, isNewRecord: false };
     }
 
