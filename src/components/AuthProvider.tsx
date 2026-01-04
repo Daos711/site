@@ -8,6 +8,7 @@ import {
   signInWithGoogle,
   signOut,
   getPlayerId,
+  getAnonymousPlayerId,
 } from '@/lib/supabase';
 
 interface AuthContextType {
@@ -23,7 +24,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [playerId, setPlayerId] = useState<string>('');
+  // Инициализируем анонимным ID сразу, потом обновим если есть auth
+  const [playerId, setPlayerId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return getAnonymousPlayerId();
+    }
+    return '';
+  });
 
   useEffect(() => {
     // Проверяем авторизацию при загрузке
