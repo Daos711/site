@@ -3,7 +3,7 @@ export const SUPABASE_URL = "https://tuskcdlcbasehlrsrsoe.supabase.co";
 export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1c2tjZGxjYmFzZWhscnNyc29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTM4NzcsImV4cCI6MjA4MTg2OTg3N30.VdfhknWL4SgbMUOxFZKsnAsjI3SUbcyoYXDiONjOjao";
 
 // Текущая версия баланса (инкремент при каждом патче)
-export const BALANCE_VERSION = 1;
+export const BALANCE_VERSION = 2;
 
 // ==================== КЭШИРОВАНИЕ ====================
 
@@ -379,13 +379,13 @@ export async function getRandomLeaderboardByDeck(deckKey: string, limit = 100): 
 
 // Получить рекорды игрока (с кэшированием)
 export async function getPlayerRuns(playerId: string, limit = 50): Promise<TribolabRun[]> {
-  const cacheKey = `player_${playerId}_${limit}`;
+  const cacheKey = `player_${playerId}_${BALANCE_VERSION}_${limit}`;
 
   const cached = getCached<TribolabRun[]>(cacheKey);
   if (cached) return cached;
 
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?player_id=eq.${playerId}&select=*&order=created_at.desc&limit=${limit}`,
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?player_id=eq.${playerId}&balance_version=eq.${BALANCE_VERSION}&select=*&order=created_at.desc&limit=${limit}`,
     { headers: SUPABASE_HEADERS }
   );
 
