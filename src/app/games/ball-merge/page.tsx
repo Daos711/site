@@ -307,7 +307,6 @@ export default function BallMergePage() {
         pendingResultSubmittedRef.current = true;
         (async () => {
           try {
-            console.log('Отправка pending result:', { playerId, name: pending.name, score: pending.score });
             const result = await submitBallMergeScore(playerId, pending.name.trim(), pending.score);
             clearPendingResult();
             if (result.success) {
@@ -328,7 +327,6 @@ export default function BallMergePage() {
         })();
       } else if (pending) {
         // Невалидный pending result — очищаем
-        console.warn('Невалидный pending result, очищаем:', pending);
         clearPendingResult();
       }
     }
