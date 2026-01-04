@@ -1,6 +1,6 @@
-// Supabase конфигурация для Ball Merge
-export const SUPABASE_URL = "https://tuskcdlcbasehlrsrsoe.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1c2tjZGxjYmFzZWhscnNyc29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTM4NzcsImV4cCI6MjA4MTg2OTg3N30.VdfhknWL4SgbMUOxFZKsnAsjI3SUbcyoYXDiONjOjao";
+// Supabase конфигурация для Ball Merge (из общих env)
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export interface BallMergeScore {
   id: string;
@@ -122,7 +122,8 @@ export async function submitBallMergeScore(
     );
 
     if (!insertRes.ok) {
-      console.error("Failed to insert score:", insertRes.statusText);
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert score:", insertRes.status, insertRes.statusText, errorBody);
       return { success: false, isNewRecord: false };
     }
 
@@ -132,6 +133,7 @@ export async function submitBallMergeScore(
 
 // Генерация уникального ID игрока
 export function getOrCreatePlayerId(): string {
+  if (typeof window === 'undefined') return '';
   const key = "ballMergePlayerId";
   let playerId = localStorage.getItem(key);
   if (!playerId) {
@@ -143,9 +145,56 @@ export function getOrCreatePlayerId(): string {
 
 // Сохранение/получение имени игрока
 export function getPlayerName(): string {
+  if (typeof window === 'undefined') return '';
   return localStorage.getItem("ballMergePlayerName") || "";
 }
 
 export function setPlayerName(name: string): void {
+  if (typeof window === 'undefined') return;
   localStorage.setItem("ballMergePlayerName", name);
+}
+
+// ==================== PENDING RESULT (для OAuth) ====================
+
+export interface PendingBallMergeResult {
+  score: number;
+  name: string;
+  timestamp: number; // для проверки актуальности
+}
+
+const PENDING_RESULT_KEY = 'ballmerge_pending_result';
+const PENDING_RESULT_MAX_AGE = 5 * 60 * 1000; // 5 минут
+
+export function savePendingResult(score: number, name: string): void {
+  if (typeof window === 'undefined') return;
+  const data: PendingBallMergeResult = {
+    score,
+    name,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(data));
+}
+
+export function getPendingResult(): PendingBallMergeResult | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(PENDING_RESULT_KEY);
+  if (!raw) return null;
+
+  try {
+    const data: PendingBallMergeResult = JSON.parse(raw);
+    // Проверяем актуальность (не старше 5 минут)
+    if (Date.now() - data.timestamp > PENDING_RESULT_MAX_AGE) {
+      clearPendingResult();
+      return null;
+    }
+    return data;
+  } catch {
+    clearPendingResult();
+    return null;
+  }
+}
+
+export function clearPendingResult(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PENDING_RESULT_KEY);
 }

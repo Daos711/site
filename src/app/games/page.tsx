@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Grid3X3, Circle } from "lucide-react";
+import { Grid3X3, Circle, Cog } from "lucide-react";
 
 const games = [
   {
@@ -17,6 +17,14 @@ const games = [
     description: "Бросай шарики и соединяй одинаковые. Физика + головоломка.",
     href: "/games/ball-merge",
     icon: Circle,
+    status: "prototype" as const,
+  },
+  {
+    id: "tribology-lab",
+    title: "Трибо-Лаб",
+    description: "Tower Defense + Merge. Защити подшипник от частиц износа.",
+    href: "/games/tribology-lab",
+    icon: Cog,
     status: "prototype" as const,
   },
 ];
