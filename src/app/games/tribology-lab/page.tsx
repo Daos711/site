@@ -806,6 +806,7 @@ export default function TribologyLabPage() {
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
   const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
+  // labStandId вычисляется ниже из gameSeed для совпадения с MainMenu
 
   // DEV-панель для тестирования
   const [devMode, setDevMode] = useState(false);
@@ -840,7 +841,7 @@ export default function TribologyLabPage() {
   const [gameMode, setGameMode] = useState<GameMode>('daily');
   const [menuDeck, setMenuDeck] = useState<ModuleType[] | null>(null);
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false);
-  // Номер стенда вычисляется из seed (как в MainMenu)
+  // Номер стенда из seed (как в MainMenu)
   const labStandId = (gameSeed % 999) + 1;
 
   // Загружаем флаг туториала из localStorage
@@ -861,7 +862,16 @@ export default function TribologyLabPage() {
     if (authUser && !authLoading && playerId) {
       const pending = getPendingResult();
       if (pending) {
-        const nick = getPlayerNickname();
+        // Используем сохранённый никнейм или имя из Google как fallback
+        let nick = getPlayerNickname();
+        if (!nick && authUser.name) {
+          nick = authUser.name;
+          setPlayerNickname(nick); // Сохраняем для будущего
+        }
+        if (!nick && authUser.email) {
+          nick = authUser.email.split('@')[0]; // Имя из email
+          setPlayerNickname(nick);
+        }
         if (nick) {
           pendingResultSubmittedRef.current = true;
           (async () => {
