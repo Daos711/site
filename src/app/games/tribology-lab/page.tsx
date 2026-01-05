@@ -861,7 +861,16 @@ export default function TribologyLabPage() {
     if (authUser && !authLoading && playerId) {
       const pending = getPendingResult();
       if (pending) {
-        const nick = getPlayerNickname();
+        // Используем сохранённый никнейм или имя из Google как fallback
+        let nick = getPlayerNickname();
+        if (!nick && authUser.name) {
+          nick = authUser.name;
+          setPlayerNickname(nick); // Сохраняем для будущего
+        }
+        if (!nick && authUser.email) {
+          nick = authUser.email.split('@')[0]; // Имя из email
+          setPlayerNickname(nick);
+        }
         if (nick) {
           pendingResultSubmittedRef.current = true;
           (async () => {
