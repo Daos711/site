@@ -62,14 +62,27 @@ function seededRandom(seed: number): () => number {
 }
 
 /**
+ * Fisher-Yates shuffle - детерминированное перемешивание
+ * В отличие от .sort(() => random() - 0.5), работает одинаково во всех браузерах
+ */
+function shuffleArray<T>(array: T[], random: () => number): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
  * Генерация колоды по правилам: 2 DPS + 1 Control + 2 Support = 5 модулей
  */
 function generateDeck(seed: number): ModuleType[] {
   const random = seededRandom(seed);
 
-  const shuffledDps = [...MODULE_ROLES.dps].sort(() => random() - 0.5);
-  const shuffledControl = [...MODULE_ROLES.control].sort(() => random() - 0.5);
-  const shuffledSupport = [...MODULE_ROLES.support].sort(() => random() - 0.5);
+  const shuffledDps = shuffleArray(MODULE_ROLES.dps, random);
+  const shuffledControl = shuffleArray(MODULE_ROLES.control, random);
+  const shuffledSupport = shuffleArray(MODULE_ROLES.support, random);
 
   return [
     shuffledDps[0],      // DPS 1
