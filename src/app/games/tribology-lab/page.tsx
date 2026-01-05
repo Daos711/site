@@ -118,6 +118,7 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
   const [showPanel, setShowPanel] = useState(false);
   const [localNickname, setLocalNickname] = useState(nickname);
   const [nicknameSaved, setNicknameSaved] = useState(false);
+  const [resultSubmitted, setResultSubmitted] = useState(false);
 
   // Форматирование времени MM:SS
   const formatTime = (seconds: number) => {
@@ -130,6 +131,7 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
   useEffect(() => {
     if (isOpen) {
       setLocalNickname(nickname);
+      setResultSubmitted(false); // Сбрасываем флаг отправки
     }
   }, [isOpen, nickname]);
 
@@ -154,8 +156,10 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
 
   // Кнопка OK - сохраняем ник и отправляем результат
   const handleOkClick = () => {
+    if (resultSubmitted) return; // Уже отправлено
     saveNickname();
     onSubmitResult();
+    setResultSubmitted(true);
   };
 
   const handleNicknameBlur = () => {
@@ -339,20 +343,23 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
               />
               <button
                 onClick={handleOkClick}
-                disabled={!localNickname.trim()}
+                disabled={!localNickname.trim() || resultSubmitted}
                 style={{
                   padding: '10px 16px',
-                  background: localNickname.trim() ? '#22C55E' : '#2A3441',
+                  background: resultSubmitted
+                    ? '#1E40AF' // Синий после отправки
+                    : localNickname.trim() ? '#22C55E' : '#2A3441',
                   border: 'none',
                   borderRadius: '8px',
-                  color: localNickname.trim() ? '#FFFFFF' : '#7A8A99',
+                  color: resultSubmitted || localNickname.trim() ? '#FFFFFF' : '#7A8A99',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: localNickname.trim() ? 'pointer' : 'default',
+                  cursor: resultSubmitted || !localNickname.trim() ? 'default' : 'pointer',
                   transition: 'all 0.2s ease',
+                  minWidth: resultSubmitted ? '100px' : 'auto',
                 }}
               >
-                OK
+                {resultSubmitted ? '✓ Сохранено' : 'OK'}
               </button>
             </div>
           </div>
