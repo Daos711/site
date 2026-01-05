@@ -3787,7 +3787,28 @@ export default function TribologyLabPage() {
         >
           {attackEffects.map(effect => {
             const progress = effect.progress;
-            const midX = (effect.fromX + effect.toX) / 2;
+
+            // Находим врага по targetId и берём его ТЕКУЩУЮ позицию
+            // Это фиксит рассинхрон анимации на высоких скоростях
+            let toX: number;
+            let toY: number;
+            if (effect.targetId) {
+              const targetEnemy = enemies.find(e => e.id === effect.targetId);
+              if (targetEnemy) {
+                const targetConfig = ENEMIES[targetEnemy.type];
+                const currentPos = getPositionOnPath(enemyPath, targetEnemy.progress, targetConfig.oscillation);
+                toX = currentPos.x;
+                toY = currentPos.y;
+              } else {
+                toX = effect.toX;
+                toY = effect.toY;
+              }
+            } else {
+              toX = effect.toX;
+              toY = effect.toY;
+            }
+
+            const midX = (effect.fromX + toX) / 2;
 
             // МАГНИТ — силовые линии (дуги)
             if (effect.moduleType === 'magnet') {
@@ -3795,7 +3816,7 @@ export default function TribologyLabPage() {
                 <g key={effect.id} opacity={1 - progress * 0.7}>
                   {/* Главная дуга */}
                   <path
-                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY - 30} ${effect.toX} ${effect.toY}`}
+                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY - 30} ${toX} ${toY}`}
                     fill="none"
                     stroke="#6B4CD6"
                     strokeWidth={2}
@@ -3803,7 +3824,7 @@ export default function TribologyLabPage() {
                   />
                   {/* Вторая дуга (снизу) */}
                   <path
-                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY + 25} ${effect.toX} ${effect.toY}`}
+                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY + 25} ${toX} ${toY}`}
                     fill="none"
                     stroke="#6B4CD6"
                     strokeWidth={1.5}
@@ -3811,15 +3832,15 @@ export default function TribologyLabPage() {
                     opacity={0.5}
                   />
                   {/* Точка на цели */}
-                  <circle cx={effect.toX} cy={effect.toY} r={5} fill="#6B4CD6" opacity={0.6} />
+                  <circle cx={toX} cy={toY} r={5} fill="#6B4CD6" opacity={0.6} />
                 </g>
               );
             }
 
             // ОХЛАДИТЕЛЬ — холодный снаряд
             if (effect.moduleType === 'cooler') {
-              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
-              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
+              const x = effect.fromX + (toX - effect.fromX) * progress;
+              const y = effect.fromY + (toY - effect.fromY) * progress;
               return (
                 <g key={effect.id}>
                   {/* Ледяной след */}
@@ -3864,8 +3885,8 @@ export default function TribologyLabPage() {
                     <g opacity={1 - (progress - 0.2) * 1.2}>
                       {/* Внешнее кольцо */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={5 + (progress - 0.2) * 40}
                         fill="none"
                         stroke="#C09A1E"
@@ -3873,8 +3894,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Внутреннее кольцо */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={3 + (progress - 0.2) * 25}
                         fill="none"
                         stroke="#C09A1E"
@@ -3883,8 +3904,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Микросетка (фильтрация) */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={12}
                         fill="none"
                         stroke="#C09A1E"
@@ -3898,8 +3919,8 @@ export default function TribologyLabPage() {
                         return (
                           <circle
                             key={i}
-                            cx={effect.toX + Math.cos(angle * Math.PI / 180) * Math.max(0, dist)}
-                            cy={effect.toY + Math.sin(angle * Math.PI / 180) * Math.max(0, dist)}
+                            cx={toX + Math.cos(angle * Math.PI / 180) * Math.max(0, dist)}
+                            cy={toY + Math.sin(angle * Math.PI / 180) * Math.max(0, dist)}
                             r={2}
                             fill="#8B7355"
                             opacity={Math.max(0, 1 - (progress - 0.2) * 1.2)}
@@ -3920,8 +3941,8 @@ export default function TribologyLabPage() {
                   {progress < 0.5 && (
                     <g>
                       <ellipse
-                        cx={effect.fromX + (effect.toX - effect.fromX) * progress * 2}
-                        cy={effect.fromY + (effect.toY - effect.fromY) * progress * 2}
+                        cx={effect.fromX + (toX - effect.fromX) * progress * 2}
+                        cy={effect.fromY + (toY - effect.fromY) * progress * 2}
                         rx={4}
                         ry={6}
                         fill="#8845C7"
@@ -3929,8 +3950,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Блик */}
                       <ellipse
-                        cx={effect.fromX + (effect.toX - effect.fromX) * progress * 2 - 1}
-                        cy={effect.fromY + (effect.toY - effect.fromY) * progress * 2 - 2}
+                        cx={effect.fromX + (toX - effect.fromX) * progress * 2 - 1}
+                        cy={effect.fromY + (toY - effect.fromY) * progress * 2 - 2}
                         rx={1.5}
                         ry={2}
                         fill="#FFFFFF"
@@ -3944,24 +3965,24 @@ export default function TribologyLabPage() {
                     <g opacity={Math.max(0, 1 - (progress - 0.4) * 1.5)}>
                       {/* Масляное пятно */}
                       <ellipse
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         rx={8 + (progress - 0.4) * 35}
                         ry={5 + (progress - 0.4) * 18}
                         fill="rgba(136, 69, 199, 0.35)"
                       />
                       {/* Глянцевый блик */}
                       <ellipse
-                        cx={effect.toX - 5}
-                        cy={effect.toY - 3}
+                        cx={toX - 5}
+                        cy={toY - 3}
                         rx={4 + (progress - 0.4) * 12}
                         ry={2 + (progress - 0.4) * 6}
                         fill="rgba(255, 255, 255, 0.3)"
                       />
                       {/* Контур пятна */}
                       <ellipse
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         rx={8 + (progress - 0.4) * 35}
                         ry={5 + (progress - 0.4) * 18}
                         fill="none"
@@ -4007,16 +4028,16 @@ export default function TribologyLabPage() {
                     <g opacity={Math.max(0, 1 - (progress - 0.2) * 1.1)}>
                       {/* Концентрические кольца ОТ ВРАГА */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={10 + (progress - 0.2) * 60}
                         fill="none"
                         stroke="#24A899"
                         strokeWidth={2}
                       />
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={5 + (progress - 0.2) * 40}
                         fill="none"
                         stroke="#24A899"
@@ -4024,8 +4045,8 @@ export default function TribologyLabPage() {
                         opacity={0.7}
                       />
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={3 + (progress - 0.2) * 20}
                         fill="none"
                         stroke="#24A899"
@@ -4040,8 +4061,8 @@ export default function TribologyLabPage() {
                         return (
                           <circle
                             key={i}
-                            cx={effect.toX + Math.cos(angle * Math.PI / 180) * dist}
-                            cy={effect.toY + Math.sin(angle * Math.PI / 180) * dist}
+                            cx={toX + Math.cos(angle * Math.PI / 180) * dist}
+                            cy={toY + Math.sin(angle * Math.PI / 180) * dist}
                             r={size * Math.max(0, 1 - (progress - 0.2))}
                             fill="#24A899"
                             opacity={0.6 * Math.max(0, 1 - (progress - 0.2))}
@@ -4062,8 +4083,8 @@ export default function TribologyLabPage() {
                   <line
                     x1={effect.fromX}
                     y1={effect.fromY}
-                    x2={effect.toX}
-                    y2={effect.toY}
+                    x2={toX}
+                    y2={toY}
                     stroke="#FF6666"
                     strokeWidth={5}
                     opacity={0.3}
@@ -4072,14 +4093,14 @@ export default function TribologyLabPage() {
                   <line
                     x1={effect.fromX}
                     y1={effect.fromY}
-                    x2={effect.toX}
-                    y2={effect.toY}
+                    x2={toX}
+                    y2={toY}
                     stroke="#BF3636"
                     strokeWidth={2}
                   />
                   {/* Точка фокуса (на цели) */}
-                  <circle cx={effect.toX} cy={effect.toY} r={8} fill="#FF4444" opacity={0.5} />
-                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#FFFFFF" opacity={0.8} />
+                  <circle cx={toX} cy={toY} r={8} fill="#FF4444" opacity={0.5} />
+                  <circle cx={toX} cy={toY} r={4} fill="#FFFFFF" opacity={0.8} />
                 </g>
               );
             }
@@ -4113,8 +4134,8 @@ export default function TribologyLabPage() {
 
             // ДЕЭМУЛЬГАТОР — конусная струя осушения
             if (effect.moduleType === 'demulsifier') {
-              const dx = effect.toX - effect.fromX;
-              const dy = effect.toY - effect.fromY;
+              const dx = toX - effect.fromX;
+              const dy = toY - effect.fromY;
               const dist = Math.sqrt(dx * dx + dy * dy);
               const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
@@ -4141,19 +4162,7 @@ export default function TribologyLabPage() {
             // АНАЛИЗАТОР — упрощённая анимация "пинг + метка" (2 фазы)
             if (effect.moduleType === 'analyzer') {
               const pingDuration = 0.14; // Фаза 1: быстрый пинг
-
-              // Получаем ТЕКУЩУЮ позицию врага по targetId (прицел следует за ним)
-              let targetX = effect.toX;
-              let targetY = effect.toY;
-              if (effect.targetId) {
-                const targetEnemy = enemies.find(e => e.id === effect.targetId);
-                if (targetEnemy) {
-                  const targetConfig = ENEMIES[targetEnemy.type];
-                  const livePos = getPositionOnPath(enemyPath, targetEnemy.progress, targetConfig.oscillation);
-                  targetX = livePos.x;
-                  targetY = livePos.y;
-                }
-              }
+              // Используем общие toX/toY (уже отслеживают врага)
 
               return (
                 <g key={effect.id}>
@@ -4163,8 +4172,8 @@ export default function TribologyLabPage() {
                       <line
                         x1={effect.fromX}
                         y1={effect.fromY}
-                        x2={targetX}
-                        y2={targetY}
+                        x2={toX}
+                        y2={toY}
                         stroke="#e0e8f0"
                         strokeWidth={2}
                         opacity={0.8 * (1 - progress / pingDuration)}
@@ -4172,8 +4181,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Вспышка на враге */}
                       <circle
-                        cx={targetX}
-                        cy={targetY}
+                        cx={toX}
+                        cy={toY}
                         r={2 + (progress / pingDuration) * 3}
                         fill="#e0e8f0"
                         opacity={0.9 * (1 - progress / pingDuration)}
@@ -4184,7 +4193,7 @@ export default function TribologyLabPage() {
                   {/* Фаза 2: Прицел (метка) — слегка "дышит" */}
                   {progress >= pingDuration && (
                     <g
-                      transform={`translate(${Math.round(targetX)}, ${Math.round(targetY)})`}
+                      transform={`translate(${Math.round(toX)}, ${Math.round(toY)})`}
                       opacity={0.75 + Math.sin(progress * 10) * 0.1}
                     >
                       {/* Круг прицела */}
@@ -4204,8 +4213,8 @@ export default function TribologyLabPage() {
 
             // ЦЕНТРИФУГА — ударный импульс
             if (effect.moduleType === 'centrifuge') {
-              const dx = effect.toX - effect.fromX;
-              const dy = effect.toY - effect.fromY;
+              const dx = toX - effect.fromX;
+              const dy = toY - effect.fromY;
               const pushAngle = Math.atan2(dy, dx) + Math.PI; // назад от модуля
               const enemyRadius = 15;
 
@@ -4213,8 +4222,8 @@ export default function TribologyLabPage() {
                 <g key={effect.id}>
                   {/* Ударное кольцо расширяется */}
                   <circle
-                    cx={effect.toX}
-                    cy={effect.toY}
+                    cx={toX}
+                    cy={toY}
                     r={enemyRadius * 1.1 + progress * enemyRadius * 0.6}
                     fill="none"
                     stroke="#FF9F43"
@@ -4229,10 +4238,10 @@ export default function TribologyLabPage() {
                     return (
                       <line
                         key={i}
-                        x1={effect.toX + Math.cos(lineAngle) * dist}
-                        y1={effect.toY + Math.sin(lineAngle) * dist}
-                        x2={effect.toX + Math.cos(lineAngle) * (dist + len)}
-                        y2={effect.toY + Math.sin(lineAngle) * (dist + len)}
+                        x1={toX + Math.cos(lineAngle) * dist}
+                        y1={toY + Math.sin(lineAngle) * dist}
+                        x2={toX + Math.cos(lineAngle) * (dist + len)}
+                        y2={toY + Math.sin(lineAngle) * (dist + len)}
                         stroke="#FF9F43"
                         strokeWidth={2.5}
                         strokeLinecap="round"
@@ -4250,8 +4259,8 @@ export default function TribologyLabPage() {
                     return (
                       <circle
                         key={n}
-                        cx={effect.toX + Math.cos(a) * r}
-                        cy={effect.toY + Math.sin(a) * r}
+                        cx={toX + Math.cos(a) * r}
+                        cy={toY + Math.sin(a) * r}
                         r={1.5 + (n % 2) * 0.5}
                         fill="#FF9F43"
                         opacity={0.5 - progress * 0.45}
@@ -4284,7 +4293,7 @@ export default function TribologyLabPage() {
                 <g key={effect.id} opacity={1 - progress * 0.6}>
                   {/* Свечение */}
                   <path
-                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 5)}
+                    d={generateLightning(effect.fromX, effect.fromY, toX, toY, 5)}
                     fill="none"
                     stroke="#fde047"
                     strokeWidth={6}
@@ -4293,7 +4302,7 @@ export default function TribologyLabPage() {
                   />
                   {/* Основная молния */}
                   <path
-                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 6)}
+                    d={generateLightning(effect.fromX, effect.fromY, toX, toY, 6)}
                     fill="none"
                     stroke="#fde047"
                     strokeWidth={3}
@@ -4301,15 +4310,15 @@ export default function TribologyLabPage() {
                   />
                   {/* Ядро молнии */}
                   <path
-                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 4)}
+                    d={generateLightning(effect.fromX, effect.fromY, toX, toY, 4)}
                     fill="none"
                     stroke="#ffffff"
                     strokeWidth={1.5}
                     opacity={0.8}
                   />
                   {/* Искра на цели */}
-                  <circle cx={effect.toX} cy={effect.toY} r={8 - progress * 5} fill="#fde047" opacity={0.7} />
-                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#ffffff" opacity={0.9 - progress * 0.5} />
+                  <circle cx={toX} cy={toY} r={8 - progress * 5} fill="#fde047" opacity={0.7} />
+                  <circle cx={toX} cy={toY} r={4} fill="#ffffff" opacity={0.9 - progress * 0.5} />
                 </g>
               );
             }
