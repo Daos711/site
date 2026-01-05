@@ -1499,12 +1499,14 @@ export default function TribologyLabPage() {
                   };
                 }
 
-                // Если враг ДО барьера — ОТКАТЫВАЕМ и держим
+                // Если враг ДО барьера — держим на месте
                 if (isBeforeBarrier) {
-                  // Минимальный откат — враг стоит на месте без вибрации
+                  // Откат пропорционален deltaTime чтобы не зависеть от FPS
+                  // 0.03 в секунду = достаточно чтобы компенсировать движение
+                  const rollback = 0.03 * deltaTime / 1000;
                   return {
                     ...enemy,
-                    progress: Math.max(0, enemy.progress - 0.0005),
+                    progress: Math.max(0, enemy.progress - rollback),
                   };
                 }
               }
