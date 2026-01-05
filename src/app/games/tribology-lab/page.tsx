@@ -103,7 +103,7 @@ interface GameOverModalProps {
   gold: number;
   nickname: string;
   onNicknameChange: (value: string) => void;
-  onSubmitResult: () => void; // Отправка результата в лидерборд
+  onSubmitResult: () => Promise<{ success: boolean; error?: string }>; // Возвращает статус
   onRestart: () => void;
   onMainMenu: () => void;
   onShowLeaderboard: () => void;
@@ -118,7 +118,8 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
   const [showPanel, setShowPanel] = useState(false);
   const [localNickname, setLocalNickname] = useState(nickname);
   const [nicknameSaved, setNicknameSaved] = useState(false);
-  const [resultSubmitted, setResultSubmitted] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Форматирование времени MM:SS
   const formatTime = (seconds: number) => {
@@ -131,7 +132,8 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
   useEffect(() => {
     if (isOpen) {
       setLocalNickname(nickname);
-      setResultSubmitted(false); // Сбрасываем флаг отправки
+      setSubmitStatus('idle'); // Сбрасываем статус отправки
+      setSubmitError('');
     }
   }, [isOpen, nickname]);
 
@@ -155,11 +157,19 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
   };
 
   // Кнопка OK - сохраняем ник и отправляем результат
-  const handleOkClick = () => {
-    if (resultSubmitted) return; // Уже отправлено
+  const handleOkClick = async () => {
+    if (submitStatus === 'loading' || submitStatus === 'success') return;
     saveNickname();
-    onSubmitResult();
-    setResultSubmitted(true);
+    setSubmitStatus('loading');
+    setSubmitError('');
+
+    const result = await onSubmitResult();
+    if (result.success) {
+      setSubmitStatus('success');
+    } else {
+      setSubmitStatus('error');
+      setSubmitError(result.error || 'Ошибка отправки');
+    }
   };
 
   const handleNicknameBlur = () => {
@@ -343,25 +353,36 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
               />
               <button
                 onClick={handleOkClick}
-                disabled={!localNickname.trim() || resultSubmitted}
+                disabled={!localNickname.trim() || submitStatus === 'loading' || submitStatus === 'success'}
                 style={{
                   padding: '10px 16px',
-                  background: resultSubmitted
-                    ? '#1E40AF' // Синий после отправки
+                  background: submitStatus === 'success'
+                    ? '#1E40AF' // Синий - успех
+                    : submitStatus === 'error'
+                    ? '#DC2626' // Красный - ошибка
+                    : submitStatus === 'loading'
+                    ? '#6B7280' // Серый - загрузка
                     : localNickname.trim() ? '#22C55E' : '#2A3441',
                   border: 'none',
                   borderRadius: '8px',
-                  color: resultSubmitted || localNickname.trim() ? '#FFFFFF' : '#7A8A99',
+                  color: submitStatus !== 'idle' || localNickname.trim() ? '#FFFFFF' : '#7A8A99',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: resultSubmitted || !localNickname.trim() ? 'default' : 'pointer',
+                  cursor: submitStatus === 'loading' || submitStatus === 'success' || !localNickname.trim() ? 'default' : 'pointer',
                   transition: 'all 0.2s ease',
-                  minWidth: resultSubmitted ? '100px' : 'auto',
+                  minWidth: '100px',
                 }}
               >
-                {resultSubmitted ? '✓ Сохранено' : 'OK'}
+                {submitStatus === 'success' ? '✓ Сохранено' :
+                 submitStatus === 'loading' ? '...' :
+                 submitStatus === 'error' ? '✕ Ошибка' : 'OK'}
               </button>
             </div>
+            {submitError && (
+              <p style={{ fontSize: '12px', color: '#F87171', marginTop: '8px', textAlign: 'center' }}>
+                {submitError}
+              </p>
+            )}
           </div>
         ) : (
           <div style={{
@@ -1054,12 +1075,25 @@ export default function TribologyLabPage() {
   }, []);
 
   // Отправка результата текущей игры в лидерборд
-  const submitCurrentGameResult = useCallback(async () => {
+  const submitCurrentGameResult = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     const result = currentGameResultRef.current;
-    if (!result || result.submitted) return;
+    if (!result) {
+      return { success: false, error: 'Нет данных для отправки' };
+    }
+    if (result.submitted) {
+      return { success: true }; // Уже отправлено ранее
+    }
 
     const nick = getPlayerNickname();
-    if (!authUser || !nick || !playerId) return;
+    if (!authUser) {
+      return { success: false, error: 'Войдите в аккаунт для сохранения' };
+    }
+    if (!nick) {
+      return { success: false, error: 'Введите никнейм' };
+    }
+    if (!playerId) {
+      return { success: false, error: 'Ошибка авторизации' };
+    }
 
     // Помечаем как отправленный сразу, чтобы избежать дублей
     result.submitted = true;
@@ -1075,10 +1109,12 @@ export default function TribologyLabPage() {
         0,
         result.timeMs
       );
+      return { success: true };
     } catch (err) {
       console.error('Ошибка отправки результата:', err);
       // Сбрасываем флаг, чтобы можно было попробовать снова
       result.submitted = false;
+      return { success: false, error: 'Сетевая ошибка' };
     }
   }, [authUser, playerId, gameMode]);
 
