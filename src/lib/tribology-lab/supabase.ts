@@ -323,9 +323,13 @@ export async function getDailyLeaderboard(date?: string, limit = 100): Promise<L
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
-  // Загружаем достаточно записей для Daily
+  // Получаем ожидаемый набор дня и его ключ
+  const expectedDeck = generateDailyDeckFromDate(targetDate);
+  const expectedDeckKey = generateDeckKey(expectedDeck);
+
+  // Загружаем только записи с правильным набором дня
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&deck_key=eq.${encodeURIComponent(expectedDeckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
     { headers: SUPABASE_HEADERS }
   );
 
