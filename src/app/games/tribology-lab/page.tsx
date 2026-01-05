@@ -1472,7 +1472,9 @@ export default function TribologyLabPage() {
         pauseStartRef.current = 0;  // Сбрасываем
       }
 
-      const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed;
+      const rawDeltaTime = (timestamp - lastUpdateRef.current) * gameSpeed;
+      // Ограничиваем deltaTime чтобы избежать проблем после переключения вкладок
+      const deltaTime = Math.min(rawDeltaTime, 100); // Максимум 100ms (10 FPS минимум)
       lastUpdateRef.current = timestamp;
       const elapsedSinceStart = ((timestamp - waveStartTime) - pauseTimeRef.current) * gameSpeed;
 
