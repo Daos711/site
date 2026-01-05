@@ -103,6 +103,7 @@ interface GameOverModalProps {
   gold: number;
   nickname: string;
   onNicknameChange: (value: string) => void;
+  onSubmitResult: () => void; // Отправка результата в лидерборд
   onRestart: () => void;
   onMainMenu: () => void;
   onShowLeaderboard: () => void;
@@ -113,7 +114,7 @@ interface GameOverModalProps {
   deck: string[];
 }
 
-function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onRestart, onMainMenu, onShowLeaderboard, isAuthenticated, onSignIn, gameMode, deck }: GameOverModalProps) {
+function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onSubmitResult, onRestart, onMainMenu, onShowLeaderboard, isAuthenticated, onSignIn, gameMode, deck }: GameOverModalProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [localNickname, setLocalNickname] = useState(nickname);
   const [nicknameSaved, setNicknameSaved] = useState(false);
@@ -142,13 +143,19 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
     }
   }, [isOpen]);
 
-  // Сохранение никнейма
+  // Сохранение никнейма (без отправки результата)
   const saveNickname = () => {
     if (localNickname.trim() && localNickname.trim() !== nickname) {
       onNicknameChange(localNickname.trim());
       setNicknameSaved(true);
       setTimeout(() => setNicknameSaved(false), 2000);
     }
+  };
+
+  // Кнопка OK - сохраняем ник и отправляем результат
+  const handleOkClick = () => {
+    saveNickname();
+    onSubmitResult();
   };
 
   const handleNicknameBlur = () => {
@@ -331,23 +338,17 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
                 }}
               />
               <button
-                onClick={saveNickname}
-                disabled={!localNickname.trim() || localNickname.trim() === nickname}
+                onClick={handleOkClick}
+                disabled={!localNickname.trim()}
                 style={{
                   padding: '10px 16px',
-                  background: localNickname.trim() && localNickname.trim() !== nickname
-                    ? '#22C55E'
-                    : '#2A3441',
+                  background: localNickname.trim() ? '#22C55E' : '#2A3441',
                   border: 'none',
                   borderRadius: '8px',
-                  color: localNickname.trim() && localNickname.trim() !== nickname
-                    ? '#FFFFFF'
-                    : '#7A8A99',
+                  color: localNickname.trim() ? '#FFFFFF' : '#7A8A99',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: localNickname.trim() && localNickname.trim() !== nickname
-                    ? 'pointer'
-                    : 'default',
+                  cursor: localNickname.trim() ? 'pointer' : 'default',
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -4948,9 +4949,8 @@ export default function TribologyLabPage() {
         onNicknameChange={(value) => {
           setPlayerNicknameState(value);
           setPlayerNickname(value);
-          // Отправляем результат когда пользователь подтвердил свой ник
-          submitCurrentGameResult();
         }}
+        onSubmitResult={submitCurrentGameResult}
         onRestart={handleGameOverRestart}
         onMainMenu={handleGameOverMainMenu}
         onShowLeaderboard={() => setShowLeaderboard(true)}
