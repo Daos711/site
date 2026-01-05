@@ -630,8 +630,8 @@ export function calculateDamage(
 
   // Ультразвук: бонус от количества врагов
   if (module.type === 'ultrasonic' && enemiesInAoe > 1) {
-    // +10% за каждого врага сверх первого, максимум +50%
-    const aoeBonus = Math.min((enemiesInAoe - 1) * 0.1, 0.5);
+    // +15% за каждого врага сверх первого, максимум +75%
+    const aoeBonus = Math.min((enemiesInAoe - 1) * 0.15, 0.75);
     damage *= (1 + aoeBonus);
   }
 
