@@ -98,9 +98,14 @@ export function MainMenu({
   const [isLoaded, setIsLoaded] = useState(false);
   const [showHandbook, setShowHandbook] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [currentDateUTC, setCurrentDateUTC] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+  });
 
-  // Seed и дека зависят от режима
-  const seed = useMemo(() => generateSeed(mode), [mode]);
+  // Обновляем дату при смене дня (проверка каждую секунду в useEffect ниже)
+  // Seed и дека зависят от режима И текущей даты
+  const seed = useMemo(() => generateSeed(mode), [mode, currentDateUTC]);
   const deck = useMemo(() => generateDeck(seed), [seed]);
 
   // Номер "стенда" — просто seed mod 999 + 1
@@ -133,6 +138,7 @@ export function MainMenu({
   }, [mode, seed]);
 
   // Обновление таймера каждую секунду (только для daily)
+  // Также проверяем смену дня для обновления набора
   useEffect(() => {
     if (mode === 'daily') {
       // Немедленно установить начальное значение
@@ -141,6 +147,11 @@ export function MainMenu({
       // Обновлять каждую секунду
       const interval = setInterval(() => {
         setTimeRemaining(getTimeUntilNextDayUTC());
+
+        // Проверяем не сменился ли день (для обновления набора без рефреша)
+        const now = new Date();
+        const nowDateUTC = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+        setCurrentDateUTC(prev => prev !== nowDateUTC ? nowDateUTC : prev);
       }, 1000);
 
       return () => clearInterval(interval);
