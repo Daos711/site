@@ -1502,8 +1502,8 @@ export default function TribologyLabPage() {
                 // Если враг ДО барьера — держим на месте
                 if (isBeforeBarrier) {
                   // Откат пропорционален deltaTime чтобы не зависеть от FPS
-                  // 0.03 в секунду = достаточно чтобы компенсировать движение
-                  const rollback = 0.03 * deltaTime / 1000;
+                  // 0.06/сек > скорости любого врага (пыль ~0.037/сек)
+                  const rollback = 0.06 * deltaTime / 1000;
                   return {
                     ...enemy,
                     progress: Math.max(0, enemy.progress - rollback),
