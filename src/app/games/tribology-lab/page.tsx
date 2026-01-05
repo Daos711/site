@@ -805,7 +805,7 @@ export default function TribologyLabPage() {
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
   const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
-  const labStandId = useRef(Math.floor(Math.random() * 900) + 100);  // Лаб-стенд №XXX
+  // labStandId вычисляется ниже из gameSeed для совпадения с MainMenu
 
   // DEV-панель для тестирования
   const [devMode, setDevMode] = useState(false);
@@ -840,6 +840,8 @@ export default function TribologyLabPage() {
   const [gameMode, setGameMode] = useState<GameMode>('daily');
   const [menuDeck, setMenuDeck] = useState<ModuleType[] | null>(null);
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false);
+  // Номер стенда из seed (как в MainMenu)
+  const labStandId = (gameSeed % 999) + 1;
 
   // Загружаем флаг туториала из localStorage
   useEffect(() => {
@@ -4572,7 +4574,7 @@ export default function TribologyLabPage() {
           <WaveOverlay
             wave={wave}
             mode={gameMode}
-            labStandId={labStandId.current}
+            labStandId={labStandId}
             onComplete={startWaveActual}
             gridX={gridStartX}
             gridY={gridStartY}
