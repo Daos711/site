@@ -1499,23 +1499,14 @@ export default function TribologyLabPage() {
                   };
                 }
 
-<<<<<<< HEAD
-                // Если враг ДО барьера — ФИКСИРУЕМ на позиции барьера
-                if (isBeforeBarrier) {
-                  // Останавливаем врага НА позиции барьера (не откатываем далеко!)
-                  return {
-                    ...enemy,
-                    progress: barrier.pathProgress - 0.003,
-=======
                 // Если враг ДО барьера — держим на месте
                 if (isBeforeBarrier) {
                   // Откат пропорционален deltaTime чтобы не зависеть от FPS
-                  // 0.03 в секунду = достаточно чтобы компенсировать движение
-                  const rollback = 0.03 * deltaTime / 1000;
+                  // 0.06/сек > скорости любого врага (пыль ~0.037/сек)
+                  const rollback = 0.06 * deltaTime / 1000;
                   return {
                     ...enemy,
                     progress: Math.max(0, enemy.progress - rollback),
->>>>>>> ca7cc7b (fix(tribolab): make barrier rollback time-based instead of per-frame)
                   };
                 }
               }
