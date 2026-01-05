@@ -1330,9 +1330,14 @@ export default function TribologyLabPage() {
   // Game Over: когда lives достигает 0
   useEffect(() => {
     if (lives <= 0 && gameStarted && !showGameOver) {
-      // Вычисляем итоговое время игры
+      // Вычисляем итоговое время игры (вычитаем время на паузе)
+      let totalPauseMs = pauseTimeRef.current;
+      // Если сейчас на паузе — добавляем текущую паузу
+      if (pauseStartRef.current > 0) {
+        totalPauseMs += performance.now() - pauseStartRef.current;
+      }
       const finalTime = gameStartTimeRef.current > 0
-        ? Math.floor((Date.now() - gameStartTimeRef.current) / 1000)
+        ? Math.floor((Date.now() - gameStartTimeRef.current - totalPauseMs) / 1000)
         : 0;
       const finalTimeMs = finalTime * 1000;
       setGameOverTime(finalTime);
