@@ -773,6 +773,7 @@ export default function TribologyLabPage() {
   const modulesRef = useRef<Module[]>([]); // Ref для актуальных модулей в game loop
   const [shop, setShop] = useState<ModuleType[]>(FALLBACK_SHOP);
   const [dragState, setDragState] = useState<DragState | null>(null);
+  const dragStateRef = useRef<DragState | null>(null); // Синхронный ref для touch
   const [mergingCell, setMergingCell] = useState<{x: number, y: number} | null>(null);
   const fieldRef = useRef<HTMLDivElement>(null);
 
@@ -1724,91 +1725,37 @@ export default function TribologyLabPage() {
     return null;
   };
 
-  // Начало перетаскивания из магазина
-  const handleShopDragStart = (e: React.MouseEvent | React.TouchEvent, index: number) => {
-    // Блокировка на паузе
-    if (isPaused) return;
-
-    const moduleType = shop[index];
-    const config = MODULES[moduleType];
-    if (gold < config.basePrice) return;
-
-    // Предотвращаем дефолтное поведение тача (выделение, скролл)
-    if ('touches' in e) {
-      e.preventDefault();
-    }
-
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    setDragState({
-      type: 'shop',
-      shopIndex: index,
-      moduleType,
-      startX: clientX,
-      startY: clientY,
-      currentX: clientX,
-      currentY: clientY,
-    });
-  };
-
-  // Начало перетаскивания с поля
-  const handleFieldDragStart = (e: React.MouseEvent | React.TouchEvent, module: Module) => {
-    // Блокировка на паузе
-    if (isPaused) return;
-
-    // Предотвращаем дефолтное поведение тача (выделение, скролл)
-    if ('touches' in e) {
-      e.preventDefault();
-    }
-
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    setDragState({
-      type: 'field',
-      moduleId: module.id,
-      moduleType: module.type,
-      startX: clientX,
-      startY: clientY,
-      currentX: clientX,
-      currentY: clientY,
-    });
-  };
-
-  // Обработка перемещения
-  useEffect(() => {
-    if (!dragState) return;
+  // Общая функция для настройки drag-слушателей (вызывается сразу при touchstart/mousedown)
+  const setupDragListeners = (initialState: DragState, isTouch: boolean) => {
+    dragStateRef.current = initialState;
+    setDragState(initialState);
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      // Блокируем скролл страницы при перетаскивании на touch-устройствах
-      if ('touches' in e) {
-        e.preventDefault();
-      }
+      if (!dragStateRef.current) return;
+      if ('touches' in e) e.preventDefault();
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      setDragState(prev => prev ? { ...prev, currentX: clientX, currentY: clientY } : null);
+      dragStateRef.current = { ...dragStateRef.current, currentX: clientX, currentY: clientY };
+      setDragState({ ...dragStateRef.current });
     };
 
     const handleEnd = (e: MouseEvent | TouchEvent) => {
-      if (!dragState) return;
-
+      if (!dragStateRef.current) return;
       const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
       const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
       const targetCell = getCellFromPosition(clientX, clientY);
+      const currentDragState = dragStateRef.current;
 
       if (targetCell) {
         const existingModule = getModuleAt(targetCell.x, targetCell.y);
 
-        if (dragState.type === 'shop') {
-          const config = MODULES[dragState.moduleType];
-
+        if (currentDragState.type === 'shop') {
+          const config = MODULES[currentDragState.moduleType];
           if (!existingModule) {
-            // Пустая ячейка — размещаем новый модуль
             if (gold >= config.basePrice) {
               const newModule: Module = {
-                id: `${dragState.moduleType}-${Date.now()}`,
-                type: dragState.moduleType,
+                id: `${currentDragState.moduleType}-${Date.now()}`,
+                type: currentDragState.moduleType,
                 level: 1,
                 x: targetCell.x,
                 y: targetCell.y,
@@ -1818,62 +1765,104 @@ export default function TribologyLabPage() {
               setGold(prev => prev - config.basePrice);
             }
           } else if (
-            existingModule.type === dragState.moduleType &&
-            existingModule.level === 1 &&  // Из магазина идёт уровень 1, мёрж только с уровнем 1!
+            existingModule.type === currentDragState.moduleType &&
+            existingModule.level === 1 &&
             gold >= config.basePrice
           ) {
-            // Такой же тип на поле — мерж из магазина!
-            // Анимация слияния
             setMergingCell({ x: targetCell.x, y: targetCell.y });
             setTimeout(() => setMergingCell(null), 400);
-
             setModules(prev => prev.map(m =>
               m.id === existingModule.id ? { ...m, level: m.level + 1 } : m
             ));
             setGold(prev => prev - config.basePrice);
           }
-        } else if (dragState.type === 'field' && dragState.moduleId) {
-          // ХАРДКОР: модули с поля НЕЛЬЗЯ перемещать, только merge!
-          const draggedModule = modules.find(m => m.id === dragState.moduleId);
+        } else if (currentDragState.type === 'field' && currentDragState.moduleId) {
+          const draggedModule = modules.find(m => m.id === currentDragState.moduleId);
           if (draggedModule && existingModule) {
-            // Merge: только на такой же модуль того же уровня
             if (
-              existingModule.id !== dragState.moduleId &&
+              existingModule.id !== currentDragState.moduleId &&
               existingModule.type === draggedModule.type &&
               existingModule.level === draggedModule.level &&
               existingModule.level < 5
             ) {
-              // Анимация слияния
               setMergingCell({ x: targetCell.x, y: targetCell.y });
               setTimeout(() => setMergingCell(null), 400);
-
-              setModules(prev => prev
-                .filter(m => m.id !== dragState.moduleId)
-                .map(m => m.id === existingModule.id ? { ...m, level: m.level + 1 } : m)
+              setModules(prev =>
+                prev
+                  .filter(m => m.id !== currentDragState.moduleId)
+                  .map(m => m.id === existingModule.id ? { ...m, level: m.level + 1 } : m)
               );
             }
-            // Иначе (другой тип/уровень) — модуль просто вернётся на место
           }
-          // Если !existingModule (пустая ячейка) — модуль вернётся на место
         }
       }
 
+      // Очистка
+      dragStateRef.current = null;
       setDragState(null);
-    };
-
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-    // passive: false нужен для preventDefault() на touch-событиях
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleEnd);
-
-    return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleEnd);
       window.removeEventListener('touchmove', handleMove);
       window.removeEventListener('touchend', handleEnd);
     };
-  }, [dragState, gold, modules]);
+
+    // Добавляем слушатели СРАЗУ (не через useEffect!)
+    if (isTouch) {
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
+    } else {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+    }
+  };
+
+  // Начало перетаскивания из магазина
+  const handleShopDragStart = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+    if (isPaused) return;
+
+    const moduleType = shop[index];
+    const config = MODULES[moduleType];
+    if (gold < config.basePrice) return;
+
+    const isTouch = 'touches' in e;
+    if (isTouch) e.preventDefault();
+
+    const clientX = isTouch ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = isTouch ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    setupDragListeners({
+      type: 'shop',
+      shopIndex: index,
+      moduleType,
+      startX: clientX,
+      startY: clientY,
+      currentX: clientX,
+      currentY: clientY,
+    }, isTouch);
+  };
+
+  // Начало перетаскивания с поля
+  const handleFieldDragStart = (e: React.MouseEvent | React.TouchEvent, module: Module) => {
+    if (isPaused) return;
+
+    const isTouch = 'touches' in e;
+    if (isTouch) e.preventDefault();
+
+    const clientX = isTouch ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = isTouch ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    setupDragListeners({
+      type: 'field',
+      moduleId: module.id,
+      moduleType: module.type,
+      startX: clientX,
+      startY: clientY,
+      currentX: clientX,
+      currentY: clientY,
+    }, isTouch);
+  };
+
+  // Слушатели drag теперь добавляются синхронно в setupDragListeners
 
   // Компонент плитки модуля
   const ModuleTile = ({ module, isDragging = false, size = cellSize }: { module: { type: ModuleType; level: number }; isDragging?: boolean; size?: number }) => {
