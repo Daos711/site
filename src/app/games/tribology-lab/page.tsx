@@ -830,6 +830,15 @@ export default function TribologyLabPage() {
   const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
   const pendingResultSubmittedRef = useRef(false);
 
+  // Данные текущей игры для отправки в лидерборд (отправляется когда пользователь подтвердит ник)
+  const currentGameResultRef = useRef<{
+    deck: string[];
+    wave: number;
+    kills: number;
+    timeMs: number;
+    submitted: boolean;
+  } | null>(null);
+
   // Авторизация (из общего контекста)
   const { user: authUser, loading: authLoading, playerId, signIn, signOut: handleSignOut } = useAuth();
 
@@ -1036,8 +1045,39 @@ export default function TribologyLabPage() {
     setScreen('menu');
   }, []);
 
+  // Отправка результата текущей игры в лидерборд
+  const submitCurrentGameResult = useCallback(async () => {
+    const result = currentGameResultRef.current;
+    if (!result || result.submitted) return;
+
+    const nick = getPlayerNickname();
+    if (!authUser || !nick || !playerId) return;
+
+    // Помечаем как отправленный сразу, чтобы избежать дублей
+    result.submitted = true;
+
+    try {
+      await getOrCreateProfile(playerId, nick);
+      await submitRun(
+        playerId,
+        gameMode,
+        result.deck,
+        result.wave,
+        result.kills,
+        0,
+        result.timeMs
+      );
+    } catch (err) {
+      console.error('Ошибка отправки результата:', err);
+      // Сбрасываем флаг, чтобы можно было попробовать снова
+      result.submitted = false;
+    }
+  }, [authUser, playerId, gameMode]);
+
   // Game Over: Повторить испытание
   const handleGameOverRestart = useCallback(() => {
+    // Отправляем результат перед сбросом
+    submitCurrentGameResult();
     setShowGameOver(false);
     setIsPaused(false);
     // Полный сброс состояния игры
@@ -1069,10 +1109,12 @@ export default function TribologyLabPage() {
     // Сразу запускаем игру — показываем оверлей "ВОЛНА 1"
     setGameStarted(true);
     setGamePhase('intro_wave');
-  }, [testDeck, menuDeck]);
+  }, [testDeck, menuDeck, submitCurrentGameResult]);
 
   // Game Over: В меню
   const handleGameOverMainMenu = useCallback(() => {
+    // Отправляем результат перед выходом
+    submitCurrentGameResult();
     setShowGameOver(false);
     setIsPaused(false);
     // Полный сброс состояния
@@ -1097,7 +1139,7 @@ export default function TribologyLabPage() {
     gameStartTimeRef.current = 0;
     // Возврат в меню
     setScreen('menu');
-  }, []);
+  }, [submitCurrentGameResult]);
 
   // Роли модулей для селектора
   const MODULE_ROLES = {
@@ -1346,30 +1388,17 @@ export default function TribologyLabPage() {
       setIsPaused(true);
       setShowGameOver(true);
 
-      // Отправляем результат в лидерборд (только если авторизован и есть никнейм)
+      // Сохраняем данные результата (отправка будет когда пользователь подтвердит ник)
       const currentDeck = testDeck || menuDeck || FALLBACK_SHOP;
-      const nick = getPlayerNickname();
-
-      if (authUser && nick && playerId) {
-        (async () => {
-          try {
-            await getOrCreateProfile(playerId, nick);
-            await submitRun(
-              playerId,
-              gameMode,
-              currentDeck,
-              wave,
-              totalKills,
-              0,
-              finalTimeMs
-            );
-          } catch (err) {
-            console.error('Ошибка отправки результата:', err);
-          }
-        })();
-      }
+      currentGameResultRef.current = {
+        deck: currentDeck,
+        wave,
+        kills: totalKills,
+        timeMs: finalTimeMs,
+        submitted: false,
+      };
     }
-  }, [lives, gameStarted, showGameOver, testDeck, menuDeck, playerId, gameMode, wave, totalKills, authUser]);
+  }, [lives, gameStarted, showGameOver, testDeck, menuDeck, wave, totalKills]);
 
   // DEV: Спавн врага вне волны
   const devSpawnEnemy = useCallback((type: EnemyType, count: number = 1) => {
@@ -4919,6 +4948,8 @@ export default function TribologyLabPage() {
         onNicknameChange={(value) => {
           setPlayerNicknameState(value);
           setPlayerNickname(value);
+          // Отправляем результат когда пользователь подтвердил свой ник
+          submitCurrentGameResult();
         }}
         onRestart={handleGameOverRestart}
         onMainMenu={handleGameOverMainMenu}
