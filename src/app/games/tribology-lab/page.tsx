@@ -2384,7 +2384,7 @@ export default function TribologyLabPage() {
       {/* DEBUG: Панель отладки */}
       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm mb-1 sm:mb-2 bg-gray-800/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg">
         <span className="text-gray-400">⚡ Скорость игры:</span>
-        {[1, 3, 5, 10].map(speed => (
+        {[1, 5, 10, 15].map(speed => (
           <button
             key={speed}
             onClick={() => setGameSpeed(speed)}
@@ -4844,7 +4844,7 @@ export default function TribologyLabPage() {
             <div className="flex items-center justify-between">
               <span className="text-gray-400 text-sm">Скорость игры: {gameSpeed}x</span>
               <div className="flex gap-1">
-                {[1, 2, 5, 10].map(speed => (
+                {[1, 5, 10, 15].map(speed => (
                   <button
                     key={speed}
                     onClick={() => setGameSpeed(speed)}
