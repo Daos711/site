@@ -1725,25 +1725,24 @@ export default function TribologyLabPage() {
     return null;
   };
 
-  // Общая функция для настройки drag-слушателей (вызывается сразу при touchstart/mousedown)
-  const setupDragListeners = (initialState: DragState, isTouch: boolean) => {
+  // Общая функция для настройки drag-слушателей (использует Pointer Events для универсальности)
+  const setupDragListeners = (initialState: DragState, target: HTMLElement, pointerId: number) => {
     dragStateRef.current = initialState;
     setDragState(initialState);
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
+    // Захватываем pointer для получения всех событий даже за пределами элемента
+    target.setPointerCapture(pointerId);
+
+    const handleMove = (e: PointerEvent) => {
       if (!dragStateRef.current) return;
-      if ('touches' in e) e.preventDefault();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      dragStateRef.current = { ...dragStateRef.current, currentX: clientX, currentY: clientY };
+      e.preventDefault();
+      dragStateRef.current = { ...dragStateRef.current, currentX: e.clientX, currentY: e.clientY };
       setDragState({ ...dragStateRef.current });
     };
 
-    const handleEnd = (e: MouseEvent | TouchEvent) => {
+    const handleEnd = (e: PointerEvent) => {
       if (!dragStateRef.current) return;
-      const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
-      const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
-      const targetCell = getCellFromPosition(clientX, clientY);
+      const targetCell = getCellFromPosition(e.clientX, e.clientY);
       const currentDragState = dragStateRef.current;
 
       if (targetCell) {
@@ -1800,66 +1799,54 @@ export default function TribologyLabPage() {
       // Очистка
       dragStateRef.current = null;
       setDragState(null);
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchmove', handleMove);
-      window.removeEventListener('touchend', handleEnd);
+      target.releasePointerCapture(pointerId);
+      target.removeEventListener('pointermove', handleMove);
+      target.removeEventListener('pointerup', handleEnd);
+      target.removeEventListener('pointercancel', handleEnd);
     };
 
-    // Добавляем слушатели СРАЗУ (не через useEffect!)
-    if (isTouch) {
-      window.addEventListener('touchmove', handleMove, { passive: false });
-      window.addEventListener('touchend', handleEnd);
-    } else {
-      window.addEventListener('mousemove', handleMove);
-      window.addEventListener('mouseup', handleEnd);
-    }
+    // Добавляем слушатели на элемент (с pointer capture события приходят на него)
+    target.addEventListener('pointermove', handleMove);
+    target.addEventListener('pointerup', handleEnd);
+    target.addEventListener('pointercancel', handleEnd);
   };
 
-  // Начало перетаскивания из магазина
-  const handleShopDragStart = (e: React.MouseEvent | React.TouchEvent, index: number) => {
+  // Начало перетаскивания из магазина (Pointer Events)
+  const handleShopDragStart = (e: React.PointerEvent, index: number) => {
     if (isPaused) return;
 
     const moduleType = shop[index];
     const config = MODULES[moduleType];
     if (gold < config.basePrice) return;
 
-    const isTouch = 'touches' in e;
-    if (isTouch) e.preventDefault();
-
-    const clientX = isTouch ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = isTouch ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    e.preventDefault();
 
     setupDragListeners({
       type: 'shop',
       shopIndex: index,
       moduleType,
-      startX: clientX,
-      startY: clientY,
-      currentX: clientX,
-      currentY: clientY,
-    }, isTouch);
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+    }, e.currentTarget as HTMLElement, e.pointerId);
   };
 
-  // Начало перетаскивания с поля
-  const handleFieldDragStart = (e: React.MouseEvent | React.TouchEvent, module: Module) => {
+  // Начало перетаскивания с поля (Pointer Events)
+  const handleFieldDragStart = (e: React.PointerEvent, module: Module) => {
     if (isPaused) return;
 
-    const isTouch = 'touches' in e;
-    if (isTouch) e.preventDefault();
-
-    const clientX = isTouch ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = isTouch ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    e.preventDefault();
 
     setupDragListeners({
       type: 'field',
       moduleId: module.id,
       moduleType: module.type,
-      startX: clientX,
-      startY: clientY,
-      currentX: clientX,
-      currentY: clientY,
-    }, isTouch);
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+    }, e.currentTarget as HTMLElement, e.pointerId);
   };
 
   // Слушатели drag теперь добавляются синхронно в setupDragListeners
@@ -3676,8 +3663,7 @@ export default function TribologyLabPage() {
                       <div
                         className={`absolute inset-0 cursor-grab active:cursor-grabbing ${isMerging ? 'animate-merge' : ''}`}
                         style={{ touchAction: 'none' }}
-                        onMouseDown={(e) => handleFieldDragStart(e, module)}
-                        onTouchStart={(e) => handleFieldDragStart(e, module)}
+                        onPointerDown={(e) => handleFieldDragStart(e, module)}
                       >
                         <FieldTile
                           type={module.type}
@@ -4508,8 +4494,7 @@ export default function TribologyLabPage() {
                 compact={true}
                 canAfford={canAfford}
                 isDragging={isDraggingThis}
-                onMouseDown={(e) => handleShopDragStart(e, index)}
-                onTouchStart={(e) => handleShopDragStart(e, index)}
+                onPointerDown={(e) => handleShopDragStart(e, index)}
               />
             );
           })}

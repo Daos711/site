@@ -14,8 +14,7 @@ interface ModuleCardProps {
   // Для магазина
   canAfford?: boolean;
   isDragging?: boolean;
-  onMouseDown?: (e: React.MouseEvent) => void;
-  onTouchStart?: (e: React.TouchEvent) => void;
+  onPointerDown?: (e: React.PointerEvent) => void;
 }
 
 export function ModuleCard({
@@ -28,8 +27,7 @@ export function ModuleCard({
   className = '',
   canAfford = true,
   isDragging = false,
-  onMouseDown,
-  onTouchStart,
+  onPointerDown,
 }: ModuleCardProps) {
   const config = MODULES[type];
   const code = MODULE_CODES[type];
@@ -40,8 +38,7 @@ export function ModuleCard({
     <div
       className={`module-card ${selected ? 'selected' : ''} ${!canAfford ? 'disabled' : ''} ${isDragging ? 'dragging' : ''} ${compact ? 'compact' : ''} ${className}`}
       onClick={onClick}
-      onMouseDown={canAfford ? onMouseDown : undefined}
-      onTouchStart={canAfford ? onTouchStart : undefined}
+      onPointerDown={canAfford ? onPointerDown : undefined}
       style={{
         '--module-accent': palette.light,
         '--module-glow': palette.glow,
@@ -165,7 +162,7 @@ export function ModuleCard({
           border-radius: 8px;
           padding: 16px;
           overflow: hidden;
-          cursor: ${onMouseDown ? 'grab' : onClick ? 'pointer' : 'default'};
+          cursor: ${onPointerDown ? 'grab' : onClick ? 'pointer' : 'default'};
           transition: all 0.2s ease;
           box-shadow:
             0 4px 12px rgba(0,0,0,0.4),
