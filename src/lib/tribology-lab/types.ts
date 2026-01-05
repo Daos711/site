@@ -264,7 +264,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'ultrasonic',
     name: 'Ультразвук',
     icon: '📡',
-    basePrice: 100,
+    basePrice: 80,
     baseDamage: 10,
     range: 200,       // большой радиус для AOE
     attackSpeed: 0.4,
