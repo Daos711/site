@@ -984,10 +984,10 @@ export function processModuleAttack(
             const isBoss = target.type.startsWith('boss_');
             const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
 
-            // Базовый откат 8%, +2% за уровень (L1=8%, L2=10%, L3=12%, L4=14%, L5=16%)
-            const baseStrength = config.effectStrength || 8;
-            const scaledStrength = getEffectStrength(baseStrength, module.level);
-            let pushAmount = scaledStrength / 100; // В десятичную дробь
+            // Базовый откат 6%, +1% за уровень (L1=6%, L2=7%, L3=8%, L4=9%, L5=10%)
+            const baseStrength = config.effectStrength || 6;
+            const pushPercent = baseStrength + (module.level - 1); // +1% за уровень
+            let pushAmount = pushPercent / 100;
 
             // Модификаторы для сильных врагов
             if (isElite) pushAmount *= 0.5;  // 50% эффективности
@@ -999,7 +999,7 @@ export function processModuleAttack(
                 ...updatedEnemies[index].effects,
                 // pushback: strength в процентах * 1000 для точности
                 { type: 'pushback' as EffectType, duration: 400, strength: pushAmount * 1000 },
-                { type: 'antiPush' as EffectType, duration: 1500, strength: 0 } // 1.5 сек кулдаун (было 2.5)
+                { type: 'antiPush' as EffectType, duration: 2500, strength: 0 } // 2.5 сек кулдаун
               ]
             };
           }

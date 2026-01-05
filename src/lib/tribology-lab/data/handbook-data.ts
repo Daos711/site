@@ -179,10 +179,10 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     synergies: [],
     notes: [
       'AOE радиус: 60 px (L1) → 96 px (L5)',
-      'Откат: 8% (L1) → 16% (L5)',
+      'Откат: 6% (L1) → 10% (L5)',
       'Элитные: 50% эффективности',
       'Боссы: 20% эффективности',
-      'Кулдаун между откатами: 1.5 сек',
+      'Иммунитет к откату: 2.5 сек',
     ],
   },
   barrier: {
