@@ -822,6 +822,7 @@ export default function TribologyLabPage() {
   const [deathEffects, setDeathEffects] = useState<DeathEffect[]>([]);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
+  const gameOverRef = useRef(false);  // Для немедленной остановки game loop
   const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
   const spawnedIdsRef = useRef<Set<string>>(new Set()); // Отслеживание заспавненных врагов
 
@@ -985,6 +986,7 @@ export default function TribologyLabPage() {
     // Сбрасываем статистику для Game Over
     setTotalKills(0);
     setTotalGoldEarned(0);
+    gameOverRef.current = false;  // Разрешаем запуск game loop
     setShowGameOver(false);
     setGameOverTime(0);
     gameStartTimeRef.current = 0;
@@ -1122,6 +1124,7 @@ export default function TribologyLabPage() {
   const handleGameOverRestart = useCallback(() => {
     // Отправляем результат перед сбросом
     submitCurrentGameResult();
+    gameOverRef.current = false;  // Разрешаем запуск game loop
     setShowGameOver(false);
     setIsPaused(false);
     // Полный сброс состояния игры
@@ -1159,6 +1162,7 @@ export default function TribologyLabPage() {
   const handleGameOverMainMenu = useCallback(() => {
     // Отправляем результат перед выходом
     submitCurrentGameResult();
+    gameOverRef.current = false;  // Разрешаем запуск game loop
     setShowGameOver(false);
     setIsPaused(false);
     // Полный сброс состояния
@@ -1428,6 +1432,7 @@ export default function TribologyLabPage() {
       const finalTimeMs = finalTime * 1000;
       setGameOverTime(finalTime);
       // ПОЛНОСТЬЮ останавливаем игру
+      gameOverRef.current = true;  // Немедленно останавливает game loop
       setGamePhase('defeat');  // Останавливает game loop
       setIsPaused(true);
       setShowGameOver(true);
@@ -1492,6 +1497,11 @@ export default function TribologyLabPage() {
     if (gamePhase !== 'wave') return;
 
     const gameLoop = (timestamp: number) => {
+      // Если игра окончена — полностью останавливаем (не запрашиваем следующий кадр)
+      if (gameOverRef.current) {
+        return;
+      }
+
       // Если на паузе — запоминаем начало паузы и ждём
       if (isPaused) {
         if (pauseStartRef.current === 0) {
