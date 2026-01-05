@@ -348,7 +348,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     description: 'Откатывает врагов в радиусе 60px',
     attackType: 'aoe',
     aoeRadius: 60,     // радиус AOE отката
-    effectStrength: 8, // Базовый откат 8%, масштабируется с уровнем
+    effectStrength: 6, // Базовый откат 6%, +1% за уровень (L5=10%)
   },
   electrostatic: {
     id: 'electrostatic',
