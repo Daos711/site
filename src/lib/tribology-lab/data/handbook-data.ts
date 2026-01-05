@@ -250,13 +250,14 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     name: 'Ультразвук',
     role: 'DPS',
     attackType: 'aoe',
-    description: 'Урон по площади. +20% по пыльным врагам.',
+    description: 'Урон по площади. +20% по пыльным. Бонус урона от скопления врагов.',
     keyEffect: null,
     synergies: [],
     notes: [
       'Радиус поражения: 120 px (L1) → 192 px (L5)',
       '+20% урона по пыльным',
       'Урон падает с расстоянием (мин. 50%)',
+      '+10% урона за каждого врага в зоне (макс. +50%)',
     ],
   },
   demulsifier: {
