@@ -1275,7 +1275,7 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <h3>Подбор ${profile.type === 'i-beam' ? 'двутавра' : 'швеллера'} по ${profile.gost}</h3>
   <p>Из сортамента по ${profile.gost} выбираем ${profileTypeName.toLowerCase()} с \\(W_x \\geq ${Wreq_str}\\) см³.</p>
 
-  <div class="profile-selection" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 15px 0;">
+  <div class="profile-selection" style="padding: 15px 0; margin: 15px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
     <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>Принимаем: ${profileTypeName} № ${profile.number}</strong></p>
     <table style="width: 100%; border-collapse: collapse;">
       <tr>
