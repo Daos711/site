@@ -235,7 +235,7 @@ const SVG_COLORS = {
   moment: "#a855f7",
   reaction: "#22c55e",
   text: "#1f2937",
-  background: "#f8fafc",
+  background: "#ffffff",
 };
 
 interface DiagramImages {
@@ -2585,7 +2585,6 @@ function buildVereshchaginSection(
   // Функция m(x) - момент от единичной силы в точке impactX
   const m = (x: number): number => {
     if (isCantilever) {
-      const fixedX = result.reactions.xf ?? (input.beamType === 'cantilever-left' ? L : 0);
       if (input.beamType === 'cantilever-left') {
         // Заделка справа
         if (x <= impactX) return 0;
@@ -2596,11 +2595,14 @@ function buildVereshchaginSection(
         return -(impactX - x);
       }
     } else {
-      // Двухопорная
-      let moment = 0;
-      if (x > xA) moment += RA_unit * (x - xA);
-      if (x > impactX) moment -= 1 * (x - impactX);
-      return moment;
+      // Двухопорная - используем формулу через RB для второго участка
+      if (x <= impactX) {
+        // m1(x) = RA × (x - xA)
+        return RA_unit * (x - xA);
+      } else {
+        // m2(x) = RB × (xB - x) - более удобная форма через правую опору
+        return RB_unit * (xB - x);
+      }
     }
   };
 
@@ -2626,11 +2628,13 @@ function buildVereshchaginSection(
   // Значения для формул
   const EI_formatted = formatNumber(EI / 1e6, 2); // МН·м²
 
-  // Находим значения M и m в характерных точках для рисунка
-  const M_at_impact = M(impactX);
-  const m_at_A = m(xA);
-  const m_at_B = m(xB);
-  const m_at_impact = m(impactX);
+  // Вычисляем длины участков
+  const L1 = impactX - xA; // длина первого участка
+  const L2 = xB - impactX; // длина второго участка
+
+  // Максимальные значения m на границе участков
+  const m_max_1 = RA_unit * L1; // m(impactX) слева
+  const m_max_2 = RB_unit * L2; // m(impactX) справа (= m_max_1 для непрерывности)
 
   let html = `
   <h2>${sectionNum}. Метод Верещагина</h2>
@@ -2650,12 +2654,15 @@ function buildVereshchaginSection(
   </div>`;
   } else {
     html += `
-  <p>Из уравнений равновесия (\\(P \\to 1\\)):</p>
+  <p>Из уравнений равновесия для единичной силы \\(X = 1\\) в точке \\(x = ${formatNumber(impactX)}\\) м:</p>
   <div class="formula">
-    \\[R_A^{(1)} + R_B^{(1)} = 1\\]
+    \\[\\sum M_A = 0: \\quad 1 \\cdot ${formatNumber(impactX)} - R_B^{(1)} \\cdot ${formatNumber(xB - xA)} = 0\\]
   </div>
   <div class="formula">
-    \\[1 \\cdot ${formatNumber(impactX)} + R_B^{(1)} \\cdot ${formatNumber(xB - xA)} = 0 \\Rightarrow R_B^{(1)} = ${formatNumber(-RB_unit, 3)} \\Rightarrow R_A^{(1)} = ${formatNumber(RA_unit, 3)}\\]
+    \\[R_B^{(1)} = \\frac{${formatNumber(impactX)}}{${formatNumber(xB - xA)}} = ${formatNumber(RB_unit, 4)}\\]
+  </div>
+  <div class="formula">
+    \\[\\sum F_y = 0: \\quad R_A^{(1)} + R_B^{(1)} = 1 \\Rightarrow R_A^{(1)} = 1 - ${formatNumber(RB_unit, 4)} = ${formatNumber(RA_unit, 4)}\\]
   </div>`;
   }
 
@@ -2676,21 +2683,34 @@ function buildVereshchaginSection(
   </div>`;
     }
   } else {
+    // Вычисляем коэффициенты для удобной формы m2(x) = a*x + b
+    const a2 = -RB_unit;
+    const b2 = RB_unit * xB;
+
     html += `
-  <p>Участок 1 (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <p><strong>Участок 1</strong> (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <p>Рассматриваем сечение слева от единичной силы:</p>
   <div class="formula">
-    \\[m_1(x) = ${formatNumber(RA_unit, 3)} \\cdot x = ${formatNumber(RA_unit, 3)} x\\]
+    \\[m_1(x) = R_A^{(1)} \\cdot x = ${formatNumber(RA_unit, 4)} \\cdot x\\]
   </div>
-  <p>Участок 2 (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xB)}\\)):</p>
+  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = ${formatNumber(RA_unit, 4)} \\cdot ${formatNumber(impactX)} = ${formatNumber(m_max_1, 4)}\\)</p>
+
+  <p><strong>Участок 2</strong> (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xB)}\\)):</p>
+  <p>Рассматриваем сечение справа от единичной силы (удобнее использовать реакцию \\(R_B^{(1)}\\)):</p>
   <div class="formula">
-    \\[m_2(x) = ${formatNumber(RA_unit, 3)} \\cdot x - 1 \\cdot (x - ${formatNumber(impactX)}) = ${formatNumber(RA_unit - 1, 3)} x + ${formatNumber(impactX, 2)}\\]
-  </div>`;
+    \\[m_2(x) = R_B^{(1)} \\cdot (${formatNumber(xB)} - x) = ${formatNumber(RB_unit, 4)} \\cdot (${formatNumber(xB)} - x)\\]
+  </div>
+  <p>Или в развёрнутом виде:</p>
+  <div class="formula">
+    \\[m_2(x) = ${formatNumber(a2, 4)} x + ${formatNumber(b2, 2)}\\]
+  </div>
+  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_2(${formatNumber(impactX)}) = ${formatNumber(RB_unit, 4)} \\cdot (${formatNumber(xB)} - ${formatNumber(impactX)}) = ${formatNumber(m_max_2, 4)}\\)</p>`;
   }
 
   // SVG рисунок с эпюрами M(x) и m(x)
   const svgWidth = 500;
-  const svgHeight = 300;
-  const margin = { left: 50, right: 30, top: 30, bottom: 80 };
+  const svgHeight = 320;
+  const margin = { left: 50, right: 30, top: 30, bottom: 90 };
   const plotW = svgWidth - margin.left - margin.right;
   const plotH = (svgHeight - margin.top - margin.bottom) / 2 - 20;
 
@@ -2720,10 +2740,15 @@ function buildVereshchaginSection(
     pathm += ` L ${scaleX(x)} ${scalem(m(x))}`;
   }
 
+  // Центры тяжести треугольников эпюры m(x)
+  // Для треугольника центр тяжести на 1/3 от основания
+  const xc1 = xA + (2/3) * L1; // центр тяжести первого треугольника (от xA к impactX)
+  const xc2 = impactX + (1/3) * L2; // центр тяжести второго треугольника (от impactX к xB)
+
   html += `
   <h3>${sectionNum}.3. Графическое представление</h3>
   <div style="display: flex; justify-content: center; margin: 20px 0;">
-    <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="max-width: ${svgWidth}px; width: 100%; background: #fafafa; border: 1px solid #ddd;">
+    <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="max-width: ${svgWidth}px; width: 100%; background: white; border: 1px solid #ddd;">
       <!-- Эпюра M(x) -->
       <text x="${margin.left - 10}" y="${baselineM}" font-size="12" text-anchor="end" fill="#333">M(x)</text>
       <line x1="${margin.left}" y1="${baselineM}" x2="${margin.left + plotW}" y2="${baselineM}" stroke="#666" stroke-width="1"/>
@@ -2734,9 +2759,15 @@ function buildVereshchaginSection(
       <line x1="${margin.left}" y1="${baselinem}" x2="${margin.left + plotW}" y2="${baselinem}" stroke="#666" stroke-width="1"/>
       <path d="${pathm} L ${scaleX(L)} ${baselinem} L ${scaleX(0)} ${baselinem} Z" fill="rgba(34,197,94,0.2)" stroke="#22c55e" stroke-width="2"/>
 
+      <!-- Пунктирные линии центров тяжести треугольников m(x) -->
+      <line x1="${scaleX(xc1)}" y1="${baselinem - plotH/2 + 5}" x2="${scaleX(xc1)}" y2="${baselinem + 5}" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="${scaleX(xc1)}" y="${baselinem + 18}" font-size="9" text-anchor="middle" fill="#9333ea">x&#x0304;&#x2081;</text>
+      <line x1="${scaleX(xc2)}" y1="${baselinem - plotH/2 + 5}" x2="${scaleX(xc2)}" y2="${baselinem + 5}" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="${scaleX(xc2)}" y="${baselinem + 18}" font-size="9" text-anchor="middle" fill="#9333ea">x&#x0304;&#x2082;</text>
+
       <!-- Точка удара -->
       <line x1="${scaleX(impactX)}" y1="${margin.top}" x2="${scaleX(impactX)}" y2="${svgHeight - margin.bottom + 20}" stroke="#f97316" stroke-width="1" stroke-dasharray="4,4"/>
-      <text x="${scaleX(impactX)}" y="${svgHeight - margin.bottom + 35}" font-size="10" text-anchor="middle" fill="#f97316">x=${formatNumber(impactX)} (удар)</text>
+      <text x="${scaleX(impactX)}" y="${svgHeight - margin.bottom + 35}" font-size="10" text-anchor="middle" fill="#f97316">x=${formatNumber(impactX)} (X=1)</text>
 
       <!-- Ось X -->
       <text x="${margin.left + plotW / 2}" y="${svgHeight - 10}" font-size="11" text-anchor="middle" fill="#333">x, м</text>
@@ -2744,14 +2775,55 @@ function buildVereshchaginSection(
       <text x="${margin.left + plotW}" y="${svgHeight - margin.bottom + 55}" font-size="10" text-anchor="middle" fill="#333">${formatNumber(L)}</text>
     </svg>
   </div>
-  <p class="figure-caption" style="text-align: center;">Эпюры \\(M(x)\\) и \\(m(x)\\) для метода Верещагина</p>
+  <p class="figure-caption" style="text-align: center;">Эпюры \\(M(x)\\) и \\(m(x)\\). Пунктирные линии — центры тяжести треугольников эпюры \\(m(x)\\)</p>
 
-  <h3>${sectionNum}.4. Вычисление интеграла</h3>
-  <p>Применяя правило Верещагина (перемножение эпюр):</p>
+  <h3>${sectionNum}.4. Вычисление интеграла методом Верещагина</h3>
+  <p>Эпюра \\(m(x)\\) состоит из двух треугольников. Применяем формулу Верещагина: умножаем площадь фигуры \\(m(x)\\) на ординату эпюры \\(M(x)\\) в центре тяжести этой фигуры.</p>`;
+
+  // Вычисляем площади треугольников m(x)
+  const A1 = 0.5 * L1 * m_max_1; // площадь первого треугольника
+  const A2 = 0.5 * L2 * m_max_2; // площадь второго треугольника
+
+  // Значения M(x) в центрах тяжести
+  const M_at_xc1 = M(xc1);
+  const M_at_xc2 = M(xc2);
+
+  // Вклады в интеграл
+  const contrib1 = A1 * M_at_xc1;
+  const contrib2 = A2 * M_at_xc2;
+  const totalIntegral = contrib1 + contrib2;
+
+  if (!isCantilever) {
+    html += `
+  <p><strong>Треугольник 1</strong> (участок \\(0 \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <ul>
+    <li>Площадь: \\(A_1 = \\frac{1}{2} \\cdot ${formatNumber(L1)} \\cdot ${formatNumber(m_max_1, 4)} = ${formatNumber(A1, 4)}\\) м²</li>
+    <li>Центр тяжести: \\(\\bar{x}_1 = \\frac{2}{3} \\cdot ${formatNumber(L1)} = ${formatNumber(xc1, 4)}\\) м</li>
+    <li>Ордината \\(M(\\bar{x}_1)\\): \\(M(${formatNumber(xc1, 2)}) = ${formatNumber(M_at_xc1, 4)}\\) кН·м</li>
+    <li>Вклад: \\(A_1 \\cdot M(\\bar{x}_1) = ${formatNumber(A1, 4)} \\cdot ${formatNumber(M_at_xc1, 4)} = ${formatNumber(contrib1, 4)}\\) кН·м³</li>
+  </ul>
+
+  <p><strong>Треугольник 2</strong> (участок \\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xB)}\\)):</p>
+  <ul>
+    <li>Площадь: \\(A_2 = \\frac{1}{2} \\cdot ${formatNumber(L2)} \\cdot ${formatNumber(m_max_2, 4)} = ${formatNumber(A2, 4)}\\) м²</li>
+    <li>Центр тяжести: \\(\\bar{x}_2 = ${formatNumber(impactX)} + \\frac{1}{3} \\cdot ${formatNumber(L2)} = ${formatNumber(xc2, 4)}\\) м</li>
+    <li>Ордината \\(M(\\bar{x}_2)\\): \\(M(${formatNumber(xc2, 2)}) = ${formatNumber(M_at_xc2, 4)}\\) кН·м</li>
+    <li>Вклад: \\(A_2 \\cdot M(\\bar{x}_2) = ${formatNumber(A2, 4)} \\cdot ${formatNumber(M_at_xc2, 4)} = ${formatNumber(contrib2, 4)}\\) кН·м³</li>
+  </ul>
+
+  <p><strong>Сумма вкладов:</strong></p>
   <div class="formula">
-    \\[\\delta_{\\text{ст}} = \\frac{1}{EI} \\int_0^{${formatNumber(L)}} M(x) \\cdot m(x) \\, dx\\]
+    \\[\\int_0^L M(x) \\cdot m(x) \\, dx = A_1 \\cdot M(\\bar{x}_1) + A_2 \\cdot M(\\bar{x}_2) = ${formatNumber(contrib1, 4)} + ${formatNumber(contrib2, 4)} = ${formatNumber(totalIntegral, 4)} \\text{ кН·м}^3\\]
+  </div>`;
+  }
+
+  html += `
+  <h3>${sectionNum}.5. Результат</h3>
+  <p>Статический прогиб в точке удара:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}} = \\frac{1}{EI} \\int_0^L M(x) \\cdot m(x) \\, dx\\]
   </div>
-  <p>При \\(EI = ${EI_formatted} \\cdot 10^6\\) Н·м²:</p>
+  <p>При \\(EI = ${EI_formatted} \\cdot 10^6\\) Н·м² = \\(${EI_formatted}\\) МН·м²:</p>
   <div class="formula">
     \\[|\\delta_{\\text{ст}}| = \\frac{${formatNumber(Math.abs(integral * 1000), 2)}}{${EI_formatted} \\cdot 10^6} = ${formatNumber(Math.abs(delta_m), 6)} \\text{ м} = ${formatNumber(delta_mm, 4)} \\text{ мм}\\]
   </div>
@@ -2813,9 +2885,9 @@ function buildImpactLoadingSection(
     html += `
   <h3>${sectionNum}.2. Учёт податливости опоры</h3>
   <p>Опора ${springSupport} заменена пружиной с коэффициентом податливости \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН.</p>
-  <p>Осадка пружины при статическом действии силы:</p>
+  <p>Осадка пружины при статическом действии силы (от реакции опоры ${springSupport}):</p>
   <div class="formula">
-    \\[\\delta_{\\text{пр}} = \\alpha \\cdot P = ${formatNumber(springStiffness)} \\cdot ${formatNumber(impactForce)} = ${formatNumber(springDefl_cm, 4)} \\text{ см}\\]
+    \\[\\delta_{\\text{пр}} = \\alpha \\cdot |R_${springSupport}| = ${formatNumber(springStiffness)} \\cdot ${formatNumber(Math.abs(springReaction))} = ${formatNumber(springDefl_cm, 4)} \\text{ см}\\]
   </div>
   <p>Полное статическое перемещение в точке удара с учётом пружины:</p>
   <div class="formula">

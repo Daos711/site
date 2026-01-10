@@ -78,25 +78,26 @@ export const CHANNELS_U: ProfileData[] = [
 ];
 
 /**
- * Швеллеры с параллельными гранями полок по ГОСТ 8240-97
+ * Швеллеры с параллельными гранями полок по ГОСТ 8240-97 (Таблица 2)
+ * Отличаются от серии У большими значениями Iy и Wy
  */
 export const CHANNELS_P: ProfileData[] = [
-  { type: 'channel-p', number: '5П',   h: 50,  b: 32,  s: 4.4, t: 7.0,  Ix: 22.8,   Wx: 9.1,   Iy: 5.61,  Wy: 2.75,  A: 6.16,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '6.5П', h: 65,  b: 36,  s: 4.4, t: 7.2,  Ix: 48.6,   Wx: 15.0,  Iy: 8.70,  Wy: 3.68,  A: 7.51,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '8П',   h: 80,  b: 40,  s: 4.5, t: 7.4,  Ix: 89.4,   Wx: 22.4,  Iy: 12.8,  Wy: 4.75,  A: 8.98,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '10П',  h: 100, b: 46,  s: 4.5, t: 7.6,  Ix: 174,    Wx: 34.8,  Iy: 20.4,  Wy: 6.46,  A: 10.9,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '12П',  h: 120, b: 52,  s: 4.8, t: 7.8,  Ix: 304,    Wx: 50.6,  Iy: 31.2,  Wy: 8.52,  A: 13.3,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '14П',  h: 140, b: 58,  s: 4.9, t: 8.1,  Ix: 491,    Wx: 70.2,  Iy: 45.4,  Wy: 11.0,  A: 15.6,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '16П',  h: 160, b: 64,  s: 5.0, t: 8.4,  Ix: 747,    Wx: 93.4,  Iy: 63.3,  Wy: 13.8,  A: 18.1,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '18П',  h: 180, b: 70,  s: 5.1, t: 8.7,  Ix: 1090,   Wx: 121,   Iy: 86.0,  Wy: 17.0,  A: 20.7,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '20П',  h: 200, b: 76,  s: 5.2, t: 9.0,  Ix: 1520,   Wx: 152,   Iy: 113,   Wy: 20.5,  A: 23.4,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '22П',  h: 220, b: 82,  s: 5.4, t: 9.5,  Ix: 2110,   Wx: 192,   Iy: 151,   Wy: 25.1,  A: 26.7,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '24П',  h: 240, b: 90,  s: 5.6, t: 10.0, Ix: 2900,   Wx: 242,   Iy: 208,   Wy: 31.6,  A: 30.6,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '27П',  h: 270, b: 95,  s: 6.0, t: 10.5, Ix: 4160,   Wx: 308,   Iy: 262,   Wy: 37.3,  A: 35.2,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '30П',  h: 300, b: 100, s: 6.5, t: 11.0, Ix: 5810,   Wx: 387,   Iy: 327,   Wy: 43.6,  A: 40.5,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '33П',  h: 330, b: 105, s: 7.0, t: 11.7, Ix: 7980,   Wx: 484,   Iy: 410,   Wy: 51.8,  A: 46.5,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '36П',  h: 360, b: 110, s: 7.5, t: 12.6, Ix: 10820,  Wx: 601,   Iy: 513,   Wy: 61.7,  A: 53.4,  gost: 'ГОСТ 8240-97' },
-  { type: 'channel-p', number: '40П',  h: 400, b: 115, s: 8.0, t: 13.5, Ix: 15220,  Wx: 761,   Iy: 642,   Wy: 73.4,  A: 61.5,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '5П',   h: 50,  b: 32,  s: 4.4, t: 7.0,  Ix: 22.8,   Wx: 9.1,   Iy: 5.95,  Wy: 2.99,  A: 6.16,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '6.5П', h: 65,  b: 36,  s: 4.4, t: 7.2,  Ix: 48.6,   Wx: 15.0,  Iy: 9.35,  Wy: 4.06,  A: 7.51,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '8П',   h: 80,  b: 40,  s: 4.5, t: 7.4,  Ix: 89.4,   Wx: 22.4,  Iy: 13.3,  Wy: 5.13,  A: 8.98,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '10П',  h: 100, b: 46,  s: 4.5, t: 7.6,  Ix: 175,    Wx: 35.0,  Iy: 20.6,  Wy: 6.74,  A: 10.9,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '12П',  h: 120, b: 52,  s: 4.8, t: 7.8,  Ix: 305,    Wx: 50.8,  Iy: 31.5,  Wy: 8.84,  A: 13.3,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '14П',  h: 140, b: 58,  s: 4.9, t: 8.1,  Ix: 493,    Wx: 70.4,  Iy: 46.0,  Wy: 11.4,  A: 15.6,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '16П',  h: 160, b: 64,  s: 5.0, t: 8.4,  Ix: 751,    Wx: 93.9,  Iy: 64.5,  Wy: 14.3,  A: 18.1,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '18П',  h: 180, b: 70,  s: 5.1, t: 8.7,  Ix: 1100,   Wx: 122,   Iy: 88.4,  Wy: 17.6,  A: 20.7,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '20П',  h: 200, b: 76,  s: 5.2, t: 9.0,  Ix: 1530,   Wx: 153,   Iy: 116,   Wy: 21.3,  A: 23.4,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '22П',  h: 220, b: 82,  s: 5.4, t: 9.5,  Ix: 2120,   Wx: 193,   Iy: 155,   Wy: 26.1,  A: 26.7,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '24П',  h: 240, b: 90,  s: 5.6, t: 10.0, Ix: 2910,   Wx: 243,   Iy: 216,   Wy: 33.0,  A: 30.6,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '27П',  h: 270, b: 95,  s: 6.0, t: 10.5, Ix: 4180,   Wx: 310,   Iy: 314,   Wy: 46.7,  A: 35.2,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '30П',  h: 300, b: 100, s: 6.5, t: 11.0, Ix: 5830,   Wx: 389,   Iy: 394,   Wy: 54.6,  A: 40.5,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '33П',  h: 330, b: 105, s: 7.0, t: 11.7, Ix: 8010,   Wx: 485,   Iy: 495,   Wy: 64.8,  A: 46.5,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '36П',  h: 360, b: 110, s: 7.5, t: 12.6, Ix: 10880,  Wx: 604,   Iy: 618,   Wy: 77.2,  A: 53.4,  gost: 'ГОСТ 8240-97' },
+  { type: 'channel-p', number: '40П',  h: 400, b: 115, s: 8.0, t: 13.5, Ix: 15340,  Wx: 767,   Iy: 779,   Wy: 92.0,  A: 61.5,  gost: 'ГОСТ 8240-97' },
 ];
 
 /**
