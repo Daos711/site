@@ -2678,7 +2678,7 @@ function buildVereshchaginSection(
 
   const delta_m = (integral * 1000) / EI;
   const delta_mm = Math.abs(delta_m) * 1000;
-  const EI_formatted = formatNumber(EI / 1e6, 2);
+  const EI_formatted = formatNumber(EI / 1e6, 4);
 
   let html = `
   <h2>${sectionNum}. Метод Верещагина</h2>
@@ -2798,12 +2798,24 @@ function buildVereshchaginSection(
 
   const scaleX = (x: number) => margin.left + (x / L) * plotW;
 
-  // Находим max значения для масштабирования
+  // Находим max значения для масштабирования и позиции экстремумов
   let maxM = 0, maxm = 0;
+  let maxM_x = 0, maxm_x = 0;  // Позиции экстремумов
+  let maxM_val = 0, maxm_val = 0;  // Значения в экстремумах (со знаком)
   for (let i = 0; i <= 50; i++) {
     const x = (i / 50) * L;
-    maxM = Math.max(maxM, Math.abs(M(x)));
-    maxm = Math.max(maxm, Math.abs(m(x)));
+    const Mval = M(x);
+    const mval = m(x);
+    if (Math.abs(Mval) > maxM) {
+      maxM = Math.abs(Mval);
+      maxM_x = x;
+      maxM_val = Mval;
+    }
+    if (Math.abs(mval) > maxm) {
+      maxm = Math.abs(mval);
+      maxm_x = x;
+      maxm_val = mval;
+    }
   }
   if (maxM === 0) maxM = 1;
   if (maxm === 0) maxm = 1;
@@ -2865,11 +2877,15 @@ function buildVereshchaginSection(
       <text x="${margin.left - 10}" y="${baselineM}" font-size="12" text-anchor="end" fill="#333">M(x)</text>
       <line x1="${margin.left}" y1="${baselineM}" x2="${margin.left + plotW}" y2="${baselineM}" stroke="#666" stroke-width="1"/>
       <path d="${pathM} L ${scaleX(L)} ${baselineM} L ${scaleX(0)} ${baselineM} Z" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="2"/>
+      <!-- Подпись максимума M(x) -->
+      <text x="${scaleX(maxM_x)}" y="${scaleM(maxM_val) + (maxM_val >= 0 ? -5 : 12)}" font-size="9" text-anchor="middle" fill="#ef4444" font-weight="bold">${formatNumber(maxM_val, 2)}</text>
 
       <!-- Эпюра m(x) -->
       <text x="${margin.left - 10}" y="${baselinem}" font-size="12" text-anchor="end" fill="#333">m(x)</text>
       <line x1="${margin.left}" y1="${baselinem}" x2="${margin.left + plotW}" y2="${baselinem}" stroke="#666" stroke-width="1"/>
       <path d="${pathm} L ${scaleX(L)} ${baselinem} L ${scaleX(0)} ${baselinem} Z" fill="rgba(34,197,94,0.2)" stroke="#22c55e" stroke-width="2"/>
+      <!-- Подпись экстремума m(x) -->
+      <text x="${scaleX(maxm_x)}" y="${scalem(maxm_val) + (maxm_val >= 0 ? -5 : 12)}" font-size="9" text-anchor="middle" fill="#22c55e" font-weight="bold">${formatNumber(maxm_val, 2)}</text>
 
       <!-- Пунктирные линии центров тяжести - через оба графика -->
       <line x1="${scaleX(xc1)}" y1="${margin.top}" x2="${scaleX(xc1)}" y2="${baselinem + plotH/2}" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="5,3"/>
