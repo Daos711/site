@@ -1660,8 +1660,8 @@ function buildStressDiagramSection(
       <text x="0" y="195" font-size="10" fill="#333">−y</text>
       <text x="4" y="114" font-size="10" fill="#333">0</text>
 
-      <!-- Подпись высоты -->
-      <text x="95" y="15" font-size="11" fill="#333">${sizeLabel} = ${h} мм</text>
+      <!-- Подпись y_max (расстояние до крайнего волокна) -->
+      <text x="75" y="15" font-size="11" fill="#333">y_max = ${formatNumber(y_max_mm, 1)} мм</text>
     </svg>
   </div>
 
@@ -2581,10 +2581,11 @@ function buildVereshchaginSection(
     return `-(x - ${formatNumber(c)})`;
   };
 
-  // Форматирование разности (a - b) без лишних нулей
-  const formatDiff = (a: number, b: number): string => {
+  // Форматирование разности (a - b) без лишних нулей, с скобками если нужно для умножения
+  const formatDiff = (a: number, b: number, withParens = false): string => {
     if (Math.abs(b) < 1e-9) return formatNumber(a);
-    return `${formatNumber(a)} - ${formatNumber(b)}`;
+    const result = `${formatNumber(a)} - ${formatNumber(b)}`;
+    return withParens ? `(${result})` : result;
   };
 
   // Форматирование линейного выражения ax + b без двойных знаков
@@ -2709,7 +2710,7 @@ function buildVereshchaginSection(
   <p>Из уравнений равновесия для единичной силы \\(X = 1\\) в точке \\(x = ${formatNumber(impactX)}\\) м:</p>
   <p>Опоры расположены в точках: \\(x_A = ${formatNumber(xA)}\\) м, \\(x_B = ${formatNumber(xB)}\\) м. Пролёт \\(l = ${formatNumber(span)}\\) м.</p>
   <div class="formula">
-    \\[\\sum M_A = 0: \\quad 1 \\cdot ${formatDiff(impactX, xA)} - R_B^{(1)} \\cdot ${formatNumber(span)} = 0\\]
+    \\[\\sum M_A = 0: \\quad 1 \\cdot ${formatDiff(impactX, xA, true)} - R_B^{(1)} \\cdot ${formatNumber(span)} = 0\\]
   </div>
   <div class="formula">
     \\[R_B^{(1)} = \\frac{${formatNumber(distFromA)}}{${formatNumber(span)}} = ${formatNumber(RB_unit, 4)}\\]
