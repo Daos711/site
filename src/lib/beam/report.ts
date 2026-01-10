@@ -2802,8 +2802,17 @@ function buildVereshchaginSection(
   let maxM = 0, maxm = 0;
   let maxM_x = 0, maxm_x = 0;  // Позиции экстремумов
   let maxM_val = 0, maxm_val = 0;  // Значения в экстремумах (со знаком)
+
+  // Критические точки: опоры и точка удара - именно там экстремумы M(x) и m(x)
+  const criticalPoints = [0, impactX, xA, xB, L];
+
+  // Проверяем критические точки + регулярную сетку для масштабирования
   for (let i = 0; i <= 50; i++) {
-    const x = (i / 50) * L;
+    criticalPoints.push((i / 50) * L);
+  }
+
+  for (const x of criticalPoints) {
+    if (x < 0 || x > L) continue;
     const Mval = M(x);
     const mval = m(x);
     if (Math.abs(Mval) > maxM) {
