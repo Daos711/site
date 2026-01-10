@@ -1,9 +1,11 @@
 // Типы нагрузок и балок
 
-import type { ProfileData, ProfileType } from './gost-profiles';
+import type { ProfileData, ProfileType, BendingAxis } from './gost-profiles';
 
 /** Тип поперечного сечения */
-export type SectionType = 'round' | ProfileType;
+export type SectionType = 'round' | 'rectangle' | 'rectangular-tube' | 'square' | ProfileType;
+
+export type { BendingAxis };
 
 export type BeamType =
   | "simply-supported"           // Двухопорная (опоры на концах)
@@ -47,7 +49,17 @@ export interface BeamInput {
   E?: number;             // модуль упругости, Па (для прогибов)
   I?: number;             // момент инерции, м^4 (для прогибов) — если задан вручную
   sigma?: number;         // допускаемое напряжение, Па (для подбора сечения)
-  sectionType?: SectionType;  // тип сечения (круглое, двутавр, швеллер)
+  sectionType?: SectionType;  // тип сечения (круглое, двутавр, швеллер, прямоугольник и т.д.)
+  bendingAxis?: BendingAxis;  // ось изгиба для профилей ('x' или 'y')
+  // Параметры для прямоугольного сечения (rectangle)
+  rectWidth?: number;     // ширина b, м
+  rectHeight?: number;    // высота h, м
+  // Параметры для прямоугольной трубы (rectangular-tube)
+  tubeOuterWidth?: number;   // внешняя ширина B, м
+  tubeOuterHeight?: number;  // внешняя высота H, м
+  tubeThickness?: number;    // толщина стенки t, м
+  // Параметры для квадратного сечения (square)
+  squareSide?: number;    // сторона a, м
 }
 
 export interface Reactions {
@@ -72,12 +84,22 @@ export interface BeamResult {
   Qmax: { value: number; x: number };
   events: number[];  // точки разрыва/перегиба
   // Подбор сечения (если задано sigma)
-  sectionType?: SectionType;   // тип сечения
-  diameter?: number;           // подобранный диаметр для круглого, м
+  sectionType?: SectionType;      // тип сечения
+  bendingAxis?: BendingAxis;      // ось изгиба
+  diameter?: number;              // подобранный диаметр для круглого, м
   selectedProfile?: ProfileData;  // выбранный профиль из ГОСТ (для двутавра/швеллера)
-  I?: number;                  // момент инерции, м^4
-  W?: number;                  // момент сопротивления, м^3
-  Wreq?: number;               // требуемый момент сопротивления, см³
+  I?: number;                     // момент инерции, м^4
+  W?: number;                     // момент сопротивления, м^3
+  Wreq?: number;                  // требуемый момент сопротивления, см³
+  // Для прямоугольного сечения
+  rectWidth?: number;             // ширина b, м
+  rectHeight?: number;            // высота h, м
+  // Для трубы
+  tubeOuterWidth?: number;
+  tubeOuterHeight?: number;
+  tubeThickness?: number;
+  // Для квадрата
+  squareSide?: number;
 }
 
 export interface DiagramData {

@@ -1,6 +1,6 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
-import type { BeamInput, BeamResult, Reactions, SectionType } from "./types";
-import { selectProfile, type ProfileData, type ProfileType } from "./gost-profiles";
+import type { BeamInput, BeamResult, Reactions, SectionType, BendingAxis } from "./types";
+import { selectProfile, getProfileI, getProfileW, type ProfileData, type ProfileType } from "./gost-profiles";
 
 /** Точность для сравнения с нулём */
 const EPS = 1e-6;
@@ -41,7 +41,14 @@ export function solveBeam(input: BeamInput): BeamResult {
   let I_computed: number | undefined;
   let selectedProfile: ProfileData | undefined;
   let Wreq: number | undefined;
+  let rectWidth: number | undefined;
+  let rectHeight: number | undefined;
+  let tubeOuterWidth: number | undefined;
+  let tubeOuterHeight: number | undefined;
+  let tubeThickness: number | undefined;
+  let squareSide: number | undefined;
   const sectionType: SectionType = input.sectionType ?? 'round';
+  const bendingAxis: BendingAxis = input.bendingAxis ?? 'x';
 
   if (input.sigma) {
     // |M|max в кН·м, sigma в Па
@@ -59,19 +66,103 @@ export function solveBeam(input: BeamInput): BeamResult {
 
       // Момент инерции: I = π·d⁴/64
       I_computed = (Math.PI * Math.pow(diameter, 4)) / 64; // м⁴
+
+    } else if (sectionType === 'rectangle') {
+      // Прямоугольное сечение b×h
+      // Используем заданные пропорции или h/b = 2 по умолчанию
+      const ratio = input.rectHeight && input.rectWidth
+        ? input.rectHeight / input.rectWidth
+        : 2;
+
+      // W = b·h²/6, h = ratio·b
+      // W = b·(ratio·b)²/6 = ratio²·b³/6
+      // b = ∛(6·W/ratio²)
+      const b = Math.pow((6 * W_m3) / (ratio * ratio), 1 / 3);
+      const h = ratio * b;
+
+      rectWidth = b;
+      rectHeight = h;
+      W = W_m3;
+
+      // I = b·h³/12
+      I_computed = (b * Math.pow(h, 3)) / 12;
+
+    } else if (sectionType === 'rectangular-tube') {
+      // Прямоугольная труба B×H×t
+      // Если заданы параметры, вычисляем W и I, иначе подбираем
+      if (input.tubeOuterWidth && input.tubeOuterHeight && input.tubeThickness) {
+        const B = input.tubeOuterWidth;
+        const H = input.tubeOuterHeight;
+        const t = input.tubeThickness;
+
+        tubeOuterWidth = B;
+        tubeOuterHeight = H;
+        tubeThickness = t;
+
+        // I = (B·H³ - (B-2t)·(H-2t)³) / 12
+        const I_outer = B * Math.pow(H, 3) / 12;
+        const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+        I_computed = I_outer - I_inner;
+
+        W = 2 * I_computed / H;
+      } else {
+        // Подбор: фиксируем t/H = 0.1, H/B = 1.5
+        const tRatio = 0.1;
+        const aspectRatio = 1.5;
+
+        // W ≈ (B·H³ - (B-2t)·(H-2t)³) / (6H), упрощённо
+        // Численно подбираем H
+        let H = 0.05; // начальное приближение
+        for (let iter = 0; iter < 20; iter++) {
+          const B = H / aspectRatio;
+          const t = H * tRatio;
+          const I_outer = B * Math.pow(H, 3) / 12;
+          const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+          const W_cur = 2 * (I_outer - I_inner) / H;
+
+          if (W_cur >= W_m3) break;
+          H *= 1.1;
+        }
+
+        const B = H / aspectRatio;
+        const t = H * tRatio;
+
+        tubeOuterWidth = B;
+        tubeOuterHeight = H;
+        tubeThickness = t;
+
+        const I_outer = B * Math.pow(H, 3) / 12;
+        const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+        I_computed = I_outer - I_inner;
+        W = 2 * I_computed / H;
+      }
+
+    } else if (sectionType === 'square') {
+      // Квадратное сечение a×a
+      // W = a³/6
+      // a = ∛(6·W)
+      const a = Math.pow(6 * W_m3, 1 / 3);
+
+      squareSide = a;
+      W = W_m3;
+
+      // I = a⁴/12
+      I_computed = Math.pow(a, 4) / 12;
+
     } else {
       // Для профилей из ГОСТ (двутавр, швеллер)
       // Переводим W из м³ в см³: W_см³ = W_м³ * 10^6
       const W_cm3 = W_m3 * 1e6;
       Wreq = W_cm3;
 
-      // Подбираем профиль из сортамента
-      const profile = selectProfile(sectionType as ProfileType, W_cm3);
+      // Подбираем профиль из сортамента с учётом оси
+      const profile = selectProfile(sectionType as ProfileType, W_cm3, bendingAxis);
       if (profile) {
         selectedProfile = profile;
-        W = profile.Wx / 1e6; // переводим см³ в м³
+        // Используем W и I для выбранной оси
+        W = getProfileW(profile, bendingAxis) / 1e6; // переводим см³ в м³
         // Переводим момент инерции из см⁴ в м⁴: I_м⁴ = I_см⁴ * 10^(-8)
-        I_computed = profile.Ix * 1e-8;
+        I_computed = getProfileI(profile, bendingAxis) * 1e-8;
       } else {
         // Профиль не найден — Wreq слишком большой для сортамента
         // Оставляем I_computed = undefined, прогибы не будут рассчитаны
@@ -110,11 +201,18 @@ export function solveBeam(input: BeamInput): BeamResult {
     Qmax,
     events,
     sectionType,
+    bendingAxis,
     diameter,
     selectedProfile,
     I: I_final,
     W,
     Wreq,
+    rectWidth,
+    rectHeight,
+    tubeOuterWidth,
+    tubeOuterHeight,
+    tubeThickness,
+    squareSide,
   };
 }
 

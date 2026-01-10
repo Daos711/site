@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
-import { generateReport, getProfileTypeShortName } from "@/lib/beam";
+import { generateReport, getProfileTypeShortName, getProfileW, getProfileI } from "@/lib/beam";
 import { Latex } from "@/components/Latex";
 
 interface Props {
@@ -257,11 +257,75 @@ export function ResultCards({ input, result, className, showButton = true, onRep
         </div>
       )}
 
+      {/* Квадратное сечение */}
+      {result.sectionType === 'square' && result.squareSide && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (квадрат)</h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`a = ${formatNum(result.squareSide * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Прямоугольное сечение */}
+      {result.sectionType === 'rectangle' && result.rectWidth && result.rectHeight && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (прямоугольник)</h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`b = ${formatNum(result.rectWidth * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`h = ${formatNum(result.rectHeight * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Прямоугольная труба */}
+      {result.sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (труба)</h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`B = ${formatNum(result.tubeOuterWidth * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`H = ${formatNum(result.tubeOuterHeight * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`t = ${formatNum(result.tubeThickness * 1000, 1)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Подобранный профиль из ГОСТ */}
-      {result.sectionType && result.sectionType !== 'round' && result.selectedProfile && (
+      {result.selectedProfile && (
         <div className="p-4 rounded-lg border border-border bg-card">
           <h3 className="font-semibold mb-3 text-base text-foreground">
             Подбор сечения ({getProfileTypeShortName(result.selectedProfile.type)})
+            {result.bendingAxis === 'y' && <span className="text-sm text-muted ml-2">(ось Y)</span>}
           </h3>
           <div className="space-y-2">
             <div className="text-lg font-medium text-accent">
@@ -278,17 +342,17 @@ export function ResultCards({ input, result, className, showButton = true, onRep
                 <Latex tex={`b = ${result.selectedProfile.b}${UNIT_MM}`} />
               </div>
               <div>
-                <Latex tex={`W_x = ${formatNum(result.selectedProfile.Wx)}${UNIT_CM3}`} />
+                <Latex tex={`W_${result.bendingAxis || 'x'} = ${formatNum(getProfileW(result.selectedProfile, result.bendingAxis))}${UNIT_CM3}`} />
               </div>
               <div>
-                <Latex tex={`I_x = ${formatNum(result.selectedProfile.Ix)}${UNIT_CM4}`} />
+                <Latex tex={`I_${result.bendingAxis || 'x'} = ${formatNum(getProfileI(result.selectedProfile, result.bendingAxis))}${UNIT_CM4}`} />
               </div>
             </div>
             {result.Wreq && (
               <div className="mt-2 pt-2 border-t border-border text-sm text-muted">
                 <Latex tex={`W_{\\text{треб}} = ${formatNum(result.Wreq)}${UNIT_CM3}`} />
                 <span className="ml-2 text-green-500">
-                  ({formatNum(result.selectedProfile.Wx)} ≥ {formatNum(result.Wreq)} ✓)
+                  ({formatNum(getProfileW(result.selectedProfile, result.bendingAxis))} ≥ {formatNum(result.Wreq)} ✓)
                 </span>
               </div>
             )}
@@ -296,8 +360,8 @@ export function ResultCards({ input, result, className, showButton = true, onRep
         </div>
       )}
 
-      {/* Предупреждение если профиль не найден */}
-      {result.sectionType && result.sectionType !== 'round' && !result.selectedProfile && result.Wreq && (
+      {/* Предупреждение если профиль не найден (только для ГОСТ профилей) */}
+      {(result.sectionType === 'i-beam' || result.sectionType === 'channel-u' || result.sectionType === 'channel-p') && !result.selectedProfile && result.Wreq && (
         <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/5">
           <h3 className="font-semibold mb-2 text-base text-red-400">Профиль не найден</h3>
           <p className="text-sm text-muted">

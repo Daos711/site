@@ -4,7 +4,7 @@
 
 import type { BeamInput, BeamResult, Reactions, Load } from "./types";
 import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula, type ForceContribution } from "./sections";
-import { getProfileTypeName } from "./gost-profiles";
+import { getProfileTypeName, getProfileW, getProfileI } from "./gost-profiles";
 
 /**
  * Оценивает ширину LaTeX терма в условных единицах (примерно символах)
@@ -1266,17 +1266,81 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
 
+  } else if (sectionType === 'square' && result.squareSide) {
+    // Квадратное сечение
+    const a_mm = formatNumber(result.squareSide * 1000, 2);
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    html += `
+  <p>Для квадратного сечения со стороной \\(a\\): \\(W = \\frac{a^3}{6}\\), откуда:</p>
+  <div class="formula">
+    \\[\\boxed{a = \\sqrt[3]{6W} = \\sqrt[3]{6 \\cdot ${W_cm3}} = ${a_mm} \\text{ мм}}\\]
+  </div>
+  <p>Момент инерции квадратного сечения:</p>
+  <div class="formula">
+    \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+
+  } else if (sectionType === 'rectangle' && result.rectWidth && result.rectHeight) {
+    // Прямоугольное сечение
+    const b_mm = formatNumber(result.rectWidth * 1000, 2);
+    const h_mm = formatNumber(result.rectHeight * 1000, 2);
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    html += `
+  <p>Для прямоугольного сечения \\(b \\times h\\): \\(W = \\frac{b \\cdot h^2}{6}\\).</p>
+  <p>Принимая соотношение \\(h/b = ${formatNumber(result.rectHeight / result.rectWidth, 1)}\\), получаем:</p>
+  <div class="formula">
+    \\[\\boxed{b = ${b_mm} \\text{ мм}, \\quad h = ${h_mm} \\text{ мм}}\\]
+  </div>
+  <p>Момент сопротивления и момент инерции:</p>
+  <div class="formula">
+    \\[W = \\frac{b \\cdot h^2}{6} = \\frac{${b_mm} \\cdot ${h_mm}^2}{6} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+
+  } else if (sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness) {
+    // Прямоугольная труба
+    const B_mm = formatNumber(result.tubeOuterWidth * 1000, 2);
+    const H_mm = formatNumber(result.tubeOuterHeight * 1000, 2);
+    const t_mm = formatNumber(result.tubeThickness * 1000, 1);
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    html += `
+  <p>Для прямоугольной трубы \\(B \\times H \\times t\\):</p>
+  <div class="formula">
+    \\[\\boxed{B = ${B_mm} \\text{ мм}, \\quad H = ${H_mm} \\text{ мм}, \\quad t = ${t_mm} \\text{ мм}}\\]
+  </div>
+  <p>Момент инерции прямоугольной трубы:</p>
+  <div class="formula">
+    \\[I = \\frac{B \\cdot H^3 - (B-2t)(H-2t)^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>
+  <p>Момент сопротивления:</p>
+  <div class="formula">
+    \\[W = \\frac{2I}{H} = ${W_cm3} \\text{ см}^3\\]
+  </div>`;
+
   } else if (result.selectedProfile) {
     // Профиль из ГОСТ (двутавр или швеллер)
     const profile = result.selectedProfile;
     const profileTypeName = getProfileTypeName(profile.type);
+    const axis = result.bendingAxis ?? 'x';
+    const axisLabel = axis.toUpperCase();
+    const W_axis = getProfileW(profile, axis);
+    const I_axis = getProfileI(profile, axis);
+    const axisNote = axis === 'y' ? ' (профиль повёрнут на 90°)' : '';
 
     html += `
-  <h3>Подбор ${profile.type === 'i-beam' ? 'двутавра' : 'швеллера'} по ${profile.gost}</h3>
-  <p>Из сортамента по ${profile.gost} выбираем ${profileTypeName.toLowerCase()} с \\(W_x \\geq ${Wreq_str}\\) см³.</p>
+  <h3>Подбор ${profile.type === 'i-beam' ? 'двутавра' : 'швеллера'} по ${profile.gost}${axisNote}</h3>
+  <p>Из сортамента по ${profile.gost} выбираем ${profileTypeName.toLowerCase()} с \\(W_${axis} \\geq ${Wreq_str}\\) см³.</p>
 
   <div class="profile-selection" style="padding: 15px 0; margin: 15px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
-    <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>Принимаем: ${profileTypeName} № ${profile.number}</strong></p>
+    <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>Принимаем: ${profileTypeName} № ${profile.number}</strong>${axis === 'y' ? ' <span style="color: #666;">(изгиб относительно оси Y)</span>' : ''}</p>
     <table style="width: 100%; border-collapse: collapse;">
       <tr>
         <td style="padding: 5px 10px;">Высота \\(h\\)</td>
@@ -1291,27 +1355,27 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
         <td style="padding: 5px 10px;"><strong>${profile.t} мм</strong></td>
       </tr>
       <tr>
-        <td style="padding: 5px 10px;">Момент сопротивления \\(W_x\\)</td>
-        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.Wx)} см³</strong></td>
+        <td style="padding: 5px 10px;">Момент сопротивления \\(W_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(W_axis)} см³</strong></td>
         <td style="padding: 5px 10px;">Площадь \\(A\\)</td>
         <td style="padding: 5px 10px;"><strong>${formatNumber(profile.A)} см²</strong></td>
       </tr>
       <tr>
-        <td style="padding: 5px 10px;">Момент инерции \\(I_x\\)</td>
-        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.Ix)} см⁴</strong></td>
+        <td style="padding: 5px 10px;">Момент инерции \\(I_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(I_axis)} см⁴</strong></td>
         <td style="padding: 5px 10px;"></td>
         <td style="padding: 5px 10px;"></td>
       </tr>
     </table>
   </div>
 
-  <p>Проверка: \\(W_x = ${formatNumber(profile.Wx)}\\) см³ \\(\\geq W_{\\text{треб}} = ${Wreq_str}\\) см³ ✓</p>
+  <p>Проверка: \\(W_${axis} = ${formatNumber(W_axis)}\\) см³ \\(\\geq W_{\\text{треб}} = ${Wreq_str}\\) см³ ✓</p>
   <div class="formula">
-    \\[\\boxed{\\text{${profileTypeName} № ${profile.number}, } I_x = ${formatNumber(profile.Ix)} \\text{ см}^4}\\]
+    \\[\\boxed{\\text{${profileTypeName} № ${profile.number}, } I_${axis} = ${formatNumber(I_axis)} \\text{ см}^4}\\]
   </div>`;
 
     // Добавляем раздел с эпюрой нормальных напряжений
-    html += buildStressDiagramSection(profile, Mmax, sectionNum);
+    html += buildStressDiagramSection(profile, Mmax, sectionNum, axis);
 
   } else {
     // Профиль не найден
@@ -1329,33 +1393,33 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 function buildStressDiagramSection(
   profile: NonNullable<BeamResult['selectedProfile']>,
   Mmax: { value: number; x: number },
-  sectionNum: number
+  sectionNum: number,
+  axis: 'x' | 'y' = 'x'
 ): string {
-  const h = profile.h; // мм
-  const Ix = profile.Ix; // см⁴
+  // Для оси Y размеры меняются местами
+  const h = axis === 'x' ? profile.h : profile.b; // мм - размер в направлении изгиба
+  const W_val = getProfileW(profile, axis); // см³
+  const I_val = getProfileI(profile, axis); // см⁴
   const MmaxKNm = Math.abs(Mmax.value); // кН·м
 
   // σ = M·y / I
-  // y_max = h/2 (мм → см: /10)
-  // M в кН·м = 100 кН·см
-  // I в см⁴
-  // σ = (M * 100) * (h/2 / 10) / I = M * 100 * h / 20 / I = M * 5 * h / I (кН/см² → МПа: *10)
-  // σ_max = M * 50 * h / I (МПа), где M в кН·м, h в мм, I в см⁴
-  // Упрощённо: σ_max = M / W * 1000 (МПа), где M в кН·м, W в см³
+  // σ_max = M / W * 1000 (МПа), где M в кН·м, W в см³
 
-  const sigmaMax = MmaxKNm * 1000 / profile.Wx; // МПа (M в кН·м → Н·м, W в см³ → м³)
+  const sigmaMax = MmaxKNm * 1000 / W_val; // МПа
   const sigmaMaxStr = formatNumber(sigmaMax, 2);
+
+  const sizeLabel = axis === 'x' ? 'h' : 'b';
 
   return `
   <h3>${sectionNum}.1. Нормальные напряжения в опасном сечении</h3>
   <p>Опасное сечение находится в точке \\(x = ${formatNumber(Mmax.x)}\\) м, где \\(|M|_{\\max} = ${formatNumber(MmaxKNm)}\\) кН·м.</p>
   <p>Нормальные напряжения по высоте сечения распределяются по закону:</p>
   <div class="formula">
-    \\[\\sigma(y) = \\frac{M \\cdot y}{I_x}\\]
+    \\[\\sigma(y) = \\frac{M \\cdot y}{I_${axis}}\\]
   </div>
-  <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm h/2 = \\pm ${formatNumber(h/2)}\\) мм):</p>
+  <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm ${sizeLabel}/2 = \\pm ${formatNumber(h/2)}\\) мм):</p>
   <div class="formula">
-    \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_x} = \\frac{${formatNumber(MmaxKNm)} \\cdot 10^6}{${formatNumber(profile.Wx)} \\cdot 10^3} = ${sigmaMaxStr} \\text{ МПа}\\]
+    \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_${axis}} = \\frac{${formatNumber(MmaxKNm)} \\cdot 10^6}{${formatNumber(W_val)} \\cdot 10^3} = ${sigmaMaxStr} \\text{ МПа}\\]
   </div>
 
   <div class="stress-diagram" style="display: flex; justify-content: center; margin: 20px 0;">
@@ -1418,13 +1482,13 @@ function buildStressDiagramSection(
       <text x="0" y="195" font-size="10" fill="#333">−y</text>
       <text x="4" y="114" font-size="10" fill="#333">0</text>
 
-      <!-- Подпись высоты h -->
-      <text x="95" y="15" font-size="11" fill="#333">h = ${h} мм</text>
+      <!-- Подпись высоты -->
+      <text x="95" y="15" font-size="11" fill="#333">${sizeLabel} = ${h} мм</text>
     </svg>
   </div>
 
   <p><strong>Эпюра нормальных напряжений σ(y):</strong> линейное распределение по высоте сечения.
-  На нейтральной оси (y = 0) напряжения равны нулю. На крайних волокнах (y = ±h/2) напряжения максимальны:
+  На нейтральной оси (y = 0) напряжения равны нулю. На крайних волокнах (y = ±${sizeLabel}/2) напряжения максимальны:
   растяжение (+σ) в верхней зоне, сжатие (−σ) в нижней.</p>`;
 }
 

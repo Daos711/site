@@ -8,6 +8,7 @@ import type {
   Load,
   BeamSupport,
   SectionType,
+  BendingAxis,
 } from "@/lib/beam";
 
 // Компонент числового ввода с валидацией min/max
@@ -112,32 +113,51 @@ const beamTypes: { value: BeamType; label: string; description: string }[] = [
   },
 ];
 
-const sectionTypes: { value: SectionType; label: string; description: string }[] = [
+const sectionTypes: { value: SectionType; label: string; description: string; hasAxis?: boolean }[] = [
   {
     value: "round",
     label: "Круглое сплошное",
     description: "Подбор диаметра по условию прочности",
   },
   {
+    value: "square",
+    label: "Квадратное",
+    description: "Подбор стороны a×a",
+  },
+  {
+    value: "rectangle",
+    label: "Прямоугольное",
+    description: "Подбор размеров b×h",
+  },
+  {
+    value: "rectangular-tube",
+    label: "Прямоугольная труба",
+    description: "Подбор размеров B×H×t",
+  },
+  {
     value: "i-beam",
     label: "Двутавр",
     description: "Подбор номера по ГОСТ 8239-89",
+    hasAxis: true,
   },
   {
     value: "channel-u",
     label: "Швеллер У",
     description: "С уклоном полок, ГОСТ 8240-97",
+    hasAxis: true,
   },
   {
     value: "channel-p",
     label: "Швеллер П",
     description: "С параллельными полками, ГОСТ 8240-97",
+    hasAxis: true,
   },
 ];
 
 export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) {
   const [beamType, setBeamType] = useState<BeamType>("simply-supported");
   const [sectionType, setSectionType] = useState<SectionType>("i-beam");
+  const [bendingAxis, setBendingAxis] = useState<BendingAxis>("x");
   const [L, setL] = useState<number>(10);
   const [loads, setLoads] = useState<Load[]>([]);
   const [E, setE] = useState<number>(200e9); // Па
@@ -262,6 +282,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
       E,
       sigma,
       sectionType,
+      bendingAxis,
     };
 
     onCalculate(input);
@@ -334,6 +355,46 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
             </label>
           ))}
         </div>
+
+        {/* Выбор оси изгиба для профилей */}
+        {sectionTypes.find(st => st.value === sectionType)?.hasAxis && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <h4 className="text-sm font-medium mb-3">Ось изгиба</h4>
+            <div className="flex gap-4">
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                bendingAxis === 'x'
+                  ? "bg-accent/10 border border-accent"
+                  : "bg-card-hover border border-transparent hover:border-border"
+              }`}>
+                <input
+                  type="radio"
+                  name="bendingAxis"
+                  value="x"
+                  checked={bendingAxis === 'x'}
+                  onChange={() => setBendingAxis('x')}
+                />
+                <span>Ось X (стандартно)</span>
+              </label>
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+                bendingAxis === 'y'
+                  ? "bg-accent/10 border border-accent"
+                  : "bg-card-hover border border-transparent hover:border-border"
+              }`}>
+                <input
+                  type="radio"
+                  name="bendingAxis"
+                  value="y"
+                  checked={bendingAxis === 'y'}
+                  onChange={() => setBendingAxis('y')}
+                />
+                <span>Ось Y (повёрнуто)</span>
+              </label>
+            </div>
+            <p className="text-xs text-muted mt-2">
+              При изгибе относительно оси Y профиль установлен «плашмя» (повёрнут на 90°)
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Длина балки */}
