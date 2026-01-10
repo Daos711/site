@@ -1,5 +1,5 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
-import type { BeamInput, BeamResult, Reactions, SectionType, SectionMode, BendingAxis } from "./types";
+import type { BeamInput, BeamResult, Reactions, SectionType, SectionMode, BendingAxis, LoadMode } from "./types";
 import { selectProfile, getProfileI, getProfileW, getProfileByNumber, type ProfileData, type ProfileType } from "./gost-profiles";
 
 /** Точность для сравнения с нулём */
@@ -250,6 +250,54 @@ export function solveBeam(input: BeamInput): BeamResult {
     C2 = deflectionResult.C2;
   }
 
+  // Ударное нагружение
+  const loadMode: LoadMode = input.loadMode ?? 'static';
+  let yStaticAtImpact: number | undefined;
+  let Kd: number | undefined;
+  let sigmaDynamic: number | undefined;
+  let yDynamic: number | undefined;
+  let springDeflection: number | undefined;
+
+  if (loadMode === 'impact' && input.impactHeight !== undefined && y) {
+    // Находим точку приложения ударной силы
+    // По умолчанию берём первую сосредоточенную силу или середину балки
+    let impactX = input.L / 2;
+    const forceIndex = input.impactForceIndex ?? 0;
+    const forces = input.loads.filter(l => l.type === 'force');
+    if (forces.length > forceIndex) {
+      impactX = (forces[forceIndex] as { x: number }).x;
+    }
+
+    // Статический прогиб в точке удара (берём по модулю)
+    yStaticAtImpact = Math.abs(y(impactX));
+
+    // Учёт податливости пружины (если задана)
+    let totalStaticDeflection = yStaticAtImpact;
+    if (input.springStiffness && input.springStiffness > 0) {
+      // α в см/кН, нужно перевести в м/кН
+      // Прогиб пружины = α × P (P в кН)
+      // Для расчёта Kd используем суммарный прогиб
+      const P_kN = forces.length > 0 ? Math.abs((forces[forceIndex] as { F: number }).F) : 0;
+      const springDefl_m = (input.springStiffness / 100) * P_kN; // см → м
+      totalStaticDeflection += springDefl_m;
+      springDeflection = springDefl_m;
+    }
+
+    // Коэффициент динамичности: Kд = 1 + √(1 + 2H/δст)
+    if (totalStaticDeflection > 0) {
+      const H = input.impactHeight;
+      Kd = 1 + Math.sqrt(1 + (2 * H) / totalStaticDeflection);
+
+      // Динамическое напряжение: σд = Kд × σст
+      if (sigmaMax !== undefined) {
+        sigmaDynamic = Kd * sigmaMax;
+      }
+
+      // Динамический прогиб: yд = Kд × δст
+      yDynamic = Kd * yStaticAtImpact;
+    }
+  }
+
   return {
     reactions,
     Q,
@@ -276,6 +324,15 @@ export function solveBeam(input: BeamInput): BeamResult {
     tubeOuterHeight,
     tubeThickness,
     squareSide,
+    // Ударное нагружение
+    loadMode,
+    impactHeight: input.impactHeight,
+    yStaticAtImpact,
+    Kd,
+    sigmaDynamic,
+    yDynamic,
+    springStiffness: input.springStiffness,
+    springDeflection,
   };
 }
 

@@ -10,6 +10,7 @@ import type {
   SectionType,
   SectionMode,
   BendingAxis,
+  LoadMode,
 } from "@/lib/beam";
 import { getProfilesByType, type ProfileData, type ProfileType } from "@/lib/beam";
 
@@ -176,6 +177,11 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
   const [squareSide, setSquareSide] = useState<number>(0.08);  // м
   const [profileNumber, setProfileNumber] = useState<string>("20");
 
+  // Параметры ударного нагружения
+  const [loadMode, setLoadMode] = useState<LoadMode>("static");
+  const [impactHeight, setImpactHeight] = useState<number>(0.08);  // м (высота падения)
+  const [springStiffness, setSpringStiffness] = useState<number>(0);  // см/кН (податливость пружины)
+
   // Позиции опор для балок с консолями
   const [xA, setXA] = useState<number>(2);   // позиция опоры A
   const [xB, setXB] = useState<number>(8);   // позиция опоры B
@@ -296,6 +302,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
       sectionType,
       sectionMode,
       bendingAxis,
+      loadMode,
       // Для режима подбора
       ...(sectionMode === 'select' ? { sigma } : {}),
       // Для режима заданного сечения
@@ -304,6 +311,9 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
       ...(sectionMode === 'given' && sectionType === 'rectangular-tube' ? { tubeOuterWidth, tubeOuterHeight, tubeThickness } : {}),
       ...(sectionMode === 'given' && sectionType === 'square' ? { squareSide } : {}),
       ...(sectionMode === 'given' && (sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') ? { profileNumber } : {}),
+      // Ударное нагружение
+      ...(loadMode === 'impact' ? { impactHeight } : {}),
+      ...(loadMode === 'impact' && springStiffness > 0 ? { springStiffness } : {}),
     };
 
     onCalculate(input);
@@ -711,6 +721,75 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
           </div>
         )}
       </div>
+
+      {/* Режим нагружения (только для заданного сечения) */}
+      {sectionMode === 'given' && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3">Тип нагружения</h3>
+          <div className="flex gap-4 mb-4">
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+              loadMode === 'static'
+                ? "bg-accent/10 border border-accent"
+                : "bg-card-hover border border-transparent hover:border-border"
+            }`}>
+              <input
+                type="radio"
+                name="loadMode"
+                value="static"
+                checked={loadMode === 'static'}
+                onChange={() => setLoadMode('static')}
+              />
+              <span>Статическое</span>
+            </label>
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+              loadMode === 'impact'
+                ? "bg-accent/10 border border-accent"
+                : "bg-card-hover border border-transparent hover:border-border"
+            }`}>
+              <input
+                type="radio"
+                name="loadMode"
+                value="impact"
+                checked={loadMode === 'impact'}
+                onChange={() => setLoadMode('impact')}
+              />
+              <span>Ударное (динамическое)</span>
+            </label>
+          </div>
+
+          {loadMode === 'impact' && (
+            <div className="pt-4 border-t border-border">
+              <h4 className="text-sm font-medium mb-3">Параметры удара</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-muted mb-1">Высота падения H, м</label>
+                  <NumInput
+                    value={impactHeight}
+                    onChange={setImpactHeight}
+                    min={0.001}
+                    step={0.01}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Податливость пружины α, см/кН</label>
+                  <NumInput
+                    value={springStiffness}
+                    onChange={setSpringStiffness}
+                    min={0}
+                    step={0.1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                  <p className="text-xs text-muted mt-1">0 = без пружины (жёсткая опора)</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted mt-3">
+                Kд = 1 + √(1 + 2H/δст) — коэффициент динамичности
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Кнопка расчёта */}
       {showButton && (

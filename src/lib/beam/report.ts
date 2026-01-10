@@ -720,6 +720,13 @@ function buildReportHTML(data: ReportData): string {
 
     if (hasDeflection) {
       html += buildMNPSection(input, result, sectionNum);
+      sectionNum++;
+    }
+
+    // Раздел ударного нагружения (если есть)
+    if (result.loadMode === 'impact' && result.Kd !== undefined) {
+      html += buildImpactLoadingSection(input, result, sectionNum);
+      sectionNum++;
     }
 
     return html;
@@ -791,6 +798,16 @@ function buildProblemStatement(input: BeamInput, result: BeamResult, hasDeflecti
     tasks.push("Определить прогибы и найти максимальный прогиб балки");
   }
 
+  // Ударное нагружение
+  if (result.loadMode === 'impact') {
+    tasks.push("Определить коэффициент динамичности при ударном нагружении");
+    tasks.push("Определить напряжения и прогиб при ударе");
+    if (result.springStiffness && result.springStiffness > 0) {
+      tasks.push("Учесть податливость пружинной опоры");
+    }
+    tasks.push("Сравнить статическое и динамическое нагружение");
+  }
+
   return `
   <h2>Постановка задачи</h2>
   <p>Дана ${formatBeamType(input.beamType).toLowerCase()}. Требуется:</p>
@@ -856,6 +873,17 @@ function buildInputDataSection(input: BeamInput): string {
       const qLabel = resultingLoads.length === 1 ? "q" : `q_{${i + 1}}`;
       return `<tr><td>\\(${qLabel}\\)</td><td>\\(${formatNumber(Math.abs(seg.q))}\\) кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от \\(${formatNumber(seg.a)}\\) до \\(${formatNumber(seg.b)}\\) м</td></tr>`;
     }).join("\n    ")}
+  </table>`;
+  }
+
+  // Параметры ударного нагружения
+  if (input.loadMode === 'impact' && input.impactHeight !== undefined) {
+    html += `
+  <h3>Параметры ударного нагружения</h3>
+  <table>
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Высота падения груза \\(H\\)</td><td>\\(${formatNumber(input.impactHeight * 100)}\\) см = \\(${formatNumber(input.impactHeight, 3)}\\) м</td></tr>
+    ${input.springStiffness && input.springStiffness > 0 ? `<tr><td>Коэффициент податливости пружины \\(\\alpha\\)</td><td>\\(${formatNumber(input.springStiffness)}\\) см/кН</td></tr>` : ""}
   </table>`;
   }
 
@@ -2477,6 +2505,126 @@ function buildCantileverRightDerivation(
 }
 
 /**
+ * Раздел "Ударное нагружение"
+ */
+function buildImpactLoadingSection(
+  input: BeamInput,
+  result: BeamResult,
+  sectionNum: number
+): string {
+  if (result.loadMode !== 'impact' || result.Kd === undefined) {
+    return '';
+  }
+
+  const H_cm = (result.impactHeight ?? 0) * 100; // м → см
+  const H_m = result.impactHeight ?? 0;
+  const yStaticAtImpact_mm = (result.yStaticAtImpact ?? 0) * 1000; // м → мм
+  const yStaticAtImpact_cm = yStaticAtImpact_mm / 10;
+  const Kd = result.Kd;
+  const sigmaMax = result.sigmaMax ?? 0; // МПа
+  const sigmaDynamic = result.sigmaDynamic ?? 0; // МПа
+  const yDynamic_mm = (result.yDynamic ?? 0) * 1000;
+  const springStiffness = result.springStiffness; // см/кН
+  const springDeflection_mm = (result.springDeflection ?? 0) * 1000;
+
+  // Находим силу удара
+  const forces = input.loads.filter(l => l.type === 'force');
+  const forceIndex = input.impactForceIndex ?? 0;
+  const impactForce = forces.length > forceIndex ? Math.abs((forces[forceIndex] as { F: number }).F) : 0;
+
+  let html = `
+  <h2>${sectionNum}. Ударное нагружение</h2>
+  <p>На балку действует груз массой \\(P = ${formatNumber(impactForce)}\\) кН, падающий с высоты \\(H = ${formatNumber(H_cm)}\\) см = \\(${formatNumber(H_m, 3)}\\) м.</p>
+
+  <h3>${sectionNum}.1. Статический прогиб в точке удара</h3>
+  <p>Статический прогиб \\(\\delta_{\\text{ст}}\\) — прогиб балки в точке приложения силы при статическом действии нагрузки:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}} = ${formatNumber(yStaticAtImpact_mm, 4)} \\text{ мм} = ${formatNumber(yStaticAtImpact_cm, 5)} \\text{ см}\\]
+  </div>`;
+
+  // Учёт пружины если есть
+  if (springStiffness && springStiffness > 0 && result.springDeflection) {
+    const springDefl_cm = springDeflection_mm / 10;
+    const totalDefl_cm = yStaticAtImpact_cm + springDefl_cm;
+    html += `
+  <h3>${sectionNum}.2. Учёт податливости опоры</h3>
+  <p>Одна из опор заменена пружиной с коэффициентом податливости \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН.</p>
+  <p>Осадка пружины при статическом действии силы:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{пр}} = \\alpha \\cdot P = ${formatNumber(springStiffness)} \\cdot ${formatNumber(impactForce)} = ${formatNumber(springDefl_cm, 4)} \\text{ см}\\]
+  </div>
+  <p>Полное статическое перемещение в точке удара с учётом пружины:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}}^{\\text{полн}} = \\delta_{\\text{ст}} + \\delta_{\\text{пр}} = ${formatNumber(yStaticAtImpact_cm, 4)} + ${formatNumber(springDefl_cm, 4)} = ${formatNumber(totalDefl_cm, 4)} \\text{ см}\\]
+  </div>`;
+  }
+
+  // Коэффициент динамичности
+  const subsectionNum = springStiffness && springStiffness > 0 ? 3 : 2;
+  const deltaForKd = springStiffness && result.springDeflection
+    ? (yStaticAtImpact_cm + springDeflection_mm / 10)
+    : yStaticAtImpact_cm;
+
+  html += `
+  <h3>${sectionNum}.${subsectionNum}. Коэффициент динамичности</h3>
+  <p>Коэффициент динамичности определяется по формуле:</p>
+  <div class="formula">
+    \\[K_д = 1 + \\sqrt{1 + \\frac{2H}{\\delta_{\\text{ст}}}}\\]
+  </div>
+  <p>Подставляя значения:</p>
+  <div class="formula">
+    \\[K_д = 1 + \\sqrt{1 + \\frac{2 \\cdot ${formatNumber(H_cm)}}{${formatNumber(deltaForKd, 4)}}} = 1 + \\sqrt{${formatNumber(1 + (2 * H_cm) / deltaForKd, 3)}} = ${formatNumber(Kd, 3)}\\]
+  </div>`;
+
+  // Динамические напряжения
+  const subsectionSigma = subsectionNum + 1;
+  html += `
+  <h3>${sectionNum}.${subsectionSigma}. Динамические напряжения</h3>
+  <p>Статическое напряжение (при статическом действии нагрузки):</p>
+  <div class="formula">
+    \\[\\sigma_{\\text{ст}} = ${formatNumber(sigmaMax, 2)} \\text{ МПа}\\]
+  </div>
+  <p>Максимальное нормальное напряжение при ударе:</p>
+  <div class="formula">
+    \\[\\sigma_{\\text{дин}} = K_д \\cdot \\sigma_{\\text{ст}} = ${formatNumber(Kd, 3)} \\cdot ${formatNumber(sigmaMax, 2)} = ${formatNumber(sigmaDynamic, 2)} \\text{ МПа}\\]
+  </div>`;
+
+  // Динамический прогиб
+  const subsectionDefl = subsectionSigma + 1;
+  html += `
+  <h3>${sectionNum}.${subsectionDefl}. Динамический прогиб</h3>
+  <p>Максимальный прогиб балки при ударе:</p>
+  <div class="formula">
+    \\[y_{\\text{дин}} = K_д \\cdot \\delta_{\\text{ст}} = ${formatNumber(Kd, 3)} \\cdot ${formatNumber(yStaticAtImpact_mm, 4)} = ${formatNumber(yDynamic_mm, 4)} \\text{ мм}\\]
+  </div>`;
+
+  // Сравнение статики и динамики
+  const subsectionCompare = subsectionDefl + 1;
+  const stressDiff = sigmaDynamic - sigmaMax;
+  const stressRatio = sigmaMax > 0 ? (sigmaDynamic / sigmaMax - 1) * 100 : 0;
+  html += `
+  <h3>${sectionNum}.${subsectionCompare}. Сравнение статического и динамического нагружения</h3>
+  <table>
+    <tr><th>Параметр</th><th>Статика</th><th>Удар</th><th>Увеличение</th></tr>
+    <tr>
+      <td>Напряжение \\(\\sigma\\), МПа</td>
+      <td>\\(${formatNumber(sigmaMax, 2)}\\)</td>
+      <td>\\(${formatNumber(sigmaDynamic, 2)}\\)</td>
+      <td>\\(${formatNumber(stressDiff, 2)}\\) МПа (${formatNumber(stressRatio, 1)}%)</td>
+    </tr>
+    <tr>
+      <td>Прогиб \\(y\\), мм</td>
+      <td>\\(${formatNumber(yStaticAtImpact_mm, 4)}\\)</td>
+      <td>\\(${formatNumber(yDynamic_mm, 4)}\\)</td>
+      <td>в \\(K_д = ${formatNumber(Kd, 3)}\\) раз</td>
+    </tr>
+  </table>
+  <p><strong>Вывод:</strong> При ударном нагружении напряжения и прогибы увеличиваются в \\(K_д = ${formatNumber(Kd, 3)}\\) раз по сравнению со статическим нагружением.</p>`;
+
+  return html;
+}
+
+/**
  * Раздел "Выводы"
  */
 function buildConclusionsSection(
@@ -2508,6 +2656,17 @@ function buildConclusionsSection(
   // Прогиб
   if (hasDeflection && Math.abs(yMax.value) > 1e-9) {
     conclusions.push(`Максимальный прогиб: \\(|y|_{\\max} = ${formatNumber(Math.abs(yMax.value) * 1000)}\\) мм при \\(x = ${formatNumber(yMax.x)}\\) м`);
+  }
+
+  // Ударное нагружение
+  if (result.loadMode === 'impact' && result.Kd !== undefined) {
+    conclusions.push(`Коэффициент динамичности: \\(K_д = ${formatNumber(result.Kd, 3)}\\)`);
+    if (result.sigmaDynamic !== undefined) {
+      conclusions.push(`Динамическое напряжение: \\(\\sigma_{\\text{дин}} = ${formatNumber(result.sigmaDynamic, 2)}\\) МПа`);
+    }
+    if (result.yDynamic !== undefined) {
+      conclusions.push(`Динамический прогиб: \\(y_{\\text{дин}} = ${formatNumber(result.yDynamic * 1000, 4)}\\) мм`);
+    }
   }
 
   // Проверки

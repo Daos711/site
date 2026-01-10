@@ -442,6 +442,51 @@ export function ResultCards({ input, result, className, showButton = true, onRep
         </div>
       </div>
 
+      {/* Ударное нагружение */}
+      {result.loadMode === 'impact' && result.Kd !== undefined && (
+        <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+          <h3 className="font-semibold mb-3 text-base text-foreground">Ударное нагружение</h3>
+          <div className="space-y-2">
+            <div className="text-sm text-muted mb-2">
+              Высота падения: <Latex tex={`H = ${formatNum((result.impactHeight ?? 0) * 100)}\\,\\text{см}`} />
+            </div>
+            {result.yStaticAtImpact !== undefined && (
+              <div>
+                <Latex tex={`\\delta_{\\text{ст}} = ${formatNum(result.yStaticAtImpact * 1000, 4)}${UNIT_MM}`} />
+                <span className="text-xs text-muted ml-2">(статический прогиб)</span>
+              </div>
+            )}
+            {result.springStiffness !== undefined && result.springDeflection !== undefined && (
+              <div>
+                <Latex tex={`\\delta_{\\text{пруж}} = ${formatNum(result.springDeflection * 1000, 4)}${UNIT_MM}`} />
+                <span className="text-xs text-muted ml-2">(осадка пружины, α = {formatNum(result.springStiffness)} см/кН)</span>
+              </div>
+            )}
+            <div className="mt-2 pt-2 border-t border-orange-500/20">
+              <Latex tex={`K_д = 1 + \\sqrt{1 + \\frac{2H}{\\delta_{\\text{ст}}}} = ${formatNum(result.Kd, 3)}`} />
+            </div>
+            {result.sigmaMax !== undefined && result.sigmaDynamic !== undefined && (
+              <div className="mt-2 space-y-1">
+                <div>
+                  <Latex tex={`\\sigma_{\\text{ст}} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+                </div>
+                <div>
+                  <Latex tex={`\\sigma_{\\text{дин}} = K_д \\cdot \\sigma_{\\text{ст}} = ${formatNum(result.sigmaDynamic, 1)}${UNIT_MPA}`} />
+                </div>
+                <div className="text-sm text-orange-400 mt-1">
+                  Разница: <Latex tex={`\\Delta\\sigma = ${formatNum(result.sigmaDynamic - result.sigmaMax, 1)}${UNIT_MPA}`} /> ({formatNum((result.sigmaDynamic / result.sigmaMax - 1) * 100, 1)}%)
+                </div>
+              </div>
+            )}
+            {result.yDynamic !== undefined && (
+              <div className="mt-2">
+                <Latex tex={`y_{\\text{дин}} = K_д \\cdot \\delta_{\\text{ст}} = ${formatNum(result.yDynamic * 1000, 4)}${UNIT_MM}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Кнопка отчёта */}
       {showButton && (
         <button

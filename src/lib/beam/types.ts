@@ -8,6 +8,9 @@ export type SectionType = 'round' | 'rectangle' | 'rectangular-tube' | 'square' 
 /** Режим работы с сечением */
 export type SectionMode = 'select' | 'given';  // подбор или заданное
 
+/** Режим нагружения */
+export type LoadMode = 'static' | 'impact';  // статическое или ударное (динамическое)
+
 export type { BendingAxis };
 
 export type BeamType =
@@ -68,6 +71,11 @@ export interface BeamInput {
   tubeThickness?: number;    // толщина стенки t, м
   // Параметры для квадратного сечения (square)
   squareSide?: number;    // сторона a, м
+  // Параметры ударного нагружения
+  loadMode?: LoadMode;         // режим: 'static' или 'impact'
+  impactHeight?: number;       // высота падения груза H, м
+  impactForceIndex?: number;   // индекс силы, к которой применяется удар (в массиве loads)
+  springStiffness?: number;    // коэффициент податливости пружины α, см/кН (если опора на пружине)
 }
 
 export interface Reactions {
@@ -110,6 +118,15 @@ export interface BeamResult {
   tubeThickness?: number;
   // Для квадрата
   squareSide?: number;
+  // Ударное нагружение
+  loadMode?: LoadMode;          // режим нагружения
+  impactHeight?: number;        // высота падения H, м
+  yStaticAtImpact?: number;     // статический прогиб в точке удара, м
+  Kd?: number;                  // коэффициент динамичности
+  sigmaDynamic?: number;        // динамическое напряжение, МПа
+  yDynamic?: number;            // динамический прогиб, м
+  springStiffness?: number;     // податливость пружины α, см/кН
+  springDeflection?: number;    // осадка пружины, м
 }
 
 export interface DiagramData {
