@@ -3001,6 +3001,12 @@ function buildImpactLoadingSection(
   const springStiffness = result.springStiffness; // см/кН
   const springDeflection_mm = (result.springDeflection ?? 0) * 1000;
 
+  // Вспомогательная функция для форматирования со скобками для отрицательных
+  const formatSigned = (n: number, decimals = 4): string => {
+    const formatted = formatNumber(n, decimals);
+    return n < 0 ? `(${formatted})` : formatted;
+  };
+
   // Находим силу удара
   const forces = input.loads.filter(l => l.type === 'force');
   const forceIndex = input.impactForceIndex ?? 0;
@@ -3019,33 +3025,9 @@ function buildImpactLoadingSection(
     \\[|\\delta_{\\text{ст}}| = ${formatNumber(yStaticAtImpact_mm, 4)} \\text{ мм} = ${formatNumber(yStaticAtImpact_cm / 100, 6)} \\text{ м}\\]
   </div>`;
 
-  // Учёт пружины если есть
-  if (springStiffness && springStiffness > 0 && result.springDeflection) {
-    const springDefl_cm = springDeflection_mm / 10;
-    const totalDefl_cm = yStaticAtImpact_cm + springDefl_cm;
-
-    // Определяем какая опора заменена (по умолчанию опора B - подвижная)
-    const springSupport = 'B';
-    const springReaction = result.reactions.RB ?? impactForce;
-
-    html += `
-  <h3>${sectionNum}.2. Учёт податливости опоры</h3>
-  <p>Опора ${springSupport} заменена пружиной с коэффициентом податливости \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН.</p>
-  <p>Осадка пружины при статическом действии силы (от реакции опоры ${springSupport}):</p>
-  <div class="formula">
-    \\[\\delta_{\\text{пр}} = \\alpha \\cdot |R_${springSupport}| = ${formatNumber(springStiffness)} \\cdot ${formatNumber(Math.abs(springReaction))} = ${formatNumber(springDefl_cm, 4)} \\text{ см}\\]
-  </div>
-  <p>Полное статическое перемещение в точке удара с учётом пружины:</p>
-  <div class="formula">
-    \\[\\delta_{\\text{ст}}^{\\text{полн}} = \\delta_{\\text{ст}} + \\delta_{\\text{пр}} = ${formatNumber(yStaticAtImpact_cm, 4)} + ${formatNumber(springDefl_cm, 4)} = ${formatNumber(totalDefl_cm, 4)} \\text{ см}\\]
-  </div>`;
-  }
-
-  // Коэффициент динамичности
-  const subsectionNum = springStiffness && springStiffness > 0 ? 3 : 2;
-  const deltaForKd = springStiffness && result.springDeflection
-    ? (yStaticAtImpact_cm + springDeflection_mm / 10)
-    : yStaticAtImpact_cm;
+  // Коэффициент динамичности - используем только прогиб балки (без пружины)
+  const subsectionNum = 2;
+  const deltaForKd = yStaticAtImpact_cm; // Только прогиб балки в точке удара
 
   // Промежуточные значения для Kд
   const deltaForKd_m = deltaForKd / 100; // см → м
@@ -3086,8 +3068,45 @@ function buildImpactLoadingSection(
     \\[y_{\\text{дин}} = K_д \\cdot \\delta_{\\text{ст}} = ${formatNumber(Kd, 3)} \\cdot ${formatNumber(yStaticAtImpact_mm, 4)} = ${formatNumber(yDynamic_mm, 4)} \\text{ мм}\\]
   </div>`;
 
+  // Осадки пружин (если есть)
+  let subsectionSpring = subsectionDefl;
+  if (springStiffness && springStiffness > 0) {
+    subsectionSpring = subsectionDefl + 1;
+    const RA = result.reactions.RA ?? 0;
+    const RB = result.reactions.RB ?? 0;
+
+    // Статические осадки: s = α × R
+    const sA_st = springStiffness * RA; // см
+    const sB_st = springStiffness * RB; // см
+
+    // Динамические осадки: s_уд = k_уд × s_ст
+    const sA_dyn = Kd * sA_st;
+    const sB_dyn = Kd * sB_st;
+
+    html += `
+  <h3>${sectionNum}.${subsectionSpring}. Осадки пружинных опор</h3>
+  <p>Осадка пружины определяется по формуле \\(s = \\alpha \\cdot R\\), где \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН, \\(R\\) — реакция опоры в кН.</p>
+
+  <p><strong>Статические осадки:</strong></p>
+  <div class="formula">
+    \\[s_{A,\\text{ст}} = \\alpha \\cdot R_A = ${formatNumber(springStiffness)} \\cdot ${formatNumber(RA)} = ${formatNumber(sA_st, 4)} \\text{ см}\\]
+  </div>
+  <div class="formula">
+    \\[s_{B,\\text{ст}} = \\alpha \\cdot R_B = ${formatNumber(springStiffness)} \\cdot ${formatSigned(RB)} = ${formatNumber(sB_st, 4)} \\text{ см}\\]
+  </div>
+
+  <p><strong>Динамические осадки</strong> (при ударе реакции масштабируются на \\(K_д\\)):</p>
+  <div class="formula">
+    \\[s_{A,\\text{уд}} = K_д \\cdot s_{A,\\text{ст}} = ${formatNumber(Kd, 4)} \\cdot ${formatNumber(sA_st, 4)} = ${formatNumber(sA_dyn, 2)} \\text{ см}\\]
+  </div>
+  <div class="formula">
+    \\[s_{B,\\text{уд}} = K_д \\cdot s_{B,\\text{ст}} = ${formatNumber(Kd, 4)} \\cdot ${formatSigned(sB_st, 4)} = ${formatNumber(sB_dyn, 2)} \\text{ см}\\]
+  </div>
+  <p><em>Знак минус означает, что реакция направлена противоположно ожидаемому (отрыв).</em></p>`;
+  }
+
   // Сравнение статики и динамики
-  const subsectionCompare = subsectionDefl + 1;
+  const subsectionCompare = subsectionSpring + 1;
   const stressDiff = sigmaDynamic - sigmaMax;
   const stressRatio = sigmaMax > 0 ? (sigmaDynamic / sigmaMax - 1) * 100 : 0;
   html += `
