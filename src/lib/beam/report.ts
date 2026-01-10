@@ -2565,6 +2565,36 @@ function buildVereshchaginSection(
     return n < 0 ? `(${formatted})` : formatted;
   };
 
+  // Форматирование (x - c): если c = 0, возвращает просто "x"
+  const formatXMinusC = (c: number): string => {
+    if (Math.abs(c) < 1e-9) return 'x';
+    return `(x - ${formatNumber(c)})`;
+  };
+
+  // Форматирование -(x - c): если c = 0, возвращает "-x"
+  const formatNegXMinusC = (c: number): string => {
+    if (Math.abs(c) < 1e-9) return '-x';
+    return `-(x - ${formatNumber(c)})`;
+  };
+
+  // Форматирование разности (a - b) без лишних нулей
+  const formatDiff = (a: number, b: number): string => {
+    if (Math.abs(b) < 1e-9) return formatNumber(a);
+    return `${formatNumber(a)} - ${formatNumber(b)}`;
+  };
+
+  // Форматирование линейного выражения ax + b без двойных знаков
+  const formatLinear = (a: number, b: number, decimalsA = 4, decimalsB = 2): string => {
+    const aStr = formatNumber(a, decimalsA);
+    if (Math.abs(b) < 1e-9) {
+      return `${aStr}x`;
+    } else if (b > 0) {
+      return `${aStr}x + ${formatNumber(b, decimalsB)}`;
+    } else {
+      return `${aStr}x - ${formatNumber(Math.abs(b), decimalsB)}`;
+    }
+  };
+
   // Находим реакции от единичной силы X=1 в точке impactX
   const isCantilever = input.beamType.startsWith('cantilever');
 
@@ -2675,13 +2705,13 @@ function buildVereshchaginSection(
   <p>Из уравнений равновесия для единичной силы \\(X = 1\\) в точке \\(x = ${formatNumber(impactX)}\\) м:</p>
   <p>Опоры расположены в точках: \\(x_A = ${formatNumber(xA)}\\) м, \\(x_B = ${formatNumber(xB)}\\) м. Пролёт \\(l = ${formatNumber(span)}\\) м.</p>
   <div class="formula">
-    \\[\\sum M_A = 0: \\quad 1 \\cdot (${formatNumber(impactX)} - ${formatNumber(xA)}) - R_B^{(1)} \\cdot ${formatNumber(span)} = 0\\]
+    \\[\\sum M_A = 0: \\quad 1 \\cdot ${formatDiff(impactX, xA)} - R_B^{(1)} \\cdot ${formatNumber(span)} = 0\\]
   </div>
   <div class="formula">
     \\[R_B^{(1)} = \\frac{${formatNumber(distFromA)}}{${formatNumber(span)}} = ${formatNumber(RB_unit, 4)}\\]
   </div>
   <div class="formula">
-    \\[\\sum F_y = 0: \\quad R_A^{(1)} + R_B^{(1)} = 1 \\Rightarrow R_A^{(1)} = 1 - ${formatSigned(RB_unit)} = ${formatNumber(RA_unit, 4)}\\]
+    \\[R_A^{(1)} = 1 - R_B^{(1)} = ${formatNumber(RA_unit, 4)}\\]
   </div>`;
   }
 
@@ -2697,7 +2727,7 @@ function buildVereshchaginSection(
   </div>
   <p>Участок 2 (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(L)}\\)):</p>
   <div class="formula">
-    \\[m_2(x) = -1 \\cdot (x - ${formatNumber(impactX)}) = -(x - ${formatNumber(impactX)})\\]
+    \\[m_2(x) = -1 \\cdot ${formatXMinusC(impactX)} = ${formatNegXMinusC(impactX)}\\]
   </div>`;
     }
   } else if (isOverhangLeft) {
@@ -2712,22 +2742,22 @@ function buildVereshchaginSection(
   <p>Рассматриваем сечение: слева только единичная сила \\(X = 1\\) (направлена вниз) в точке \\(x = ${formatNumber(impactX)}\\).</p>
   <p>Сила вниз создаёт отрицательный момент (сжатие нижнего волокна):</p>
   <div class="formula">
-    \\[m_1(x) = -1 \\cdot (x - ${formatNumber(impactX)}) = -(x - ${formatNumber(impactX)})\\]
+    \\[m_1(x) = -1 \\cdot ${formatXMinusC(impactX)} = ${formatNegXMinusC(impactX)}\\]
   </div>
   <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = 0\\)</p>
-  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = -(${formatNumber(xA)} - ${formatNumber(impactX)}) = ${formatNumber(m_at_xA, 4)}\\)</p>
+  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = -${formatDiff(xA, impactX)} = ${formatNumber(m_at_xA, 4)}\\)</p>
 
   <p><strong>Участок 2</strong> (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(xB)}\\)) — между опорами:</p>
   <p>Слева от сечения: единичная сила (вниз) и реакция \\(R_A^{(1)} = ${formatNumber(RA_unit, 4)}\\) (вверх):</p>
   <div class="formula">
-    \\[m_2(x) = -1 \\cdot (x - ${formatNumber(impactX)}) + R_A^{(1)} \\cdot (x - ${formatNumber(xA)})\\]
+    \\[m_2(x) = -1 \\cdot ${formatXMinusC(impactX)} + R_A^{(1)} \\cdot (x - ${formatNumber(xA)})\\]
   </div>
   <div class="formula">
-    \\[m_2(x) = -(x - ${formatNumber(impactX)}) + ${formatNumber(RA_unit, 4)} \\cdot (x - ${formatNumber(xA)})\\]
+    \\[m_2(x) = ${formatNegXMinusC(impactX)} + ${formatNumber(RA_unit, 4)} \\cdot (x - ${formatNumber(xA)})\\]
   </div>
-  <p>В развёрнутом виде:</p>
+  <p>После приведения подобных:</p>
   <div class="formula">
-    \\[m_2(x) = ${formatNumber(a2, 4)}x + ${formatSigned(b2, 2)}\\]
+    \\[m_2(x) = ${formatLinear(a2, b2)}\\]
   </div>
   <p>При \\(x = ${formatNumber(xA)}\\): \\(m_2(${formatNumber(xA)}) = ${formatNumber(m_at_xA, 4)}\\) (совпадает с \\(m_1\\))</p>
   <p>При \\(x = ${formatNumber(xB)}\\): \\(m_2(${formatNumber(xB)}) = 0\\) (на опоре B)</p>`;
@@ -2741,19 +2771,19 @@ function buildVereshchaginSection(
   <p><strong>Участок 1</strong> (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
   <p>Слева от сечения только реакция \\(R_A^{(1)}\\):</p>
   <div class="formula">
-    \\[m_1(x) = R_A^{(1)} \\cdot (x - ${formatNumber(xA)}) = ${formatNumber(RA_unit, 4)} \\cdot (x - ${formatNumber(xA)})\\]
+    \\[m_1(x) = R_A^{(1)} \\cdot ${formatXMinusC(xA)} = ${formatNumber(RA_unit, 4)} \\cdot ${formatXMinusC(xA)}\\]
   </div>
   <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = 0\\)</p>
-  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = ${formatNumber(RA_unit, 4)} \\cdot (${formatNumber(impactX)} - ${formatNumber(xA)}) = ${formatNumber(m_at_impact, 4)}\\)</p>
+  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = ${formatNumber(RA_unit, 4)} \\cdot ${formatDiff(impactX, xA)} = ${formatNumber(m_at_impact, 4)}\\)</p>
 
   <p><strong>Участок 2</strong> (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xB)}\\)):</p>
   <p>Слева от сечения: реакция \\(R_A^{(1)}\\) и единичная сила:</p>
   <div class="formula">
-    \\[m_2(x) = R_A^{(1)} \\cdot (x - ${formatNumber(xA)}) - 1 \\cdot (x - ${formatNumber(impactX)})\\]
+    \\[m_2(x) = R_A^{(1)} \\cdot ${formatXMinusC(xA)} - 1 \\cdot ${formatXMinusC(impactX)}\\]
   </div>
-  <p>В развёрнутом виде:</p>
+  <p>После приведения подобных:</p>
   <div class="formula">
-    \\[m_2(x) = ${formatNumber(a2, 4)}x + ${formatSigned(b2, 2)}\\]
+    \\[m_2(x) = ${formatLinear(a2, b2)}\\]
   </div>
   <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_2(${formatNumber(impactX)}) = ${formatNumber(m_at_impact, 4)}\\) (совпадает)</p>
   <p>При \\(x = ${formatNumber(xB)}\\): \\(m_2(${formatNumber(xB)}) = 0\\)</p>`;
