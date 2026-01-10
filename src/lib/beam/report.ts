@@ -1231,24 +1231,42 @@ function buildMDerivation(
 }
 
 /**
- * Раздел "Подбор сечения"
+ * Раздел "Подбор сечения" или "Заданное сечение"
  */
 function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { value: number; x: number }, sectionNum: number): string {
-  const sigma_MPa = formatNumber((input.sigma ?? 0) / 1e6);
   const sectionType = result.sectionType ?? 'round';
-
-  // Требуемый момент сопротивления (общий для всех типов)
+  const sectionMode = result.sectionMode ?? 'select';
   const MmaxNm = Math.abs(Mmax.value) * 1000; // Н·м
-  const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
-  const Wreq_str = formatNumber(Wreq_cm3, 2);
 
-  let html = `
+  let html = '';
+
+  if (sectionMode === 'given') {
+    // Режим "Заданное сечение" - вычисляем σmax
+    const sigmaMax_MPa = formatNumber(result.sigmaMax ?? 0, 2);
+    const W_cm3 = formatNumber((result.W ?? 0) * 1e6, 4);
+
+    html = `
+  <h2>${sectionNum}. Заданное сечение</h2>
+  <p>Для заданного сечения вычисляем максимальное нормальное напряжение:</p>
+  <div class="formula">
+    \\[\\sigma_{\\max} = \\frac{|M|_{\\max}}{W} = \\frac{${formatNumber(Math.abs(Mmax.value))} \\cdot 10^6}{${W_cm3} \\cdot 10^3} = ${sigmaMax_MPa} \\text{ МПа}\\]
+  </div>
+  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м, \\(W = ${W_cm3}\\) см³.</p>`;
+
+  } else {
+    // Режим "Подбор сечения"
+    const sigma_MPa = formatNumber((input.sigma ?? 0) / 1e6);
+    const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+    const Wreq_str = formatNumber(Wreq_cm3, 2);
+
+    html = `
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
     \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(MmaxNm)}}{${sigma_MPa} \\cdot 10^6} \\cdot 10^6 = ${Wreq_str} \\text{ см}^3\\]
   </div>
   <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м \\(= ${formatNumber(MmaxNm)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>`;
+  }
 
   if (sectionType === 'round') {
     // Круглое сечение
@@ -1256,7 +1274,19 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     const d_mm = formatNumber(result.diameter! * 1000, 2);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
 
-    html += `
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Круглое сплошное сечение</h3>
+  <p>Диаметр: \\(d = ${d_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[W = \\frac{\\pi d^3}{32} = \\frac{\\pi \\cdot ${d_mm}^3}{32} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    } else {
+      html += `
   <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
     \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = \\sqrt[3]{\\frac{32 \\cdot ${W_cm3}}{\\pi}} = ${d_mm} \\text{ мм}}\\]
@@ -1265,6 +1295,7 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <div class="formula">
     \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
+    }
 
   } else if (sectionType === 'square' && result.squareSide) {
     // Квадратное сечение
@@ -1272,7 +1303,19 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
 
-    html += `
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Квадратное сечение</h3>
+  <p>Сторона: \\(a = ${a_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[W = \\frac{a^3}{6} = \\frac{${a_mm}^3}{6} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    } else {
+      html += `
   <p>Для квадратного сечения со стороной \\(a\\): \\(W = \\frac{a^3}{6}\\), откуда:</p>
   <div class="formula">
     \\[\\boxed{a = \\sqrt[3]{6W} = \\sqrt[3]{6 \\cdot ${W_cm3}} = ${a_mm} \\text{ мм}}\\]
@@ -1281,6 +1324,7 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <div class="formula">
     \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
+    }
 
   } else if (sectionType === 'rectangle' && result.rectWidth && result.rectHeight) {
     // Прямоугольное сечение
@@ -1289,7 +1333,19 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
 
-    html += `
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Прямоугольное сечение</h3>
+  <p>Размеры: \\(b = ${b_mm}\\) мм, \\(h = ${h_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[W = \\frac{b \\cdot h^2}{6} = \\frac{${b_mm} \\cdot ${h_mm}^2}{6} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    } else {
+      html += `
   <p>Для прямоугольного сечения \\(b \\times h\\): \\(W = \\frac{b \\cdot h^2}{6}\\).</p>
   <p>Принимая соотношение \\(h/b = ${formatNumber(result.rectHeight / result.rectWidth, 1)}\\), получаем:</p>
   <div class="formula">
@@ -1302,6 +1358,7 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <div class="formula">
     \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
+    }
 
   } else if (sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness) {
     // Прямоугольная труба
@@ -1311,7 +1368,19 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
 
-    html += `
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Прямоугольная труба</h3>
+  <p>Размеры: \\(B = ${B_mm}\\) мм, \\(H = ${H_mm}\\) мм, \\(t = ${t_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[I = \\frac{B \\cdot H^3 - (B-2t)(H-2t)^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>
+  <div class="formula">
+    \\[W = \\frac{2I}{H} = ${W_cm3} \\text{ см}^3\\]
+  </div>`;
+    } else {
+      html += `
   <p>Для прямоугольной трубы \\(B \\times H \\times t\\):</p>
   <div class="formula">
     \\[\\boxed{B = ${B_mm} \\text{ мм}, \\quad H = ${H_mm} \\text{ мм}, \\quad t = ${t_mm} \\text{ мм}}\\]
@@ -1324,6 +1393,7 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <div class="formula">
     \\[W = \\frac{2I}{H} = ${W_cm3} \\text{ см}^3\\]
   </div>`;
+    }
 
   } else if (result.selectedProfile) {
     // Профиль из ГОСТ (двутавр или швеллер)
@@ -1335,7 +1405,43 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     const I_axis = getProfileI(profile, axis);
     const axisNote = axis === 'y' ? ' (профиль повёрнут на 90°)' : '';
 
-    html += `
+    if (sectionMode === 'given') {
+      html += `
+  <h3>${profileTypeName} № ${profile.number} по ${profile.gost}${axisNote}</h3>
+
+  <div class="profile-selection" style="padding: 15px 0; margin: 15px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 5px 10px;">Высота \\(h\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.h} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина стенки \\(s\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.s} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Ширина полки \\(b\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.b} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина полки \\(t\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.t} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент сопротивления \\(W_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(W_axis)} см³</strong></td>
+        <td style="padding: 5px 10px;">Площадь \\(A\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.A)} см²</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент инерции \\(I_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(I_axis)} см⁴</strong></td>
+        <td style="padding: 5px 10px;"></td>
+        <td style="padding: 5px 10px;"></td>
+      </tr>
+    </table>
+  </div>`;
+    } else {
+      const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+      const Wreq_str = formatNumber(Wreq_cm3, 2);
+
+      html += `
   <h3>Подбор ${profile.type === 'i-beam' ? 'двутавра' : 'швеллера'} по ${profile.gost}${axisNote}</h3>
   <p>Из сортамента по ${profile.gost} выбираем ${profileTypeName.toLowerCase()} с \\(W_${axis} \\geq ${Wreq_str}\\) см³.</p>
 
@@ -1373,12 +1479,15 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <div class="formula">
     \\[\\boxed{\\text{${profileTypeName} № ${profile.number}, } I_${axis} = ${formatNumber(I_axis)} \\text{ см}^4}\\]
   </div>`;
+    }
 
     // Добавляем раздел с эпюрой нормальных напряжений
     html += buildStressDiagramSection(profile, Mmax, sectionNum, axis);
 
-  } else {
-    // Профиль не найден
+  } else if (sectionMode === 'select') {
+    // Профиль не найден (только в режиме подбора)
+    const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+    const Wreq_str = formatNumber(Wreq_cm3, 2);
     html += `
   <p style="color: red;"><strong>Внимание:</strong> Требуемый момент сопротивления \\(W_{\\text{треб}} = ${Wreq_str}\\) см³
   превышает максимальное значение в сортаменте. Необходимо использовать составное сечение или сечение большего типоразмера.</p>`;

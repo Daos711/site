@@ -155,6 +155,17 @@ export function getProfileW(profile: ProfileData, axis: BendingAxis = 'x'): numb
 }
 
 /**
+ * Найти профиль по номеру
+ * @param type - тип профиля
+ * @param number - номер профиля (например, "20", "18а")
+ * @returns ProfileData | null
+ */
+export function getProfileByNumber(type: ProfileType, number: string): ProfileData | null {
+  const profiles = getProfilesByType(type);
+  return profiles.find(p => p.number === number) ?? null;
+}
+
+/**
  * Получить название типа профиля на русском
  */
 export function getProfileTypeName(type: ProfileType): string {

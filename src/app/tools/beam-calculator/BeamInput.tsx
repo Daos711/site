@@ -8,8 +8,10 @@ import type {
   Load,
   BeamSupport,
   SectionType,
+  SectionMode,
   BendingAxis,
 } from "@/lib/beam";
+import { getProfilesByType, type ProfileData, type ProfileType } from "@/lib/beam";
 
 // Компонент числового ввода с валидацией min/max
 function NumInput({
@@ -157,11 +159,22 @@ const sectionTypes: { value: SectionType; label: string; description: string; ha
 export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) {
   const [beamType, setBeamType] = useState<BeamType>("simply-supported");
   const [sectionType, setSectionType] = useState<SectionType>("i-beam");
+  const [sectionMode, setSectionMode] = useState<SectionMode>("select");
   const [bendingAxis, setBendingAxis] = useState<BendingAxis>("x");
   const [L, setL] = useState<number>(10);
   const [loads, setLoads] = useState<Load[]>([]);
   const [E, setE] = useState<number>(200e9); // Па
   const [sigma, setSigma] = useState<number>(160e6);  // Па (допускаемое напряжение)
+
+  // Параметры для заданного сечения
+  const [diameter, setDiameter] = useState<number>(0.1);  // м
+  const [rectWidth, setRectWidth] = useState<number>(0.05);  // м
+  const [rectHeight, setRectHeight] = useState<number>(0.1);  // м
+  const [tubeOuterWidth, setTubeOuterWidth] = useState<number>(0.08);  // м
+  const [tubeOuterHeight, setTubeOuterHeight] = useState<number>(0.12);  // м
+  const [tubeThickness, setTubeThickness] = useState<number>(0.005);  // м
+  const [squareSide, setSquareSide] = useState<number>(0.08);  // м
+  const [profileNumber, setProfileNumber] = useState<string>("20");
 
   // Позиции опор для балок с консолями
   const [xA, setXA] = useState<number>(2);   // позиция опоры A
@@ -280,9 +293,17 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
       supports,
       loads,
       E,
-      sigma,
       sectionType,
+      sectionMode,
       bendingAxis,
+      // Для режима подбора
+      ...(sectionMode === 'select' ? { sigma } : {}),
+      // Для режима заданного сечения
+      ...(sectionMode === 'given' && sectionType === 'round' ? { diameter } : {}),
+      ...(sectionMode === 'given' && sectionType === 'rectangle' ? { rectWidth, rectHeight } : {}),
+      ...(sectionMode === 'given' && sectionType === 'rectangular-tube' ? { tubeOuterWidth, tubeOuterHeight, tubeThickness } : {}),
+      ...(sectionMode === 'given' && sectionType === 'square' ? { squareSide } : {}),
+      ...(sectionMode === 'given' && (sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') ? { profileNumber } : {}),
     };
 
     onCalculate(input);
@@ -329,31 +350,79 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
 
       {/* Тип сечения */}
       <div className="p-4 rounded-lg border border-border bg-card">
-        <h3 className="font-semibold mb-3">Тип сечения</h3>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {sectionTypes.map((st) => (
-            <label
-              key={st.value}
-              className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                sectionType === st.value
-                  ? "bg-accent/10 border border-accent"
-                  : "bg-card-hover border border-transparent hover:border-border"
-              }`}
-            >
+        <h3 className="font-semibold mb-3">Сечение</h3>
+
+        {/* Режим работы с сечением */}
+        <div className="mb-4">
+          <h4 className="text-sm font-medium mb-2">Режим</h4>
+          <div className="flex gap-4">
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+              sectionMode === 'select'
+                ? "bg-accent/10 border border-accent"
+                : "bg-card-hover border border-transparent hover:border-border"
+            }`}>
               <input
                 type="radio"
-                name="sectionType"
-                value={st.value}
-                checked={sectionType === st.value}
-                onChange={(e) => setSectionType(e.target.value as SectionType)}
-                className="mt-1"
+                name="sectionMode"
+                value="select"
+                checked={sectionMode === 'select'}
+                onChange={() => setSectionMode('select')}
               />
-              <div>
-                <div className="font-medium">{st.label}</div>
-                <div className="text-sm text-muted">{st.description}</div>
-              </div>
+              <span>Подбор сечения</span>
             </label>
-          ))}
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+              sectionMode === 'given'
+                ? "bg-accent/10 border border-accent"
+                : "bg-card-hover border border-transparent hover:border-border"
+            }`}>
+              <input
+                type="radio"
+                name="sectionMode"
+                value="given"
+                checked={sectionMode === 'given'}
+                onChange={() => setSectionMode('given')}
+              />
+              <span>Заданное сечение</span>
+            </label>
+          </div>
+          <p className="text-xs text-muted mt-2">
+            {sectionMode === 'select'
+              ? "По допускаемому напряжению [σ] подбирается требуемое сечение"
+              : "Сечение задано, вычисляется максимальное напряжение σmax"}
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-border">
+          <h4 className="text-sm font-medium mb-3">Тип сечения</h4>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {sectionTypes.map((st) => (
+              <label
+                key={st.value}
+                className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                  sectionType === st.value
+                    ? "bg-accent/10 border border-accent"
+                    : "bg-card-hover border border-transparent hover:border-border"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="sectionType"
+                  value={st.value}
+                  checked={sectionType === st.value}
+                  onChange={(e) => setSectionType(e.target.value as SectionType)}
+                  className="mt-1"
+                />
+                <div>
+                  <div className="font-medium">{st.label}</div>
+                  <div className="text-sm text-muted">
+                    {sectionMode === 'select'
+                      ? st.description
+                      : st.description.replace("Подбор", "Расчёт").replace("подбор", "расчёт")}
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Выбор оси изгиба для профилей */}
@@ -395,12 +464,128 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
             </p>
           </div>
         )}
+
+        {/* Параметры заданного сечения */}
+        {sectionMode === 'given' && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <h4 className="text-sm font-medium mb-3">Параметры сечения</h4>
+
+            {sectionType === 'round' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-muted mb-1">Диаметр d, мм</label>
+                  <NumInput
+                    value={diameter * 1000}
+                    onChange={(n) => setDiameter(n / 1000)}
+                    min={1}
+                    step={1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+              </div>
+            )}
+
+            {sectionType === 'square' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-muted mb-1">Сторона a, мм</label>
+                  <NumInput
+                    value={squareSide * 1000}
+                    onChange={(n) => setSquareSide(n / 1000)}
+                    min={1}
+                    step={1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+              </div>
+            )}
+
+            {sectionType === 'rectangle' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-muted mb-1">Ширина b, мм</label>
+                  <NumInput
+                    value={rectWidth * 1000}
+                    onChange={(n) => setRectWidth(n / 1000)}
+                    min={1}
+                    step={1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Высота h, мм</label>
+                  <NumInput
+                    value={rectHeight * 1000}
+                    onChange={(n) => setRectHeight(n / 1000)}
+                    min={1}
+                    step={1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+              </div>
+            )}
+
+            {sectionType === 'rectangular-tube' && (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="block text-sm text-muted mb-1">Ширина B, мм</label>
+                  <NumInput
+                    value={tubeOuterWidth * 1000}
+                    onChange={(n) => setTubeOuterWidth(n / 1000)}
+                    min={1}
+                    step={1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Высота H, мм</label>
+                  <NumInput
+                    value={tubeOuterHeight * 1000}
+                    onChange={(n) => setTubeOuterHeight(n / 1000)}
+                    min={1}
+                    step={1}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-muted mb-1">Толщина t, мм</label>
+                  <NumInput
+                    value={tubeThickness * 1000}
+                    onChange={(n) => setTubeThickness(n / 1000)}
+                    min={0.5}
+                    step={0.5}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  />
+                </div>
+              </div>
+            )}
+
+            {(sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm text-muted mb-1">Номер профиля</label>
+                  <select
+                    value={profileNumber}
+                    onChange={(e) => setProfileNumber(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+                  >
+                    {getProfilesByType(sectionType as ProfileType).map((p: ProfileData) => (
+                      <option key={p.number} value={p.number}>
+                        {p.number} (h={p.h}мм, W{bendingAxis === 'x' ? 'x' : 'y'}={(bendingAxis === 'x' ? p.Wx : p.Wy ?? 0).toFixed(1)}см³)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Длина балки */}
       <div className="p-4 rounded-lg border border-border bg-card">
         <h3 className="font-semibold mb-3">Параметры балки</h3>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className={`grid gap-4 ${sectionMode === 'select' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           <div>
             <label className="block text-sm text-muted mb-1">Длина L, м</label>
             <NumInput
@@ -420,16 +605,18 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
             />
           </div>
-          <div>
-            <label className="block text-sm text-muted mb-1">[σ], МПа</label>
-            <NumInput
-              value={sigma / 1e6}
-              onChange={(n) => setSigma(n * 1e6)}
-              min={1}
-              step={10}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
-            />
-          </div>
+          {sectionMode === 'select' && (
+            <div>
+              <label className="block text-sm text-muted mb-1">[σ], МПа</label>
+              <NumInput
+                value={sigma / 1e6}
+                onChange={(n) => setSigma(n * 1e6)}
+                min={1}
+                step={10}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
+              />
+            </div>
+          )}
         </div>
 
         {/* Позиции опор для балок с консолями */}

@@ -1,6 +1,6 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
-import type { BeamInput, BeamResult, Reactions, SectionType, BendingAxis } from "./types";
-import { selectProfile, getProfileI, getProfileW, type ProfileData, type ProfileType } from "./gost-profiles";
+import type { BeamInput, BeamResult, Reactions, SectionType, SectionMode, BendingAxis } from "./types";
+import { selectProfile, getProfileI, getProfileW, getProfileByNumber, type ProfileData, type ProfileType } from "./gost-profiles";
 
 /** Точность для сравнения с нулём */
 const EPS = 1e-6;
@@ -35,7 +35,7 @@ export function solveBeam(input: BeamInput): BeamResult {
   const Qmax = findQExtremum(L, events, Q);
   const Mmax = findMExtremum(input.loads, events, Q, M);
 
-  // Подбор сечения по [σ] (если задано)
+  // Подбор или расчёт сечения
   let diameter: number | undefined;
   let W: number | undefined;
   let I_computed: number | undefined;
@@ -47,10 +47,71 @@ export function solveBeam(input: BeamInput): BeamResult {
   let tubeOuterHeight: number | undefined;
   let tubeThickness: number | undefined;
   let squareSide: number | undefined;
+  let sigmaMax: number | undefined;
   const sectionType: SectionType = input.sectionType ?? 'round';
+  const sectionMode = input.sectionMode ?? 'select';
   const bendingAxis: BendingAxis = input.bendingAxis ?? 'x';
 
-  if (input.sigma) {
+  if (sectionMode === 'given') {
+    // Режим "заданное сечение" — используем заданные параметры, вычисляем σmax
+    if (sectionType === 'round' && input.diameter) {
+      // Круглое сечение
+      diameter = input.diameter;
+      // W = π·d³/32
+      W = (Math.PI * Math.pow(diameter, 3)) / 32;
+      // I = π·d⁴/64
+      I_computed = (Math.PI * Math.pow(diameter, 4)) / 64;
+
+    } else if (sectionType === 'rectangle' && input.rectWidth && input.rectHeight) {
+      // Прямоугольное сечение b×h
+      rectWidth = input.rectWidth;
+      rectHeight = input.rectHeight;
+      // W = b·h²/6
+      W = (rectWidth * Math.pow(rectHeight, 2)) / 6;
+      // I = b·h³/12
+      I_computed = (rectWidth * Math.pow(rectHeight, 3)) / 12;
+
+    } else if (sectionType === 'rectangular-tube' && input.tubeOuterWidth && input.tubeOuterHeight && input.tubeThickness) {
+      // Прямоугольная труба B×H×t
+      tubeOuterWidth = input.tubeOuterWidth;
+      tubeOuterHeight = input.tubeOuterHeight;
+      tubeThickness = input.tubeThickness;
+      const B = tubeOuterWidth;
+      const H = tubeOuterHeight;
+      const t = tubeThickness;
+      // I = (B·H³ - (B-2t)·(H-2t)³) / 12
+      const I_outer = B * Math.pow(H, 3) / 12;
+      const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+      I_computed = I_outer - I_inner;
+      W = 2 * I_computed / H;
+
+    } else if (sectionType === 'square' && input.squareSide) {
+      // Квадратное сечение a×a
+      squareSide = input.squareSide;
+      // W = a³/6
+      W = Math.pow(squareSide, 3) / 6;
+      // I = a⁴/12
+      I_computed = Math.pow(squareSide, 4) / 12;
+
+    } else if ((sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') && input.profileNumber) {
+      // Профиль из ГОСТ
+      const profile = getProfileByNumber(sectionType as ProfileType, input.profileNumber);
+      if (profile) {
+        selectedProfile = profile;
+        // W и I в зависимости от оси
+        W = getProfileW(profile, bendingAxis) / 1e6; // см³ → м³
+        I_computed = getProfileI(profile, bendingAxis) * 1e-8; // см⁴ → м⁴
+      }
+    }
+
+    // Вычисляем σmax = |M|max / W
+    if (W && Math.abs(Mmax.value) > 0) {
+      const MmaxNm = Math.abs(Mmax.value) * 1000; // кН·м → Н·м
+      const sigmaMax_Pa = MmaxNm / W; // Па
+      sigmaMax = sigmaMax_Pa / 1e6; // Па → МПа
+    }
+
+  } else if (input.sigma) {
     // |M|max в кН·м, sigma в Па
     // W = |M|max / sigma, но нужно согласовать единицы
     // |M|max в кН·м = |M|max * 1000 Н·м
@@ -201,12 +262,14 @@ export function solveBeam(input: BeamInput): BeamResult {
     Qmax,
     events,
     sectionType,
+    sectionMode,
     bendingAxis,
     diameter,
     selectedProfile,
     I: I_final,
     W,
     Wreq,
+    sigmaMax,
     rectWidth,
     rectHeight,
     tubeOuterWidth,

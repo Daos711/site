@@ -32,6 +32,7 @@ const UNIT_M = "\\,\\text{м}";
 const UNIT_MM = "\\,\\text{мм}";
 const UNIT_CM4 = "\\,\\text{см}^4";
 const UNIT_CM3 = "\\,\\text{см}^3";
+const UNIT_MPA = "\\,\\text{МПа}";
 
 export function ResultCards({ input, result, className, showButton = true, onReportRef }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
@@ -239,13 +240,15 @@ export function ResultCards({ input, result, className, showButton = true, onRep
         </div>
       </div>
 
-      {/* Подобранное сечение (если задано sigma) */}
+      {/* Сечение (круглое) */}
       {result.sectionType === 'round' && result.diameter && result.W && result.I && (
         <div className="p-4 rounded-lg border border-border bg-card">
-          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (круглое)</h3>
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (круглое)
+          </h3>
           <div className="space-y-2">
             <div>
-              <Latex tex={`d_{\\min} = ${formatNum(result.diameter * 1000)}${UNIT_MM}`} />
+              <Latex tex={`d${result.sectionMode === 'select' ? '_{\\min}' : ''} = ${formatNum(result.diameter * 1000)}${UNIT_MM}`} />
             </div>
             <div>
               <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
@@ -253,6 +256,11 @@ export function ResultCards({ input, result, className, showButton = true, onRep
             <div>
               <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
             </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -260,7 +268,9 @@ export function ResultCards({ input, result, className, showButton = true, onRep
       {/* Квадратное сечение */}
       {result.sectionType === 'square' && result.squareSide && result.W && result.I && (
         <div className="p-4 rounded-lg border border-border bg-card">
-          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (квадрат)</h3>
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (квадрат)
+          </h3>
           <div className="space-y-2">
             <div>
               <Latex tex={`a = ${formatNum(result.squareSide * 1000)}${UNIT_MM}`} />
@@ -271,6 +281,11 @@ export function ResultCards({ input, result, className, showButton = true, onRep
             <div>
               <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
             </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -278,7 +293,9 @@ export function ResultCards({ input, result, className, showButton = true, onRep
       {/* Прямоугольное сечение */}
       {result.sectionType === 'rectangle' && result.rectWidth && result.rectHeight && result.W && result.I && (
         <div className="p-4 rounded-lg border border-border bg-card">
-          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (прямоугольник)</h3>
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (прямоугольник)
+          </h3>
           <div className="space-y-2">
             <div>
               <Latex tex={`b = ${formatNum(result.rectWidth * 1000)}${UNIT_MM}`} />
@@ -292,6 +309,11 @@ export function ResultCards({ input, result, className, showButton = true, onRep
             <div>
               <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
             </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -299,7 +321,9 @@ export function ResultCards({ input, result, className, showButton = true, onRep
       {/* Прямоугольная труба */}
       {result.sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness && result.W && result.I && (
         <div className="p-4 rounded-lg border border-border bg-card">
-          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (труба)</h3>
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (труба)
+          </h3>
           <div className="space-y-2">
             <div>
               <Latex tex={`B = ${formatNum(result.tubeOuterWidth * 1000)}${UNIT_MM}`} />
@@ -316,15 +340,20 @@ export function ResultCards({ input, result, className, showButton = true, onRep
             <div>
               <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
             </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Подобранный профиль из ГОСТ */}
+      {/* Профиль из ГОСТ */}
       {result.selectedProfile && (
         <div className="p-4 rounded-lg border border-border bg-card">
           <h3 className="font-semibold mb-3 text-base text-foreground">
-            Подбор сечения ({getProfileTypeShortName(result.selectedProfile.type)})
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} ({getProfileTypeShortName(result.selectedProfile.type)})
             {result.bendingAxis === 'y' && <span className="text-sm text-muted ml-2">(ось Y)</span>}
           </h3>
           <div className="space-y-2">
@@ -348,7 +377,7 @@ export function ResultCards({ input, result, className, showButton = true, onRep
                 <Latex tex={`I_${result.bendingAxis || 'x'} = ${formatNum(getProfileI(result.selectedProfile, result.bendingAxis))}${UNIT_CM4}`} />
               </div>
             </div>
-            {result.Wreq && (
+            {result.sectionMode === 'select' && result.Wreq && (
               <div className="mt-2 pt-2 border-t border-border text-sm text-muted">
                 <Latex tex={`W_{\\text{треб}} = ${formatNum(result.Wreq)}${UNIT_CM3}`} />
                 <span className="ml-2 text-green-500">
@@ -356,12 +385,17 @@ export function ResultCards({ input, result, className, showButton = true, onRep
                 </span>
               </div>
             )}
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Предупреждение если профиль не найден (только для ГОСТ профилей) */}
-      {(result.sectionType === 'i-beam' || result.sectionType === 'channel-u' || result.sectionType === 'channel-p') && !result.selectedProfile && result.Wreq && (
+      {/* Предупреждение если профиль не найден (только для ГОСТ профилей в режиме подбора) */}
+      {result.sectionMode === 'select' && (result.sectionType === 'i-beam' || result.sectionType === 'channel-u' || result.sectionType === 'channel-p') && !result.selectedProfile && result.Wreq && (
         <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/5">
           <h3 className="font-semibold mb-2 text-base text-red-400">Профиль не найден</h3>
           <p className="text-sm text-muted">

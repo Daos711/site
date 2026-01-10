@@ -5,6 +5,9 @@ import type { ProfileData, ProfileType, BendingAxis } from './gost-profiles';
 /** Тип поперечного сечения */
 export type SectionType = 'round' | 'rectangle' | 'rectangular-tube' | 'square' | ProfileType;
 
+/** Режим работы с сечением */
+export type SectionMode = 'select' | 'given';  // подбор или заданное
+
 export type { BendingAxis };
 
 export type BeamType =
@@ -50,7 +53,12 @@ export interface BeamInput {
   I?: number;             // момент инерции, м^4 (для прогибов) — если задан вручную
   sigma?: number;         // допускаемое напряжение, Па (для подбора сечения)
   sectionType?: SectionType;  // тип сечения (круглое, двутавр, швеллер, прямоугольник и т.д.)
+  sectionMode?: SectionMode;  // режим: 'select' (подбор) или 'given' (заданное)
   bendingAxis?: BendingAxis;  // ось изгиба для профилей ('x' или 'y')
+  // Для заданного профиля ГОСТ
+  profileNumber?: string;     // номер профиля (например, "20", "18а")
+  // Параметры для круглого сечения (round)
+  diameter?: number;      // диаметр d, м (для заданного сечения)
   // Параметры для прямоугольного сечения (rectangle)
   rectWidth?: number;     // ширина b, м
   rectHeight?: number;    // высота h, м
@@ -83,14 +91,16 @@ export interface BeamResult {
   Mmax: { value: number; x: number };
   Qmax: { value: number; x: number };
   events: number[];  // точки разрыва/перегиба
-  // Подбор сечения (если задано sigma)
+  // Сечение
   sectionType?: SectionType;      // тип сечения
+  sectionMode?: SectionMode;      // режим: подбор или заданное
   bendingAxis?: BendingAxis;      // ось изгиба
-  diameter?: number;              // подобранный диаметр для круглого, м
-  selectedProfile?: ProfileData;  // выбранный профиль из ГОСТ (для двутавра/швеллера)
+  diameter?: number;              // диаметр для круглого, м
+  selectedProfile?: ProfileData;  // профиль из ГОСТ (для двутавра/швеллера)
   I?: number;                     // момент инерции, м^4
   W?: number;                     // момент сопротивления, м^3
-  Wreq?: number;                  // требуемый момент сопротивления, см³
+  Wreq?: number;                  // требуемый момент сопротивления, см³ (для режима подбора)
+  sigmaMax?: number;              // максимальное напряжение, МПа (для режима заданного сечения)
   // Для прямоугольного сечения
   rectWidth?: number;             // ширина b, м
   rectHeight?: number;            // высота h, м
