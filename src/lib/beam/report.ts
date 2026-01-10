@@ -1359,48 +1359,73 @@ function buildStressDiagramSection(
   </div>
 
   <div class="stress-diagram" style="display: flex; justify-content: center; margin: 20px 0;">
-    <svg viewBox="0 0 400 200" style="max-width: 400px; width: 100%;">
-      <!-- Ось сечения -->
-      <line x1="100" y1="20" x2="100" y2="180" stroke="#333" stroke-width="2"/>
-      <line x1="90" y1="100" x2="300" y2="100" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
-
-      <!-- Сечение (схематично) -->
+    <svg viewBox="0 0 450 220" style="max-width: 450px; width: 100%;">
+      <!-- Сечение (слева) -->
       ${profile.type === 'i-beam' ? `
       <!-- Двутавр -->
-      <rect x="70" y="20" width="60" height="10" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
-      <rect x="95" y="30" width="10" height="140" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
-      <rect x="70" y="170" width="60" height="10" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="40" y="30" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="60" y="38" width="10" height="144" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="40" y="182" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
       ` : `
       <!-- Швеллер -->
-      <rect x="70" y="20" width="50" height="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
-      <rect x="70" y="30" width="10" height="140" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
-      <rect x="70" y="170" width="50" height="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="40" y="30" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="40" y="38" width="8" height="144" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="40" y="182" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       `}
 
-      <!-- Эпюра напряжений (треугольник) -->
-      <polygon points="100,20 280,20 100,100" fill="rgba(244,67,54,0.3)" stroke="#F44336" stroke-width="2"/>
-      <polygon points="100,100 280,180 100,180" fill="rgba(33,150,243,0.3)" stroke="#2196F3" stroke-width="2"/>
+      <!-- Нейтральная ось (пунктир через сечение и эпюру) -->
+      <line x1="30" y1="110" x2="380" y2="110" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
 
-      <!-- Подписи -->
-      <text x="290" y="25" font-size="14" fill="#F44336">+σ</text>
-      <text x="290" y="185" font-size="14" fill="#2196F3">−σ</text>
-      <text x="285" y="25" font-size="10" fill="#F44336">${sigmaMaxStr}</text>
-      <text x="285" y="185" font-size="10" fill="#2196F3">${sigmaMaxStr}</text>
+      <!-- Вертикальная ось эпюры -->
+      <line x1="130" y1="25" x2="130" y2="195" stroke="#333" stroke-width="1.5"/>
 
-      <!-- Нейтральная ось -->
-      <text x="305" y="104" font-size="12" fill="#666">н.о.</text>
+      <!-- Эпюра напряжений: верхний треугольник (растяжение, красный) -->
+      <!-- Вершина на нейтральной оси (130,110), основание вверху -->
+      <polygon points="130,110 130,30 320,30" fill="rgba(244,67,54,0.25)" stroke="#E53935" stroke-width="2"/>
 
-      <!-- Размеры -->
-      <text x="45" y="105" font-size="11" fill="#333">y</text>
-      <line x1="50" y1="25" x2="50" y2="175" stroke="#666" stroke-width="1"/>
-      <line x1="45" y1="25" x2="55" y2="25" stroke="#666" stroke-width="1"/>
-      <line x1="45" y1="175" x2="55" y2="175" stroke="#666" stroke-width="1"/>
-      <text x="30" y="105" font-size="10" fill="#666">h</text>
+      <!-- Эпюра напряжений: нижний треугольник (сжатие, синий) -->
+      <!-- Вершина на нейтральной оси (130,110), основание внизу -->
+      <polygon points="130,110 130,190 320,190" fill="rgba(33,150,243,0.25)" stroke="#1E88E5" stroke-width="2"/>
+
+      <!-- Стрелки показывают направление напряжений -->
+      <line x1="320" y1="30" x2="340" y2="30" stroke="#E53935" stroke-width="2" marker-end="url(#arrowRed)"/>
+      <line x1="320" y1="190" x2="340" y2="190" stroke="#1E88E5" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+      <!-- Маркеры стрелок -->
+      <defs>
+        <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L9,3 z" fill="#E53935"/>
+        </marker>
+        <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L9,3 z" fill="#1E88E5"/>
+        </marker>
+      </defs>
+
+      <!-- Подписи значений -->
+      <text x="350" y="35" font-size="13" fill="#E53935" font-weight="bold">+σ = ${sigmaMaxStr} МПа</text>
+      <text x="350" y="195" font-size="13" fill="#1E88E5" font-weight="bold">−σ = ${sigmaMaxStr} МПа</text>
+
+      <!-- Подпись нейтральной оси -->
+      <text x="385" y="114" font-size="11" fill="#666">н.о.</text>
+      <text x="385" y="126" font-size="10" fill="#666">(σ=0)</text>
+
+      <!-- Ось y (слева от сечения) -->
+      <line x1="20" y1="30" x2="20" y2="190" stroke="#333" stroke-width="1"/>
+      <line x1="17" y1="30" x2="23" y2="30" stroke="#333" stroke-width="1"/>
+      <line x1="17" y1="190" x2="23" y2="190" stroke="#333" stroke-width="1"/>
+      <line x1="17" y1="110" x2="23" y2="110" stroke="#333" stroke-width="1"/>
+      <text x="8" y="35" font-size="10" fill="#333">+y</text>
+      <text x="8" y="195" font-size="10" fill="#333">−y</text>
+      <text x="8" y="114" font-size="10" fill="#333">0</text>
+
+      <!-- Подпись высоты h -->
+      <text x="95" y="15" font-size="11" fill="#333">h = ${h} мм</text>
     </svg>
   </div>
 
-  <p>Эпюра показывает линейное распределение нормальных напряжений: растяжение (+σ) в верхних волокнах
-  и сжатие (−σ) в нижних при положительном изгибающем моменте.</p>`;
+  <p><strong>Эпюра нормальных напряжений σ(y):</strong> линейное распределение по высоте сечения.
+  На нейтральной оси (y = 0) напряжения равны нулю. На крайних волокнах (y = ±h/2) напряжения максимальны:
+  растяжение (+σ) в верхней зоне, сжатие (−σ) в нижней.</p>`;
 }
 
 /**
