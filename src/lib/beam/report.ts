@@ -781,15 +781,34 @@ function buildProblemStatement(input: BeamInput, result: BeamResult, hasDeflecti
 
   if (hasCrossSection) {
     const sectionType = result.sectionType ?? 'round';
-    if (sectionType === 'round') {
-      tasks.push("Подобрать диаметр круглого сечения из условия прочности");
-    } else if (sectionType === 'i-beam') {
-      tasks.push("Подобрать номер стального двутавра из условия прочности");
+    const sectionMode = result.sectionMode ?? 'select';
+
+    if (sectionMode === 'given') {
+      // Режим "Заданное сечение" - определяем напряжения
+      if (sectionType === 'round') {
+        tasks.push("Определить максимальные напряжения для заданного круглого сечения");
+      } else if (sectionType === 'i-beam') {
+        tasks.push("Определить максимальные напряжения для заданного двутавра");
+      } else if (sectionType === 'channel-u' || sectionType === 'channel-p') {
+        tasks.push("Определить максимальные напряжения для заданного швеллера");
+      } else {
+        tasks.push("Определить максимальные напряжения для заданного сечения");
+      }
     } else {
-      tasks.push("Подобрать номер стального швеллера из условия прочности");
+      // Режим "Подбор сечения"
+      if (sectionType === 'round') {
+        tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+      } else if (sectionType === 'i-beam') {
+        tasks.push("Подобрать номер стального двутавра из условия прочности");
+      } else if (sectionType === 'channel-u' || sectionType === 'channel-p') {
+        tasks.push("Подобрать номер стального швеллера из условия прочности");
+      } else {
+        tasks.push("Подобрать сечение из условия прочности");
+      }
     }
+
     // Добавляем задачу про эпюру напряжений для профилей
-    if (sectionType !== 'round') {
+    if (sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') {
       tasks.push("Построить эпюру нормальных напряжений в опасном сечении");
     }
   }
@@ -1567,8 +1586,13 @@ function buildStressDiagramSection(
       <rect x="40" y="30" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
       <rect x="60" y="38" width="10" height="144" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
       <rect x="40" y="182" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      ` : axis === 'y' ? `
+      <!-- Швеллер повёрнутый (ось Y) - лежит на боку -->
+      <rect x="30" y="60" width="8" height="100" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="38" y="60" width="54" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="38" y="152" width="54" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       ` : `
-      <!-- Швеллер -->
+      <!-- Швеллер обычный (ось X) -->
       <rect x="40" y="30" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       <rect x="40" y="38" width="8" height="144" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       <rect x="40" y="182" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
@@ -2532,14 +2556,17 @@ function buildImpactLoadingSection(
   const forceIndex = input.impactForceIndex ?? 0;
   const impactForce = forces.length > forceIndex ? Math.abs((forces[forceIndex] as { F: number }).F) : 0;
 
+  // Точка приложения удара
+  const impactX = forces.length > forceIndex ? (forces[forceIndex] as { x: number }).x : 0;
+
   let html = `
   <h2>${sectionNum}. Ударное нагружение</h2>
-  <p>На балку действует груз массой \\(P = ${formatNumber(impactForce)}\\) кН, падающий с высоты \\(H = ${formatNumber(H_cm)}\\) см = \\(${formatNumber(H_m, 3)}\\) м.</p>
+  <p>На балку действует груз \\(P = ${formatNumber(impactForce)}\\) кН, падающий с высоты \\(H = ${formatNumber(H_cm)}\\) см = \\(${formatNumber(H_m, 3)}\\) м в точке \\(x = ${formatNumber(impactX)}\\) м.</p>
 
   <h3>${sectionNum}.1. Статический прогиб в точке удара</h3>
-  <p>Статический прогиб \\(\\delta_{\\text{ст}}\\) — прогиб балки в точке приложения силы при статическом действии нагрузки:</p>
+  <p>Статический прогиб \\(\\delta_{\\text{ст}}\\) — прогиб балки в точке приложения силы при статическом действии нагрузки (определён методом начальных параметров в предыдущем разделе):</p>
   <div class="formula">
-    \\[\\delta_{\\text{ст}} = ${formatNumber(yStaticAtImpact_mm, 4)} \\text{ мм} = ${formatNumber(yStaticAtImpact_cm, 5)} \\text{ см}\\]
+    \\[|\\delta_{\\text{ст}}| = ${formatNumber(yStaticAtImpact_mm, 4)} \\text{ мм} = ${formatNumber(yStaticAtImpact_cm / 100, 6)} \\text{ м}\\]
   </div>`;
 
   // Учёт пружины если есть
@@ -2565,15 +2592,21 @@ function buildImpactLoadingSection(
     ? (yStaticAtImpact_cm + springDeflection_mm / 10)
     : yStaticAtImpact_cm;
 
+  // Промежуточные значения для Kд
+  const deltaForKd_m = deltaForKd / 100; // см → м
+  const ratioUnderSqrt = (2 * H_m) / deltaForKd_m;
+  const valueUnderSqrt = 1 + ratioUnderSqrt;
+  const sqrtValue = Math.sqrt(valueUnderSqrt);
+
   html += `
   <h3>${sectionNum}.${subsectionNum}. Коэффициент динамичности</h3>
-  <p>Коэффициент динамичности определяется по формуле:</p>
+  <p>Коэффициент динамичности при ударе с высоты \\(H\\) определяется по формуле:</p>
   <div class="formula">
-    \\[K_д = 1 + \\sqrt{1 + \\frac{2H}{\\delta_{\\text{ст}}}}\\]
+    \\[K_д = 1 + \\sqrt{1 + \\frac{2H}{|\\delta_{\\text{ст}}|}}\\]
   </div>
-  <p>Подставляя значения:</p>
+  <p>Подставляя значения (\\(|\\delta_{\\text{ст}}| = ${formatNumber(deltaForKd_m, 6)}\\) м, \\(H = ${formatNumber(H_m, 3)}\\) м):</p>
   <div class="formula">
-    \\[K_д = 1 + \\sqrt{1 + \\frac{2 \\cdot ${formatNumber(H_cm)}}{${formatNumber(deltaForKd, 4)}}} = 1 + \\sqrt{${formatNumber(1 + (2 * H_cm) / deltaForKd, 3)}} = ${formatNumber(Kd, 3)}\\]
+    \\[K_д = 1 + \\sqrt{1 + \\frac{2 \\cdot ${formatNumber(H_m, 3)}}{${formatNumber(deltaForKd_m, 6)}}} = 1 + \\sqrt{1 + ${formatNumber(ratioUnderSqrt, 3)}} = 1 + \\sqrt{${formatNumber(valueUnderSqrt, 3)}} = 1 + ${formatNumber(sqrtValue, 4)} = ${formatNumber(Kd, 4)}\\]
   </div>`;
 
   // Динамические напряжения
