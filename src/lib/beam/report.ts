@@ -1414,9 +1414,9 @@ function buildStressDiagramSection(
       <line x1="17" y1="30" x2="23" y2="30" stroke="#333" stroke-width="1"/>
       <line x1="17" y1="190" x2="23" y2="190" stroke="#333" stroke-width="1"/>
       <line x1="17" y1="110" x2="23" y2="110" stroke="#333" stroke-width="1"/>
-      <text x="8" y="35" font-size="10" fill="#333">+y</text>
-      <text x="8" y="195" font-size="10" fill="#333">−y</text>
-      <text x="8" y="114" font-size="10" fill="#333">0</text>
+      <text x="0" y="35" font-size="10" fill="#333">+y</text>
+      <text x="0" y="195" font-size="10" fill="#333">−y</text>
+      <text x="4" y="114" font-size="10" fill="#333">0</text>
 
       <!-- Подпись высоты h -->
       <text x="95" y="15" font-size="11" fill="#333">h = ${h} мм</text>
