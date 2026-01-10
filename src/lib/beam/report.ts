@@ -2602,15 +2602,16 @@ function buildVereshchaginSection(
       }
     } else if (isOverhangLeft) {
       // Удар на левой консоли (impactX < xA)
+      // Знак: сила вниз создаёт отрицательный момент (сжатие нижнего волокна)
       if (x <= impactX) {
         // Левее точки удара - момент 0
         return 0;
       } else if (x <= xA) {
-        // Между точкой удара и опорой A: только единичная сила слева
-        return 1 * (x - impactX);
+        // Между точкой удара и опорой A: только единичная сила слева (вниз → минус)
+        return -1 * (x - impactX);
       } else {
-        // Между опорами: единичная сила + реакция RA
-        return 1 * (x - impactX) - RA_unit * (x - xA);
+        // Между опорами: единичная сила (вниз) + реакция RA (вверх)
+        return -1 * (x - impactX) + RA_unit * (x - xA);
       }
     } else if (isOverhangRight) {
       // Удар на правой консоли (impactX > xB)
@@ -2701,26 +2702,28 @@ function buildVereshchaginSection(
     }
   } else if (isOverhangLeft) {
     // Удар на левой консоли
-    const m_at_xA = 1 * (xA - impactX); // m(xA) - максимум на первом участке
-    const a2 = 1 - RA_unit; // коэффициент при x на втором участке
-    const b2 = -impactX + RA_unit * xA; // свободный член
+    // Сила вниз → отрицательный момент (сжатие нижнего волокна)
+    const m_at_xA = -1 * (xA - impactX); // m(xA) - минимум на первом участке (отрицательный)
+    const a2 = -1 + RA_unit; // коэффициент при x на втором участке
+    const b2 = impactX - RA_unit * xA; // свободный член
 
     html += `
   <p><strong>Участок 1</strong> (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xA)}\\)) — консольная часть:</p>
-  <p>Рассматриваем сечение: слева только единичная сила \\(X = 1\\) в точке \\(x = ${formatNumber(impactX)}\\):</p>
+  <p>Рассматриваем сечение: слева только единичная сила \\(X = 1\\) (направлена вниз) в точке \\(x = ${formatNumber(impactX)}\\).</p>
+  <p>Сила вниз создаёт отрицательный момент (сжатие нижнего волокна):</p>
   <div class="formula">
-    \\[m_1(x) = 1 \\cdot (x - ${formatNumber(impactX)}) = x - ${formatNumber(impactX)}\\]
+    \\[m_1(x) = -1 \\cdot (x - ${formatNumber(impactX)}) = -(x - ${formatNumber(impactX)})\\]
   </div>
   <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = 0\\)</p>
-  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = ${formatNumber(xA)} - ${formatNumber(impactX)} = ${formatNumber(m_at_xA, 4)}\\)</p>
+  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = -(${formatNumber(xA)} - ${formatNumber(impactX)}) = ${formatNumber(m_at_xA, 4)}\\)</p>
 
   <p><strong>Участок 2</strong> (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(xB)}\\)) — между опорами:</p>
-  <p>Слева от сечения: единичная сила и реакция \\(R_A^{(1)} = ${formatNumber(RA_unit, 4)}\\):</p>
+  <p>Слева от сечения: единичная сила (вниз) и реакция \\(R_A^{(1)} = ${formatNumber(RA_unit, 4)}\\) (вверх):</p>
   <div class="formula">
-    \\[m_2(x) = 1 \\cdot (x - ${formatNumber(impactX)}) - R_A^{(1)} \\cdot (x - ${formatNumber(xA)})\\]
+    \\[m_2(x) = -1 \\cdot (x - ${formatNumber(impactX)}) + R_A^{(1)} \\cdot (x - ${formatNumber(xA)})\\]
   </div>
   <div class="formula">
-    \\[m_2(x) = (x - ${formatNumber(impactX)}) - ${formatNumber(RA_unit, 4)} \\cdot (x - ${formatNumber(xA)})\\]
+    \\[m_2(x) = -(x - ${formatNumber(impactX)}) + ${formatNumber(RA_unit, 4)} \\cdot (x - ${formatNumber(xA)})\\]
   </div>
   <p>В развёрнутом виде:</p>
   <div class="formula">
@@ -2801,10 +2804,11 @@ function buildVereshchaginSection(
     seg1End = xA;
     seg2Start = xA;
     seg2End = xB;
-    m_max_at_junction = xA - impactX; // m(xA) на первом участке
-    // Треугольник 1: нуль в impactX, максимум в xA → центр на 2/3 от impactX
+    // m(xA) = -(xA - impactX) — отрицательное значение (знаковая площадь)
+    m_max_at_junction = -(xA - impactX);
+    // Треугольник 1: нуль в impactX, минимум в xA → центр на 2/3 от impactX
     xc1 = impactX + (2/3) * (xA - impactX);
-    // Треугольник 2: максимум в xA, нуль в xB → центр на 1/3 от xA
+    // Треугольник 2: минимум в xA, нуль в xB → центр на 1/3 от xA
     xc2 = xA + (1/3) * (xB - xA);
   } else {
     // Удар между опорами: треугольник 1 от xA до impactX, треугольник 2 от impactX до xB
@@ -2882,20 +2886,20 @@ function buildVereshchaginSection(
     html += `
   <p><strong>Треугольник 1</strong> (участок \\(${formatNumber(seg1Start)} \\leq x \\leq ${formatNumber(seg1End)}\\)):</p>
   <ul>
-    <li>Основание: \\(${formatNumber(len1)}\\) м, высота: \\(${formatNumber(m_max_at_junction, 4)}\\)</li>
-    <li>Площадь: \\(A_1 = \\frac{1}{2} \\cdot ${formatNumber(len1)} \\cdot ${formatNumber(m_max_at_junction, 4)} = ${formatNumber(A1, 4)}\\) м²</li>
+    <li>Основание: \\(${formatNumber(len1)}\\) м, значение \\(m\\) на стыке: \\(${formatNumber(m_max_at_junction, 4)}\\)</li>
+    <li>Площадь (знаковая): \\(A_1 = \\frac{1}{2} \\cdot ${formatNumber(len1)} \\cdot ${formatSigned(m_max_at_junction, 4)} = ${formatNumber(A1, 4)}\\) м²</li>
     <li>Центр тяжести: \\(\\bar{x}_1 = ${centroidFormula1} = ${formatNumber(xc1, 4)}\\) м</li>
     <li>Ордината \\(M(\\bar{x}_1)\\): \\(M(${formatNumber(xc1, 2)}) = ${formatNumber(M_at_xc1, 4)}\\) кН·м</li>
-    <li>Вклад: \\(A_1 \\cdot M(\\bar{x}_1) = ${formatNumber(A1, 4)} \\cdot ${formatSigned(M_at_xc1)} = ${formatNumber(contrib1, 4)}\\) кН·м³</li>
+    <li>Вклад: \\(A_1 \\cdot M(\\bar{x}_1) = ${formatSigned(A1, 4)} \\cdot ${formatSigned(M_at_xc1)} = ${formatNumber(contrib1, 4)}\\) кН·м³</li>
   </ul>
 
   <p><strong>Треугольник 2</strong> (участок \\(${formatNumber(seg2Start)} \\leq x \\leq ${formatNumber(seg2End)}\\)):</p>
   <ul>
-    <li>Основание: \\(${formatNumber(len2)}\\) м, высота: \\(${formatNumber(m_max_at_junction, 4)}\\)</li>
-    <li>Площадь: \\(A_2 = \\frac{1}{2} \\cdot ${formatNumber(len2)} \\cdot ${formatNumber(m_max_at_junction, 4)} = ${formatNumber(A2, 4)}\\) м²</li>
+    <li>Основание: \\(${formatNumber(len2)}\\) м, значение \\(m\\) на стыке: \\(${formatNumber(m_max_at_junction, 4)}\\)</li>
+    <li>Площадь (знаковая): \\(A_2 = \\frac{1}{2} \\cdot ${formatNumber(len2)} \\cdot ${formatSigned(m_max_at_junction, 4)} = ${formatNumber(A2, 4)}\\) м²</li>
     <li>Центр тяжести: \\(\\bar{x}_2 = ${centroidFormula2} = ${formatNumber(xc2, 4)}\\) м</li>
     <li>Ордината \\(M(\\bar{x}_2)\\): \\(M(${formatNumber(xc2, 2)}) = ${formatNumber(M_at_xc2, 4)}\\) кН·м</li>
-    <li>Вклад: \\(A_2 \\cdot M(\\bar{x}_2) = ${formatNumber(A2, 4)} \\cdot ${formatSigned(M_at_xc2)} = ${formatNumber(contrib2, 4)}\\) кН·м³</li>
+    <li>Вклад: \\(A_2 \\cdot M(\\bar{x}_2) = ${formatSigned(A2, 4)} \\cdot ${formatSigned(M_at_xc2)} = ${formatNumber(contrib2, 4)}\\) кН·м³</li>
   </ul>
 
   <p><strong>Сумма вкладов:</strong></p>
