@@ -2650,13 +2650,18 @@ function buildVereshchaginSection(
     \\[R^{(1)} = 1, \\quad M^{(1)} = 1 \\cdot ${formatNumber(Math.abs(impactX - (result.reactions.xf ?? L)))} = ${formatNumber(Math.abs(impactX - (result.reactions.xf ?? L)))} \\text{ (безразм.)}\\]
   </div>`;
   } else {
+    // Расстояние от опоры A до точки удара
+    const distFromA = impactX - xA;
+    const span = xB - xA;
+
     html += `
   <p>Из уравнений равновесия для единичной силы \\(X = 1\\) в точке \\(x = ${formatNumber(impactX)}\\) м:</p>
+  <p>Опоры расположены в точках: \\(x_A = ${formatNumber(xA)}\\) м, \\(x_B = ${formatNumber(xB)}\\) м. Пролёт \\(l = ${formatNumber(span)}\\) м.</p>
   <div class="formula">
-    \\[\\sum M_A = 0: \\quad 1 \\cdot ${formatNumber(impactX)} - R_B^{(1)} \\cdot ${formatNumber(xB - xA)} = 0\\]
+    \\[\\sum M_A = 0: \\quad 1 \\cdot (${formatNumber(impactX)} - ${formatNumber(xA)}) - R_B^{(1)} \\cdot ${formatNumber(span)} = 0\\]
   </div>
   <div class="formula">
-    \\[R_B^{(1)} = \\frac{${formatNumber(impactX)}}{${formatNumber(xB - xA)}} = ${formatNumber(RB_unit, 4)}\\]
+    \\[R_B^{(1)} = \\frac{${formatNumber(distFromA)}}{${formatNumber(span)}} = ${formatNumber(RB_unit, 4)}\\]
   </div>
   <div class="formula">
     \\[\\sum F_y = 0: \\quad R_A^{(1)} + R_B^{(1)} = 1 \\Rightarrow R_A^{(1)} = 1 - ${formatSigned(RB_unit)} = ${formatNumber(RA_unit, 4)}\\]
