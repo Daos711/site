@@ -760,9 +760,9 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
           {loadMode === 'impact' && (
             <div className="pt-4 border-t border-border">
               <h4 className="text-sm font-medium mb-3">Параметры удара</h4>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-[2fr_3fr]">
                 <div>
-                  <label className="block text-sm text-muted mb-1">Высота падения H, м</label>
+                  <label className="block text-sm text-muted mb-1">Высота H, м</label>
                   <NumInput
                     value={impactHeight}
                     onChange={setImpactHeight}
@@ -780,7 +780,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
                     step={0.1}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
                   />
-                  <p className="text-xs text-muted mt-1">0 = без пружины (жёсткая опора)</p>
+                  <p className="text-xs text-muted mt-1">0 = жёсткая опора</p>
                 </div>
               </div>
               <p className="text-xs text-muted mt-3">
