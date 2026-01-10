@@ -272,21 +272,18 @@ export function solveBeam(input: BeamInput): BeamResult {
     yStaticAtImpact = Math.abs(y(impactX));
 
     // Учёт податливости пружины (если задана)
-    let totalStaticDeflection = yStaticAtImpact;
+    // Осадка пружины s = α × R (реакция), НЕ используется для Kd
     if (input.springStiffness && input.springStiffness > 0) {
-      // α в см/кН, нужно перевести в м/кН
-      // Прогиб пружины = α × P (P в кН)
-      // Для расчёта Kd используем суммарный прогиб
-      const P_kN = forces.length > 0 ? Math.abs((forces[forceIndex] as { F: number }).F) : 0;
-      const springDefl_m = (input.springStiffness / 100) * P_kN; // см → м
-      totalStaticDeflection += springDefl_m;
-      springDeflection = springDefl_m;
+      // Сохраняем springStiffness для отчёта, но не добавляем к прогибу для Kd
+      // Осадки пружин рассчитываются отдельно как s = α × R в отчёте
+      springDeflection = 0; // Будет рассчитано в отчёте как α × R
     }
 
     // Коэффициент динамичности: Kд = 1 + √(1 + 2H/δст)
-    if (totalStaticDeflection > 0) {
+    // Используем ТОЛЬКО прогиб балки, без пружины
+    if (yStaticAtImpact > 0) {
       const H = input.impactHeight;
-      Kd = 1 + Math.sqrt(1 + (2 * H) / totalStaticDeflection);
+      Kd = 1 + Math.sqrt(1 + (2 * H) / yStaticAtImpact);
 
       // Динамическое напряжение: σд = Kд × σст
       if (sigmaMax !== undefined) {

@@ -1562,19 +1562,23 @@ function buildStressDiagramSection(
   sectionNum: number,
   axis: 'x' | 'y' = 'x'
 ): string {
-  // Для оси Y размеры меняются местами
-  const h = axis === 'x' ? profile.h : profile.b; // мм - размер в направлении изгиба
   const W_val = getProfileW(profile, axis); // см³
   const I_val = getProfileI(profile, axis); // см⁴
   const MmaxKNm = Math.abs(Mmax.value); // кН·м
+
+  // Размер сечения в направлении изгиба (для рисунка)
+  const sizeLabel = axis === 'x' ? 'h' : 'b';
+  const h = axis === 'x' ? profile.h : profile.b; // мм - геометрический размер
+
+  // y_max = I / W (в см → мм) - корректное значение из соотношения W = I / y_max
+  const y_max_cm = I_val / W_val; // см
+  const y_max_mm = y_max_cm * 10; // мм
 
   // σ = M·y / I
   // σ_max = M / W * 1000 (МПа), где M в кН·м, W в см³
 
   const sigmaMax = MmaxKNm * 1000 / W_val; // МПа
   const sigmaMaxStr = formatNumber(sigmaMax, 2);
-
-  const sizeLabel = axis === 'x' ? 'h' : 'b';
 
   return `
   <h3>${sectionNum}.1. Нормальные напряжения в опасном сечении</h3>
@@ -1583,7 +1587,7 @@ function buildStressDiagramSection(
   <div class="formula">
     \\[\\sigma(y) = \\frac{M \\cdot y}{I_${axis}}\\]
   </div>
-  <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm ${sizeLabel}/2 = \\pm ${formatNumber(h/2)}\\) мм):</p>
+  <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm y_{\\max} = \\pm ${formatNumber(y_max_mm, 1)}\\) мм, где \\(y_{\\max} = I_${axis}/W_${axis}\\)):</p>
   <div class="formula">
     \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_${axis}} = \\frac{${formatNumber(MmaxKNm)} \\cdot 10^6}{${formatNumber(W_val)} \\cdot 10^3} = ${sigmaMaxStr} \\text{ МПа}\\]
   </div>
@@ -1661,9 +1665,9 @@ function buildStressDiagramSection(
     </svg>
   </div>
 
-  <p><strong>Эпюра нормальных напряжений σ(y):</strong> линейное распределение по высоте сечения.
-  На нейтральной оси (y = 0) напряжения равны нулю. На крайних волокнах (y = ±${sizeLabel}/2) напряжения максимальны:
-  растяжение (+σ) в верхней зоне, сжатие (−σ) в нижней.</p>`;
+  <p><strong>Эпюра нормальных напряжений \\(\\sigma(y)\\):</strong> линейное распределение по высоте сечения.
+  На нейтральной оси (\\(y = 0\\)) напряжения равны нулю. На крайних волокнах (\\(y = \\pm y_{\\max} = \\pm ${formatNumber(y_max_mm, 1)}\\) мм) напряжения максимальны:
+  растяжение (\\(+\\sigma\\)) в верхней зоне, сжатие (\\(-\\sigma\\)) в нижней.</p>`;
 }
 
 /**
