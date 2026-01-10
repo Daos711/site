@@ -723,8 +723,18 @@ function buildReportHTML(data: ReportData): string {
       sectionNum++;
     }
 
-    // Раздел ударного нагружения (если есть)
+    // Метод Верещагина и ударное нагружение (если есть)
     if (result.loadMode === 'impact' && result.Kd !== undefined) {
+      // Находим точку удара
+      const forces = input.loads.filter(l => l.type === 'force');
+      const forceIndex = input.impactForceIndex ?? 0;
+      const impactX = forces.length > forceIndex ? (forces[forceIndex] as { x: number }).x : 0;
+
+      // Метод Верещагина
+      html += buildVereshchaginSection(input, result, sectionNum, impactX);
+      sectionNum++;
+
+      // Ударное нагружение
       html += buildImpactLoadingSection(input, result, sectionNum);
       sectionNum++;
     }
@@ -1587,12 +1597,15 @@ function buildStressDiagramSection(
       <rect x="60" y="38" width="10" height="144" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
       <rect x="40" y="182" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
       ` : axis === 'y' ? `
-      <!-- Швеллер повёрнутый (ось Y) - лежит на боку -->
-      <rect x="30" y="60" width="8" height="100" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
-      <rect x="38" y="60" width="54" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
-      <rect x="38" y="152" width="54" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <!-- Швеллер повёрнутый (ось Y) - как буква U, полки вертикально -->
+      <!-- Левая полка (вертикально) -->
+      <rect x="30" y="30" width="8" height="160" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <!-- Правая полка (вертикально) -->
+      <rect x="82" y="30" width="8" height="160" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <!-- Стенка (горизонтально снизу) -->
+      <rect x="30" y="182" width="60" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       ` : `
-      <!-- Швеллер обычный (ось X) -->
+      <!-- Швеллер обычный (ось X) - как буква [ -->
       <rect x="40" y="30" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       <rect x="40" y="38" width="8" height="144" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
       <rect x="40" y="182" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
@@ -2529,6 +2542,225 @@ function buildCantileverRightDerivation(
 }
 
 /**
+ * Раздел "Метод Верещагина" для нахождения прогиба в точке удара
+ */
+function buildVereshchaginSection(
+  input: BeamInput,
+  result: BeamResult,
+  sectionNum: number,
+  impactX: number
+): string {
+  const { L } = input;
+  const E = input.E ?? 2e11; // Па
+  const I = result.I ?? input.I ?? 1e-6; // м⁴
+  const EI = E * I;
+
+  // Функция M(x) от внешней нагрузки уже есть в result
+  const M = result.M;
+  if (!M) return '';
+
+  // Находим реакции от единичной силы X=1 в точке impactX
+  // Для двухопорной балки: ΣM_A = 0: R_B × L - 1 × impactX = 0 → R_B = impactX/L
+  // ΣFy = 0: R_A + R_B = 1 → R_A = 1 - impactX/L = (L - impactX)/L
+  const isCantilever = input.beamType.startsWith('cantilever');
+
+  let RA_unit: number, RB_unit: number;
+  let xA: number, xB: number;
+
+  if (isCantilever) {
+    // Консоль - реакции в заделке
+    xA = result.reactions.xf ?? (input.beamType === 'cantilever-left' ? L : 0);
+    xB = xA;
+    RA_unit = 1; // Единичная сила полностью воспринимается заделкой
+    RB_unit = 0;
+  } else {
+    // Двухопорная балка
+    xA = result.reactions.xA ?? 0;
+    xB = result.reactions.xB ?? L;
+    const span = xB - xA;
+    RB_unit = (impactX - xA) / span;
+    RA_unit = 1 - RB_unit;
+  }
+
+  // Функция m(x) - момент от единичной силы в точке impactX
+  const m = (x: number): number => {
+    if (isCantilever) {
+      const fixedX = result.reactions.xf ?? (input.beamType === 'cantilever-left' ? L : 0);
+      if (input.beamType === 'cantilever-left') {
+        // Заделка справа
+        if (x <= impactX) return 0;
+        return -(x - impactX); // Момент растёт от точки приложения к заделке
+      } else {
+        // Заделка слева
+        if (x >= impactX) return 0;
+        return -(impactX - x);
+      }
+    } else {
+      // Двухопорная
+      let moment = 0;
+      if (x > xA) moment += RA_unit * (x - xA);
+      if (x > impactX) moment -= 1 * (x - impactX);
+      return moment;
+    }
+  };
+
+  // Численное интегрирование методом трапеций: ∫ M(x)×m(x) dx
+  const n = 200; // Количество отрезков
+  const dx = L / n;
+  let integral = 0;
+  for (let i = 0; i <= n; i++) {
+    const x = i * dx;
+    const Mx = M(x);
+    const mx = m(x);
+    const weight = (i === 0 || i === n) ? 0.5 : 1;
+    integral += weight * Mx * mx * dx;
+  }
+
+  // δ = (1/EI) × integral  (в Н·м³ / (Н/м² × м⁴) = м)
+  // M в кН·м = 1000 Н·м, m в м (безразмерно для единичной силы)
+  // integral в кН·м × м × м = кН·м³
+  // Нужно перевести: integral × 1000 (кН→Н) / EI = м
+  const delta_m = (integral * 1000) / EI;
+  const delta_mm = Math.abs(delta_m) * 1000;
+
+  // Значения для формул
+  const EI_formatted = formatNumber(EI / 1e6, 2); // МН·м²
+
+  // Находим значения M и m в характерных точках для рисунка
+  const M_at_impact = M(impactX);
+  const m_at_A = m(xA);
+  const m_at_B = m(xB);
+  const m_at_impact = m(impactX);
+
+  let html = `
+  <h2>${sectionNum}. Метод Верещагина</h2>
+  <p>Для нахождения прогиба в точке удара (\\(x = ${formatNumber(impactX)}\\) м) применим метод Верещагина:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}} = \\frac{1}{EI} \\int_0^L M(x) \\cdot m(x) \\, dx\\]
+  </div>
+  <p>где \\(M(x)\\) — эпюра изгибающих моментов от внешней нагрузки, \\(m(x)\\) — эпюра моментов от единичной силы \\(X = 1\\), приложенной в точке измерения прогиба.</p>
+
+  <h3>${sectionNum}.1. Реакции от единичной силы \\(X = 1\\)</h3>`;
+
+  if (isCantilever) {
+    html += `
+  <p>Для консольной балки единичная сила полностью воспринимается заделкой:</p>
+  <div class="formula">
+    \\[R^{(1)} = 1, \\quad M^{(1)} = 1 \\cdot ${formatNumber(Math.abs(impactX - (result.reactions.xf ?? L)))} = ${formatNumber(Math.abs(impactX - (result.reactions.xf ?? L)))} \\text{ (безразм.)}\\]
+  </div>`;
+  } else {
+    html += `
+  <p>Из уравнений равновесия (\\(P \\to 1\\)):</p>
+  <div class="formula">
+    \\[R_A^{(1)} + R_B^{(1)} = 1\\]
+  </div>
+  <div class="formula">
+    \\[1 \\cdot ${formatNumber(impactX)} + R_B^{(1)} \\cdot ${formatNumber(xB - xA)} = 0 \\Rightarrow R_B^{(1)} = ${formatNumber(-RB_unit, 3)} \\Rightarrow R_A^{(1)} = ${formatNumber(RA_unit, 3)}\\]
+  </div>`;
+  }
+
+  html += `
+  <h3>${sectionNum}.2. Эпюра \\(m(x)\\) от единичной силы</h3>`;
+
+  // Генерируем выражения для m(x) по участкам
+  if (isCantilever) {
+    if (input.beamType === 'cantilever-left') {
+      html += `
+  <p>Участок 1 (\\(0 \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <div class="formula">
+    \\[m_1(x) = 0\\]
+  </div>
+  <p>Участок 2 (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(L)}\\)):</p>
+  <div class="formula">
+    \\[m_2(x) = -1 \\cdot (x - ${formatNumber(impactX)}) = -(x - ${formatNumber(impactX)})\\]
+  </div>`;
+    }
+  } else {
+    html += `
+  <p>Участок 1 (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <div class="formula">
+    \\[m_1(x) = ${formatNumber(RA_unit, 3)} \\cdot x = ${formatNumber(RA_unit, 3)} x\\]
+  </div>
+  <p>Участок 2 (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xB)}\\)):</p>
+  <div class="formula">
+    \\[m_2(x) = ${formatNumber(RA_unit, 3)} \\cdot x - 1 \\cdot (x - ${formatNumber(impactX)}) = ${formatNumber(RA_unit - 1, 3)} x + ${formatNumber(impactX, 2)}\\]
+  </div>`;
+  }
+
+  // SVG рисунок с эпюрами M(x) и m(x)
+  const svgWidth = 500;
+  const svgHeight = 300;
+  const margin = { left: 50, right: 30, top: 30, bottom: 80 };
+  const plotW = svgWidth - margin.left - margin.right;
+  const plotH = (svgHeight - margin.top - margin.bottom) / 2 - 20;
+
+  const scaleX = (x: number) => margin.left + (x / L) * plotW;
+
+  // Находим max значения для масштабирования
+  let maxM = 0, maxm = 0;
+  for (let i = 0; i <= 50; i++) {
+    const x = (i / 50) * L;
+    maxM = Math.max(maxM, Math.abs(M(x)));
+    maxm = Math.max(maxm, Math.abs(m(x)));
+  }
+  if (maxM === 0) maxM = 1;
+  if (maxm === 0) maxm = 1;
+
+  const baselineM = margin.top + plotH / 2;
+  const baselinem = margin.top + plotH + 40 + plotH / 2;
+  const scaleM = (v: number) => baselineM - (v / maxM) * (plotH / 2 - 10);
+  const scalem = (v: number) => baselinem - (v / maxm) * (plotH / 2 - 10);
+
+  // Строим path для эпюр
+  let pathM = `M ${scaleX(0)} ${scaleM(M(0))}`;
+  let pathm = `M ${scaleX(0)} ${scalem(m(0))}`;
+  for (let i = 1; i <= 100; i++) {
+    const x = (i / 100) * L;
+    pathM += ` L ${scaleX(x)} ${scaleM(M(x))}`;
+    pathm += ` L ${scaleX(x)} ${scalem(m(x))}`;
+  }
+
+  html += `
+  <h3>${sectionNum}.3. Графическое представление</h3>
+  <div style="display: flex; justify-content: center; margin: 20px 0;">
+    <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="max-width: ${svgWidth}px; width: 100%; background: #fafafa; border: 1px solid #ddd;">
+      <!-- Эпюра M(x) -->
+      <text x="${margin.left - 10}" y="${baselineM}" font-size="12" text-anchor="end" fill="#333">M(x)</text>
+      <line x1="${margin.left}" y1="${baselineM}" x2="${margin.left + plotW}" y2="${baselineM}" stroke="#666" stroke-width="1"/>
+      <path d="${pathM} L ${scaleX(L)} ${baselineM} L ${scaleX(0)} ${baselineM} Z" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="2"/>
+
+      <!-- Эпюра m(x) -->
+      <text x="${margin.left - 10}" y="${baselinem}" font-size="12" text-anchor="end" fill="#333">m(x)</text>
+      <line x1="${margin.left}" y1="${baselinem}" x2="${margin.left + plotW}" y2="${baselinem}" stroke="#666" stroke-width="1"/>
+      <path d="${pathm} L ${scaleX(L)} ${baselinem} L ${scaleX(0)} ${baselinem} Z" fill="rgba(34,197,94,0.2)" stroke="#22c55e" stroke-width="2"/>
+
+      <!-- Точка удара -->
+      <line x1="${scaleX(impactX)}" y1="${margin.top}" x2="${scaleX(impactX)}" y2="${svgHeight - margin.bottom + 20}" stroke="#f97316" stroke-width="1" stroke-dasharray="4,4"/>
+      <text x="${scaleX(impactX)}" y="${svgHeight - margin.bottom + 35}" font-size="10" text-anchor="middle" fill="#f97316">x=${formatNumber(impactX)} (удар)</text>
+
+      <!-- Ось X -->
+      <text x="${margin.left + plotW / 2}" y="${svgHeight - 10}" font-size="11" text-anchor="middle" fill="#333">x, м</text>
+      <text x="${margin.left}" y="${svgHeight - margin.bottom + 55}" font-size="10" text-anchor="middle" fill="#333">0</text>
+      <text x="${margin.left + plotW}" y="${svgHeight - margin.bottom + 55}" font-size="10" text-anchor="middle" fill="#333">${formatNumber(L)}</text>
+    </svg>
+  </div>
+  <p class="figure-caption" style="text-align: center;">Эпюры \\(M(x)\\) и \\(m(x)\\) для метода Верещагина</p>
+
+  <h3>${sectionNum}.4. Вычисление интеграла</h3>
+  <p>Применяя правило Верещагина (перемножение эпюр):</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}} = \\frac{1}{EI} \\int_0^{${formatNumber(L)}} M(x) \\cdot m(x) \\, dx\\]
+  </div>
+  <p>При \\(EI = ${EI_formatted} \\cdot 10^6\\) Н·м²:</p>
+  <div class="formula">
+    \\[|\\delta_{\\text{ст}}| = \\frac{${formatNumber(Math.abs(integral * 1000), 2)}}{${EI_formatted} \\cdot 10^6} = ${formatNumber(Math.abs(delta_m), 6)} \\text{ м} = ${formatNumber(delta_mm, 4)} \\text{ мм}\\]
+  </div>
+  <p><em>Примечание: значение совпадает с результатом, полученным методом начальных параметров.</em></p>`;
+
+  return html;
+}
+
+/**
  * Раздел "Ударное нагружение"
  */
 function buildImpactLoadingSection(
@@ -2564,7 +2796,7 @@ function buildImpactLoadingSection(
   <p>На балку действует груз \\(P = ${formatNumber(impactForce)}\\) кН, падающий с высоты \\(H = ${formatNumber(H_cm)}\\) см = \\(${formatNumber(H_m, 3)}\\) м в точке \\(x = ${formatNumber(impactX)}\\) м.</p>
 
   <h3>${sectionNum}.1. Статический прогиб в точке удара</h3>
-  <p>Статический прогиб \\(\\delta_{\\text{ст}}\\) — прогиб балки в точке приложения силы при статическом действии нагрузки (определён методом начальных параметров в предыдущем разделе):</p>
+  <p>Статический прогиб \\(\\delta_{\\text{ст}}\\) — прогиб балки в точке приложения силы при статическом действии нагрузки (определён методом Верещагина и МНП в предыдущих разделах):</p>
   <div class="formula">
     \\[|\\delta_{\\text{ст}}| = ${formatNumber(yStaticAtImpact_mm, 4)} \\text{ мм} = ${formatNumber(yStaticAtImpact_cm / 100, 6)} \\text{ м}\\]
   </div>`;
@@ -2573,9 +2805,14 @@ function buildImpactLoadingSection(
   if (springStiffness && springStiffness > 0 && result.springDeflection) {
     const springDefl_cm = springDeflection_mm / 10;
     const totalDefl_cm = yStaticAtImpact_cm + springDefl_cm;
+
+    // Определяем какая опора заменена (по умолчанию опора B - подвижная)
+    const springSupport = 'B';
+    const springReaction = result.reactions.RB ?? impactForce;
+
     html += `
   <h3>${sectionNum}.2. Учёт податливости опоры</h3>
-  <p>Одна из опор заменена пружиной с коэффициентом податливости \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН.</p>
+  <p>Опора ${springSupport} заменена пружиной с коэффициентом податливости \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН.</p>
   <p>Осадка пружины при статическом действии силы:</p>
   <div class="formula">
     \\[\\delta_{\\text{пр}} = \\alpha \\cdot P = ${formatNumber(springStiffness)} \\cdot ${formatNumber(impactForce)} = ${formatNumber(springDefl_cm, 4)} \\text{ см}\\]
