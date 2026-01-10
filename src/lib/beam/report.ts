@@ -4,6 +4,7 @@
 
 import type { BeamInput, BeamResult, Reactions, Load } from "./types";
 import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula, type ForceContribution } from "./sections";
+import { getProfileTypeName } from "./gost-profiles";
 
 /**
  * Оценивает ширину LaTeX терма в условных единицах (примерно символах)
@@ -1219,26 +1220,173 @@ function buildMDerivation(
  * Раздел "Подбор сечения"
  */
 function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { value: number; x: number }, sectionNum: number): string {
-  const W_cm3 = formatNumber(result.W! * 1e6, 4);
-  const d_mm = formatNumber(result.diameter! * 1000, 2);
-  const I_cm4 = formatNumber(result.I! * 1e8, 4);
   const sigma_MPa = formatNumber((input.sigma ?? 0) / 1e6);
+  const sectionType = result.sectionType ?? 'round';
 
-  return `
+  // Требуемый момент сопротивления (общий для всех типов)
+  const MmaxNm = Math.abs(Mmax.value) * 1000; // Н·м
+  const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+  const Wreq_str = formatNumber(Wreq_cm3, 2);
+
+  let html = `
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
-    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3} \\text{ см}^3\\]
+    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(MmaxNm)}}{${sigma_MPa} \\cdot 10^6} \\cdot 10^6 = ${Wreq_str} \\text{ см}^3\\]
   </div>
-  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value) * 1000)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>
+  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м \\(= ${formatNumber(MmaxNm)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>`;
+
+  if (sectionType === 'round') {
+    // Круглое сечение
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const d_mm = formatNumber(result.diameter! * 1000, 2);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    html += `
   <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
-    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm} \\text{ мм}}\\]
+    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = \\sqrt[3]{\\frac{32 \\cdot ${W_cm3}}{\\pi}} = ${d_mm} \\text{ мм}}\\]
   </div>
-  <p>Момент инерции:</p>
+  <p>Момент инерции круглого сечения:</p>
   <div class="formula">
-    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4} \\text{ см}^4\\]
+    \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
+
+  } else if (result.selectedProfile) {
+    // Профиль из ГОСТ (двутавр или швеллер)
+    const profile = result.selectedProfile;
+    const profileTypeName = getProfileTypeName(profile.type);
+
+    html += `
+  <h3>Подбор ${profile.type === 'i-beam' ? 'двутавра' : 'швеллера'} по ${profile.gost}</h3>
+  <p>Из сортамента по ${profile.gost} выбираем ${profileTypeName.toLowerCase()} с \\(W_x \\geq ${Wreq_str}\\) см³.</p>
+
+  <div class="profile-selection" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 15px 0;">
+    <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>Принимаем: ${profileTypeName} № ${profile.number}</strong></p>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 5px 10px;">Высота \\(h\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.h} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина стенки \\(s\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.s} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Ширина полки \\(b\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.b} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина полки \\(t\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.t} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент сопротивления \\(W_x\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.Wx)} см³</strong></td>
+        <td style="padding: 5px 10px;">Площадь \\(A\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.A)} см²</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент инерции \\(I_x\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.Ix)} см⁴</strong></td>
+        <td style="padding: 5px 10px;"></td>
+        <td style="padding: 5px 10px;"></td>
+      </tr>
+    </table>
+  </div>
+
+  <p>Проверка: \\(W_x = ${formatNumber(profile.Wx)}\\) см³ \\(\\geq W_{\\text{треб}} = ${Wreq_str}\\) см³ ✓</p>
+  <div class="formula">
+    \\[\\boxed{\\text{${profileTypeName} № ${profile.number}, } I_x = ${formatNumber(profile.Ix)} \\text{ см}^4}\\]
+  </div>`;
+
+    // Добавляем раздел с эпюрой нормальных напряжений
+    html += buildStressDiagramSection(profile, Mmax, sectionNum);
+
+  } else {
+    // Профиль не найден
+    html += `
+  <p style="color: red;"><strong>Внимание:</strong> Требуемый момент сопротивления \\(W_{\\text{треб}} = ${Wreq_str}\\) см³
+  превышает максимальное значение в сортаменте. Необходимо использовать составное сечение или сечение большего типоразмера.</p>`;
+  }
+
+  return html;
+}
+
+/**
+ * Построение раздела с эпюрой нормальных напряжений в сечении
+ */
+function buildStressDiagramSection(
+  profile: NonNullable<BeamResult['selectedProfile']>,
+  Mmax: { value: number; x: number },
+  sectionNum: number
+): string {
+  const h = profile.h; // мм
+  const Ix = profile.Ix; // см⁴
+  const MmaxKNm = Math.abs(Mmax.value); // кН·м
+
+  // σ = M·y / I
+  // y_max = h/2 (мм → см: /10)
+  // M в кН·м = 100 кН·см
+  // I в см⁴
+  // σ = (M * 100) * (h/2 / 10) / I = M * 100 * h / 20 / I = M * 5 * h / I (кН/см² → МПа: *10)
+  // σ_max = M * 50 * h / I (МПа), где M в кН·м, h в мм, I в см⁴
+  // Упрощённо: σ_max = M / W * 1000 (МПа), где M в кН·м, W в см³
+
+  const sigmaMax = MmaxKNm * 1000 / profile.Wx; // МПа (M в кН·м → Н·м, W в см³ → м³)
+  const sigmaMaxStr = formatNumber(sigmaMax, 2);
+
+  return `
+  <h3>${sectionNum}.1. Нормальные напряжения в опасном сечении</h3>
+  <p>Опасное сечение находится в точке \\(x = ${formatNumber(Mmax.x)}\\) м, где \\(|M|_{\\max} = ${formatNumber(MmaxKNm)}\\) кН·м.</p>
+  <p>Нормальные напряжения по высоте сечения распределяются по закону:</p>
+  <div class="formula">
+    \\[\\sigma(y) = \\frac{M \\cdot y}{I_x}\\]
+  </div>
+  <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm h/2 = \\pm ${formatNumber(h/2)}\\) мм):</p>
+  <div class="formula">
+    \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_x} = \\frac{${formatNumber(MmaxKNm)} \\cdot 10^6}{${formatNumber(profile.Wx)} \\cdot 10^3} = ${sigmaMaxStr} \\text{ МПа}\\]
+  </div>
+
+  <div class="stress-diagram" style="display: flex; justify-content: center; margin: 20px 0;">
+    <svg viewBox="0 0 400 200" style="max-width: 400px; width: 100%;">
+      <!-- Ось сечения -->
+      <line x1="100" y1="20" x2="100" y2="180" stroke="#333" stroke-width="2"/>
+      <line x1="90" y1="100" x2="300" y2="100" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+
+      <!-- Сечение (схематично) -->
+      ${profile.type === 'i-beam' ? `
+      <!-- Двутавр -->
+      <rect x="70" y="20" width="60" height="10" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="95" y="30" width="10" height="140" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="70" y="170" width="60" height="10" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      ` : `
+      <!-- Швеллер -->
+      <rect x="70" y="20" width="50" height="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="70" y="30" width="10" height="140" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="70" y="170" width="50" height="10" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      `}
+
+      <!-- Эпюра напряжений (треугольник) -->
+      <polygon points="100,20 280,20 100,100" fill="rgba(244,67,54,0.3)" stroke="#F44336" stroke-width="2"/>
+      <polygon points="100,100 280,180 100,180" fill="rgba(33,150,243,0.3)" stroke="#2196F3" stroke-width="2"/>
+
+      <!-- Подписи -->
+      <text x="290" y="25" font-size="14" fill="#F44336">+σ</text>
+      <text x="290" y="185" font-size="14" fill="#2196F3">−σ</text>
+      <text x="285" y="25" font-size="10" fill="#F44336">${sigmaMaxStr}</text>
+      <text x="285" y="185" font-size="10" fill="#2196F3">${sigmaMaxStr}</text>
+
+      <!-- Нейтральная ось -->
+      <text x="305" y="104" font-size="12" fill="#666">н.о.</text>
+
+      <!-- Размеры -->
+      <text x="45" y="105" font-size="11" fill="#333">y</text>
+      <line x1="50" y1="25" x2="50" y2="175" stroke="#666" stroke-width="1"/>
+      <line x1="45" y1="25" x2="55" y2="25" stroke="#666" stroke-width="1"/>
+      <line x1="45" y1="175" x2="55" y2="175" stroke="#666" stroke-width="1"/>
+      <text x="30" y="105" font-size="10" fill="#666">h</text>
+    </svg>
+  </div>
+
+  <p>Эпюра показывает линейное распределение нормальных напряжений: растяжение (+σ) в верхних волокнах
+  и сжатие (−σ) в нижних при положительном изгибающем моменте.</p>`;
 }
 
 /**

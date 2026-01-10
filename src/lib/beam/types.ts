@@ -1,5 +1,10 @@
 // Типы нагрузок и балок
 
+import type { ProfileData, ProfileType } from './gost-profiles';
+
+/** Тип поперечного сечения */
+export type SectionType = 'round' | ProfileType;
+
 export type BeamType =
   | "simply-supported"           // Двухопорная (опоры на концах)
   | "simply-supported-overhang-left"   // Двухопорная с консолью слева
@@ -41,7 +46,8 @@ export interface BeamInput {
   loads: Load[];
   E?: number;             // модуль упругости, Па (для прогибов)
   I?: number;             // момент инерции, м^4 (для прогибов) — если задан вручную
-  sigma?: number;         // допускаемое напряжение, Па (для подбора диаметра)
+  sigma?: number;         // допускаемое напряжение, Па (для подбора сечения)
+  sectionType?: SectionType;  // тип сечения (круглое, двутавр, швеллер)
 }
 
 export interface Reactions {
@@ -66,9 +72,12 @@ export interface BeamResult {
   Qmax: { value: number; x: number };
   events: number[];  // точки разрыва/перегиба
   // Подбор сечения (если задано sigma)
-  diameter?: number;  // подобранный диаметр, м
-  I?: number;         // момент инерции, м^4
-  W?: number;         // момент сопротивления, м^3
+  sectionType?: SectionType;   // тип сечения
+  diameter?: number;           // подобранный диаметр для круглого, м
+  selectedProfile?: ProfileData;  // выбранный профиль из ГОСТ (для двутавра/швеллера)
+  I?: number;                  // момент инерции, м^4
+  W?: number;                  // момент сопротивления, м^3
+  Wreq?: number;               // требуемый момент сопротивления, см³
 }
 
 export interface DiagramData {

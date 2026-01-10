@@ -1,5 +1,6 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
-import type { BeamInput, BeamResult, Reactions } from "./types";
+import type { BeamInput, BeamResult, Reactions, SectionType } from "./types";
+import { selectProfile, type ProfileData, type ProfileType } from "./gost-profiles";
 
 /** Точность для сравнения с нулём */
 const EPS = 1e-6;
@@ -38,6 +39,9 @@ export function solveBeam(input: BeamInput): BeamResult {
   let diameter: number | undefined;
   let W: number | undefined;
   let I_computed: number | undefined;
+  let selectedProfile: ProfileData | undefined;
+  let Wreq: number | undefined;
+  const sectionType: SectionType = input.sectionType ?? 'round';
 
   if (input.sigma) {
     // |M|max в кН·м, sigma в Па
@@ -45,14 +49,35 @@ export function solveBeam(input: BeamInput): BeamResult {
     // |M|max в кН·м = |M|max * 1000 Н·м
     // W = |M|max * 1000 / sigma (в м³)
     const MmaxNm = Math.abs(Mmax.value) * 1000; // Н·м
-    W = MmaxNm / input.sigma; // м³
+    const W_m3 = MmaxNm / input.sigma; // м³
 
-    // Для круглого сечения: W = π·d³/32
-    // d = ∛(32·W/π)
-    diameter = Math.pow((32 * W) / Math.PI, 1 / 3); // м
+    if (sectionType === 'round') {
+      // Для круглого сечения: W = π·d³/32
+      // d = ∛(32·W/π)
+      W = W_m3;
+      diameter = Math.pow((32 * W) / Math.PI, 1 / 3); // м
 
-    // Момент инерции: I = π·d⁴/64
-    I_computed = (Math.PI * Math.pow(diameter, 4)) / 64; // м⁴
+      // Момент инерции: I = π·d⁴/64
+      I_computed = (Math.PI * Math.pow(diameter, 4)) / 64; // м⁴
+    } else {
+      // Для профилей из ГОСТ (двутавр, швеллер)
+      // Переводим W из м³ в см³: W_см³ = W_м³ * 10^6
+      const W_cm3 = W_m3 * 1e6;
+      Wreq = W_cm3;
+
+      // Подбираем профиль из сортамента
+      const profile = selectProfile(sectionType as ProfileType, W_cm3);
+      if (profile) {
+        selectedProfile = profile;
+        W = profile.Wx / 1e6; // переводим см³ в м³
+        // Переводим момент инерции из см⁴ в м⁴: I_м⁴ = I_см⁴ * 10^(-8)
+        I_computed = profile.Ix * 1e-8;
+      } else {
+        // Профиль не найден — Wreq слишком большой для сортамента
+        // Оставляем I_computed = undefined, прогибы не будут рассчитаны
+        W = W_m3;
+      }
+    }
   }
 
   // Момент инерции: либо из подбора, либо заданный вручную
@@ -84,9 +109,12 @@ export function solveBeam(input: BeamInput): BeamResult {
     Mmax,
     Qmax,
     events,
+    sectionType,
     diameter,
+    selectedProfile,
     I: I_final,
     W,
+    Wreq,
   };
 }
 

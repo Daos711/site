@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
-import { generateReport } from "@/lib/beam";
+import { generateReport, getProfileTypeShortName } from "@/lib/beam";
 import { Latex } from "@/components/Latex";
 
 interface Props {
@@ -240,7 +240,7 @@ export function ResultCards({ input, result, className, showButton = true, onRep
       </div>
 
       {/* Подобранное сечение (если задано sigma) */}
-      {result.diameter && result.W && result.I && (
+      {result.sectionType === 'round' && result.diameter && result.W && result.I && (
         <div className="p-4 rounded-lg border border-border bg-card">
           <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (круглое)</h3>
           <div className="space-y-2">
@@ -254,6 +254,55 @@ export function ResultCards({ input, result, className, showButton = true, onRep
               <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Подобранный профиль из ГОСТ */}
+      {result.sectionType && result.sectionType !== 'round' && result.selectedProfile && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            Подбор сечения ({getProfileTypeShortName(result.selectedProfile.type)})
+          </h3>
+          <div className="space-y-2">
+            <div className="text-lg font-medium text-accent">
+              № {result.selectedProfile.number}
+            </div>
+            <div className="text-sm text-muted">
+              {result.selectedProfile.gost}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+              <div>
+                <Latex tex={`h = ${result.selectedProfile.h}${UNIT_MM}`} />
+              </div>
+              <div>
+                <Latex tex={`b = ${result.selectedProfile.b}${UNIT_MM}`} />
+              </div>
+              <div>
+                <Latex tex={`W_x = ${formatNum(result.selectedProfile.Wx)}${UNIT_CM3}`} />
+              </div>
+              <div>
+                <Latex tex={`I_x = ${formatNum(result.selectedProfile.Ix)}${UNIT_CM4}`} />
+              </div>
+            </div>
+            {result.Wreq && (
+              <div className="mt-2 pt-2 border-t border-border text-sm text-muted">
+                <Latex tex={`W_{\\text{треб}} = ${formatNum(result.Wreq)}${UNIT_CM3}`} />
+                <span className="ml-2 text-green-500">
+                  ({formatNum(result.selectedProfile.Wx)} ≥ {formatNum(result.Wreq)} ✓)
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Предупреждение если профиль не найден */}
+      {result.sectionType && result.sectionType !== 'round' && !result.selectedProfile && result.Wreq && (
+        <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/5">
+          <h3 className="font-semibold mb-2 text-base text-red-400">Профиль не найден</h3>
+          <p className="text-sm text-muted">
+            Требуемый момент сопротивления <Latex tex={`W_{\\text{треб}} = ${formatNum(result.Wreq)}${UNIT_CM3}`} /> превышает максимальный в сортаменте.
+          </p>
         </div>
       )}
 

@@ -7,6 +7,7 @@ import type {
   BeamType,
   Load,
   BeamSupport,
+  SectionType,
 } from "@/lib/beam";
 
 // Компонент числового ввода с валидацией min/max
@@ -111,8 +112,32 @@ const beamTypes: { value: BeamType; label: string; description: string }[] = [
   },
 ];
 
+const sectionTypes: { value: SectionType; label: string; description: string }[] = [
+  {
+    value: "round",
+    label: "Круглое сплошное",
+    description: "Подбор диаметра по условию прочности",
+  },
+  {
+    value: "i-beam",
+    label: "Двутавр",
+    description: "Подбор номера по ГОСТ 8239-89",
+  },
+  {
+    value: "channel-u",
+    label: "Швеллер У",
+    description: "С уклоном полок, ГОСТ 8240-97",
+  },
+  {
+    value: "channel-p",
+    label: "Швеллер П",
+    description: "С параллельными полками, ГОСТ 8240-97",
+  },
+];
+
 export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) {
   const [beamType, setBeamType] = useState<BeamType>("simply-supported");
+  const [sectionType, setSectionType] = useState<SectionType>("i-beam");
   const [L, setL] = useState<number>(10);
   const [loads, setLoads] = useState<Load[]>([]);
   const [E, setE] = useState<number>(200e9); // Па
@@ -236,6 +261,7 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
       loads,
       E,
       sigma,
+      sectionType,
     };
 
     onCalculate(input);
@@ -274,6 +300,36 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
               <div>
                 <div className="font-medium">{bt.label}</div>
                 <div className="text-sm text-muted">{bt.description}</div>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Тип сечения */}
+      <div className="p-4 rounded-lg border border-border bg-card">
+        <h3 className="font-semibold mb-3">Тип сечения</h3>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {sectionTypes.map((st) => (
+            <label
+              key={st.value}
+              className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                sectionType === st.value
+                  ? "bg-accent/10 border border-accent"
+                  : "bg-card-hover border border-transparent hover:border-border"
+              }`}
+            >
+              <input
+                type="radio"
+                name="sectionType"
+                value={st.value}
+                checked={sectionType === st.value}
+                onChange={(e) => setSectionType(e.target.value as SectionType)}
+                className="mt-1"
+              />
+              <div>
+                <div className="font-medium">{st.label}</div>
+                <div className="text-sm text-muted">{st.description}</div>
               </div>
             </label>
           ))}
