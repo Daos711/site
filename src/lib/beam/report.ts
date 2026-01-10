@@ -581,7 +581,10 @@ function buildReportHTML(data: ReportData): string {
 
   // Флаги для определения наличия разделов
   const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
-  const hasCrossSection = !!(result.diameter && result.W && result.I);
+  const hasCrossSection = !!(
+    (result.diameter && result.W && result.I) || // круглое сечение
+    (result.selectedProfile && result.I) // профиль из ГОСТ (двутавр/швеллер)
+  );
   const hasDeflection = !!y;
 
   return `<!DOCTYPE html>
@@ -651,7 +654,7 @@ function buildReportHTML(data: ReportData): string {
 
   <h1>Расчёт балки методом сечений</h1>
 
-  ${buildProblemStatement(input, hasDeflection, hasCrossSection)}
+  ${buildProblemStatement(input, result, hasDeflection, hasCrossSection)}
 
   <h2>1. Исходные данные</h2>
   ${buildInputDataSection(input)}
@@ -763,14 +766,25 @@ function buildReportHTML(data: ReportData): string {
 /**
  * Раздел "Постановка задачи"
  */
-function buildProblemStatement(input: BeamInput, hasDeflection: boolean, hasCrossSection: boolean): string {
+function buildProblemStatement(input: BeamInput, result: BeamResult, hasDeflection: boolean, hasCrossSection: boolean): string {
   const tasks: string[] = [
     "Определить реакции опор",
     "Построить эпюры поперечных сил \\(Q\\) и изгибающих моментов \\(M\\)"
   ];
 
   if (hasCrossSection) {
-    tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+    const sectionType = result.sectionType ?? 'round';
+    if (sectionType === 'round') {
+      tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+    } else if (sectionType === 'i-beam') {
+      tasks.push("Подобрать номер стального двутавра из условия прочности");
+    } else {
+      tasks.push("Подобрать номер стального швеллера из условия прочности");
+    }
+    // Добавляем задачу про эпюру напряжений для профилей
+    if (sectionType !== 'round') {
+      tasks.push("Построить эпюру нормальных напряжений в опасном сечении");
+    }
   }
 
   if (hasDeflection) {
