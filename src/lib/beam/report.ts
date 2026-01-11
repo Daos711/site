@@ -2310,10 +2310,11 @@ function buildTheta0Derivation(
   const sumTerms = terms.reduce((acc, t) => acc + t.value, 0);
 
   // Формула с переносом строк при большом количестве слагаемых
-  const formulaTerms = terms.map(t => t.symbolic);
+  // Первый терм — EI·θ₀·x, остальные — от нагрузок
+  const allTerms = [`+ EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)}`, ...terms.map(t => t.symbolic)];
   const { latex: thetaFormula, isMultiline: thetaMultiline } = formatLongFormula(
-    `0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)}`,
-    formulaTerms
+    `0`,
+    allTerms
   );
 
   // Вычисляем θ₀ из формулы: θ₀ = -sumTerms / (xB · EI)
