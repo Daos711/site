@@ -37,7 +37,7 @@ export default function LorenzPage() {
   const [isRunning, setIsRunning] = useState(true);
   const [trails, setTrails] = useState<Trail[]>([]);
   const [rotation, setRotation] = useState({ x: 0.3, y: 0, z: 0 });
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfo, setShowInfo] = useState(true); // По умолчанию показываем справку
   const [trailCount, setTrailCount] = useState(3);
   const [autoRotate, setAutoRotate] = useState(true);
 
@@ -114,11 +114,12 @@ export default function LorenzPage() {
   }, [lorenzDerivatives]);
 
   // 3D -> 2D проекция с вращением
-  const project = useCallback((p: Point3D, width: number, height: number): { x: number; y: number; depth: number } => {
+  const project = useCallback((p: Point3D, width: number, height: number, rho: number): { x: number; y: number; depth: number } => {
     const rot = rotationRef.current;
 
-    // Центрируем аттрактор (он примерно в районе z=25)
-    const centered = { x: p.x, y: p.y, z: p.z - 25 };
+    // Центрируем аттрактор (он примерно в районе z=rho-1)
+    const centerZ = Math.max(25, rho - 1);
+    const centered = { x: p.x, y: p.y, z: p.z - centerZ };
 
     // Вращение вокруг X
     let y1 = centered.y * Math.cos(rot.x) - centered.z * Math.sin(rot.x);
@@ -132,14 +133,18 @@ export default function LorenzPage() {
     let x3 = x2 * Math.cos(rot.z) - y1 * Math.sin(rot.z);
     let y3 = x2 * Math.sin(rot.z) + y1 * Math.cos(rot.z);
 
+    // Адаптивный масштаб — чем больше rho, тем дальше камера
+    const baseScale = 4;
+    const adaptiveScale = baseScale * (28 / Math.max(rho, 10));
+
     // Перспективная проекция
     const fov = 200;
     const distance = 80;
     const scale = fov / (distance + z2);
 
     return {
-      x: width / 2 + x3 * scale * 4,
-      y: height / 2 - y3 * scale * 4,
+      x: width / 2 + x3 * scale * adaptiveScale,
+      y: height / 2 - y3 * scale * adaptiveScale,
       depth: z2,
     };
   }, []);
@@ -229,7 +234,7 @@ export default function LorenzPage() {
         ctx.beginPath();
 
         for (let j = startIdx; j <= endIdx; j++) {
-          const p = project(trail.points[j], width, height);
+          const p = project(trail.points[j], width, height, params.rho);
           if (j === startIdx) {
             ctx.moveTo(p.x, p.y);
           } else {
@@ -241,7 +246,7 @@ export default function LorenzPage() {
         const alpha = 0.3 + (endIdx / trail.points.length) * 0.7;
         // Яркость зависит от глубины
         const avgDepth = trail.points.slice(startIdx, endIdx + 1)
-          .reduce((sum, p) => sum + project(p, width, height).depth, 0) / (endIdx - startIdx + 1);
+          .reduce((sum, pt) => sum + project(pt, width, height, params.rho).depth, 0) / (endIdx - startIdx + 1);
         const brightness = Math.max(40, Math.min(70, 55 - avgDepth * 0.5));
 
         ctx.strokeStyle = `hsla(${trail.hue}, 80%, ${brightness}%, ${alpha})`;
@@ -252,7 +257,7 @@ export default function LorenzPage() {
       // Рисуем "головы" траекторий (текущие точки)
       if (trail.points.length > 0) {
         const head = trail.points[trail.points.length - 1];
-        const p = project(head, width, height);
+        const p = project(head, width, height, params.rho);
 
         // Свечение
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 15);
@@ -273,7 +278,7 @@ export default function LorenzPage() {
       }
     });
 
-  }, [trails, project]);
+  }, [trails, project, params.rho]);
 
   // Обработка перетаскивания для вращения
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -339,7 +344,7 @@ export default function LorenzPage() {
     <div className="max-w-6xl mx-auto">
       <PageHeader
         title="Аттрактор Лоренца"
-        description="Визуализация хаотической системы — знаменитая «бабочка»"
+        description="Модель погоды 1963 года. Демонстрирует «эффект бабочки» — почему невозможно предсказать погоду."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
