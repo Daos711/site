@@ -131,6 +131,7 @@ export default function FractalsPage() {
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const bufferCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const renderIdRef = useRef(0);
@@ -192,7 +193,7 @@ export default function FractalsPage() {
     return maxIter;
   }, []);
 
-  // Рендеринг фрактала
+  // Рендеринг фрактала с двойной буферизацией
   const renderFractal = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -205,18 +206,28 @@ export default function FractalsPage() {
 
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+    const width = Math.floor(rect.width * dpr);
+    const height = Math.floor(rect.height * dpr);
 
-    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
     }
 
-    const imageData = ctx.createImageData(canvas.width, canvas.height);
+    // Создаём или переиспользуем буферный canvas
+    if (!bufferCanvasRef.current) {
+      bufferCanvasRef.current = document.createElement("canvas");
+    }
+    const bufferCanvas = bufferCanvasRef.current;
+    bufferCanvas.width = width;
+    bufferCanvas.height = height;
+    const bufferCtx = bufferCanvas.getContext("2d");
+    if (!bufferCtx) return;
+
+    const imageData = bufferCtx.createImageData(width, height);
     const data = imageData.data;
 
-    const scale = 3 / (zoom * Math.min(canvas.width, canvas.height));
+    const scale = 3 / (zoom * Math.min(width, height));
     const colorFn = colorSchemes[colorSchemeIdx].fn;
 
     // Рендерим построчно с setTimeout для отзывчивости UI
@@ -224,18 +235,18 @@ export default function FractalsPage() {
     const renderChunk = () => {
       if (currentRenderId !== renderIdRef.current) return; // Отменён
 
-      const chunkSize = Math.ceil(canvas.height / 20);
-      const endY = Math.min(y + chunkSize, canvas.height);
+      const chunkSize = Math.ceil(height / 10);
+      const endY = Math.min(y + chunkSize, height);
 
       for (; y < endY; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-          const cx = center.x + (x - canvas.width / 2) * scale;
-          const cy = center.y + (y - canvas.height / 2) * scale;
+        for (let x = 0; x < width; x++) {
+          const cx = center.x + (x - width / 2) * scale;
+          const cy = center.y + (y - height / 2) * scale;
 
           const iter = computeFractal(fractalType, cx, cy, juliaC, maxIterations);
           const [r, g, b] = colorFn(iter, maxIterations);
 
-          const idx = (y * canvas.width + x) * 4;
+          const idx = (y * width + x) * 4;
           data[idx] = r;
           data[idx + 1] = g;
           data[idx + 2] = b;
@@ -243,12 +254,13 @@ export default function FractalsPage() {
         }
       }
 
-      ctx.putImageData(imageData, 0, 0);
-
-      if (y < canvas.height) {
-        setTimeout(renderChunk, 0);
-      } else {
+      if (y >= height) {
+        // Рендеринг завершён — копируем буфер на видимый canvas
+        bufferCtx.putImageData(imageData, 0, 0);
+        ctx.drawImage(bufferCanvas, 0, 0);
         setIsRendering(false);
+      } else {
+        setTimeout(renderChunk, 0);
       }
     };
 
