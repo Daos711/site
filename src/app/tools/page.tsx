@@ -30,13 +30,14 @@ const tools = [
     status: "prototype" as const,
   },
 
-  // === Coming Soon ===
+  // === Визуализации ===
   {
-    id: "mandelbrot",
-    title: "Множество Мандельброта",
-    description: "Интерактивный фрактал с бесконечным зумом.",
+    id: "fractals",
+    title: "Фракталы",
+    description: "Мандельброт, Жюлиа, Burning Ship и другие. Бесконечный зум.",
     icon: Snowflake,
-    status: "coming-soon" as const,
+    href: "/tools/fractals",
+    status: "prototype" as const,
   },
   {
     id: "double-pendulum",
