@@ -304,18 +304,21 @@ export function BeamSchemaExport({ input, result }: Props) {
         const arrowLen = 32;
         const markerOffset = 6;
 
-        const drawReaction = (key: string, px: number, value: number, name: string, subscript: string, labelSide: "left" | "right") => {
+        // Проверяем наличие момента Mf для смещения подписи R
+        const hasMf = reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9;
+
+        const drawReaction = (key: string, px: number, value: number, name: string, subscript: string, labelSide: "left" | "right", labelYOffset = 0) => {
           const pointsUp = value >= 0;
           let startY: number, endY: number, textY: number;
 
           if (pointsUp) {
             startY = beamTop;
             endY = beamTop - arrowLen;
-            textY = endY - 8;
+            textY = endY - 8 - labelYOffset;
           } else {
             startY = beamTop - arrowLen;
             endY = beamTop - markerOffset;
-            textY = startY - 4;
+            textY = startY - 4 - labelYOffset;
           }
 
           const textX = labelSide === "left" ? px - 8 : px + 8;
@@ -337,20 +340,17 @@ export function BeamSchemaExport({ input, result }: Props) {
         if (reactions.RB !== undefined && reactions.RB !== 0) {
           drawReaction("RB", xToPx(reactions.xB ?? L), reactions.RB, "R", "B", "left");
         }
-        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
-          drawReaction("Rf", xToPx(reactions.xf ?? 0), reactions.Rf, "R", "", "right");
-        }
 
-        // Реактивный момент Mf для консольных балок
-        if (reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9) {
+        // Реактивный момент Mf для консольных балок (рисуем ПЕРЕД Rf)
+        if (hasMf) {
           const px = xToPx(reactions.xf ?? 0);
           const H = 28;
           const R = 16;
           const gap = 5;
-          const Cy = beamY - beamThickness / 2 - gap - H;
+          const Cy = beamTop - gap - H;
 
           // Mf > 0 (против часовой) или Mf < 0 (по часовой)
-          const isCW = reactions.Mf < 0;
+          const isCW = reactions.Mf! < 0;
           const aLeft = (240 * Math.PI) / 180;
           const aRight = (330 * Math.PI) / 180;
           const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
@@ -361,13 +361,13 @@ export function BeamSchemaExport({ input, result }: Props) {
           const arcEnd = isCW ? pRight : pLeft;
           const sweepFlag = isCW ? 1 : 0;
 
-          // Подпись всегда справа и выше
+          // Подпись момента: справа и выше дуги
           const labelX = px + R + 6;
-          const labelY = Cy - 14;
+          const labelY = Cy - 18;
 
           elements.push(
             <g key="Mf">
-              <line x1={px} y1={beamY - beamThickness / 2 - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.reaction} strokeWidth={2} />
+              <line x1={px} y1={beamTop - gap} x2={legEnd.x} y2={legEnd.y} stroke={COLORS.reaction} strokeWidth={2} />
               <path
                 d={`M ${arcStart.x} ${arcStart.y} A ${R} ${R} 0 0 ${sweepFlag} ${arcEnd.x} ${arcEnd.y}`}
                 fill="none"
@@ -380,6 +380,12 @@ export function BeamSchemaExport({ input, result }: Props) {
               </text>
             </g>
           );
+        }
+
+        // Rf рисуем ПОСЛЕ Mf, со смещением подписи если есть момент
+        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
+          const mfOffset = hasMf ? 20 : 0;
+          drawReaction("Rf", xToPx(reactions.xf ?? 0), reactions.Rf, "R", "", "right", mfOffset);
         }
 
         return <>{elements}</>;

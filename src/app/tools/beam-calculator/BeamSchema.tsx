@@ -183,7 +183,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               subscript="A"
               valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
               labelSide={isNearLeftEdge ? "right" : "left"}
-              labelYOffset={hasLoadAtA ? 70 : 40}
+              labelYOffset={hasLoadAtA ? 20 : 0}
             />
           );
         }
@@ -202,7 +202,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               subscript="B"
               valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
               labelSide="left"
-              labelYOffset={hasLoadAtB ? 70 : 50}
+              labelYOffset={hasLoadAtB ? 20 : 0}
               labelXOffset={-30}
             />
           );
@@ -256,8 +256,10 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const hasLoadAtF = hasLoadAt(xf);
           // Если заделка близко к левому краю — подпись справа
           const isNearLeftEdge = xf < L * 0.15;
-          // Если есть момент Mf — сдвигаем подпись R ниже, чтобы не накладывались
-          const extraOffset = hasMf ? 15 : 0;
+          // Если есть момент Mf — сдвигаем подпись R выше, чтобы не накладывалась на дугу момента
+          // Дуга момента занимает ~beamTop-20 до beamTop-60, подпись R по умолчанию ~beamTop-50
+          const mfOffset = hasMf ? 25 : 0;
+          const loadOffset = hasLoadAtF ? 15 : 0;
           elements.push(
             <ReactionArrow
               key="Rf"
@@ -267,7 +269,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
               labelSide={isNearLeftEdge ? "right" : "left"}
-              labelYOffset={(hasLoadAtF ? 65 : 35) + extraOffset}
+              labelYOffset={mfOffset + loadOffset}
             />
           );
         }
