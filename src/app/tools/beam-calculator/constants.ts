@@ -31,9 +31,9 @@ export function formatNum(val: number, decimals = 2): string {
   // Сначала проверяем на ноль (включая -0)
   if (Math.abs(val) < 1e-10) return "0";
 
-  // Округляем floating-point шум: если значение очень близко к "красивому" числу
-  // (целое, .5, .25), округляем к нему
-  const snapThreshold = 0.05; // 5% допуск для округления
+  // Округляем floating-point шум: если значение ОЧЕНЬ близко к "красивому" числу
+  // (целое, .5, .25), округляем к нему. Порог 0.2% — только явные ошибки типа 20.03
+  const snapThreshold = 0.002; // 0.2% допуск — только floating-point шум
   const roundToNearest = (v: number, step: number): number => {
     const rounded = Math.round(v / step) * step;
     const relError = Math.abs(v - rounded) / Math.max(Math.abs(v), 1);

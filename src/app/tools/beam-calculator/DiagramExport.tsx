@@ -84,8 +84,8 @@ export function DiagramExport({
   const formatNum = (val: number): string => {
     if (Math.abs(val) < 1e-10) return "0";
 
-    // Округляем floating-point шум: если близко к "красивому" числу
-    const snapThreshold = 0.05;
+    // Округляем floating-point шум: только явные ошибки типа 20.03
+    const snapThreshold = 0.002; // 0.2% допуск
     const roundToNearest = (v: number, step: number): number => {
       const rounded = Math.round(v / step) * step;
       const relError = Math.abs(v - rounded) / Math.max(Math.abs(v), 1);
