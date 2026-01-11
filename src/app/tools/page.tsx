@@ -52,7 +52,8 @@ const tools = [
     title: "Ряды Фурье",
     description: "Как из синусов собираются любые формы волн.",
     icon: AudioWaveform,
-    status: "coming-soon" as const,
+    href: "/tools/fourier",
+    status: "prototype" as const,
   },
   {
     id: "game-of-life",

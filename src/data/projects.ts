@@ -94,7 +94,8 @@ export const projects: Project[] = [
     title: "Ряды Фурье",
     description: "Как из синусов собираются любые формы волн.",
     tags: ["инструмент", "математика", "визуализация"],
-    status: "coming-soon",
+    status: "prototype",
+    href: "/tools/fourier",
   },
   {
     id: "game-of-life",
