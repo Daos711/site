@@ -2206,14 +2206,10 @@ function buildTheta0Derivation(
     // Вычитание с корректными знаками
     const sumAtADisplay = sumAtA >= 0 ? `${formatNumber(sumAtA)}` : `(${formatNumber(sumAtA)})`;
 
-    // Форматируем правую часть: -deltaSum/EI
-    // Если deltaSum >= 0: результат отрицательный → пишем -deltaSum/EI
-    // Если deltaSum < 0: результат положительный → пишем |deltaSum|/EI (без знака)
-    const rhsPrefix = deltaSum >= 0 ? "-" : "";
-    const rhsValue = Math.abs(deltaSum);
-
-    // Вычисляем θ₀ как в solver.ts
+    // Вычисляем θ₀ как в solver.ts: θ₀ = -deltaSum / (deltaX · EI)
     const computedTheta0 = -deltaSum / EI / deltaX;
+    const deltaSumFormatted = formatNumber(deltaSum);
+    const absDeltaSum = Math.abs(deltaSum);
 
     html += `
   <p><strong>Вычитаем (1) из (2):</strong></p>
@@ -2221,13 +2217,13 @@ function buildTheta0Derivation(
     \\[\\theta_0 \\cdot (${formatNumber(xB)} - ${formatNumber(xA)}) + \\frac{1}{EI}\\left(${formatNumber(sumAtB)} - ${sumAtADisplay}\\right) = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${formatNumber(deltaSum)}}{EI} = 0\\]
+    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${deltaSumFormatted}}{EI} = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(deltaX)} \\cdot EI} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${deltaSumFormatted}}{${formatNumber(deltaX)} \\cdot EI} = \\frac{${formatNumber(absDeltaSum)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
+    \\[\\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад}\\]
   </div>`;
 
     // Вычисляем y₀ как в solver.ts
@@ -2313,12 +2309,6 @@ function buildTheta0Derivation(
   // Сумма слагаемых
   const sumTerms = terms.reduce((acc, t) => acc + t.value, 0);
 
-  // Форматируем: -sumTerms/(xB·EI)
-  // Если sumTerms >= 0: результат отрицательный → пишем -sumTerms/...
-  // Если sumTerms < 0: результат положительный → пишем |sumTerms|/... (без знака)
-  const thetaPrefix = sumTerms >= 0 ? "-" : "";
-  const thetaValue = Math.abs(sumTerms);
-
   // Формула с переносом строк при большом количестве слагаемых
   const formulaTerms = terms.map(t => t.symbolic);
   const { latex: thetaFormula, isMultiline: thetaMultiline } = formatLongFormula(
@@ -2326,8 +2316,13 @@ function buildTheta0Derivation(
     formulaTerms
   );
 
-  // Вычисляем θ₀ из формулы
+  // Вычисляем θ₀ из формулы: θ₀ = -sumTerms / (xB · EI)
   const computedTheta0 = -sumTerms / (xB * EI);
+
+  // Формируем вывод формулы: всегда показываем -sumTerms/(xB·EI)
+  // Если sumTerms отрицательный, получается -(-X) = X
+  const sumTermsFormatted = formatNumber(sumTerms);
+  const absResult = Math.abs(sumTerms);
 
   html += `
   <div class="formula${thetaMultiline ? " formula-multiline" : ""}">
@@ -2337,13 +2332,13 @@ function buildTheta0Derivation(
   <ul>
     ${terms.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\) Н·м³</li>`).join("\n    ")}
   </ul>
-  <p>Сумма: \\(${formatNumber(sumTerms)}\\) Н·м³</p>
+  <p>Сумма: \\(${sumTermsFormatted}\\) Н·м³</p>
   <div class="formula">
-    \\[\\theta_0 = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot EI} = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${sumTermsFormatted}}{${formatNumber(xB)} \\cdot EI} = \\frac{${formatNumber(absResult)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber(computedTheta0 * 180 / Math.PI, 2)}°}\\]
+    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber(computedTheta0 * 180 / Math.PI, 1)}°}\\]
   </div>`;
 
   return html;
@@ -2500,14 +2495,14 @@ function buildCantileverRightDerivation(
     }
   }
 
-  // Вычисляем θ₀ из формулы
+  // Вычисляем θ₀ из формулы: θ₀ = -sumTheta / EI
   const computedTheta0 = -sumTheta / EI;
-  const thetaRhsPrefix = sumTheta >= 0 ? "-" : "";
-  const thetaRhsValue = Math.abs(sumTheta);
+  const sumThetaFormatted = formatNumber(sumTheta);
+  const absThetaResult = Math.abs(sumTheta);
 
   html += `
   <div class="formula">
-    \\[\\theta_0 = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{EI} = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${sumThetaFormatted}}{EI} = \\frac{${formatNumber(absThetaResult)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>`;
 
   html += `
@@ -3111,7 +3106,7 @@ function buildImpactLoadingSection(
   <div class="formula">
     \\[s_{B,\\text{уд}} = K_д \\cdot s_{B,\\text{ст}} = ${formatNumber(Kd, 4)} \\cdot ${formatSigned(sB_st, 4)} = ${formatNumber(sB_dyn, 2)} \\text{ см}\\]
   </div>
-  <p><em>Знак минус означает, что реакция направлена противоположно ожидаемому (отрыв).</em></p>`;
+  ${RB < 0 || RA < 0 ? `<p><em>Знак минус означает, что реакция направлена противоположно ожидаемому (отрыв).</em></p>` : ""}`;
   }
 
   // Сравнение статики и динамики
