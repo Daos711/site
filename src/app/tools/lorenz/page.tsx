@@ -69,18 +69,21 @@ export default function LorenzPage() {
   }, []);
 
   // Сброс симуляции (можно передать кол-во траекторий напрямую)
-  const reset = useCallback((count?: number) => {
-    const actualCount = count ?? trailCount;
-    const newTrails = initTrails(actualCount);
+  const resetTrails = useCallback((count: number) => {
+    const newTrails = initTrails(count);
     setTrails(newTrails);
     trailsRef.current = newTrails;
-  }, [initTrails, trailCount]);
+  }, [initTrails]);
+
+  // Обёртка для кнопки сброса (использует текущий trailCount)
+  const handleReset = useCallback(() => {
+    resetTrails(trailCount);
+  }, [resetTrails, trailCount]);
 
   // Инициализация при монтировании
   useEffect(() => {
-    reset();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    resetTrails(3); // Начальное количество
+  }, [resetTrails]);
 
   // Производные системы Лоренца
   const lorenzDerivatives = useCallback((p: Point3D, params: LorenzParams) => {
@@ -386,7 +389,7 @@ export default function LorenzPage() {
               {isRunning ? "Пауза" : "Старт"}
             </button>
             <button
-              onClick={reset}
+              onClick={handleReset}
               className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-muted/10 text-muted hover:bg-muted/20 transition-all"
             >
               <RotateCcw size={18} />
@@ -410,7 +413,7 @@ export default function LorenzPage() {
                   key={preset.name}
                   onClick={() => {
                     setParams({ sigma: preset.sigma, rho: preset.rho, beta: preset.beta });
-                    reset();
+                    handleReset();
                   }}
                   className="px-3 py-2 rounded-lg bg-muted/10 hover:bg-muted/20 text-sm transition-all"
                 >
@@ -495,7 +498,7 @@ export default function LorenzPage() {
                 onChange={(e) => {
                   const newCount = parseInt(e.target.value);
                   setTrailCount(newCount);
-                  reset(newCount); // Сразу перезапускаем с новым количеством
+                  resetTrails(newCount); // Сразу перезапускаем с новым количеством
                 }}
                 className="w-full accent-accent"
               />
@@ -520,7 +523,7 @@ export default function LorenzPage() {
           <button
             onClick={() => {
               setTrailCount(5);
-              reset(5); // Передаём 5 напрямую
+              resetTrails(5); // Передаём 5 напрямую
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
           >
