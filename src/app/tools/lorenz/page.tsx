@@ -68,9 +68,10 @@ export default function LorenzPage() {
     return newTrails;
   }, []);
 
-  // Сброс симуляции
-  const reset = useCallback(() => {
-    const newTrails = initTrails(trailCount);
+  // Сброс симуляции (можно передать кол-во траекторий напрямую)
+  const reset = useCallback((count?: number) => {
+    const actualCount = count ?? trailCount;
+    const newTrails = initTrails(actualCount);
     setTrails(newTrails);
     trailsRef.current = newTrails;
   }, [initTrails, trailCount]);
@@ -78,7 +79,8 @@ export default function LorenzPage() {
   // Инициализация при монтировании
   useEffect(() => {
     reset();
-  }, [reset]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Производные системы Лоренца
   const lorenzDerivatives = useCallback((p: Point3D, params: LorenzParams) => {
@@ -491,7 +493,9 @@ export default function LorenzPage() {
                 step="1"
                 value={trailCount}
                 onChange={(e) => {
-                  setTrailCount(parseInt(e.target.value));
+                  const newCount = parseInt(e.target.value);
+                  setTrailCount(newCount);
+                  reset(newCount); // Сразу перезапускаем с новым количеством
                 }}
                 className="w-full accent-accent"
               />
@@ -516,7 +520,7 @@ export default function LorenzPage() {
           <button
             onClick={() => {
               setTrailCount(5);
-              reset();
+              reset(5); // Передаём 5 напрямую
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
           >
