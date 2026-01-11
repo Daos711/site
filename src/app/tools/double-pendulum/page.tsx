@@ -53,6 +53,7 @@ export default function DoublePendulumPage() {
   // Настройки смещения начальных условий
   const [identicalStart, setIdenticalStart] = useState(false);
   const [offsetAmount, setOffsetAmount] = useState(0.001); // в градусах
+  const [symmetricMode, setSymmetricMode] = useState(false); // зеркальные маятники
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,22 +67,49 @@ export default function DoublePendulumPage() {
     angle1Deg: number,
     angle2Deg: number,
     useIdentical: boolean = identicalStart,
-    offset: number = offsetAmount
+    offset: number = offsetAmount,
+    useSymmetric: boolean = symmetricMode
   ) => {
     const newTrails: Trail[] = [];
-    for (let i = 0; i < count; i++) {
-      // Смещение для демонстрации хаоса (или 0 если идентичные условия)
-      const currentOffset = useIdentical ? 0 : (i - (count - 1) / 2) * offset;
-      const theta1 = (angle1Deg + currentOffset) * Math.PI / 180;
-      const theta2 = (angle2Deg + currentOffset) * Math.PI / 180;
-      newTrails.push({
-        state: { theta1, theta2, omega1: 0, omega2: 0 },
-        points: [],
-        hue: count === 1 ? 280 : (i / count) * 360,
-      });
+
+    if (useSymmetric && count >= 2) {
+      // Симметричный режим: создаём пары зеркальных маятников
+      const pairs = Math.floor(count / 2);
+      for (let i = 0; i < pairs; i++) {
+        const pairOffset = useIdentical ? 0 : i * offset;
+        // Левый маятник (положительные углы)
+        const theta1Left = (angle1Deg + pairOffset) * Math.PI / 180;
+        const theta2Left = (angle2Deg + pairOffset) * Math.PI / 180;
+        // Правый маятник (отрицательные углы - зеркальное отражение)
+        const theta1Right = -theta1Left;
+        const theta2Right = -theta2Left;
+
+        newTrails.push({
+          state: { theta1: theta1Left, theta2: theta2Left, omega1: 0, omega2: 0 },
+          points: [],
+          hue: (i / pairs) * 180, // 0-180 для левых
+        });
+        newTrails.push({
+          state: { theta1: theta1Right, theta2: theta2Right, omega1: 0, omega2: 0 },
+          points: [],
+          hue: 180 + (i / pairs) * 180, // 180-360 для правых
+        });
+      }
+    } else {
+      // Обычный режим
+      for (let i = 0; i < count; i++) {
+        const currentOffset = useIdentical ? 0 : (i - (count - 1) / 2) * offset;
+        const theta1 = (angle1Deg + currentOffset) * Math.PI / 180;
+        const theta2 = (angle2Deg + currentOffset) * Math.PI / 180;
+        newTrails.push({
+          state: { theta1, theta2, omega1: 0, omega2: 0 },
+          points: [],
+          hue: count === 1 ? 280 : (i / count) * 360,
+        });
+      }
     }
     return newTrails;
-  }, [identicalStart, offsetAmount]);
+  }, [identicalStart, offsetAmount, symmetricMode]);
 
   // Сброс симуляции
   const resetTrails = useCallback((count: number) => {
@@ -261,8 +289,9 @@ export default function DoublePendulumPage() {
     const width = rect.width;
     const height = rect.height;
     const centerX = width / 2;
-    const centerY = height * 0.35;
-    const scale = Math.min(width, height) / (2.5 * (params.L1 + params.L2));
+    // Центрируем точку подвеса, чтобы маятник помещался при любых углах (включая 180°)
+    const centerY = height / 2;
+    const scale = Math.min(width, height) / (2.8 * (params.L1 + params.L2));
 
     // Очистка
     ctx.fillStyle = "#0f172a";
@@ -503,13 +532,13 @@ export default function DoublePendulumPage() {
             <div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted">Маятники</span>
-                <span className="font-mono">{trailCount}</span>
+                <span className="font-mono">{trailCount}{symmetricMode ? ` (${trailCount/2} пар${trailCount === 2 ? 'а' : 'ы'})` : ''}</span>
               </div>
               <input
                 type="range"
-                min="1"
-                max="5"
-                step="1"
+                min={symmetricMode ? 2 : 1}
+                max={symmetricMode ? 6 : 5}
+                step={symmetricMode ? 2 : 1}
                 value={trailCount}
                 onChange={(e) => {
                   const count = parseInt(e.target.value);
@@ -522,7 +551,7 @@ export default function DoublePendulumPage() {
                 className="w-full accent-accent"
               />
               <p className="text-xs text-muted mt-1">
-                Больше маятников = виднее хаос
+                {symmetricMode ? 'Каждая пара — зеркальное отражение' : 'Больше маятников = виднее хаос'}
               </p>
             </div>
 
@@ -587,27 +616,74 @@ export default function DoublePendulumPage() {
               </div>
             )}
 
-            {identicalStart && trailCount > 1 && (
+            {identicalStart && trailCount > 1 && !symmetricMode && (
               <p className="text-xs text-green-400/80">
                 Все маятники стартуют с одинаковыми углами — будут двигаться синхронно навсегда
               </p>
             )}
+
+            <div className="pt-3 border-t border-border">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={symmetricMode}
+                  onChange={(e) => {
+                    setSymmetricMode(e.target.checked);
+                    if (!isRunning) {
+                      // В симметричном режиме нужно чётное число маятников
+                      const count = e.target.checked ? Math.max(2, trailCount % 2 === 0 ? trailCount : trailCount + 1) : trailCount;
+                      if (count !== trailCount) setTrailCount(count);
+                      const newTrails = initTrails(count, initialAngle1, initialAngle2, identicalStart, offsetAmount, e.target.checked);
+                      setTrails(newTrails);
+                      trailsRef.current = newTrails;
+                    }
+                  }}
+                  className="w-4 h-4 rounded accent-pink-500"
+                />
+                <span className="text-sm">Симметричный режим</span>
+              </label>
+              {symmetricMode && (
+                <p className="text-xs text-pink-400/80 mt-2">
+                  Маятники зеркально отражены относительно вертикальной оси — траектории симметричны
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Хаос-демо */}
-          <button
-            onClick={() => {
-              setTrailCount(3);
-              const newTrails = initTrails(3, initialAngle1, initialAngle2);
-              setTrails(newTrails);
-              trailsRef.current = newTrails;
-              setIsRunning(true);
-            }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
-          >
-            <Sparkles size={18} />
-            Демо хаоса (3 маятника)
-          </button>
+          {/* Демо-кнопки */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setSymmetricMode(false);
+                setTrailCount(3);
+                const newTrails = initTrails(3, initialAngle1, initialAngle2, identicalStart, offsetAmount, false);
+                setTrails(newTrails);
+                trailsRef.current = newTrails;
+                setIsRunning(true);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-sm"
+            >
+              <Sparkles size={16} />
+              Хаос
+            </button>
+            <button
+              onClick={() => {
+                setSymmetricMode(true);
+                setIdenticalStart(true);
+                setTrailCount(2);
+                const newTrails = initTrails(2, 120, 120, true, offsetAmount, true);
+                setTrails(newTrails);
+                trailsRef.current = newTrails;
+                setInitialAngle1(120);
+                setInitialAngle2(120);
+                setIsRunning(true);
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-pink-500/20 to-cyan-500/20 text-pink-300 hover:from-pink-500/30 hover:to-cyan-500/30 transition-all text-sm"
+            >
+              <Sparkles size={16} />
+              Симметрия
+            </button>
+          </div>
 
           {/* Энергия */}
           {trails.length > 0 && (
