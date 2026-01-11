@@ -2855,7 +2855,7 @@ function buildVereshchaginSection(
   let m_max_at_junction: number; // Максимум m(x) на стыке участков
 
   if (isOverhangLeft) {
-    // Удар на консоли: треугольник 1 от impactX до xA, треугольник 2 от xA до xB
+    // Удар на левой консоли: треугольник 1 от impactX до xA, треугольник 2 от xA до xB
     seg1Start = impactX;
     seg1End = xA;
     seg2Start = xA;
@@ -2866,6 +2866,18 @@ function buildVereshchaginSection(
     xc1 = impactX + (2/3) * (xA - impactX);
     // Треугольник 2: минимум в xA, нуль в xB → центр на 1/3 от xA
     xc2 = xA + (1/3) * (xB - xA);
+  } else if (isOverhangRight) {
+    // Удар на правой консоли: треугольник 1 от xA до xB, треугольник 2 от xB до impactX
+    seg1Start = xA;
+    seg1End = xB;
+    seg2Start = xB;
+    seg2End = impactX;
+    // m(xB) — значение на правой опоре (максимум эпюры m)
+    m_max_at_junction = m(xB);
+    // Треугольник 1: нуль в xA, максимум в xB → центр на 2/3 от xA
+    xc1 = xA + (2/3) * (xB - xA);
+    // Треугольник 2: максимум в xB, нуль в impactX → центр на 1/3 от xB
+    xc2 = xB + (1/3) * (impactX - xB);
   } else {
     // Удар между опорами: треугольник 1 от xA до impactX, треугольник 2 от impactX до xB
     seg1Start = xA;
@@ -2936,12 +2948,23 @@ function buildVereshchaginSection(
   const totalIntegral = contrib1 + contrib2;
 
   if (!isCantilever) {
-    const centroidFormula1 = isOverhangLeft
-      ? `${formatNumber(impactX)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`
-      : `${formatNumber(xA)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
-    const centroidFormula2 = isOverhangLeft
-      ? `${formatNumber(xA)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`
-      : `${formatNumber(impactX)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    // Формулы центров тяжести зависят от конфигурации
+    let centroidFormula1: string, centroidFormula2: string;
+    if (isOverhangLeft) {
+      // Треугольник 1: от impactX до xA, центр на 2/3 от impactX
+      centroidFormula1 = `${formatNumber(impactX)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
+      // Треугольник 2: от xA до xB, центр на 1/3 от xA
+      centroidFormula2 = `${formatNumber(xA)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    } else if (isOverhangRight) {
+      // Треугольник 1: от xA до xB, центр на 2/3 от xA
+      centroidFormula1 = `${formatNumber(xA)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
+      // Треугольник 2: от xB до impactX, центр на 1/3 от xB
+      centroidFormula2 = `${formatNumber(xB)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    } else {
+      // Между опорами: треугольник 1 от xA до impactX, треугольник 2 от impactX до xB
+      centroidFormula1 = `${formatNumber(xA)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
+      centroidFormula2 = `${formatNumber(impactX)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    }
 
     html += `
   <p><strong>Треугольник 1</strong> (участок \\(${formatNumber(seg1Start)} \\leq x \\leq ${formatNumber(seg1End)}\\)):</p>
