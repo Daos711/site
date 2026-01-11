@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { Latex } from "@/components/Latex";
 import { Play, Pause, RotateCcw, Info } from "lucide-react";
 
 // Физические параметры
 interface OscillatorParams {
-  mass: number;      // масса (кг)
-  stiffness: number; // жёсткость пружины (Н/м)
-  damping: number;   // коэффициент демпфирования
+  mass: number;         // масса (кг)
+  stiffness: number;    // жёсткость пружины (Н/м)
+  damping: number;      // коэффициент демпфирования
+  forcingAmplitude: number; // амплитуда внешней силы (Н)
+  forcingFrequency: number; // частота внешней силы (рад/с)
 }
 
 // Состояние системы
@@ -31,6 +34,8 @@ export default function OscillatorPage() {
     mass: 1.0,
     stiffness: 20,
     damping: 0.3,
+    forcingAmplitude: 0,
+    forcingFrequency: 5,
   });
 
   // Состояние симуляции
@@ -39,6 +44,7 @@ export default function OscillatorPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [showInfo, setShowInfo] = useState(false);
+  const [initialVelocity, setInitialVelocity] = useState(0);
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,21 +80,21 @@ export default function OscillatorPage() {
 
   // Физика: метод Рунге-Кутты 4-го порядка
   const step = useCallback((dt: number) => {
-    const { mass: m, stiffness: k, damping: c } = params;
+    const { mass: m, stiffness: k, damping: c, forcingAmplitude: F0, forcingFrequency: omega } = params;
     const { x, v, t } = stateRef.current;
 
-    // Уравнение: m*x'' + c*x' + k*x = 0
+    // Уравнение: m*x'' + c*x' + k*x = F0*sin(ω*t)
     // x' = v
-    // v' = (-c*v - k*x) / m
-    const f = (x: number, v: number) => ({
+    // v' = (-c*v - k*x + F0*sin(ω*t)) / m
+    const f = (x: number, v: number, time: number) => ({
       dx: v,
-      dv: (-c * v - k * x) / m,
+      dv: (-c * v - k * x + F0 * Math.sin(omega * time)) / m,
     });
 
-    const k1 = f(x, v);
-    const k2 = f(x + k1.dx * dt / 2, v + k1.dv * dt / 2);
-    const k3 = f(x + k2.dx * dt / 2, v + k2.dv * dt / 2);
-    const k4 = f(x + k3.dx * dt, v + k3.dv * dt);
+    const k1 = f(x, v, t);
+    const k2 = f(x + k1.dx * dt / 2, v + k1.dv * dt / 2, t + dt / 2);
+    const k3 = f(x + k2.dx * dt / 2, v + k2.dv * dt / 2, t + dt / 2);
+    const k4 = f(x + k3.dx * dt, v + k3.dv * dt, t + dt);
 
     const newX = x + (k1.dx + 2 * k2.dx + 2 * k3.dx + k4.dx) * dt / 6;
     const newV = v + (k1.dv + 2 * k2.dv + 2 * k3.dv + k4.dv) * dt / 6;
@@ -147,6 +153,7 @@ export default function OscillatorPage() {
     setHistory([]);
     stateRef.current = { x: 0, v: 0, t: 0 };
     historyRef.current = [];
+    setInitialVelocity(0);
   };
 
   // Отрисовка основного canvas (пружина + груз)
@@ -157,8 +164,19 @@ export default function OscillatorPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    // DPI scaling для чёткого текста
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+
+    // Устанавливаем реальные размеры canvas только если они изменились
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    const width = rect.width;
+    const height = rect.height;
     const centerX = width / 2;
     const anchorY = 40;
     const equilibriumY = height / 2;
@@ -305,15 +323,15 @@ export default function OscillatorPage() {
       ctx.globalAlpha = 1;
     }
 
-    // Подписи
+    // Подписи - чёткий шрифт
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "12px monospace";
+    ctx.font = "bold 14px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText("x = 0", centerX - 50, equilibriumY + 4);
+    ctx.fillText("x = 0", centerX - 50, equilibriumY + 5);
 
     // Текущее смещение
     ctx.fillStyle = "#f8fafc";
-    ctx.font = "14px monospace";
+    ctx.font = "bold 16px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(`x = ${state.x.toFixed(3)}`, centerX, height - 20);
 
@@ -327,8 +345,18 @@ export default function OscillatorPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    // DPI scaling
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    const width = rect.width;
+    const height = rect.height;
     const padding = 30;
 
     // Очистка
@@ -354,12 +382,12 @@ export default function OscillatorPage() {
     ctx.lineTo(padding, height - 10);
     ctx.stroke();
 
-    // Подписи осей
+    // Подписи осей - чёткий шрифт
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px monospace";
+    ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("t", width - 15, height / 2 + 15);
-    ctx.fillText("x(t)", padding + 15, 15);
+    ctx.fillText("x(t)", padding + 18, 15);
 
     // График
     if (history.length > 1) {
@@ -427,8 +455,18 @@ export default function OscillatorPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    // DPI scaling
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    const width = rect.width;
+    const height = rect.height;
     const centerX = width / 2;
     const centerY = height / 2;
 
@@ -459,9 +497,9 @@ export default function OscillatorPage() {
     ctx.lineTo(centerX, height - 10);
     ctx.stroke();
 
-    // Подписи
+    // Подписи - чёткий шрифт
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px monospace";
+    ctx.font = "bold 12px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("x", width - 15, centerY + 15);
     ctx.fillText("v", centerX + 15, 15);
@@ -553,10 +591,11 @@ export default function OscillatorPage() {
     if (isDragging) {
       setIsDragging(false);
       // Автоматически запускаем симуляцию после отпускания
-      setHistory([{ t: 0, x: state.x, v: 0 }]);
-      historyRef.current = [{ t: 0, x: state.x, v: 0 }];
-      setState((prev) => ({ ...prev, t: 0 }));
-      stateRef.current = { ...stateRef.current, t: 0 };
+      // Используем начальную скорость из настроек
+      setHistory([{ t: 0, x: state.x, v: initialVelocity }]);
+      historyRef.current = [{ t: 0, x: state.x, v: initialVelocity }];
+      setState((prev) => ({ ...prev, t: 0, v: initialVelocity }));
+      stateRef.current = { ...stateRef.current, t: 0, v: initialVelocity };
       setIsRunning(true);
     }
   };
@@ -730,6 +769,85 @@ export default function OscillatorPage() {
             </div>
           </div>
 
+          {/* Внешняя сила */}
+          <div className="p-4 rounded-xl border border-border bg-card space-y-4">
+            <h3 className="font-medium text-sm text-muted uppercase tracking-wide">Внешняя сила</h3>
+
+            {/* Амплитуда */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted">Амплитуда F₀</span>
+                <span className="font-mono">{params.forcingAmplitude.toFixed(1)} Н</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="50"
+                step="0.5"
+                value={params.forcingAmplitude}
+                onChange={(e) => setParams({ ...params, forcingAmplitude: parseFloat(e.target.value) })}
+                className="w-full accent-yellow-500"
+              />
+            </div>
+
+            {/* Частота */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted">Частота ω</span>
+                <span className="font-mono">{params.forcingFrequency.toFixed(1)} рад/с</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="20"
+                step="0.1"
+                value={params.forcingFrequency}
+                onChange={(e) => setParams({ ...params, forcingFrequency: parseFloat(e.target.value) })}
+                className="w-full accent-yellow-500"
+              />
+            </div>
+
+            {/* Индикатор резонанса */}
+            {params.forcingAmplitude > 0 && (
+              <div
+                className={`p-2 rounded-lg text-center text-xs ${
+                  Math.abs(params.forcingFrequency - omega0) < 0.5
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-muted/10 text-muted"
+                }`}
+              >
+                {Math.abs(params.forcingFrequency - omega0) < 0.5 ? (
+                  <>⚠️ Резонанс! ω ≈ ω₀</>
+                ) : (
+                  <>ω/ω₀ = {(params.forcingFrequency / omega0).toFixed(2)}</>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Начальные условия */}
+          <div className="p-4 rounded-xl border border-border bg-card space-y-4">
+            <h3 className="font-medium text-sm text-muted uppercase tracking-wide">Начальные условия</h3>
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted">Нач. скорость v₀</span>
+                <span className="font-mono">{initialVelocity.toFixed(1)} м/с</span>
+              </div>
+              <input
+                type="range"
+                min="-10"
+                max="10"
+                step="0.5"
+                value={initialVelocity}
+                onChange={(e) => setInitialVelocity(parseFloat(e.target.value))}
+                className="w-full accent-green-500"
+              />
+              <p className="text-xs text-muted mt-1">
+                Скорость при отпускании груза
+              </p>
+            </div>
+          </div>
+
           {/* Вычисляемые величины */}
           <div className="p-4 rounded-xl border border-border bg-card space-y-3">
             <h3 className="font-medium text-sm text-muted uppercase tracking-wide">Характеристики</h3>
@@ -782,23 +900,74 @@ export default function OscillatorPage() {
             </div>
           </div>
 
+          {/* Энергия */}
+          <div className="p-4 rounded-xl border border-border bg-card">
+            <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">Энергия</h3>
+            {(() => {
+              const kinetic = 0.5 * params.mass * state.v * state.v;
+              const potential = 0.5 * params.stiffness * state.x * state.x;
+              const total = kinetic + potential;
+              const maxEnergy = Math.max(total, 0.1);
+              return (
+                <div className="space-y-2">
+                  {/* Кинетическая */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-orange-400">Кинетическая T</span>
+                      <span className="font-mono text-orange-300">{kinetic.toFixed(3)} Дж</span>
+                    </div>
+                    <div className="h-2 bg-muted/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-orange-500 transition-all duration-75"
+                        style={{ width: `${(kinetic / maxEnergy) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  {/* Потенциальная */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-cyan-400">Потенциальная U</span>
+                      <span className="font-mono text-cyan-300">{potential.toFixed(3)} Дж</span>
+                    </div>
+                    <div className="h-2 bg-muted/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-cyan-500 transition-all duration-75"
+                        style={{ width: `${(potential / maxEnergy) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  {/* Полная */}
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted">Полная E</span>
+                      <span className="font-mono">{total.toFixed(3)} Дж</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
           {/* Справка */}
           {showInfo && (
-            <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 text-sm space-y-2">
+            <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 text-sm space-y-3">
               <h3 className="font-medium text-accent">Уравнение движения</h3>
-              <p className="font-mono text-xs bg-card/50 p-2 rounded">
-                m·x&apos;&apos; + c·x&apos; + k·x = 0
-              </p>
+              <div className="bg-card/50 p-3 rounded text-center">
+                <Latex tex="m\ddot{x} + c\dot{x} + kx = F_0\sin(\omega t)" />
+              </div>
               <ul className="text-muted text-xs space-y-1">
-                <li><strong>m</strong> — масса груза</li>
-                <li><strong>k</strong> — жёсткость пружины</li>
-                <li><strong>c</strong> — коэффициент вязкого трения</li>
-                <li><strong>ω₀ = √(k/m)</strong> — собственная частота</li>
-                <li><strong>ζ = c/(2√(km))</strong> — коэффициент демпфирования</li>
+                <li><Latex tex="m" className="text-foreground" /> — масса груза</li>
+                <li><Latex tex="k" className="text-foreground" /> — жёсткость пружины</li>
+                <li><Latex tex="c" className="text-foreground" /> — коэффициент вязкого трения</li>
+                <li><Latex tex="F_0" className="text-foreground" /> — амплитуда внешней силы</li>
+                <li><Latex tex="\omega" className="text-foreground" /> — частота внешней силы</li>
+                <li><Latex tex="\omega_0 = \sqrt{k/m}" className="text-foreground" /> — собственная частота</li>
+                <li><Latex tex="\zeta = \frac{c}{2\sqrt{km}}" className="text-foreground" /> — коэф. демпфирования</li>
               </ul>
               <p className="text-muted text-xs">
                 Фазовый портрет показывает траекторию в пространстве (x, v).
                 При затухании траектория — спираль к началу координат.
+                При резонансе (<Latex tex="\omega \approx \omega_0" />) амплитуда максимальна.
               </p>
             </div>
           )}
