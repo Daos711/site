@@ -23,43 +23,44 @@ interface ColorScheme {
 
 const colorSchemes: ColorScheme[] = [
   {
-    name: "Космос",
+    name: "Классика",
     fn: (iter, maxIter) => {
-      if (iter === maxIter) return [0, 0, 0];
+      if (iter >= maxIter) return [0, 0, 0];
       const t = iter / maxIter;
-      const r = Math.floor(9 * (1 - t) * t * t * t * 255);
-      const g = Math.floor(15 * (1 - t) * (1 - t) * t * t * 255);
-      const b = Math.floor(8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255);
+      // Классическая синяя палитра
+      const r = Math.floor(Math.min(255, 4 * (1 - t) * t * t * t * 255 * 9));
+      const g = Math.floor(Math.min(255, 15 * (1 - t) * (1 - t) * t * t * 255));
+      const b = Math.floor(Math.min(255, 8.5 * (1 - t) * (1 - t) * (1 - t) * t * 255 + 50 * t));
       return [r, g, b];
     }
   },
   {
     name: "Огонь",
     fn: (iter, maxIter) => {
-      if (iter === maxIter) return [0, 0, 0];
+      if (iter >= maxIter) return [0, 0, 0];
       const t = iter / maxIter;
-      const r = Math.floor(Math.min(255, t * 3 * 255));
-      const g = Math.floor(Math.max(0, Math.min(255, (t - 0.33) * 3 * 255)));
-      const b = Math.floor(Math.max(0, Math.min(255, (t - 0.66) * 3 * 255)));
+      const r = Math.floor(Math.min(255, t < 0.5 ? t * 2 * 255 : 255));
+      const g = Math.floor(Math.max(0, Math.min(255, (t - 0.3) * 2 * 255)));
+      const b = Math.floor(Math.max(0, Math.min(255, (t - 0.6) * 2.5 * 255)));
       return [r, g, b];
     }
   },
   {
     name: "Океан",
     fn: (iter, maxIter) => {
-      if (iter === maxIter) return [0, 0, 0];
+      if (iter >= maxIter) return [0, 0, 20];
       const t = iter / maxIter;
-      const r = Math.floor(Math.sin(t * Math.PI) * 100);
-      const g = Math.floor(Math.sin(t * Math.PI * 2) * 127 + 128);
-      const b = Math.floor(Math.cos(t * Math.PI * 0.5) * 127 + 128);
+      const r = Math.floor(t * t * 100);
+      const g = Math.floor(t * 150 + 50);
+      const b = Math.floor(180 + t * 75);
       return [r, g, b];
     }
   },
   {
     name: "Радуга",
     fn: (iter, maxIter) => {
-      if (iter === maxIter) return [0, 0, 0];
-      const hue = (iter / maxIter) * 360;
+      if (iter >= maxIter) return [0, 0, 0];
+      const hue = (iter * 10) % 360;
       const s = 1, l = 0.5;
       const c = (1 - Math.abs(2 * l - 1)) * s;
       const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
@@ -77,18 +78,18 @@ const colorSchemes: ColorScheme[] = [
   {
     name: "Электро",
     fn: (iter, maxIter) => {
-      if (iter === maxIter) return [0, 0, 0];
+      if (iter >= maxIter) return [0, 0, 0];
       const t = iter / maxIter;
-      const r = Math.floor(Math.sin(t * 5) * 127 + 128);
-      const g = Math.floor(Math.sin(t * 7 + 2) * 127 + 128);
-      const b = Math.floor(Math.sin(t * 11 + 4) * 127 + 128);
+      const r = Math.floor(Math.sin(t * 5 + 0) * 127 + 128);
+      const g = Math.floor(Math.sin(t * 5 + 2) * 127 + 128);
+      const b = Math.floor(Math.sin(t * 5 + 4) * 127 + 128);
       return [r, g, b];
     }
   },
   {
     name: "Ч/Б",
     fn: (iter, maxIter) => {
-      if (iter === maxIter) return [0, 0, 0];
+      if (iter >= maxIter) return [0, 0, 0];
       const v = Math.floor((iter / maxIter) * 255);
       return [v, v, v];
     }
@@ -107,21 +108,21 @@ interface Preset {
 
 const presets: Preset[] = [
   { name: "Обзор", type: "mandelbrot", centerX: -0.5, centerY: 0, zoom: 1 },
-  { name: "Морской конёк", type: "mandelbrot", centerX: -0.743643887037151, centerY: 0.131825904205330, zoom: 1000 },
-  { name: "Спираль", type: "mandelbrot", centerX: -0.761574, centerY: -0.0847596, zoom: 500 },
-  { name: "Молния", type: "mandelbrot", centerX: -0.170337, centerY: -1.06506, zoom: 100 },
+  { name: "Морской конёк", type: "mandelbrot", centerX: -0.743643887037151, centerY: 0.131825904205330, zoom: 500 },
+  { name: "Спираль", type: "mandelbrot", centerX: -0.761574, centerY: -0.0847596, zoom: 200 },
+  { name: "Долина", type: "mandelbrot", centerX: -0.745, centerY: 0.113, zoom: 100 },
   { name: "Жюлиа классика", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.7, y: 0.27015 } },
   { name: "Жюлиа дракон", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.8, y: 0.156 } },
-  { name: "Жюлиа спираль", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: 0.285, y: 0.01 } },
-  { name: "Burning Ship", type: "burning-ship", centerX: -0.5, centerY: -0.5, zoom: 1 },
+  { name: "Жюлиа кролик", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.123, y: 0.745 } },
+  { name: "Burning Ship", type: "burning-ship", centerX: -0.4, centerY: -0.6, zoom: 1 },
   { name: "Tricorn", type: "tricorn", centerX: -0.3, centerY: 0, zoom: 1 },
 ];
 
 export default function FractalsPage() {
-  // Состояние
+  // Состояние вида
   const [fractalType, setFractalType] = useState<FractalType>("mandelbrot");
   const [colorSchemeIdx, setColorSchemeIdx] = useState(0);
-  const [maxIterations, setMaxIterations] = useState(100);
+  const [maxIterations, setMaxIterations] = useState(80);
   const [center, setCenter] = useState({ x: -0.5, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [juliaC, setJuliaC] = useState({ x: -0.7, y: 0.27015 });
@@ -131,17 +132,18 @@ export default function FractalsPage() {
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bufferCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const renderTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const renderIdRef = useRef(0);
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
-  const renderIdRef = useRef(0);
+  const prevViewRef = useRef({ center: { x: -0.5, y: 0 }, zoom: 1 });
 
-  // Функция вычисления фрактала
-  const computeFractal = useCallback((
+  // Вычисление одной точки фрактала
+  const computePoint = useCallback((
     type: FractalType,
     cx: number,
     cy: number,
-    juliaC: { x: number; y: number },
+    jc: { x: number; y: number },
     maxIter: number
   ): number => {
     let zx: number, zy: number;
@@ -150,8 +152,8 @@ export default function FractalsPage() {
     if (type === "julia") {
       zx = cx;
       zy = cy;
-      cRe = juliaC.x;
-      cIm = juliaC.y;
+      cRe = jc.x;
+      cIm = jc.y;
     } else {
       zx = 0;
       zy = 0;
@@ -181,7 +183,7 @@ export default function FractalsPage() {
           newZx = zx2 - zy2 + cRe;
           newZy = -2 * zx * zy + cIm;
           break;
-        default: // mandelbrot & julia
+        default:
           newZx = zx2 - zy2 + cRe;
           newZy = 2 * zx * zy + cIm;
       }
@@ -193,60 +195,55 @@ export default function FractalsPage() {
     return maxIter;
   }, []);
 
-  // Рендеринг фрактала с двойной буферизацией
-  const renderFractal = useCallback(() => {
+  // Основная функция рендеринга
+  const renderFractal = useCallback((immediate = false) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const currentRenderId = ++renderIdRef.current;
-    setIsRendering(true);
+    // Отменяем предыдущий отложенный рендер
+    if (renderTimeoutRef.current) {
+      clearTimeout(renderTimeoutRef.current);
+      renderTimeoutRef.current = null;
+    }
 
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const width = Math.floor(rect.width * dpr);
-    const height = Math.floor(rect.height * dpr);
+    const doRender = () => {
+      const currentRenderId = ++renderIdRef.current;
+      setIsRendering(true);
 
-    if (canvas.width !== width || canvas.height !== height) {
+      // Размеры без DPI масштабирования для скорости
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.floor(rect.width);
+      const height = Math.floor(rect.height);
+
       canvas.width = width;
       canvas.height = height;
-    }
 
-    // Создаём или переиспользуем буферный canvas
-    if (!bufferCanvasRef.current) {
-      bufferCanvasRef.current = document.createElement("canvas");
-    }
-    const bufferCanvas = bufferCanvasRef.current;
-    bufferCanvas.width = width;
-    bufferCanvas.height = height;
-    const bufferCtx = bufferCanvas.getContext("2d");
-    if (!bufferCtx) return;
+      const imageData = ctx.createImageData(width, height);
+      const data = imageData.data;
 
-    const imageData = bufferCtx.createImageData(width, height);
-    const data = imageData.data;
+      // Масштаб: при zoom=1 показываем область ~3.5 единиц
+      const viewSize = 3.5 / zoom;
+      const aspectRatio = width / height;
+      const viewWidth = viewSize * (aspectRatio > 1 ? aspectRatio : 1);
+      const viewHeight = viewSize * (aspectRatio > 1 ? 1 : 1 / aspectRatio);
 
-    const scale = 3 / (zoom * Math.min(width, height));
-    const colorFn = colorSchemes[colorSchemeIdx].fn;
+      const colorFn = colorSchemes[colorSchemeIdx].fn;
 
-    // Рендерим построчно с setTimeout для отзывчивости UI
-    let y = 0;
-    const renderChunk = () => {
-      if (currentRenderId !== renderIdRef.current) return; // Отменён
+      // Рендерим всё сразу (без чанков для простоты)
+      for (let py = 0; py < height; py++) {
+        if (currentRenderId !== renderIdRef.current) return;
 
-      const chunkSize = Math.ceil(height / 10);
-      const endY = Math.min(y + chunkSize, height);
+        for (let px = 0; px < width; px++) {
+          const fx = center.x + (px / width - 0.5) * viewWidth;
+          const fy = center.y + (py / height - 0.5) * viewHeight;
 
-      for (; y < endY; y++) {
-        for (let x = 0; x < width; x++) {
-          const cx = center.x + (x - width / 2) * scale;
-          const cy = center.y + (y - height / 2) * scale;
-
-          const iter = computeFractal(fractalType, cx, cy, juliaC, maxIterations);
+          const iter = computePoint(fractalType, fx, fy, juliaC, maxIterations);
           const [r, g, b] = colorFn(iter, maxIterations);
 
-          const idx = (y * width + x) * 4;
+          const idx = (py * width + px) * 4;
           data[idx] = r;
           data[idx + 1] = g;
           data[idx + 2] = b;
@@ -254,39 +251,48 @@ export default function FractalsPage() {
         }
       }
 
-      if (y >= height) {
-        // Рендеринг завершён — копируем буфер на видимый canvas
-        bufferCtx.putImageData(imageData, 0, 0);
-        ctx.drawImage(bufferCanvas, 0, 0);
+      if (currentRenderId === renderIdRef.current) {
+        ctx.putImageData(imageData, 0, 0);
+        prevViewRef.current = { center: { ...center }, zoom };
         setIsRendering(false);
-      } else {
-        setTimeout(renderChunk, 0);
       }
     };
 
-    renderChunk();
-  }, [center, zoom, fractalType, juliaC, maxIterations, colorSchemeIdx, computeFractal]);
+    if (immediate) {
+      doRender();
+    } else {
+      // Задержка для накопления изменений
+      renderTimeoutRef.current = setTimeout(doRender, 150);
+    }
+  }, [center, zoom, fractalType, juliaC, maxIterations, colorSchemeIdx, computePoint]);
 
-  // Перерендер при изменении параметров
+  // Начальный рендер
   useEffect(() => {
-    renderFractal();
-  }, [renderFractal]);
+    renderFractal(true);
+  }, []);
 
-  // Конвертация координат экрана в координаты фрактала
+  // Перерендер при изменении параметров (с задержкой)
+  useEffect(() => {
+    renderFractal(false);
+  }, [center, zoom, fractalType, juliaC, maxIterations, colorSchemeIdx]);
+
+  // Координаты экрана → координаты фрактала
   const screenToFractal = useCallback((screenX: number, screenY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const canvasX = (screenX - rect.left) * dpr;
-    const canvasY = (screenY - rect.top) * dpr;
+    const px = screenX - rect.left;
+    const py = screenY - rect.top;
 
-    const scale = 3 / (zoom * Math.min(canvas.width, canvas.height));
+    const viewSize = 3.5 / zoom;
+    const aspectRatio = rect.width / rect.height;
+    const viewWidth = viewSize * (aspectRatio > 1 ? aspectRatio : 1);
+    const viewHeight = viewSize * (aspectRatio > 1 ? 1 : 1 / aspectRatio);
 
     return {
-      x: center.x + (canvasX - canvas.width / 2) * scale,
-      y: center.y + (canvasY - canvas.height / 2) * scale,
+      x: center.x + (px / rect.width - 0.5) * viewWidth,
+      y: center.y + (py / rect.height - 0.5) * viewHeight,
     };
   }, [center, zoom]);
 
@@ -294,10 +300,8 @@ export default function FractalsPage() {
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (isDraggingRef.current) return;
 
-    const fractalCoords = screenToFractal(e.clientX, e.clientY);
-
     if (mode === "julia" && fractalType === "mandelbrot") {
-      // Выбор параметра c для Жюлиа
+      const fractalCoords = screenToFractal(e.clientX, e.clientY);
       setJuliaC(fractalCoords);
       setFractalType("julia");
       setCenter({ x: 0, y: 0 });
@@ -305,13 +309,13 @@ export default function FractalsPage() {
     }
   }, [mode, fractalType, screenToFractal]);
 
-  // Обработка колеса мыши (зум)
+  // Зум колёсиком
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
 
     const fractalCoords = screenToFractal(e.clientX, e.clientY);
-    const zoomFactor = e.deltaY < 0 ? 1.5 : 1 / 1.5;
-    const newZoom = zoom * zoomFactor;
+    const zoomFactor = e.deltaY < 0 ? 1.3 : 1 / 1.3;
+    const newZoom = Math.max(0.5, Math.min(1000000, zoom * zoomFactor));
 
     // Зумим к точке под курсором
     const newCenterX = fractalCoords.x + (center.x - fractalCoords.x) / zoomFactor;
@@ -321,7 +325,7 @@ export default function FractalsPage() {
     setCenter({ x: newCenterX, y: newCenterY });
   }, [zoom, center, screenToFractal]);
 
-  // Обработка перетаскивания
+  // Перетаскивание
   const handleMouseDown = (e: React.MouseEvent) => {
     isDraggingRef.current = false;
     lastMouseRef.current = { x: e.clientX, y: e.clientY };
@@ -333,7 +337,7 @@ export default function FractalsPage() {
     const dx = e.clientX - lastMouseRef.current.x;
     const dy = e.clientY - lastMouseRef.current.y;
 
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
       isDraggingRef.current = true;
     }
 
@@ -341,12 +345,18 @@ export default function FractalsPage() {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      const dpr = window.devicePixelRatio || 1;
-      const scale = 3 / (zoom * Math.min(canvas.width * dpr, canvas.height * dpr));
+      const rect = canvas.getBoundingClientRect();
+      const viewSize = 3.5 / zoom;
+      const aspectRatio = rect.width / rect.height;
+      const viewWidth = viewSize * (aspectRatio > 1 ? aspectRatio : 1);
+      const viewHeight = viewSize * (aspectRatio > 1 ? 1 : 1 / aspectRatio);
+
+      const deltaX = (dx / rect.width) * viewWidth;
+      const deltaY = (dy / rect.height) * viewHeight;
 
       setCenter(c => ({
-        x: c.x - dx * dpr * scale,
-        y: c.y - dy * dpr * scale,
+        x: c.x - deltaX,
+        y: c.y - deltaY,
       }));
     }
 
@@ -359,9 +369,10 @@ export default function FractalsPage() {
     }, 10);
   };
 
-  // Touch события
+  // Touch
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
+      isDraggingRef.current = false;
       lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
@@ -371,22 +382,34 @@ export default function FractalsPage() {
       const dx = e.touches[0].clientX - lastMouseRef.current.x;
       const dy = e.touches[0].clientY - lastMouseRef.current.y;
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        isDraggingRef.current = true;
+      }
 
-      const dpr = window.devicePixelRatio || 1;
-      const scale = 3 / (zoom * Math.min(canvas.width, canvas.height));
+      if (isDraggingRef.current) {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-      setCenter(c => ({
-        x: c.x - dx * dpr * scale,
-        y: c.y - dy * dpr * scale,
-      }));
+        const rect = canvas.getBoundingClientRect();
+        const viewSize = 3.5 / zoom;
+        const aspectRatio = rect.width / rect.height;
+        const viewWidth = viewSize * (aspectRatio > 1 ? aspectRatio : 1);
+        const viewHeight = viewSize * (aspectRatio > 1 ? 1 : 1 / aspectRatio);
+
+        const deltaX = (dx / rect.width) * viewWidth;
+        const deltaY = (dy / rect.height) * viewHeight;
+
+        setCenter(c => ({
+          x: c.x - deltaX,
+          y: c.y - deltaY,
+        }));
+      }
 
       lastMouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
-  // Применение пресета
+  // Пресет
   const applyPreset = (preset: Preset) => {
     setFractalType(preset.type);
     setCenter({ x: preset.centerX, y: preset.centerY });
@@ -401,7 +424,9 @@ export default function FractalsPage() {
     if (fractalType === "julia") {
       setCenter({ x: 0, y: 0 });
     } else if (fractalType === "burning-ship") {
-      setCenter({ x: -0.5, y: -0.5 });
+      setCenter({ x: -0.4, y: -0.6 });
+    } else if (fractalType === "tricorn") {
+      setCenter({ x: -0.3, y: 0 });
     } else {
       setCenter({ x: -0.5, y: 0 });
     }
@@ -419,7 +444,7 @@ export default function FractalsPage() {
     <div className="max-w-6xl mx-auto">
       <PageHeader
         title="Фракталы"
-        description="Бесконечная сложность из простых формул. Зумь колёсиком мыши!"
+        description="Бесконечная сложность из простых формул. Колёсико = зум, перетаскивание = навигация."
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -429,17 +454,17 @@ export default function FractalsPage() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{fractalNames[fractalType]}</span>
               {isRendering && (
-                <span className="text-xs text-muted animate-pulse">рендеринг...</span>
+                <span className="text-xs text-yellow-400 animate-pulse">рендеринг...</span>
               )}
             </div>
             <span className="text-xs text-muted font-mono">
-              zoom: {zoom.toFixed(zoom > 100 ? 0 : 2)}x
+              x{zoom >= 1000 ? (zoom / 1000).toFixed(1) + "k" : zoom.toFixed(1)}
             </span>
           </div>
           <canvas
             ref={canvasRef}
-            className="w-full aspect-square cursor-grab active:cursor-grabbing"
-            style={{ touchAction: "none", background: "#000" }}
+            className="w-full aspect-square cursor-crosshair"
+            style={{ touchAction: "none", background: "#000", imageRendering: "pixelated" }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -448,25 +473,27 @@ export default function FractalsPage() {
             onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
+            onTouchEnd={handleMouseUp}
           />
         </div>
 
         {/* Управление */}
         <div className="space-y-4">
-          {/* Кнопки зума */}
+          {/* Кнопки */}
           <div className="flex gap-2">
             <button
-              onClick={() => setZoom(z => z * 2)}
+              onClick={() => setZoom(z => Math.min(1000000, z * 2))}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-all"
             >
               <ZoomIn size={18} />
-              Приблизить
+              x2
             </button>
             <button
-              onClick={() => setZoom(z => z / 2)}
+              onClick={() => setZoom(z => Math.max(0.5, z / 2))}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-muted/10 text-muted hover:bg-muted/20 transition-all"
             >
               <ZoomOut size={18} />
+              /2
             </button>
             <button
               onClick={handleReset}
@@ -486,28 +513,21 @@ export default function FractalsPage() {
 
           {/* Тип фрактала */}
           <div className="p-4 rounded-xl border border-border bg-card">
-            <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">Тип фрактала</h3>
+            <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">Тип</h3>
             <div className="grid grid-cols-2 gap-2">
               {(["mandelbrot", "julia", "burning-ship", "tricorn"] as FractalType[]).map(type => (
                 <button
                   key={type}
                   onClick={() => {
                     setFractalType(type);
-                    if (type === "julia") {
-                      setCenter({ x: 0, y: 0 });
-                    } else if (type === "burning-ship") {
-                      setCenter({ x: -0.5, y: -0.5 });
-                    } else if (type === "tricorn") {
-                      setCenter({ x: -0.3, y: 0 });
-                    } else {
-                      setCenter({ x: -0.5, y: 0 });
-                    }
+                    if (type === "julia") setCenter({ x: 0, y: 0 });
+                    else if (type === "burning-ship") setCenter({ x: -0.4, y: -0.6 });
+                    else if (type === "tricorn") setCenter({ x: -0.3, y: 0 });
+                    else setCenter({ x: -0.5, y: 0 });
                     setZoom(1);
                   }}
                   className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                    fractalType === type
-                      ? "bg-accent/20 text-accent"
-                      : "bg-muted/10 hover:bg-muted/20"
+                    fractalType === type ? "bg-accent/20 text-accent" : "bg-muted/10 hover:bg-muted/20"
                   }`}
                 >
                   {fractalNames[type]}
@@ -516,7 +536,7 @@ export default function FractalsPage() {
             </div>
           </div>
 
-          {/* Режим для Мандельброта */}
+          {/* Режим клика для Мандельброта */}
           {fractalType === "mandelbrot" && (
             <div className="p-4 rounded-xl border border-border bg-card">
               <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">Режим клика</h3>
@@ -542,7 +562,7 @@ export default function FractalsPage() {
               </div>
               {mode === "julia" && (
                 <p className="text-xs text-purple-400 mt-2">
-                  Кликни на точку Мандельброта, чтобы увидеть соответствующее множество Жюлиа
+                  Кликни на точку, чтобы увидеть соответствующее множество Жюлиа
                 </p>
               )}
             </div>
@@ -552,17 +572,17 @@ export default function FractalsPage() {
           {fractalType === "julia" && (
             <div className="p-4 rounded-xl border border-border bg-card space-y-3">
               <h3 className="font-medium text-sm text-muted uppercase tracking-wide">Параметр c</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-muted">Re(c)</span>
-                    <span className="font-mono text-xs">{juliaC.x.toFixed(4)}</span>
+                    <span className="font-mono text-xs">{juliaC.x.toFixed(3)}</span>
                   </div>
                   <input
                     type="range"
                     min="-2"
                     max="2"
-                    step="0.001"
+                    step="0.01"
                     value={juliaC.x}
                     onChange={(e) => setJuliaC(c => ({ ...c, x: parseFloat(e.target.value) }))}
                     className="w-full accent-purple-500"
@@ -571,13 +591,13 @@ export default function FractalsPage() {
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-muted">Im(c)</span>
-                    <span className="font-mono text-xs">{juliaC.y.toFixed(4)}</span>
+                    <span className="font-mono text-xs">{juliaC.y.toFixed(3)}</span>
                   </div>
                   <input
                     type="range"
                     min="-2"
                     max="2"
-                    step="0.001"
+                    step="0.01"
                     value={juliaC.y}
                     onChange={(e) => setJuliaC(c => ({ ...c, y: parseFloat(e.target.value) }))}
                     className="w-full accent-pink-500"
@@ -587,7 +607,7 @@ export default function FractalsPage() {
             </div>
           )}
 
-          {/* Цветовая схема */}
+          {/* Цвета */}
           <div className="p-4 rounded-xl border border-border bg-card">
             <div className="flex items-center gap-2 mb-3">
               <Palette size={16} className="text-muted" />
@@ -599,9 +619,7 @@ export default function FractalsPage() {
                   key={scheme.name}
                   onClick={() => setColorSchemeIdx(idx)}
                   className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                    colorSchemeIdx === idx
-                      ? "bg-accent/20 text-accent"
-                      : "bg-muted/10 hover:bg-muted/20"
+                    colorSchemeIdx === idx ? "bg-accent/20 text-accent" : "bg-muted/10 hover:bg-muted/20"
                   }`}
                 >
                   {scheme.name}
@@ -618,22 +636,22 @@ export default function FractalsPage() {
             </div>
             <input
               type="range"
-              min="50"
-              max="500"
+              min="30"
+              max="300"
               step="10"
               value={maxIterations}
               onChange={(e) => setMaxIterations(parseInt(e.target.value))}
               className="w-full accent-accent"
             />
             <p className="text-xs text-muted mt-1">
-              Больше = детальнее, но медленнее
+              Больше = детальнее при глубоком зуме
             </p>
           </div>
 
           {/* Пресеты */}
           <div className="p-4 rounded-xl border border-border bg-card">
             <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">Интересные места</h3>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
               {presets.map(preset => (
                 <button
                   key={preset.name}
@@ -649,31 +667,16 @@ export default function FractalsPage() {
           {/* Справка */}
           {showInfo && (
             <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 text-sm space-y-3">
-              <h3 className="font-medium text-accent">Что такое фракталы?</h3>
-              <p className="text-muted text-xs">
-                <strong>Фракталы</strong> — это геометрические объекты с бесконечной детализацией.
-                Как бы глубоко ты ни зумил, всегда видны новые узоры.
-              </p>
+              <h3 className="font-medium text-accent">Формулы</h3>
               <div className="space-y-2 text-xs text-muted">
-                <p>
-                  <strong>Мандельброт:</strong> z = z² + c, где c — координаты точки.
-                  Точка закрашивается по скорости «убегания» z.
-                </p>
-                <p>
-                  <strong>Жюлиа:</strong> та же формула, но c фиксировано, а начальное z — координаты точки.
-                  Каждая точка Мандельброта даёт уникальный Жюлиа!
-                </p>
-                <p>
-                  <strong>Burning Ship:</strong> z = (|Re(z)| + i|Im(z)|)² + c.
-                  Создаёт образ «горящего корабля».
-                </p>
-                <p>
-                  <strong>Tricorn:</strong> z = conj(z)² + c.
-                  «Перевёрнутый» Мандельброт.
-                </p>
+                <p><strong>Мандельброт:</strong> z → z² + c</p>
+                <p><strong>Жюлиа:</strong> z → z² + c (c фиксировано)</p>
+                <p><strong>Burning Ship:</strong> z → (|Re(z)| + i|Im(z)|)² + c</p>
+                <p><strong>Tricorn:</strong> z → conj(z)² + c</p>
               </div>
               <p className="text-muted text-xs">
-                <strong>Управление:</strong> колёсико — зум, перетаскивание — навигация.
+                Цвет точки = скорость «убегания» z в бесконечность.
+                Чёрные точки — множество (z не убегает).
               </p>
             </div>
           )}
