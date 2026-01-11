@@ -254,12 +254,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (reactions.Rf !== undefined && reactions.Rf !== 0) {
           const xf = reactions.xf ?? 0;
           const hasLoadAtF = hasLoadAt(xf);
-          // Если заделка близко к левому краю — подпись справа
+          // Если есть Mf — подпись R слева (Mf справа), иначе по позиции заделки
           const isNearLeftEdge = xf < L * 0.15;
-          // Если есть момент Mf — сдвигаем подпись R выше, чтобы не накладывалась на дугу момента
-          // Дуга момента занимает ~beamTop-20 до beamTop-60, подпись R по умолчанию ~beamTop-50
-          const mfOffset = hasMf ? 25 : 0;
-          const loadOffset = hasLoadAtF ? 15 : 0;
+          const labelSide = hasMf ? "left" : (isNearLeftEdge ? "right" : "left");
           elements.push(
             <ReactionArrow
               key="Rf"
@@ -268,8 +265,8 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               value={reactions.Rf}
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide={isNearLeftEdge ? "right" : "left"}
-              labelYOffset={mfOffset + loadOffset}
+              labelSide={labelSide}
+              labelYOffset={hasLoadAtF ? 15 : 0}
             />
           );
         }

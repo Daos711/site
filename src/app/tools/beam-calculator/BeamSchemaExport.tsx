@@ -382,10 +382,10 @@ export function BeamSchemaExport({ input, result }: Props) {
           );
         }
 
-        // Rf рисуем ПОСЛЕ Mf, со смещением подписи если есть момент
+        // Rf рисуем ПОСЛЕ Mf; если есть Mf — подпись слева (Mf справа)
         if (reactions.Rf !== undefined && reactions.Rf !== 0) {
-          const mfOffset = hasMf ? 20 : 0;
-          drawReaction("Rf", xToPx(reactions.xf ?? 0), reactions.Rf, "R", "", "right", mfOffset);
+          const labelSide = hasMf ? "left" : "right";
+          drawReaction("Rf", xToPx(reactions.xf ?? 0), reactions.Rf, "R", "", labelSide);
         }
 
         return <>{elements}</>;
