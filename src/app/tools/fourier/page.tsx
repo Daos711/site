@@ -124,9 +124,10 @@ export default function FourierPage() {
     ctx.fillRect(0, 0, w, h);
 
     const coefficients = getFourierCoefficients(waveType, harmonics);
-    const epicycleX = w * 0.22;
+    const epicycleX = w * 0.2;
     const epicycleY = h * 0.5;
-    const scale = Math.min(w, h) * 0.15;
+    // Уменьшаем масштаб, чтобы выбросы Гиббса не выходили за границы
+    const scale = Math.min(w, h) * 0.12;
     const t = timeRef.current;
 
     // Рисуем эпициклы
@@ -176,10 +177,11 @@ export default function FourierPage() {
     ctx.fill();
 
     // Область графика
-    const graphX = w * 0.35;
-    const graphWidth = w * 0.6;
+    const graphX = w * 0.32;
+    const graphWidth = w * 0.63;
     const graphCenterY = h * 0.5;
-    const graphAmplitude = h * 0.35;
+    // Уменьшаем амплитуду графика, чтобы пики не выходили за границы
+    const graphAmplitude = h * 0.28;
 
     // Линия от эпициклов к графику
     ctx.strokeStyle = "rgba(250, 204, 21, 0.5)";
@@ -243,13 +245,13 @@ export default function FourierPage() {
     // Легенда
     ctx.font = "12px system-ui";
     ctx.fillStyle = "#22d3ee";
-    ctx.fillText("Фурье", graphX + 10, h - 40);
+    ctx.fillText("Фурье", graphX + 10, h - 20);
     if (showIdeal) {
       ctx.fillStyle = "rgba(255, 100, 100, 0.7)";
-      ctx.fillText("Идеал", graphX + 70, h - 40);
+      ctx.fillText("Идеал", graphX + 70, h - 20);
     }
     ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-    ctx.fillText(`${coefficients.length} гармоник`, graphX + 130, h - 40);
+    ctx.fillText(`${coefficients.length} гармоник`, graphX + 130, h - 20);
   }, [waveType, harmonics, showIdeal]);
 
   // Анимация
