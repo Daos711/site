@@ -969,7 +969,7 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
   <h3>Участок ${idx}: \\(x \\in [${formatNumber(sectionStart)}; ${formatNumber(section.interval.b)}]\\)</h3>
   <div class="formula-block">
   <p>Локальная координата: \\(s = x - ${formatNumber(sectionStart)}\\), где \\(s \\in [0; ${formatNumber(len)}]\\) м.</p>
-  ${hasQ ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
+  ${hasQ ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(Math.abs(section.q))}\\) кН/м (${section.q >= 0 ? "↓" : "↑"}).</p>` : ""}
 
   <p><strong>Поперечная сила:</strong></p>
   ${qDerivation}
@@ -1875,12 +1875,12 @@ function buildMNPSection(
   if (result.reactions.RA !== undefined) {
     const dir = result.reactions.RA >= 0 ? "↑" : "↓";
     const sign = result.reactions.RA >= 0 ? "+" : "-";
-    loadsList.push(`\\(R_A = ${formatNumber(Math.abs(result.reactions.RA))}\\) кН (${dir}) — ${result.reactions.RA >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
+    loadsList.push(`\\(R_A = ${formatNumber(result.reactions.RA)}\\) кН (${dir}) — ${result.reactions.RA >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
   }
   if (result.reactions.RB !== undefined) {
     const dir = result.reactions.RB >= 0 ? "↑" : "↓";
     const sign = result.reactions.RB >= 0 ? "+" : "-";
-    loadsList.push(`\\(R_B = ${formatNumber(Math.abs(result.reactions.RB))}\\) кН (${dir}) — ${result.reactions.RB >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
+    loadsList.push(`\\(R_B = ${formatNumber(result.reactions.RB)}\\) кН (${dir}) — ${result.reactions.RB >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
   }
 
   // Внешние нагрузки — с индексами для множественных нагрузок
@@ -3296,7 +3296,7 @@ function buildCantileverReactions(
   const L = input.L;
 
   let html = `
-  <p><strong>Соглашения знаков:</strong> силы вверх «+», моменты против часовой стрелки «+».</p>
+  <p><strong>Соглашения знаков:</strong> реакции вверх «+»; внешние нагрузки: вниз «+», вверх «-»; моменты против часовой стрелки «+».</p>
   <p>Заделка расположена в точке \\(x = ${formatNumber(xf)}\\) м.</p>`;
 
   // Показываем равнодействующие распределённых нагрузок
@@ -3431,7 +3431,7 @@ function buildSimplySupportedReactions(
   const span = xB - xA;
 
   let html = `
-  <p><strong>Соглашения знаков:</strong> силы вверх «+», моменты против часовой стрелки «+».</p>
+  <p><strong>Соглашения знаков:</strong> реакции вверх «+»; внешние нагрузки: вниз «+», вверх «-»; моменты против часовой стрелки «+».</p>
   <p>Опора A в точке \\(x_A = ${formatNumber(xA)}\\) м, опора B в точке \\(x_B = ${formatNumber(xB)}\\) м.</p>`;
 
   // Показываем равнодействующие распределённых нагрузок
