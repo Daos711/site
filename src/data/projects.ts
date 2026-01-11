@@ -72,13 +72,14 @@ export const projects: Project[] = [
     href: "/tools/lorenz",
   },
 
-  // === Будущие визуализации ===
+  // === Визуализации ===
   {
-    id: "mandelbrot",
-    title: "Множество Мандельброта",
-    description: "Интерактивный фрактал с бесконечным зумом.",
+    id: "fractals",
+    title: "Фракталы",
+    description: "Мандельброт, Жюлиа, Burning Ship и другие. Бесконечный зум и красивые цвета.",
     tags: ["инструмент", "математика", "фракталы", "визуализация"],
-    status: "coming-soon",
+    status: "prototype",
+    href: "/tools/fractals",
   },
   {
     id: "double-pendulum",
