@@ -102,7 +102,8 @@ export const projects: Project[] = [
     title: "Game of Life",
     description: "Клеточный автомат Конвея. Эмерджентность из простых правил.",
     tags: ["инструмент", "математика", "клеточные автоматы", "визуализация"],
-    status: "coming-soon",
+    status: "prototype",
+    href: "/tools/game-of-life",
   },
 ];
 

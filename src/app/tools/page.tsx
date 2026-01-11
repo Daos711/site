@@ -60,7 +60,8 @@ const tools = [
     title: "Game of Life",
     description: "Клеточный автомат Конвея. Эмерджентность из простых правил.",
     icon: Grid3X3,
-    status: "coming-soon" as const,
+    href: "/tools/game-of-life",
+    status: "prototype" as const,
   },
 ];
 
