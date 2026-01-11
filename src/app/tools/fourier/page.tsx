@@ -84,6 +84,23 @@ const waveNames: Record<WaveType, string> = {
   pulse: "Импульсная",
 };
 
+// Склонение слова "гармоника" по числу
+function pluralizeHarmonics(n: number): string {
+  const lastTwo = n % 100;
+  const lastOne = n % 10;
+
+  if (lastTwo >= 11 && lastTwo <= 19) {
+    return `${n} гармоник`;
+  }
+  if (lastOne === 1) {
+    return `${n} гармоника`;
+  }
+  if (lastOne >= 2 && lastOne <= 4) {
+    return `${n} гармоники`;
+  }
+  return `${n} гармоник`;
+}
+
 export default function FourierPage() {
   const [waveType, setWaveType] = useState<WaveType>("square");
   const [harmonics, setHarmonics] = useState(5);
@@ -251,7 +268,7 @@ export default function FourierPage() {
       ctx.fillText("Идеал", graphX + 70, h - 20);
     }
     ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-    ctx.fillText(`${coefficients.length} гармоник`, graphX + 130, h - 20);
+    ctx.fillText(pluralizeHarmonics(coefficients.length), graphX + 130, h - 20);
   }, [waveType, harmonics, showIdeal]);
 
   // Анимация
@@ -296,7 +313,7 @@ export default function FourierPage() {
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-3 border-b border-border flex items-center justify-between">
             <span className="text-sm font-medium">{waveNames[waveType]} волна</span>
-            <span className="text-xs text-muted">{harmonics} гармоник</span>
+            <span className="text-xs text-muted">{pluralizeHarmonics(harmonics)}</span>
           </div>
           <canvas
             ref={canvasRef}
