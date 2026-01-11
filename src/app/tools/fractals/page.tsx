@@ -551,37 +551,66 @@ export default function FractalsPage() {
             </div>
           )}
 
-          {/* Параметр c для Жюлиа */}
+          {/* Выбор c для Жюлиа — мини-карта Мандельброта */}
           {fractalType === "julia" && (
-            <div className="p-4 rounded-xl border border-border bg-card space-y-3">
-              <h3 className="font-medium text-sm text-muted uppercase tracking-wide">Параметр c = {juliaC.x.toFixed(3)} + {juliaC.y.toFixed(3)}i</h3>
-              <div className="space-y-3">
-                <div>
-                  <input
-                    type="range"
-                    min="-2"
-                    max="2"
-                    step="0.01"
-                    value={juliaC.x}
-                    onChange={(e) => setJuliaC(c => ({ ...c, x: parseFloat(e.target.value) }))}
-                    className="w-full accent-purple-500"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="range"
-                    min="-2"
-                    max="2"
-                    step="0.01"
-                    value={juliaC.y}
-                    onChange={(e) => setJuliaC(c => ({ ...c, y: parseFloat(e.target.value) }))}
-                    className="w-full accent-pink-500"
-                  />
+            <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-3">
+              <h3 className="font-medium text-sm text-purple-400">Выбери точку c на карте Мандельброта</h3>
+              <p className="text-xs text-muted">
+                Чёрная область = красивые Жюлиа. Граница = самые сложные узоры.
+              </p>
+              <div
+                className="relative aspect-square rounded-lg overflow-hidden cursor-crosshair border border-purple-500/30"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width) * 4 - 2.5;
+                  const y = ((rect.height - (e.clientY - rect.top)) / rect.height) * 4 - 2;
+                  setJuliaC({ x, y });
+                }}
+              >
+                {/* Мини Мандельброт через CSS gradient (приблизительный) */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `
+                      radial-gradient(ellipse 35% 45% at 35% 50%, #000 0%, #000 70%, transparent 70%),
+                      radial-gradient(circle at 22% 50%, #000 0%, #000 8%, transparent 8%),
+                      radial-gradient(ellipse 8% 15% at 60% 50%, #000 0%, #000 90%, transparent 90%),
+                      linear-gradient(135deg,
+                        #1a1a2e 0%,
+                        #16213e 25%,
+                        #0f3460 50%,
+                        #1a1a2e 75%,
+                        #16213e 100%
+                      )
+                    `
+                  }}
+                />
+                {/* Точка текущего c */}
+                <div
+                  className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full bg-yellow-400 border-2 border-white shadow-lg"
+                  style={{
+                    left: `${((juliaC.x + 2.5) / 4) * 100}%`,
+                    bottom: `${((juliaC.y + 2) / 4) * 100}%`,
+                  }}
+                />
+                {/* Координаты */}
+                <div className="absolute bottom-1 left-1 px-2 py-1 rounded bg-black/70 text-xs font-mono text-white">
+                  c = {juliaC.x.toFixed(2)} {juliaC.y >= 0 ? "+" : ""} {juliaC.y.toFixed(2)}i
                 </div>
               </div>
-              <p className="text-xs text-muted">
-                Попробуй пресеты Жюлиа внизу — они показывают самые красивые значения c
-              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setFractalType("mandelbrot");
+                    setCenter({ x: -0.5, y: 0 });
+                    setZoom(1);
+                    setMode("julia");
+                  }}
+                  className="flex-1 px-3 py-2 rounded-lg bg-purple-500/20 text-purple-400 text-sm hover:bg-purple-500/30 transition-all"
+                >
+                  Открыть Мандельброт
+                </button>
+              </div>
             </div>
           )}
 
