@@ -50,6 +50,10 @@ export default function DoublePendulumPage() {
   const [trailCount, setTrailCount] = useState(1);
   const [showTrail, setShowTrail] = useState(true);
 
+  // Настройки смещения начальных условий
+  const [identicalStart, setIdenticalStart] = useState(false);
+  const [offsetAmount, setOffsetAmount] = useState(0.001); // в градусах
+
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
@@ -57,13 +61,19 @@ export default function DoublePendulumPage() {
   const lastTimeRef = useRef<number>(0);
 
   // Инициализация маятников
-  const initTrails = useCallback((count: number, angle1Deg: number, angle2Deg: number) => {
+  const initTrails = useCallback((
+    count: number,
+    angle1Deg: number,
+    angle2Deg: number,
+    useIdentical: boolean = identicalStart,
+    offset: number = offsetAmount
+  ) => {
     const newTrails: Trail[] = [];
     for (let i = 0; i < count; i++) {
-      // Слегка разные начальные условия для демонстрации хаоса
-      const offset = (i - (count - 1) / 2) * 0.001;
-      const theta1 = (angle1Deg + offset) * Math.PI / 180;
-      const theta2 = (angle2Deg + offset) * Math.PI / 180;
+      // Смещение для демонстрации хаоса (или 0 если идентичные условия)
+      const currentOffset = useIdentical ? 0 : (i - (count - 1) / 2) * offset;
+      const theta1 = (angle1Deg + currentOffset) * Math.PI / 180;
+      const theta2 = (angle2Deg + currentOffset) * Math.PI / 180;
       newTrails.push({
         state: { theta1, theta2, omega1: 0, omega2: 0 },
         points: [],
@@ -71,7 +81,7 @@ export default function DoublePendulumPage() {
       });
     }
     return newTrails;
-  }, []);
+  }, [identicalStart, offsetAmount]);
 
   // Сброс симуляции
   const resetTrails = useCallback((count: number) => {
@@ -527,6 +537,63 @@ export default function DoublePendulumPage() {
             </label>
           </div>
 
+          {/* Настройки смещения */}
+          <div className="p-4 rounded-xl border border-border bg-card space-y-4">
+            <h3 className="font-medium text-sm text-muted uppercase tracking-wide">Начальное смещение</h3>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={identicalStart}
+                onChange={(e) => {
+                  setIdenticalStart(e.target.checked);
+                  if (!isRunning) {
+                    const newTrails = initTrails(trailCount, initialAngle1, initialAngle2, e.target.checked, offsetAmount);
+                    setTrails(newTrails);
+                    trailsRef.current = newTrails;
+                  }
+                }}
+                className="w-4 h-4 rounded accent-green-500"
+              />
+              <span className="text-sm">Идентичные условия</span>
+            </label>
+
+            {!identicalStart && (
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted">Смещение между маятниками</span>
+                  <span className="font-mono">{offsetAmount}°</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.0001"
+                  max="1"
+                  step="0.0001"
+                  value={offsetAmount}
+                  onChange={(e) => {
+                    const offset = parseFloat(e.target.value);
+                    setOffsetAmount(offset);
+                    if (!isRunning) {
+                      const newTrails = initTrails(trailCount, initialAngle1, initialAngle2, identicalStart, offset);
+                      setTrails(newTrails);
+                      trailsRef.current = newTrails;
+                    }
+                  }}
+                  className="w-full accent-yellow-500"
+                />
+                <p className="text-xs text-muted mt-1">
+                  Меньше смещение = дольше маятники движутся вместе
+                </p>
+              </div>
+            )}
+
+            {identicalStart && trailCount > 1 && (
+              <p className="text-xs text-green-400/80">
+                Все маятники стартуют с одинаковыми углами — будут двигаться синхронно навсегда
+              </p>
+            )}
+          </div>
+
           {/* Хаос-демо */}
           <button
             onClick={() => {
@@ -545,45 +612,59 @@ export default function DoublePendulumPage() {
           {/* Энергия */}
           {trails.length > 0 && (
             <div className="p-4 rounded-xl border border-border bg-card">
-              <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">Энергия</h3>
-              {(() => {
-                const energy = getEnergy(trails[0].state, params);
-                const maxEnergy = Math.abs(energy.total) + 1;
-                return (
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-orange-400">Кинетическая T</span>
-                        <span className="font-mono text-orange-300">{energy.kinetic.toFixed(2)} Дж</span>
-                      </div>
-                      <div className="h-2 bg-muted/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-orange-500 transition-all duration-75"
-                          style={{ width: `${Math.min(100, (energy.kinetic / maxEnergy) * 100)}%` }}
-                        />
+              <h3 className="font-medium text-sm text-muted uppercase tracking-wide mb-3">
+                Энергия {trails.length > 1 ? "маятников" : ""}
+              </h3>
+              <div className="space-y-3">
+                {trails.map((trail, idx) => {
+                  const energy = getEnergy(trail.state, params);
+                  const maxEnergy = Math.abs(energy.total) + 1;
+                  const hue = trail.hue;
+                  const color = trails.length === 1 ? "purple" : `hsl(${hue}, 70%, 60%)`;
+
+                  return (
+                    <div key={idx} className={trails.length > 1 ? "pb-3 border-b border-border last:border-b-0 last:pb-0" : ""}>
+                      {trails.length > 1 && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="text-xs font-medium" style={{ color }}>
+                            Маятник {idx + 1}
+                          </span>
+                        </div>
+                      )}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-orange-400">T (кинетич.)</span>
+                          <span className="font-mono text-orange-300">{energy.kinetic.toFixed(2)}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-orange-500 transition-all duration-75"
+                            style={{ width: `${Math.min(100, (energy.kinetic / maxEnergy) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-cyan-400">U (потенц.)</span>
+                          <span className="font-mono text-cyan-300">{energy.potential.toFixed(2)}</span>
+                        </div>
+                        <div className="h-1.5 bg-muted/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-cyan-500 transition-all duration-75"
+                            style={{ width: `${Math.min(100, (Math.abs(energy.potential) / maxEnergy) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs pt-1">
+                          <span className="text-muted">E (полная)</span>
+                          <span className="font-mono">{energy.total.toFixed(2)} Дж</span>
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-cyan-400">Потенциальная U</span>
-                        <span className="font-mono text-cyan-300">{energy.potential.toFixed(2)} Дж</span>
-                      </div>
-                      <div className="h-2 bg-muted/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-cyan-500 transition-all duration-75"
-                          style={{ width: `${Math.min(100, (Math.abs(energy.potential) / maxEnergy) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="pt-2 border-t border-border">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted">Полная E (сохраняется!)</span>
-                        <span className="font-mono">{energy.total.toFixed(2)} Дж</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -596,13 +677,35 @@ export default function DoublePendulumPage() {
                 <strong className="text-foreground"> хаотическое поведение</strong> —
                 малейшая разница в начальных условиях приводит к совершенно разным траекториям.
               </p>
-              <p className="text-muted text-xs">
-                <strong>Попробуй:</strong> Запусти 3 маятника с почти одинаковыми углами (разница 0.001°).
-                Сначала они будут двигаться вместе, но через ~10-20 секунд разойдутся!
-              </p>
-              <p className="text-muted text-xs">
-                <strong>Энергия:</strong> Полная энергия E = T + U сохраняется (закон сохранения энергии),
-                но кинетическая и потенциальная постоянно перетекают друг в друга.
+
+              <div className="pt-2 border-t border-accent/20">
+                <p className="text-muted text-xs">
+                  <strong className="text-yellow-400">Смещение:</strong> По умолчанию каждый маятник
+                  стартует с небольшим смещением угла относительно соседнего.
+                  Это позволяет увидеть "эффект бабочки" — сначала траектории совпадают,
+                  но через время расходятся.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-accent/20">
+                <p className="text-muted text-xs">
+                  <strong className="text-green-400">Идентичные условия:</strong> Если включить
+                  "Идентичные условия", все маятники стартуют из одной точки и будут
+                  двигаться синхронно навсегда (в идеальной симуляции без погрешностей).
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-accent/20">
+                <p className="text-muted text-xs">
+                  <strong className="text-cyan-400">Энергия:</strong> У каждого маятника своя полная
+                  энергия E = T + U, которая сохраняется. Кинетическая (T) и потенциальная (U)
+                  постоянно перетекают друг в друга, но их сумма постоянна.
+                </p>
+              </div>
+
+              <p className="text-muted text-xs pt-2 border-t border-accent/20">
+                <strong>Попробуй:</strong> Запусти 3 маятника со смещением 0.001° — сначала
+                они будут двигаться вместе, но через ~10-20 секунд разойдутся!
               </p>
             </div>
           )}
