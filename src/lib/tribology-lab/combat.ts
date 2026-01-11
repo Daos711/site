@@ -620,6 +620,12 @@ export function calculateDamage(
     damage *= (1 + markedEffect.strength / 100);  // +25% урон
   }
 
+  // Бонус от resonance эффекта (Ультразвук накладывает +15% получаемого урона)
+  const resonanceEffect = target.effects.find(e => e.type === 'resonance');
+  if (resonanceEffect) {
+    damage *= (1 + resonanceEffect.strength / 100);  // +15% урон
+  }
+
   // Штраф от коррозии (ингибитор иммунен, фильтр получает половину штрафа)
   if (module.type !== 'inhibitor') {
     const corrosionPenalty = getCorrosionPenalty(module, allEnemies, path);
