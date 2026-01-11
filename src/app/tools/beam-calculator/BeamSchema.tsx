@@ -208,27 +208,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           );
         }
 
-        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
-          const xf = reactions.xf ?? 0;
-          const hasLoadAtF = hasLoadAt(xf);
-          // Если заделка близко к левому краю — подпись справа
-          const isNearLeftEdge = xf < L * 0.15;
-          elements.push(
-            <ReactionArrow
-              key="Rf"
-              x={xToPx(xf)}
-              baseY={beamTop}
-              value={reactions.Rf}
-              name="R"
-              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide={isNearLeftEdge ? "right" : "left"}
-              labelYOffset={hasLoadAtF ? 65 : 35}
-            />
-          );
-        }
-
-        // Реактивный момент Mf для консольных балок
-        if (reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9) {
+        // Реактивный момент Mf для консольных балок (рисуем ПЕРВЫМ, чтобы подпись R была ниже)
+        const hasMf = reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9;
+        if (hasMf) {
           const xf = reactions.xf ?? 0;
           const px = xToPx(xf);
           const H = 35;
@@ -237,7 +219,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const Cy = beamTop - gap - H;
 
           // Mf > 0 (против часовой) или Mf < 0 (по часовой)
-          const isCW = reactions.Mf < 0;
+          const isCW = reactions.Mf! < 0;
           const aLeft = (240 * Math.PI) / 180;
           const aRight = (330 * Math.PI) / 180;
           const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
@@ -248,9 +230,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const arcEnd = isCW ? pRight : pLeft;
           const sweepFlag = isCW ? 1 : 0;
 
-          // Подпись всегда справа и выше, чтобы не уходила за край
+          // Подпись момента: сверху
           const labelX = px + R + 8;
-          const labelY = Cy - 20;
+          const labelY = Cy - 25;
 
           elements.push(
             <g key="Mf">
@@ -263,9 +245,30 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
                 markerEnd="url(#arrowGreen)"
               />
               <text x={labelX} y={labelY} textAnchor="start" fill={COLORS.reaction} fontSize={13} fontWeight="600">
-                Mf = {formatNum(Math.abs(reactions.Mf))} кН·м
+                Mf = {formatNum(Math.abs(reactions.Mf!))} кН·м
               </text>
             </g>
+          );
+        }
+
+        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
+          const xf = reactions.xf ?? 0;
+          const hasLoadAtF = hasLoadAt(xf);
+          // Если заделка близко к левому краю — подпись справа
+          const isNearLeftEdge = xf < L * 0.15;
+          // Если есть момент Mf — сдвигаем подпись R ниже, чтобы не накладывались
+          const extraOffset = hasMf ? 15 : 0;
+          elements.push(
+            <ReactionArrow
+              key="Rf"
+              x={xToPx(xf)}
+              baseY={beamTop}
+              value={reactions.Rf}
+              name="R"
+              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
+              labelSide={isNearLeftEdge ? "right" : "left"}
+              labelYOffset={(hasLoadAtF ? 65 : 35) + extraOffset}
+            />
           );
         }
 
