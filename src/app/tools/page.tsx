@@ -14,9 +14,10 @@ const tools = [
   {
     id: "oscillator",
     title: "Осциллятор",
-    description: "Демонстрация затухающих колебаний: масса, жёсткость, демпфирование.",
+    description: "Интерактивная симуляция затухающих колебаний с фазовым портретом.",
     icon: Activity,
-    status: "coming-soon" as const,
+    href: "/tools/oscillator",
+    status: "prototype" as const,
   },
 ];
 
