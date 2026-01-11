@@ -722,9 +722,8 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
         )}
       </div>
 
-      {/* Режим нагружения (только для заданного сечения) */}
-      {sectionMode === 'given' && (
-        <div className="p-4 rounded-lg border border-border bg-card">
+      {/* Режим нагружения */}
+      <div className="p-4 rounded-lg border border-border bg-card">
           <h3 className="font-semibold mb-3">Тип нагружения</h3>
           <div className="flex gap-4 mb-4">
             <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
@@ -789,7 +788,6 @@ export function BeamInput({ onCalculate, showButton = true, submitRef }: Props) 
             </div>
           )}
         </div>
-      )}
 
       {/* Кнопка расчёта */}
       {showButton && (
