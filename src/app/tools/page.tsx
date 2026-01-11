@@ -21,14 +21,16 @@ const tools = [
     status: "prototype" as const,
   },
 
-  // === Coming Soon ===
   {
     id: "lorenz",
     title: "Аттрактор Лоренца",
     description: "3D-визуализация хаотической системы. Знаменитая «бабочка».",
     icon: Orbit,
-    status: "coming-soon" as const,
+    href: "/tools/lorenz",
+    status: "prototype" as const,
   },
+
+  // === Coming Soon ===
   {
     id: "mandelbrot",
     title: "Множество Мандельброта",

@@ -62,14 +62,17 @@ export const projects: Project[] = [
     href: "/apps/philoquiz",
   },
 
-  // === Будущие визуализации ===
+  // === Визуализации ===
   {
     id: "lorenz-attractor",
     title: "Аттрактор Лоренца",
     description: "3D-визуализация хаотической системы. Знаменитая «бабочка».",
     tags: ["инструмент", "математика", "хаос", "визуализация"],
-    status: "coming-soon",
+    status: "prototype",
+    href: "/tools/lorenz",
   },
+
+  // === Будущие визуализации ===
   {
     id: "mandelbrot",
     title: "Множество Мандельброта",
