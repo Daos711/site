@@ -43,7 +43,8 @@ const tools = [
     title: "Двойной маятник",
     description: "Хаос из простой механической системы.",
     icon: GitBranch,
-    status: "coming-soon" as const,
+    href: "/tools/double-pendulum",
+    status: "prototype" as const,
   },
   {
     id: "fourier",

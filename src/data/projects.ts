@@ -85,7 +85,8 @@ export const projects: Project[] = [
     title: "Двойной маятник",
     description: "Хаос из простой механической системы.",
     tags: ["инструмент", "физика", "хаос", "визуализация"],
-    status: "coming-soon",
+    status: "prototype",
+    href: "/tools/double-pendulum",
   },
   {
     id: "fourier-series",
