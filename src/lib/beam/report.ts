@@ -969,7 +969,7 @@ function buildSectionBlock(section: ReturnType<typeof buildSectionFormulas>[0]):
   <h3>Участок ${idx}: \\(x \\in [${formatNumber(sectionStart)}; ${formatNumber(section.interval.b)}]\\)</h3>
   <div class="formula-block">
   <p>Локальная координата: \\(s = x - ${formatNumber(sectionStart)}\\), где \\(s \\in [0; ${formatNumber(len)}]\\) м.</p>
-  ${hasQ ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(Math.abs(section.q))}\\) кН/м (${section.q >= 0 ? "↓" : "↑"}).</p>` : ""}
+  ${hasQ ? `<p>Распределённая нагрузка на участке: \\(q = ${formatNumber(section.q)}\\) кН/м.</p>` : ""}
 
   <p><strong>Поперечная сила:</strong></p>
   ${qDerivation}
@@ -1167,11 +1167,13 @@ function buildQDerivation(
     }
   }
 
-  // Активная q на участке
+  // Активная q на участке: Q' = -q, поэтому член -q·s
+  // Символьная формула всегда -q·s, числовая подстановка даёт знак автоматически
   if (Math.abs(activeQ) > 1e-9) {
-    const sign = activeQ >= 0 ? "-" : "+";
-    symbolicTerms.push(`${sign} q \\cdot ${varName}`);
-    numericTerms.push(`${sign} ${formatNumber(Math.abs(activeQ))} \\cdot ${varName}`);
+    symbolicTerms.push(`- q \\cdot ${varName}`);
+    // -q·s: если q > 0, то -q·s < 0; если q < 0, то -q·s > 0
+    const numSign = activeQ >= 0 ? "-" : "+";
+    numericTerms.push(`${numSign} ${formatNumber(Math.abs(activeQ))} \\cdot ${varName}`);
   }
 
   // Форматируем с переносами если формула длинная
@@ -1264,11 +1266,12 @@ function buildMDerivation(
     }
   }
 
-  // Активная q на участке: -q·z²/2 (если q вниз)
+  // Активная q на участке: M'' = -q, поэтому член -q·s²/2
+  // Символьная формула всегда -q·s²/2, числовая подстановка даёт знак автоматически
   if (Math.abs(activeQ) > 1e-9) {
-    const sign = activeQ >= 0 ? "-" : "+";
-    symbolicTerms.push(`${sign} \\frac{q \\cdot ${varName}^2}{2}`);
-    numericTerms.push(`${sign} \\frac{${formatNumber(Math.abs(activeQ))} \\cdot ${varName}^2}{2}`);
+    symbolicTerms.push(`- \\frac{q \\cdot ${varName}^2}{2}`);
+    const numSign = activeQ >= 0 ? "-" : "+";
+    numericTerms.push(`${numSign} \\frac{${formatNumber(Math.abs(activeQ))} \\cdot ${varName}^2}{2}`);
   }
 
   // Форматируем с переносами если формула длинная
@@ -1904,11 +1907,10 @@ function buildMNPSection(
       const mLabel = momentLoadsSign.length === 1 ? "M" : `M_{${momentIdxSign++}}`;
       loadsList.push(`\\(${mLabel} = ${formatNumber(Math.abs(load.M))}\\) кН·м в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.M >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     } else if (load.type === "distributed") {
-      const dir = load.q >= 0 ? "↓" : "↑";
       const sign = load.q >= 0 ? "-" : "+";
       // Используем верхний индекс в скобках q^{(n)} для оригинальных нагрузок
       const qLabel = distLoadsSign.length === 1 ? "q" : `q^{(${distIdxSign++})}`;
-      loadsList.push(`\\(${qLabel} = ${formatNumber(Math.abs(load.q))}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) (${dir}) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+      loadsList.push(`\\(${qLabel} = ${formatNumber(load.q)}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     }
   }
 
