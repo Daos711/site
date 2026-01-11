@@ -65,7 +65,8 @@ function getIdealWave(waveType: WaveType, t: number): number {
     case "square":
       return normalized < Math.PI ? 1 : -1;
     case "sawtooth":
-      return 1 - normalized / Math.PI;
+      // Пила от -1 до +1 (возрастает)
+      return normalized / Math.PI - 1;
     case "triangle":
       if (normalized < Math.PI / 2) return normalized / (Math.PI / 2);
       if (normalized < (3 * Math.PI) / 2) return 1 - 2 * (normalized - Math.PI / 2) / Math.PI;
