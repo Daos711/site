@@ -1144,12 +1144,14 @@ function buildQDerivation(
 
   for (const f of forces) {
     if (f.type === "reaction") {
-      // Реакция: знак определяется направлением (вверх = +, вниз = -)
-      // В формуле пишем знак отдельно, значение по модулю
-      const isUpward = f.value >= 0;
-      const sign = isUpward ? "+" : "-";
-      symbolicTerms.push(`${sign} ${f.label}`);
-      numericTerms.push(`${sign} ${formatNumber(Math.abs(f.value))}`);
+      // Реакция хранится со знаком: вверх = +, вниз = -
+      // В символьной формуле всегда +R, знак приходит из значения при подстановке
+      symbolicTerms.push(`+ ${f.label}`);
+      if (f.value >= 0) {
+        numericTerms.push(`+ ${formatNumber(f.value)}`);
+      } else {
+        numericTerms.push(`- ${formatNumber(Math.abs(f.value))}`);
+      }
     } else if (f.type === "force") {
       // force: если F > 0 (вниз), то -F; если F < 0 (вверх), то +|F|
       const sign = f.value >= 0 ? "-" : "+";
@@ -1211,19 +1213,19 @@ function buildMDerivation(
 
   for (const c of contributions) {
     if (c.type === "reaction") {
-      // Реакция: знак определяется направлением (вверх = +, вниз = -)
-      // В формуле пишем знак отдельно, значение по модулю
+      // Реакция хранится со знаком: вверх = +, вниз = -
+      // В символьной формуле всегда +R, знак приходит из значения при подстановке
       const arm = sectionStart - c.x;
-      const isUpward = c.value >= 0;
-      const sign = isUpward ? "+" : "-";
+      const numSign = c.value >= 0 ? "+" : "-";
+      const numVal = formatNumber(Math.abs(c.value));
 
       if (Math.abs(arm) < 1e-9) {
         // Реакция прямо в начале участка - плечо = s
-        symbolicTerms.push(`${sign} ${c.label} \\cdot ${varName}`);
-        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot ${varName}`);
+        symbolicTerms.push(`+ ${c.label} \\cdot ${varName}`);
+        numericTerms.push(`${numSign} ${numVal} \\cdot ${varName}`);
       } else {
-        symbolicTerms.push(`${sign} ${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
-        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot (${formatNumber(arm)} + ${varName})`);
+        symbolicTerms.push(`+ ${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
+        numericTerms.push(`${numSign} ${numVal} \\cdot (${formatNumber(arm)} + ${varName})`);
       }
     } else if (c.type === "force") {
       // Сила вниз (F > 0) создаёт отрицательный момент: -F·(a + z)
