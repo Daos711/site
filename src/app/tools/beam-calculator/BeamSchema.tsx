@@ -171,7 +171,8 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
           const hasLoadAtA = hasLoadAt(xA);
-          // Реакции всегда относительно верхней плоскости балки
+          // Если опора A близко к левому краю — подпись справа, иначе слева
+          const isNearLeftEdge = xA < L * 0.15;
           elements.push(
             <ReactionArrow
               key="RA"
@@ -181,7 +182,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               name="R"
               subscript="A"
               valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
-              labelSide="left"
+              labelSide={isNearLeftEdge ? "right" : "left"}
               labelYOffset={hasLoadAtA ? 70 : 40}
             />
           );
@@ -210,6 +211,8 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (reactions.Rf !== undefined && reactions.Rf !== 0) {
           const xf = reactions.xf ?? 0;
           const hasLoadAtF = hasLoadAt(xf);
+          // Если заделка близко к левому краю — подпись справа
+          const isNearLeftEdge = xf < L * 0.15;
           elements.push(
             <ReactionArrow
               key="Rf"
@@ -218,7 +221,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               value={reactions.Rf}
               name="R"
               valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide="left"
+              labelSide={isNearLeftEdge ? "right" : "left"}
               labelYOffset={hasLoadAtF ? 65 : 35}
             />
           );
