@@ -24,8 +24,10 @@ type Preset = {
   bodies: Omit<Body, "trail">[];
 };
 
-const TRAIL_LENGTH = 150;
-const G = 0.5; // Гравитационная постоянная
+const TRAIL_LENGTH = 100;
+const G = 0.3; // Гравитационная постоянная
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 500;
 
 // Цвет по массе
 function getColorByMass(mass: number): string {
@@ -36,66 +38,71 @@ function getColorByMass(mass: number): string {
   return "#a855f7";                   // Фиолетовый - астероид
 }
 
+// Вычисление орбитальной скорости для стабильной орбиты
+function orbitalVelocity(centerMass: number, distance: number): number {
+  return Math.sqrt(G * centerMass / distance) * 0.8;
+}
+
 // Пресеты систем
 const presets: Preset[] = [
   {
     id: "solar",
     name: "Солнечная",
-    description: "Звезда и планеты",
+    description: "Звезда и планеты на стабильных орбитах",
     bodies: [
-      { x: 400, y: 300, vx: 0, vy: 0, mass: 2000, radius: 25, color: "#fbbf24" },
-      { x: 400, y: 150, vx: 2.5, vy: 0, mass: 10, radius: 6, color: "#3b82f6" },
-      { x: 400, y: 80, vx: 3.2, vy: 0, mass: 3, radius: 4, color: "#22c55e" },
-      { x: 400, y: 450, vx: -2.0, vy: 0, mass: 25, radius: 8, color: "#f97316" },
-      { x: 400, y: 520, vx: -1.7, vy: 0, mass: 15, radius: 7, color: "#ec4899" },
+      { x: 0, y: 0, vx: 0, vy: 0, mass: 3000, radius: 22, color: "#fbbf24" },
+      { x: 0, y: -80, vx: orbitalVelocity(3000, 80), vy: 0, mass: 5, radius: 4, color: "#a855f7" },
+      { x: 0, y: -130, vx: orbitalVelocity(3000, 130), vy: 0, mass: 10, radius: 5, color: "#3b82f6" },
+      { x: 0, y: -190, vx: orbitalVelocity(3000, 190), vy: 0, mass: 20, radius: 7, color: "#22c55e" },
+      { x: 0, y: -260, vx: orbitalVelocity(3000, 260), vy: 0, mass: 40, radius: 9, color: "#f97316" },
     ],
   },
   {
     id: "binary",
     name: "Двойная звезда",
-    description: "Две звезды вращаются вокруг центра масс",
+    description: "Две звезды на орбите вокруг центра масс",
     bodies: [
-      { x: 300, y: 300, vx: 0, vy: 1.5, mass: 800, radius: 18, color: "#fbbf24" },
-      { x: 500, y: 300, vx: 0, vy: -1.5, mass: 800, radius: 18, color: "#f97316" },
+      { x: -60, y: 0, vx: 0, vy: -1.2, mass: 1000, radius: 15, color: "#fbbf24" },
+      { x: 60, y: 0, vx: 0, vy: 1.2, mass: 1000, radius: 15, color: "#f97316" },
     ],
   },
   {
-    id: "figure8",
-    name: "Восьмёрка",
-    description: "Три тела движутся по форме 8",
+    id: "trinary",
+    name: "Тройная",
+    description: "Три звезды — сложная динамика",
     bodies: [
-      { x: 400, y: 300, vx: 0, vy: 0, mass: 100, radius: 10, color: "#3b82f6" },
-      { x: 300, y: 300, vx: 0, vy: 1.8, mass: 100, radius: 10, color: "#22c55e" },
-      { x: 500, y: 300, vx: 0, vy: -1.8, mass: 100, radius: 10, color: "#f97316" },
+      { x: 0, y: -70, vx: 1.0, vy: 0, mass: 500, radius: 12, color: "#fbbf24" },
+      { x: 60, y: 35, vx: -0.5, vy: 0.87, mass: 500, radius: 12, color: "#3b82f6" },
+      { x: -60, y: 35, vx: -0.5, vy: -0.87, mass: 500, radius: 12, color: "#22c55e" },
     ],
   },
   {
-    id: "chaos",
-    name: "Хаос",
-    description: "Случайные тела — непредсказуемое поведение",
-    bodies: [], // Генерируется динамически
+    id: "moonplanet",
+    name: "Планета с луной",
+    description: "Звезда, планета и её спутник",
+    bodies: [
+      { x: 0, y: 0, vx: 0, vy: 0, mass: 3000, radius: 20, color: "#fbbf24" },
+      { x: 0, y: -150, vx: orbitalVelocity(3000, 150), vy: 0, mass: 50, radius: 8, color: "#3b82f6" },
+      { x: 0, y: -170, vx: orbitalVelocity(3000, 150) + orbitalVelocity(50, 20), vy: 0, mass: 2, radius: 3, color: "#94a3b8" },
+    ],
   },
 ];
 
-// Генерация хаотичной системы
-function generateChaos(): Omit<Body, "trail">[] {
-  const bodies: Omit<Body, "trail">[] = [];
-  const count = 5 + Math.floor(Math.random() * 5);
+// Вычисление центра масс
+function getCenterOfMass(bodies: Body[]): { x: number; y: number } {
+  if (bodies.length === 0) return { x: 0, y: 0 };
 
-  for (let i = 0; i < count; i++) {
-    const mass = 20 + Math.random() * 100;
-    bodies.push({
-      x: 150 + Math.random() * 500,
-      y: 100 + Math.random() * 400,
-      vx: (Math.random() - 0.5) * 2,
-      vy: (Math.random() - 0.5) * 2,
-      mass,
-      radius: 4 + Math.sqrt(mass) / 2,
-      color: getColorByMass(mass),
-    });
+  let totalMass = 0;
+  let cx = 0;
+  let cy = 0;
+
+  for (const body of bodies) {
+    totalMass += body.mass;
+    cx += body.x * body.mass;
+    cy += body.y * body.mass;
   }
 
-  return bodies;
+  return { x: cx / totalMass, y: cy / totalMass };
 }
 
 // Симуляция одного шага
@@ -177,9 +184,7 @@ export default function NBodyPage() {
     const preset = presets.find(p => p.id === presetId);
     if (!preset) return;
 
-    const presetBodies = presetId === "chaos" ? generateChaos() : preset.bodies;
-
-    setBodies(presetBodies.map(b => ({
+    setBodies(preset.bodies.map(b => ({
       ...b,
       trail: [],
     })));
@@ -210,15 +215,20 @@ export default function NBodyPage() {
     ctx.fillStyle = "#0f172a";
     ctx.fillRect(0, 0, w, h);
 
-    // Звёзды на фоне
-    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-    for (let i = 0; i < 100; i++) {
+    const currentBodies = bodiesRef.current;
+
+    // Центр масс — камера следит за ним
+    const com = getCenterOfMass(currentBodies);
+    const offsetX = w / 2 - com.x;
+    const offsetY = h / 2 - com.y;
+
+    // Звёзды на фоне (статичные)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+    for (let i = 0; i < 80; i++) {
       const x = (i * 137.5) % w;
       const y = (i * 73.3) % h;
       ctx.fillRect(x, y, 1, 1);
     }
-
-    const currentBodies = bodiesRef.current;
 
     // Трейлы
     if (showTrails) {
@@ -226,15 +236,15 @@ export default function NBodyPage() {
         if (body.trail.length < 2) continue;
 
         ctx.beginPath();
-        ctx.moveTo(body.trail[0].x, body.trail[0].y);
+        ctx.moveTo(body.trail[0].x + offsetX, body.trail[0].y + offsetY);
 
         for (let i = 1; i < body.trail.length; i++) {
-          ctx.lineTo(body.trail[i].x, body.trail[i].y);
+          ctx.lineTo(body.trail[i].x + offsetX, body.trail[i].y + offsetY);
         }
 
         ctx.strokeStyle = body.color;
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.5;
         ctx.stroke();
         ctx.globalAlpha = 1;
       }
@@ -242,26 +252,38 @@ export default function NBodyPage() {
 
     // Тела
     for (const body of currentBodies) {
+      const bx = body.x + offsetX;
+      const by = body.y + offsetY;
+
+      // Пропускаем тела за пределами экрана
+      if (bx < -50 || bx > w + 50 || by < -50 || by > h + 50) continue;
+
       // Свечение
       const gradient = ctx.createRadialGradient(
-        body.x, body.y, 0,
-        body.x, body.y, body.radius * 2
+        bx, by, 0,
+        bx, by, body.radius * 2
       );
       gradient.addColorStop(0, body.color);
       gradient.addColorStop(0.5, body.color + "80");
       gradient.addColorStop(1, "transparent");
 
       ctx.beginPath();
-      ctx.arc(body.x, body.y, body.radius * 2, 0, Math.PI * 2);
+      ctx.arc(bx, by, body.radius * 2, 0, Math.PI * 2);
       ctx.fillStyle = gradient;
       ctx.fill();
 
       // Само тело
       ctx.beginPath();
-      ctx.arc(body.x, body.y, body.radius, 0, Math.PI * 2);
+      ctx.arc(bx, by, body.radius, 0, Math.PI * 2);
       ctx.fillStyle = body.color;
       ctx.fill();
     }
+
+    // Индикатор центра масс
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fill();
   }, [showTrails]);
 
   // Анимация
@@ -302,8 +324,13 @@ export default function NBodyPage() {
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Учитываем смещение камеры (центр масс в центре экрана)
+    const com = getCenterOfMass(bodies);
+    const x = clickX - rect.width / 2 + com.x;
+    const y = clickY - rect.height / 2 + com.y;
 
     const newBody: Body = {
       x,
