@@ -1147,8 +1147,8 @@ export default function FractalsPage() {
   }, [precisionMode, center.x, center.y, fractalType, uploadReferenceOrbit]);
   // БЕЗ effectiveIterations! Орбита фиксированной длины
 
-  // Порог для переключения на Perturbation (zoom > 10^12)
-  const PERTURBATION_ZOOM_THRESHOLD = 1e12;
+  // HP работает до ~10^14, Perturbation включается после
+  const PERTURBATION_ZOOM_THRESHOLD = 1e14;
 
   // Рендеринг
   const render = useCallback(() => {
@@ -1597,7 +1597,7 @@ export default function FractalsPage() {
               {precisionMode === "ultra"
                 ? (zoom >= PERTURBATION_ZOOM_THRESHOLD
                     ? "Perturbation активен: зум до 10¹⁰⁰+"
-                    : "HP режим (Perturbation включится при zoom > 10¹²)")
+                    : "HP режим (Perturbation включится при zoom > 10¹⁴)")
                 : precisionMode === "high"
                   ? "Double-Double: зум до 10¹⁴ без артефактов"
                   : "Float: зум до 10⁷ (быстрее)"
