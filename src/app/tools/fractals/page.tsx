@@ -10,6 +10,7 @@ import {
   Palette,
   MousePointer,
   Gauge,
+  Zap,
 } from "lucide-react";
 
 // Типы фракталов
@@ -34,6 +35,13 @@ const scaleAnalogies = [
   { zoom: 1e5, name: "Дом", icon: "🏠" },
   { zoom: 1e6, name: "Комната", icon: "🚪" },
   { zoom: 1e7, name: "Муравей", icon: "🐜" },
+  { zoom: 1e8, name: "Волос", icon: "〰️" },
+  { zoom: 1e9, name: "Клетка", icon: "🧫" },
+  { zoom: 1e10, name: "Бактерия", icon: "🦠" },
+  { zoom: 1e11, name: "Вирус", icon: "🔬" },
+  { zoom: 1e12, name: "Молекула", icon: "⚗️" },
+  { zoom: 1e13, name: "Атом", icon: "⚛️" },
+  { zoom: 1e14, name: "Ядро", icon: "🔴" },
 ];
 
 function getScaleAnalogy(zoom: number) {
@@ -58,7 +66,7 @@ const presets: Preset[] = [
   { name: "Морской конёк", type: "mandelbrot", centerX: -0.743643887037151, centerY: 0.131825904205330, zoom: 2000 },
   { name: "Спираль", type: "mandelbrot", centerX: -0.761574, centerY: -0.0847596, zoom: 500 },
   { name: "Долина слонов", type: "mandelbrot", centerX: 0.275, centerY: 0.0, zoom: 50 },
-  { name: "Глубокий зум", type: "mandelbrot", centerX: -0.7435669, centerY: 0.1314023, zoom: 1e6 },
+  { name: "Глубокий зум", type: "mandelbrot", centerX: -0.7435669, centerY: 0.1314023, zoom: 1e10 },
   { name: "Жюлиа ⚡", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.7, y: 0.27015 } },
   { name: "Жюлиа 🐉", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.8, y: 0.156 } },
   { name: "Жюлиа 🌀", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: 0.285, y: 0.01 } },
@@ -180,6 +188,201 @@ const fragmentShaderSource = `
   }
 `;
 
+// High Precision шейдер с Double-Double арифметикой
+const fragmentShaderSourceHP = `
+  precision highp float;
+
+  uniform vec2 u_resolution;
+  uniform vec2 u_centerHi;
+  uniform vec2 u_centerLo;
+  uniform vec2 u_scaleHi;
+  uniform vec2 u_scaleLo;
+  uniform int u_maxIter;
+  uniform int u_fractalType;
+  uniform vec2 u_juliaCHi;
+  uniform vec2 u_juliaCLo;
+  uniform int u_colorScheme;
+
+  // ============ Double-Double Arithmetic ============
+  // Число представляется как vec2(hi, lo) где value ≈ hi + lo
+
+  vec2 twoSum(float a, float b) {
+    float s = a + b;
+    float bb = s - a;
+    float err = (a - (s - bb)) + (b - bb);
+    return vec2(s, err);
+  }
+
+  vec2 quickTwoSum(float a, float b) {
+    float s = a + b;
+    float err = b - (s - a);
+    return vec2(s, err);
+  }
+
+  vec2 dd_add(vec2 a, vec2 b) {
+    vec2 s = twoSum(a.x, b.x);
+    float e = a.y + b.y + s.y;
+    return quickTwoSum(s.x, e);
+  }
+
+  vec2 dd_sub(vec2 a, vec2 b) {
+    return dd_add(a, vec2(-b.x, -b.y));
+  }
+
+  const float SPLIT = 4097.0; // 2^12 + 1
+
+  vec2 twoProd(float a, float b) {
+    float p = a * b;
+    float a1 = a * SPLIT;
+    float a_hi = a1 - (a1 - a);
+    float a_lo = a - a_hi;
+    float b1 = b * SPLIT;
+    float b_hi = b1 - (b1 - b);
+    float b_lo = b - b_hi;
+    float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
+    return vec2(p, err);
+  }
+
+  vec2 dd_mul(vec2 a, vec2 b) {
+    vec2 p = twoProd(a.x, b.x);
+    float e = a.x * b.y + a.y * b.x + p.y;
+    return quickTwoSum(p.x, e);
+  }
+
+  // DD * float
+  vec2 dd_mul_f(vec2 a, float b) {
+    vec2 p = twoProd(a.x, b);
+    float e = a.y * b + p.y;
+    return quickTwoSum(p.x, e);
+  }
+
+  vec3 palette(float t, int scheme) {
+    if (scheme == 0) {
+      return vec3(
+        9.0 * (1.0 - t) * t * t * t,
+        15.0 * (1.0 - t) * (1.0 - t) * t * t,
+        8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t + 0.2 * t
+      );
+    } else if (scheme == 1) {
+      return vec3(
+        min(1.0, t * 2.0),
+        max(0.0, min(1.0, (t - 0.3) * 2.5)),
+        max(0.0, min(1.0, (t - 0.6) * 3.0))
+      );
+    } else if (scheme == 2) {
+      return vec3(t * t * 0.3, 0.2 + t * 0.6, 0.5 + t * 0.5);
+    } else if (scheme == 3) {
+      return vec3(
+        sin(t * 6.28318 + 0.0) * 0.5 + 0.5,
+        sin(t * 6.28318 + 2.094) * 0.5 + 0.5,
+        sin(t * 6.28318 + 4.188) * 0.5 + 0.5
+      );
+    } else if (scheme == 4) {
+      return vec3(
+        sin(t * 10.0) * 0.5 + 0.5,
+        sin(t * 10.0 + 2.0) * 0.5 + 0.5,
+        sin(t * 10.0 + 4.0) * 0.5 + 0.5
+      );
+    } else {
+      float h = mod(t * 5.0, 1.0);
+      vec3 c = vec3(h * 6.0);
+      c = abs(mod(c - vec3(3.0, 2.0, 4.0), 6.0) - 3.0) - 1.0;
+      c = clamp(c, 0.0, 1.0);
+      return mix(vec3(1.0), c, 1.0);
+    }
+  }
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    float aspect = u_resolution.x / u_resolution.y;
+
+    // Смещение в DD
+    float offsetX = (uv.x - 0.5) * aspect;
+    float offsetY = (uv.y - 0.5);
+
+    // scale как DD
+    vec2 scaleDD = vec2(u_scaleHi.x, u_scaleLo.x);
+
+    // c.x = centerX + offsetX * scale (в DD)
+    vec2 cxDD = dd_add(vec2(u_centerHi.x, u_centerLo.x), dd_mul_f(scaleDD, offsetX));
+    // c.y = centerY + offsetY * scale (в DD)
+    vec2 cyDD = dd_add(vec2(u_centerHi.y, u_centerLo.y), dd_mul_f(scaleDD, offsetY));
+
+    vec2 zxDD, zyDD;
+    vec2 jcxDD = vec2(u_juliaCHi.x, u_juliaCLo.x);
+    vec2 jcyDD = vec2(u_juliaCHi.y, u_juliaCLo.y);
+
+    if (u_fractalType == 1) {
+      // Julia: z = c, c = juliaC
+      zxDD = cxDD;
+      zyDD = cyDD;
+      cxDD = jcxDD;
+      cyDD = jcyDD;
+    } else {
+      zxDD = vec2(0.0, 0.0);
+      zyDD = vec2(0.0, 0.0);
+    }
+
+    float iter = 0.0;
+    float maxIter = float(u_maxIter);
+
+    for (int i = 0; i < 2000; i++) {
+      if (i >= u_maxIter) break;
+
+      // x² и y² в DD
+      vec2 x2 = dd_mul(zxDD, zxDD);
+      vec2 y2 = dd_mul(zyDD, zyDD);
+
+      // |z|² > 4 ?
+      float magSq = x2.x + y2.x;
+      if (magSq > 4.0) break;
+
+      vec2 newZxDD, newZyDD;
+
+      if (u_fractalType == 2) {
+        // Burning Ship: z = (|Re|, |Im|)² + c
+        vec2 absZxDD = zxDD.x < 0.0 ? vec2(-zxDD.x, -zxDD.y) : zxDD;
+        vec2 absZyDD = zyDD.x < 0.0 ? vec2(-zyDD.x, -zyDD.y) : zyDD;
+        newZxDD = dd_add(dd_sub(x2, y2), cxDD);
+        newZyDD = dd_add(dd_mul_f(dd_mul(absZxDD, absZyDD), 2.0), cyDD);
+      } else if (u_fractalType == 3) {
+        // Tricorn: z = conj(z)² + c
+        newZxDD = dd_add(dd_sub(x2, y2), cxDD);
+        newZyDD = dd_add(dd_mul_f(dd_mul(zxDD, zyDD), -2.0), cyDD);
+      } else {
+        // Mandelbrot / Julia: z = z² + c
+        newZxDD = dd_add(dd_sub(x2, y2), cxDD);
+        newZyDD = dd_add(dd_mul_f(dd_mul(zxDD, zyDD), 2.0), cyDD);
+      }
+
+      zxDD = newZxDD;
+      zyDD = newZyDD;
+      iter += 1.0;
+    }
+
+    if (iter >= maxIter) {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+      // Smooth coloring
+      float zx = zxDD.x;
+      float zy = zyDD.x;
+      float log_zn = log(zx * zx + zy * zy) / 2.0;
+      float nu = log(log_zn / log(2.0)) / log(2.0);
+      iter = iter + 1.0 - nu;
+      float t = iter / maxIter;
+      vec3 color = palette(t, u_colorScheme);
+      gl_FragColor = vec4(color, 1.0);
+    }
+  }
+`;
+
+// Упаковка double в (hi, lo) для передачи в шейдер
+function packDD(x: number): [number, number] {
+  const hi = Math.fround(x);
+  const lo = Math.fround(x - hi);
+  return [hi, lo];
+}
+
 export default function FractalsPage() {
   // Состояние
   const [fractalType, setFractalType] = useState<FractalType>("mandelbrot");
@@ -192,11 +395,13 @@ export default function FractalsPage() {
   const [mode, setMode] = useState<"navigate" | "julia">("navigate");
   const [glSupported, setGlSupported] = useState(true);
   const [autoIterations, setAutoIterations] = useState(true);
+  const [highPrecision, setHighPrecision] = useState(false);
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
+  const programHPRef = useRef<WebGLProgram | null>(null);
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
 
@@ -205,8 +410,8 @@ export default function FractalsPage() {
     ? Math.min(2000, Math.max(200, Math.floor(200 + 50 * Math.log2(zoom))))
     : maxIterations;
 
-  // Лимит зума (ограничение float precision в WebGL)
-  const maxZoom = 1e7;
+  // Лимит зума зависит от режима точности
+  const maxZoom = highPrecision ? 1e14 : 1e7;
 
   // Инициализация WebGL
   useEffect(() => {
@@ -245,11 +450,17 @@ export default function FractalsPage() {
       return prog;
     };
 
-    // Компиляция шейдера
+    // Компиляция стандартного шейдера
     const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, "vertex");
     const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, "fragment");
     const program = linkProgram(vertexShader, fragmentShader, "standard");
     programRef.current = program;
+
+    // Компиляция High Precision шейдера
+    const vertexShaderHP = compileShader(gl.VERTEX_SHADER, vertexShaderSource, "vertexHP");
+    const fragmentShaderHP = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSourceHP, "fragmentHP");
+    const programHP = linkProgram(vertexShaderHP, fragmentShaderHP, "highPrecision");
+    programHPRef.current = programHP;
 
     // Вершины (полноэкранный квад)
     const vertices = new Float32Array([
@@ -262,8 +473,11 @@ export default function FractalsPage() {
 
     return () => {
       gl.deleteProgram(program);
+      gl.deleteProgram(programHP);
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
+      gl.deleteShader(vertexShaderHP);
+      gl.deleteShader(fragmentShaderHP);
     };
   }, []);
 
@@ -271,7 +485,7 @@ export default function FractalsPage() {
   const render = useCallback(() => {
     const gl = glRef.current;
     const canvas = canvasRef.current;
-    const program = programRef.current;
+    const program = highPrecision ? programHPRef.current : programRef.current;
     if (!gl || !program || !canvas) return;
 
     gl.useProgram(program);
@@ -293,7 +507,7 @@ export default function FractalsPage() {
       gl.viewport(0, 0, width, height);
     }
 
-    // Uniforms
+    // Общие uniforms
     gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), width, height);
     gl.uniform1i(gl.getUniformLocation(program, "u_maxIter"), effectiveIterations);
 
@@ -305,13 +519,32 @@ export default function FractalsPage() {
     };
     gl.uniform1i(gl.getUniformLocation(program, "u_fractalType"), fractalTypeMap[fractalType]);
     gl.uniform1i(gl.getUniformLocation(program, "u_colorScheme"), colorSchemes[colorSchemeIdx].id);
-    gl.uniform2f(gl.getUniformLocation(program, "u_center"), center.x, center.y);
-    gl.uniform1f(gl.getUniformLocation(program, "u_zoom"), zoom);
-    gl.uniform2f(gl.getUniformLocation(program, "u_juliaC"), juliaC.x, juliaC.y);
+
+    if (highPrecision) {
+      // High Precision uniforms - передаём как (hi, lo) пары
+      const scale = 3.0 / zoom;
+      const [centerXHi, centerXLo] = packDD(center.x);
+      const [centerYHi, centerYLo] = packDD(center.y);
+      const [scaleHi, scaleLo] = packDD(scale);
+      const [juliaCXHi, juliaCXLo] = packDD(juliaC.x);
+      const [juliaCYHi, juliaCYLo] = packDD(juliaC.y);
+
+      gl.uniform2f(gl.getUniformLocation(program, "u_centerHi"), centerXHi, centerYHi);
+      gl.uniform2f(gl.getUniformLocation(program, "u_centerLo"), centerXLo, centerYLo);
+      gl.uniform2f(gl.getUniformLocation(program, "u_scaleHi"), scaleHi, 0);
+      gl.uniform2f(gl.getUniformLocation(program, "u_scaleLo"), scaleLo, 0);
+      gl.uniform2f(gl.getUniformLocation(program, "u_juliaCHi"), juliaCXHi, juliaCYHi);
+      gl.uniform2f(gl.getUniformLocation(program, "u_juliaCLo"), juliaCXLo, juliaCYLo);
+    } else {
+      // Стандартные uniforms
+      gl.uniform2f(gl.getUniformLocation(program, "u_center"), center.x, center.y);
+      gl.uniform1f(gl.getUniformLocation(program, "u_zoom"), zoom);
+      gl.uniform2f(gl.getUniformLocation(program, "u_juliaC"), juliaC.x, juliaC.y);
+    }
 
     // Рисуем
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }, [center, zoom, fractalType, juliaC, effectiveIterations, colorSchemeIdx]);
+  }, [center, zoom, fractalType, juliaC, effectiveIterations, colorSchemeIdx, highPrecision]);
 
   // Перерендер при изменении параметров
   useEffect(() => {
@@ -455,9 +688,13 @@ export default function FractalsPage() {
 
   // Пресет
   const applyPreset = (preset: Preset) => {
+    // Автоматически включаем HP для глубоких зумов
+    if (preset.zoom > 1e7) {
+      setHighPrecision(true);
+    }
     setFractalType(preset.type);
     setCenter({ x: preset.centerX, y: preset.centerY });
-    setZoom(Math.min(preset.zoom, maxZoom));
+    setZoom(preset.zoom);
     if (preset.juliaC) setJuliaC(preset.juliaC);
   };
 
@@ -515,7 +752,14 @@ export default function FractalsPage() {
           <div className="p-3 border-b border-border">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">{fractalNames[fractalType]}</span>
-              <span className="text-xs text-muted font-mono">x{formatZoom(zoom)}</span>
+              <div className="flex items-center gap-2">
+                {highPrecision && (
+                  <span className="px-2 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
+                    HP
+                  </span>
+                )}
+                <span className="text-xs text-muted font-mono">x{formatZoom(zoom)}</span>
+              </div>
             </div>
 
             {/* Индикатор глубины */}
@@ -579,6 +823,40 @@ export default function FractalsPage() {
             >
               <Info size={18} />
             </button>
+          </div>
+
+          {/* Precision Toggle */}
+          <div className="p-4 rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className={highPrecision ? "text-yellow-400" : "text-muted"} />
+                <span className="text-sm font-medium">Precision</span>
+              </div>
+              <div className="flex rounded-lg overflow-hidden border border-border">
+                <button
+                  onClick={() => setHighPrecision(false)}
+                  className={`px-3 py-1.5 text-sm transition-all ${
+                    !highPrecision ? "bg-accent/20 text-accent" : "bg-transparent text-muted hover:bg-muted/10"
+                  }`}
+                >
+                  Normal
+                </button>
+                <button
+                  onClick={() => setHighPrecision(true)}
+                  className={`px-3 py-1.5 text-sm transition-all ${
+                    highPrecision ? "bg-yellow-500/20 text-yellow-400" : "bg-transparent text-muted hover:bg-muted/10"
+                  }`}
+                >
+                  High
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-muted mt-2">
+              {highPrecision
+                ? "Double-Double: зум до 10¹⁴ без артефактов"
+                : "Float: зум до 10⁷ (быстрее)"
+              }
+            </p>
           </div>
 
           {/* Тип */}
@@ -739,6 +1017,7 @@ export default function FractalsPage() {
                   className="px-3 py-2 rounded-lg bg-muted/10 hover:bg-muted/20 text-sm transition-all text-left"
                 >
                   {preset.name}
+                  {preset.zoom > 1e7 && <span className="text-xs text-yellow-400 ml-1">HP</span>}
                 </button>
               ))}
             </div>
@@ -756,7 +1035,10 @@ export default function FractalsPage() {
                 <strong>Shift + колёсико:</strong> плавный зум
               </p>
               <p className="text-xs text-muted">
-                <strong>Лимит зума:</strong> ~10⁷ (ограничение float precision в WebGL)
+                <strong>Normal:</strong> float precision, до ~10⁷
+              </p>
+              <p className="text-xs text-muted">
+                <strong>High:</strong> Double-Double арифметика, до ~10¹⁴ без пикселей
               </p>
             </div>
           )}
