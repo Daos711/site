@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 // DEBUG: установить в true чтобы HP шейдер показывал фиолетовый цвет (тест что он работает)
-const DEBUG_HP_PURPLE = false;
+const DEBUG_HP_PURPLE = true;
 
 // Типы фракталов
 type FractalType = "mandelbrot" | "julia" | "burning-ship" | "tricorn";
