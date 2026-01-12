@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3 } from "lucide-react";
+import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route } from "lucide-react";
 
 const tools = [
   // === Готовые ===
@@ -69,6 +69,14 @@ const tools = [
     description: "Визуализация алгоритмов сортировки: пузырьковая, быстрая, слиянием и др.",
     icon: BarChart3,
     href: "/tools/sorting",
+    status: "prototype" as const,
+  },
+  {
+    id: "pathfinding",
+    title: "Поиск пути",
+    description: "A*, Dijkstra, BFS, DFS — алгоритмы поиска пути на сетке с препятствиями.",
+    icon: Route,
+    href: "/tools/pathfinding",
     status: "prototype" as const,
   },
 ];
