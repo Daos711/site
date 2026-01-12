@@ -242,16 +242,21 @@ const fragmentShaderSourceHP_WebGL1 = `
 
   const float SPLIT = 4097.0; // 2^12 + 1
 
-  // twoProd с precise для предотвращения FMA оптимизации
+  // twoProd - используем массив чтобы предотвратить FMA оптимизацию
   vec2 twoProd(float a, float b) {
-    precise float p = a * b;
-    precise float a1 = a * SPLIT;
-    precise float a_hi = a1 - (a1 - a);
+    float t[2];
+    float p = a * b;
+    t[0] = a * SPLIT;
+    float a1 = t[0];
+    t[1] = a1 - a;
+    float a_hi = a1 - t[1];
     float a_lo = a - a_hi;
-    precise float b1 = b * SPLIT;
-    precise float b_hi = b1 - (b1 - b);
+    t[0] = b * SPLIT;
+    float b1 = t[0];
+    t[1] = b1 - b;
+    float b_hi = b1 - t[1];
     float b_lo = b - b_hi;
-    precise float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
+    float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
     return vec2(p, err);
   }
 
@@ -314,16 +319,21 @@ const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
 
   const float SPLIT = 4097.0; // 2^12 + 1
 
-  // twoProd с precise для предотвращения FMA оптимизации
+  // twoProd - используем массив чтобы предотвратить FMA оптимизацию
   vec2 twoProd(float a, float b) {
-    precise float p = a * b;
-    precise float a1 = a * SPLIT;
-    precise float a_hi = a1 - (a1 - a);
+    float t[2];
+    float p = a * b;
+    t[0] = a * SPLIT;
+    float a1 = t[0];
+    t[1] = a1 - a;
+    float a_hi = a1 - t[1];
     float a_lo = a - a_hi;
-    precise float b1 = b * SPLIT;
-    precise float b_hi = b1 - (b1 - b);
+    t[0] = b * SPLIT;
+    float b1 = t[0];
+    t[1] = b1 - b;
+    float b_hi = b1 - t[1];
     float b_lo = b - b_hi;
-    precise float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
+    float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
     return vec2(p, err);
   }
 
