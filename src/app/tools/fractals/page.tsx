@@ -1147,27 +1147,15 @@ export default function FractalsPage() {
   }, [precisionMode, center.x, center.y, fractalType, uploadReferenceOrbit]);
   // БЕЗ effectiveIterations! Орбита фиксированной длины
 
-  // HP работает до ~10^14, Perturbation включается после
-  const PERTURBATION_ZOOM_THRESHOLD = 1e14;
-
   // Рендеринг
   const render = useCallback(() => {
     const gl = glRef.current;
     const canvas = canvasRef.current;
 
-    // Выбор программы в зависимости от режима и zoom
-    // Ultra при низком zoom использует HP шейдер для корректных цветов
-    // Ultra при глубоком zoom (>10^12) использует Perturbation для бесконечного зума
+    // Выбор программы: High/Ultra используют HP шейдер (DD арифметика)
+    // Perturbation отключён - требует вычисления δc на CPU для настоящего глубокого зума
     let program: WebGLProgram | null;
-    const usePerturbation = precisionMode === "ultra" &&
-                            zoom >= PERTURBATION_ZOOM_THRESHOLD &&
-                            programPerturbationRef.current &&
-                            referenceOrbitTextureRef.current;
-
-    if (usePerturbation) {
-      program = programPerturbationRef.current;
-    } else if (highPrecision) {
-      // Ultra при низком zoom или High mode -> HP шейдер
+    if (highPrecision) {
       program = programHPRef.current;
     } else {
       program = programRef.current;
@@ -1207,22 +1195,7 @@ export default function FractalsPage() {
     gl.uniform1i(gl.getUniformLocation(program, "u_fractalType"), fractalTypeMap[fractalType]);
     gl.uniform1i(gl.getUniformLocation(program, "u_colorScheme"), colorSchemes[colorSchemeIdx].id);
 
-    if (usePerturbation) {
-      // Ultra mode при глубоком зуме: Perturbation Theory
-      const scale = 3.0 / zoom;
-      const [scaleHi, scaleLo] = packDD(scale);
-
-      gl.uniform2f(gl.getUniformLocation(program, "u_scaleHi"), scaleHi, 0);
-      gl.uniform2f(gl.getUniformLocation(program, "u_scaleLo"), scaleLo, 0);
-      gl.uniform1i(gl.getUniformLocation(program, "u_orbitLength"), orbitLengthRef.current);
-
-      // Привязываем текстуру опорной орбиты
-      gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, referenceOrbitTextureRef.current);
-      gl.uniform1i(gl.getUniformLocation(program, "u_referenceOrbit"), 0);
-
-      console.log('Perturbation mode: zoom', zoom.toExponential(2), 'orbit length', orbitLengthRef.current);
-    } else if (highPrecision) {
+    if (highPrecision) {
       // High Precision uniforms - передаём как (hi, lo) пары
       const scale = 3.0 / zoom;
       const [centerXHi, centerXLo] = packDD(center.x);
@@ -1471,17 +1444,7 @@ export default function FractalsPage() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">{fractalNames[fractalType]}</span>
               <div className="flex items-center gap-2">
-                {precisionMode === "ultra" && zoom >= PERTURBATION_ZOOM_THRESHOLD && (
-                  <span className="px-2 py-0.5 rounded text-xs bg-cyan-500/20 text-cyan-400">
-                    Ultra/Pert
-                  </span>
-                )}
-                {precisionMode === "ultra" && zoom < PERTURBATION_ZOOM_THRESHOLD && (
-                  <span className="px-2 py-0.5 rounded text-xs bg-cyan-500/20 text-cyan-400">
-                    Ultra/HP
-                  </span>
-                )}
-                {precisionMode === "high" && (
+                {(precisionMode === "ultra" || precisionMode === "high") && (
                   <span className="px-2 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
                     HP
                   </span>
@@ -1594,22 +1557,15 @@ export default function FractalsPage() {
               </div>
             </div>
             <p className="text-xs text-muted mt-2">
-              {precisionMode === "ultra"
-                ? (zoom >= PERTURBATION_ZOOM_THRESHOLD
-                    ? "Perturbation активен: зум до 10¹⁰⁰+"
-                    : "HP режим (Perturbation включится при zoom > 10¹⁴)")
-                : precisionMode === "high"
-                  ? "Double-Double: зум до 10¹⁴ без артефактов"
-                  : "Float: зум до 10⁷ (быстрее)"
+              {precisionMode === "ultra" || precisionMode === "high"
+                ? "Double-Double: зум до ~10¹⁴"
+                : "Float: зум до ~10⁷ (быстрее)"
               }
             </p>
             {/* GPU диагностика */}
             <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted font-mono">
               GPU highp: {gpuPrecision !== null ? `${gpuPrecision} bits` : "..."}
               {isWebGL2 && <span className="ml-2 text-green-400">WebGL2</span>}
-              {precisionMode === "ultra" && orbitLength > 0 && (
-                <span className="ml-2 text-cyan-400">orbit: {orbitLength}</span>
-              )}
             </div>
           </div>
 
