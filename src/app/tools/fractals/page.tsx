@@ -8,7 +8,9 @@ import {
   RotateCcw,
   Info,
   Palette,
-  MousePointer
+  MousePointer,
+  Gauge,
+  Zap
 } from "lucide-react";
 
 // Типы фракталов
@@ -23,6 +25,31 @@ const colorSchemes = [
   { name: "Электро", id: 4 },
   { name: "Ультра", id: 5 },
 ];
+
+// Аналогии масштаба
+const scaleAnalogies = [
+  { zoom: 1, name: "Земля", icon: "🌍" },
+  { zoom: 1e2, name: "Страна", icon: "🗺️" },
+  { zoom: 1e3, name: "Город", icon: "🏙️" },
+  { zoom: 1e4, name: "Квартал", icon: "🏘️" },
+  { zoom: 1e5, name: "Дом", icon: "🏠" },
+  { zoom: 1e6, name: "Комната", icon: "🚪" },
+  { zoom: 1e7, name: "Муравей", icon: "🐜" },
+  { zoom: 1e8, name: "Волос", icon: "〰️" },
+  { zoom: 1e9, name: "Клетка", icon: "🧫" },
+  { zoom: 1e10, name: "Бактерия", icon: "🦠" },
+  { zoom: 1e11, name: "Вирус", icon: "🔬" },
+  { zoom: 1e12, name: "Молекула", icon: "⚗️" },
+  { zoom: 1e13, name: "Атом", icon: "⚛️" },
+  { zoom: 1e14, name: "Ядро", icon: "🔴" },
+];
+
+function getScaleAnalogy(zoom: number) {
+  for (let i = scaleAnalogies.length - 1; i >= 0; i--) {
+    if (zoom >= scaleAnalogies[i].zoom) return scaleAnalogies[i];
+  }
+  return scaleAnalogies[0];
+}
 
 // Пресеты
 interface Preset {
@@ -39,6 +66,7 @@ const presets: Preset[] = [
   { name: "Морской конёк", type: "mandelbrot", centerX: -0.743643887037151, centerY: 0.131825904205330, zoom: 2000 },
   { name: "Спираль", type: "mandelbrot", centerX: -0.761574, centerY: -0.0847596, zoom: 500 },
   { name: "Долина слонов", type: "mandelbrot", centerX: 0.275, centerY: 0.0, zoom: 50 },
+  { name: "Глубокий зум", type: "mandelbrot", centerX: -0.7435669, centerY: 0.1314023, zoom: 1e10 },
   { name: "Жюлиа ⚡", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.7, y: 0.27015 } },
   { name: "Жюлиа 🐉", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: -0.8, y: 0.156 } },
   { name: "Жюлиа 🌀", type: "julia", centerX: 0, centerY: 0, zoom: 1, juliaC: { x: 0.285, y: 0.01 } },
@@ -55,7 +83,7 @@ const vertexShaderSource = `
   }
 `;
 
-// Фрагментный шейдер с фракталами
+// Обычный фрагментный шейдер (float precision)
 const fragmentShaderSource = `
   precision highp float;
 
@@ -63,61 +91,48 @@ const fragmentShaderSource = `
   uniform vec2 u_center;
   uniform float u_zoom;
   uniform int u_maxIter;
-  uniform int u_fractalType; // 0=mandelbrot, 1=julia, 2=burning-ship, 3=tricorn
+  uniform int u_fractalType;
   uniform vec2 u_juliaC;
   uniform int u_colorScheme;
 
   vec3 palette(float t, int scheme) {
     if (scheme == 0) {
-      // Классика — синяя
       return vec3(
         9.0 * (1.0 - t) * t * t * t,
         15.0 * (1.0 - t) * (1.0 - t) * t * t,
         8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t + 0.2 * t
       );
     } else if (scheme == 1) {
-      // Огонь
       return vec3(
         min(1.0, t * 2.0),
         max(0.0, min(1.0, (t - 0.3) * 2.5)),
         max(0.0, min(1.0, (t - 0.6) * 3.0))
       );
     } else if (scheme == 2) {
-      // Океан
-      return vec3(
-        t * t * 0.3,
-        0.2 + t * 0.6,
-        0.5 + t * 0.5
-      );
+      return vec3(t * t * 0.3, 0.2 + t * 0.6, 0.5 + t * 0.5);
     } else if (scheme == 3) {
-      // Радуга
       return vec3(
         sin(t * 6.28318 + 0.0) * 0.5 + 0.5,
         sin(t * 6.28318 + 2.094) * 0.5 + 0.5,
         sin(t * 6.28318 + 4.188) * 0.5 + 0.5
       );
     } else if (scheme == 4) {
-      // Электро
       return vec3(
         sin(t * 10.0) * 0.5 + 0.5,
         sin(t * 10.0 + 2.0) * 0.5 + 0.5,
         sin(t * 10.0 + 4.0) * 0.5 + 0.5
       );
     } else {
-      // Ультра — высокий контраст
       float h = mod(t * 5.0, 1.0);
-      float s = 1.0;
-      float v = 1.0;
       vec3 c = vec3(h * 6.0);
       c = abs(mod(c - vec3(3.0, 2.0, 4.0), 6.0) - 3.0) - 1.0;
       c = clamp(c, 0.0, 1.0);
-      return v * mix(vec3(1.0), c, s);
+      return mix(vec3(1.0), c, 1.0);
     }
   }
 
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
-
     float aspect = u_resolution.x / u_resolution.y;
     float scale = 3.0 / u_zoom;
 
@@ -129,7 +144,6 @@ const fragmentShaderSource = `
     vec2 juliaC = u_juliaC;
 
     if (u_fractalType == 1) {
-      // Julia
       z = c;
       c = juliaC;
     } else {
@@ -139,7 +153,7 @@ const fragmentShaderSource = `
     float iter = 0.0;
     float maxIter = float(u_maxIter);
 
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 2000; i++) {
       if (i >= u_maxIter) break;
 
       float x2 = z.x * z.x;
@@ -150,13 +164,10 @@ const fragmentShaderSource = `
       vec2 newZ;
 
       if (u_fractalType == 2) {
-        // Burning Ship
         newZ = vec2(x2 - y2 + c.x, 2.0 * abs(z.x * z.y) + c.y);
       } else if (u_fractalType == 3) {
-        // Tricorn
         newZ = vec2(x2 - y2 + c.x, -2.0 * z.x * z.y + c.y);
       } else {
-        // Mandelbrot / Julia
         newZ = vec2(x2 - y2 + c.x, 2.0 * z.x * z.y + c.y);
       }
 
@@ -167,11 +178,9 @@ const fragmentShaderSource = `
     if (iter >= maxIter) {
       gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
     } else {
-      // Smooth coloring
       float log_zn = log(z.x * z.x + z.y * z.y) / 2.0;
       float nu = log(log_zn / log(2.0)) / log(2.0);
       iter = iter + 1.0 - nu;
-
       float t = iter / maxIter;
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
@@ -179,24 +188,231 @@ const fragmentShaderSource = `
   }
 `;
 
+// High Precision шейдер с Emulated Double (float-float)
+const fragmentShaderSourceHP = `
+  precision highp float;
+
+  uniform vec2 u_resolution;
+  uniform vec2 u_centerHi;
+  uniform vec2 u_centerLo;
+  uniform vec2 u_scaleHiLo;
+  uniform int u_maxIter;
+  uniform int u_fractalType;
+  uniform vec2 u_juliaCHi;
+  uniform vec2 u_juliaCLo;
+  uniform int u_colorScheme;
+
+  // ============ Double-Double Arithmetic ============
+  // Представляем число как (hi, lo) где value = hi + lo
+  // hi содержит старшие биты, lo — младшие (коррекция)
+
+  // Сложение двух float с компенсацией ошибки (Knuth's twoSum)
+  vec2 twoSum(float a, float b) {
+    float s = a + b;
+    float v = s - a;
+    float e = (a - (s - v)) + (b - v);
+    return vec2(s, e);
+  }
+
+  // Умножение двух float с компенсацией (Dekker's twoProd)
+  vec2 twoProd(float a, float b) {
+    float p = a * b;
+    // Split constant for float (2^12 + 1 = 4097)
+    float splitA = a * 4097.0;
+    float aH = splitA - (splitA - a);
+    float aL = a - aH;
+    float splitB = b * 4097.0;
+    float bH = splitB - (splitB - b);
+    float bL = b - bH;
+    float e = ((aH * bH - p) + aH * bL + aL * bH) + aL * bL;
+    return vec2(p, e);
+  }
+
+  // DD + DD
+  vec2 ddAdd(vec2 a, vec2 b) {
+    vec2 s = twoSum(a.x, b.x);
+    float e = a.y + b.y + s.y;
+    return twoSum(s.x, e);
+  }
+
+  // DD - DD
+  vec2 ddSub(vec2 a, vec2 b) {
+    return ddAdd(a, vec2(-b.x, -b.y));
+  }
+
+  // DD * DD
+  vec2 ddMul(vec2 a, vec2 b) {
+    vec2 p = twoProd(a.x, b.x);
+    float e = a.x * b.y + a.y * b.x + p.y;
+    return twoSum(p.x, e);
+  }
+
+  // DD * float
+  vec2 ddMulF(vec2 a, float b) {
+    vec2 p = twoProd(a.x, b);
+    float e = a.y * b + p.y;
+    return twoSum(p.x, e);
+  }
+
+  // float -> DD
+  vec2 toDD(float a) {
+    return vec2(a, 0.0);
+  }
+
+  vec3 palette(float t, int scheme) {
+    if (scheme == 0) {
+      return vec3(
+        9.0 * (1.0 - t) * t * t * t,
+        15.0 * (1.0 - t) * (1.0 - t) * t * t,
+        8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t + 0.2 * t
+      );
+    } else if (scheme == 1) {
+      return vec3(
+        min(1.0, t * 2.0),
+        max(0.0, min(1.0, (t - 0.3) * 2.5)),
+        max(0.0, min(1.0, (t - 0.6) * 3.0))
+      );
+    } else if (scheme == 2) {
+      return vec3(t * t * 0.3, 0.2 + t * 0.6, 0.5 + t * 0.5);
+    } else if (scheme == 3) {
+      return vec3(
+        sin(t * 6.28318 + 0.0) * 0.5 + 0.5,
+        sin(t * 6.28318 + 2.094) * 0.5 + 0.5,
+        sin(t * 6.28318 + 4.188) * 0.5 + 0.5
+      );
+    } else if (scheme == 4) {
+      return vec3(
+        sin(t * 10.0) * 0.5 + 0.5,
+        sin(t * 10.0 + 2.0) * 0.5 + 0.5,
+        sin(t * 10.0 + 4.0) * 0.5 + 0.5
+      );
+    } else {
+      float h = mod(t * 5.0, 1.0);
+      vec3 c = vec3(h * 6.0);
+      c = abs(mod(c - vec3(3.0, 2.0, 4.0), 6.0) - 3.0) - 1.0;
+      c = clamp(c, 0.0, 1.0);
+      return mix(vec3(1.0), c, 1.0);
+    }
+  }
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    float aspect = u_resolution.x / u_resolution.y;
+
+    // Scale как DD
+    vec2 scaleDd = vec2(u_scaleHiLo.x, u_scaleHiLo.y);
+
+    // Вычисляем координату c в DD
+    float offsetX = (uv.x - 0.5) * aspect;
+    float offsetY = (uv.y - 0.5);
+
+    // c.x = centerX + offsetX * scale
+    vec2 cxDd = ddAdd(vec2(u_centerHi.x, u_centerLo.x), ddMulF(scaleDd, offsetX));
+    // c.y = centerY + offsetY * scale
+    vec2 cyDd = ddAdd(vec2(u_centerHi.y, u_centerLo.y), ddMulF(scaleDd, offsetY));
+
+    vec2 zxDd, zyDd;
+
+    if (u_fractalType == 1) {
+      // Julia: z = c, c = juliaC
+      zxDd = cxDd;
+      zyDd = cyDd;
+      cxDd = vec2(u_juliaCHi.x, u_juliaCLo.x);
+      cyDd = vec2(u_juliaCHi.y, u_juliaCLo.y);
+    } else {
+      zxDd = vec2(0.0, 0.0);
+      zyDd = vec2(0.0, 0.0);
+    }
+
+    float iter = 0.0;
+    float maxIter = float(u_maxIter);
+
+    for (int i = 0; i < 2000; i++) {
+      if (i >= u_maxIter) break;
+
+      // x² и y² в DD
+      vec2 x2 = ddMul(zxDd, zxDd);
+      vec2 y2 = ddMul(zyDd, zyDd);
+
+      // Проверка |z|² > 4 (используем только hi часть для скорости)
+      if (x2.x + y2.x > 4.0) break;
+
+      // z = z² + c
+      vec2 newZxDd, newZyDd;
+
+      if (u_fractalType == 2) {
+        // Burning Ship: z = (|Re|, |Im|)² + c
+        vec2 absZxDd = zxDd.x < 0.0 ? vec2(-zxDd.x, -zxDd.y) : zxDd;
+        vec2 absZyDd = zyDd.x < 0.0 ? vec2(-zyDd.x, -zyDd.y) : zyDd;
+        newZxDd = ddAdd(ddSub(x2, y2), cxDd);
+        newZyDd = ddAdd(ddMulF(ddMul(absZxDd, absZyDd), 2.0), cyDd);
+      } else if (u_fractalType == 3) {
+        // Tricorn: z = conj(z)² + c
+        newZxDd = ddAdd(ddSub(x2, y2), cxDd);
+        newZyDd = ddAdd(ddMulF(ddMul(zxDd, zyDd), -2.0), cyDd);
+      } else {
+        // Mandelbrot / Julia
+        newZxDd = ddAdd(ddSub(x2, y2), cxDd);
+        newZyDd = ddAdd(ddMulF(ddMul(zxDd, zyDd), 2.0), cyDd);
+      }
+
+      zxDd = newZxDd;
+      zyDd = newZyDd;
+      iter += 1.0;
+    }
+
+    if (iter >= maxIter) {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+      // Smooth coloring (используем hi часть)
+      float zx = zxDd.x;
+      float zy = zyDd.x;
+      float log_zn = log(zx * zx + zy * zy) / 2.0;
+      float nu = log(log_zn / log(2.0)) / log(2.0);
+      iter = iter + 1.0 - nu;
+      float t = iter / maxIter;
+      vec3 color = palette(t, u_colorScheme);
+      gl_FragColor = vec4(color, 1.0);
+    }
+  }
+`;
+
+// Хелпер: упаковка double в (hi, lo)
+function packDD(x: number): { hi: number; lo: number } {
+  const hi = Math.fround(x);
+  const lo = Math.fround(x - hi);
+  return { hi, lo };
+}
+
 export default function FractalsPage() {
   // Состояние
   const [fractalType, setFractalType] = useState<FractalType>("mandelbrot");
   const [colorSchemeIdx, setColorSchemeIdx] = useState(0);
-  const [maxIterations, setMaxIterations] = useState(150);
+  const [maxIterations, setMaxIterations] = useState(200);
   const [center, setCenter] = useState({ x: -0.5, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [juliaC, setJuliaC] = useState({ x: -0.7, y: 0.27015 });
   const [showInfo, setShowInfo] = useState(false);
   const [mode, setMode] = useState<"navigate" | "julia">("navigate");
   const [glSupported, setGlSupported] = useState(true);
+  const [highPrecision, setHighPrecision] = useState(false);
+  const [autoIterations, setAutoIterations] = useState(true);
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
+  const programHPRef = useRef<WebGLProgram | null>(null);
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+
+  // Автоматическое увеличение итераций при зуме
+  const effectiveIterations = autoIterations
+    ? Math.min(2000, Math.max(200, Math.floor(200 + 50 * Math.log2(zoom))))
+    : maxIterations;
+
+  // Лимит зума в зависимости от режима
+  const maxZoom = highPrecision ? 1e14 : 1e8;
 
   // Инициализация WebGL
   useEffect(() => {
@@ -213,7 +429,7 @@ export default function FractalsPage() {
     }
     glRef.current = gl;
 
-    // Компиляция шейдеров
+    // Компиляция обычного шейдера
     const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
     gl.shaderSource(vertexShader, vertexShaderSource);
     gl.compileShader(vertexShader);
@@ -222,13 +438,26 @@ export default function FractalsPage() {
     gl.shaderSource(fragmentShader, fragmentShaderSource);
     gl.compileShader(fragmentShader);
 
-    // Программа
     const program = gl.createProgram()!;
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
-    gl.useProgram(program);
     programRef.current = program;
+
+    // Компиляция High Precision шейдера
+    const vertexShaderHP = gl.createShader(gl.VERTEX_SHADER)!;
+    gl.shaderSource(vertexShaderHP, vertexShaderSource);
+    gl.compileShader(vertexShaderHP);
+
+    const fragmentShaderHP = gl.createShader(gl.FRAGMENT_SHADER)!;
+    gl.shaderSource(fragmentShaderHP, fragmentShaderSourceHP);
+    gl.compileShader(fragmentShaderHP);
+
+    const programHP = gl.createProgram()!;
+    gl.attachShader(programHP, vertexShaderHP);
+    gl.attachShader(programHP, fragmentShaderHP);
+    gl.linkProgram(programHP);
+    programHPRef.current = programHP;
 
     // Вершины (полноэкранный квад)
     const vertices = new Float32Array([
@@ -239,23 +468,29 @@ export default function FractalsPage() {
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-    const positionLocation = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
     return () => {
       gl.deleteProgram(program);
+      gl.deleteProgram(programHP);
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
+      gl.deleteShader(vertexShaderHP);
+      gl.deleteShader(fragmentShaderHP);
     };
   }, []);
 
   // Рендеринг
   const render = useCallback(() => {
     const gl = glRef.current;
-    const program = programRef.current;
     const canvas = canvasRef.current;
+    const program = highPrecision ? programHPRef.current : programRef.current;
     if (!gl || !program || !canvas) return;
+
+    gl.useProgram(program);
+
+    // Настройка атрибутов
+    const positionLocation = gl.getAttribLocation(program, "a_position");
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
     // Размер canvas
     const rect = canvas.getBoundingClientRect();
@@ -271,9 +506,7 @@ export default function FractalsPage() {
 
     // Uniforms
     gl.uniform2f(gl.getUniformLocation(program, "u_resolution"), width, height);
-    gl.uniform2f(gl.getUniformLocation(program, "u_center"), center.x, center.y);
-    gl.uniform1f(gl.getUniformLocation(program, "u_zoom"), zoom);
-    gl.uniform1i(gl.getUniformLocation(program, "u_maxIter"), maxIterations);
+    gl.uniform1i(gl.getUniformLocation(program, "u_maxIter"), effectiveIterations);
 
     const fractalTypeMap: Record<FractalType, number> = {
       "mandelbrot": 0,
@@ -282,12 +515,32 @@ export default function FractalsPage() {
       "tricorn": 3,
     };
     gl.uniform1i(gl.getUniformLocation(program, "u_fractalType"), fractalTypeMap[fractalType]);
-    gl.uniform2f(gl.getUniformLocation(program, "u_juliaC"), juliaC.x, juliaC.y);
     gl.uniform1i(gl.getUniformLocation(program, "u_colorScheme"), colorSchemes[colorSchemeIdx].id);
+
+    if (highPrecision) {
+      // High Precision uniforms
+      const centerX = packDD(center.x);
+      const centerY = packDD(center.y);
+      const scale = 3.0 / zoom;
+      const scalePacked = packDD(scale);
+      const juliaCX = packDD(juliaC.x);
+      const juliaCY = packDD(juliaC.y);
+
+      gl.uniform2f(gl.getUniformLocation(program, "u_centerHi"), centerX.hi, centerY.hi);
+      gl.uniform2f(gl.getUniformLocation(program, "u_centerLo"), centerX.lo, centerY.lo);
+      gl.uniform2f(gl.getUniformLocation(program, "u_scaleHiLo"), scalePacked.hi, scalePacked.lo);
+      gl.uniform2f(gl.getUniformLocation(program, "u_juliaCHi"), juliaCX.hi, juliaCY.hi);
+      gl.uniform2f(gl.getUniformLocation(program, "u_juliaCLo"), juliaCX.lo, juliaCY.lo);
+    } else {
+      // Обычные uniforms
+      gl.uniform2f(gl.getUniformLocation(program, "u_center"), center.x, center.y);
+      gl.uniform1f(gl.getUniformLocation(program, "u_zoom"), zoom);
+      gl.uniform2f(gl.getUniformLocation(program, "u_juliaC"), juliaC.x, juliaC.y);
+    }
 
     // Рисуем
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }, [center, zoom, fractalType, juliaC, maxIterations, colorSchemeIdx]);
+  }, [center, zoom, fractalType, juliaC, effectiveIterations, colorSchemeIdx, highPrecision]);
 
   // Перерендер при изменении параметров
   useEffect(() => {
@@ -308,7 +561,7 @@ export default function FractalsPage() {
 
     return {
       x: center.x + (px / rect.width - 0.5) * scale * aspect,
-      y: center.y + (1 - py / rect.height - 0.5) * scale, // Y перевёрнут
+      y: center.y + (1 - py / rect.height - 0.5) * scale,
     };
   }, [center, zoom]);
 
@@ -325,7 +578,7 @@ export default function FractalsPage() {
     }
   }, [mode, fractalType, screenToFractal]);
 
-  // Зум колёсиком (нужен отдельный useEffect для passive: false)
+  // Зум колёсиком
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -346,8 +599,10 @@ export default function FractalsPage() {
         y: center.y + (1 - py / rect.height - 0.5) * scale,
       };
 
-      const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
-      const newZoom = Math.max(0.5, Math.min(100000000, zoom * factor));
+      // Плавный зум: с Shift — медленнее
+      const baseFactor = e.shiftKey ? 1.08 : 1.2;
+      const factor = e.deltaY < 0 ? baseFactor : 1 / baseFactor;
+      const newZoom = Math.max(0.5, Math.min(maxZoom, zoom * factor));
 
       setCenter({
         x: coords.x + (center.x - coords.x) / factor,
@@ -358,7 +613,7 @@ export default function FractalsPage() {
 
     canvas.addEventListener("wheel", handleWheel, { passive: false });
     return () => canvas.removeEventListener("wheel", handleWheel);
-  }, [zoom, center]);
+  }, [zoom, center, maxZoom]);
 
   // Перетаскивание
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -433,6 +688,8 @@ export default function FractalsPage() {
     setCenter({ x: preset.centerX, y: preset.centerY });
     setZoom(preset.zoom);
     if (preset.juliaC) setJuliaC(preset.juliaC);
+    // Включаем HP для глубоких зумов
+    if (preset.zoom > 1e7) setHighPrecision(true);
   };
 
   // Сброс
@@ -450,6 +707,24 @@ export default function FractalsPage() {
     "burning-ship": "Burning Ship",
     tricorn: "Tricorn",
   };
+
+  // Форматирование зума
+  const formatZoom = (z: number) => {
+    if (z >= 1e12) return (z / 1e12).toFixed(1) + "T";
+    if (z >= 1e9) return (z / 1e9).toFixed(1) + "B";
+    if (z >= 1e6) return (z / 1e6).toFixed(1) + "M";
+    if (z >= 1e3) return (z / 1e3).toFixed(1) + "k";
+    return z.toFixed(1);
+  };
+
+  // Глубина (удвоения)
+  const depth = Math.floor(Math.log2(zoom));
+  const analogy = getScaleAnalogy(zoom);
+
+  // Определяем "здоровье" точности
+  const precisionHealth = highPrecision
+    ? (zoom < 1e14 ? "good" : "warning")
+    : (zoom < 1e7 ? "good" : zoom < 1e8 ? "warning" : "bad");
 
   if (!glSupported) {
     return (
@@ -472,12 +747,42 @@ export default function FractalsPage() {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Canvas */}
         <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="p-3 border-b border-border flex items-center justify-between">
-            <span className="text-sm font-medium">{fractalNames[fractalType]}</span>
-            <span className="text-xs text-muted font-mono">
-              x{zoom >= 1000000 ? (zoom / 1000000).toFixed(1) + "M" : zoom >= 1000 ? (zoom / 1000).toFixed(1) + "k" : zoom.toFixed(1)}
-            </span>
+          {/* Header с метриками */}
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">{fractalNames[fractalType]}</span>
+              <div className="flex items-center gap-2">
+                {highPrecision && (
+                  <span className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-400">
+                    HP
+                  </span>
+                )}
+                <span className="text-xs text-muted font-mono">x{formatZoom(zoom)}</span>
+              </div>
+            </div>
+
+            {/* Индикатор глубины */}
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5">
+                <Gauge size={14} className="text-muted" />
+                <span className="text-muted">Глубина:</span>
+                <span className="font-mono">{depth}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg">{analogy.icon}</span>
+                <span className="text-muted">{analogy.name}</span>
+              </div>
+              <div className="flex-1" />
+              <div className={`w-2 h-2 rounded-full ${
+                precisionHealth === "good" ? "bg-green-500" :
+                precisionHealth === "warning" ? "bg-yellow-500" : "bg-red-500"
+              }`} title={
+                precisionHealth === "good" ? "Точность OK" :
+                precisionHealth === "warning" ? "Приближается к пределу" : "Артефакты! Включите HP"
+              } />
+            </div>
           </div>
+
           <canvas
             ref={canvasRef}
             className="w-full aspect-square cursor-crosshair"
@@ -498,7 +803,7 @@ export default function FractalsPage() {
           {/* Кнопки */}
           <div className="flex gap-2">
             <button
-              onClick={() => setZoom(z => Math.min(100000000, z * 2))}
+              onClick={() => setZoom(z => Math.min(maxZoom, z * 2))}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-all"
             >
               <ZoomIn size={18} />
@@ -525,6 +830,40 @@ export default function FractalsPage() {
             >
               <Info size={18} />
             </button>
+          </div>
+
+          {/* High Precision режим */}
+          <div className={`p-4 rounded-xl border transition-all ${
+            highPrecision
+              ? "border-purple-500/50 bg-purple-500/10"
+              : precisionHealth === "bad"
+                ? "border-red-500/50 bg-red-500/10"
+                : "border-border bg-card"
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className={highPrecision ? "text-purple-400" : "text-muted"} />
+                <h3 className="font-medium text-sm">High Precision</h3>
+              </div>
+              <button
+                onClick={() => setHighPrecision(!highPrecision)}
+                className={`px-3 py-1 rounded-lg text-sm transition-all ${
+                  highPrecision
+                    ? "bg-purple-500/30 text-purple-300"
+                    : "bg-muted/20 hover:bg-muted/30"
+                }`}
+              >
+                {highPrecision ? "ON" : "OFF"}
+              </button>
+            </div>
+            <p className="text-xs text-muted">
+              {highPrecision
+                ? `Emulated Double — зум до 10¹⁴ (${precisionHealth === "warning" ? "приближаемся к пределу" : "OK"})`
+                : precisionHealth === "bad"
+                  ? "⚠️ Артефакты! Включите HP для глубокого зума"
+                  : `Float — зум до ~10⁷ (глубже нужен HP)`
+              }
+            </p>
           </div>
 
           {/* Тип */}
@@ -577,8 +916,6 @@ export default function FractalsPage() {
           {fractalType === "julia" && (
             <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 space-y-3">
               <h3 className="font-medium text-sm text-purple-400">Параметр c</h3>
-
-              {/* Быстрый выбор красивых точек */}
               <div className="grid grid-cols-4 gap-1">
                 {[
                   { c: { x: -0.7, y: 0.27015 }, label: "⚡" },
@@ -604,41 +941,9 @@ export default function FractalsPage() {
                   </button>
                 ))}
               </div>
-
               <div className="text-xs text-muted text-center">
                 c = {juliaC.x.toFixed(3)} {juliaC.y >= 0 ? "+" : ""} {juliaC.y.toFixed(3)}i
               </div>
-
-              {/* Тонкая настройка */}
-              <details className="text-xs">
-                <summary className="cursor-pointer text-muted hover:text-purple-400">
-                  Тонкая настройка...
-                </summary>
-                <div className="mt-2 space-y-2">
-                  <input
-                    type="range"
-                    min="-1"
-                    max="0.5"
-                    step="0.01"
-                    value={juliaC.x}
-                    onChange={(e) => setJuliaC(c => ({ ...c, x: parseFloat(e.target.value) }))}
-                    className="w-full accent-purple-500"
-                  />
-                  <input
-                    type="range"
-                    min="-1"
-                    max="1"
-                    step="0.01"
-                    value={juliaC.y}
-                    onChange={(e) => setJuliaC(c => ({ ...c, y: parseFloat(e.target.value) }))}
-                    className="w-full accent-pink-500"
-                  />
-                  <p className="text-muted">
-                    Диапазон ограничен интересными значениями
-                  </p>
-                </div>
-              </details>
-
               <button
                 onClick={() => {
                   setFractalType("mandelbrot");
@@ -676,19 +981,36 @@ export default function FractalsPage() {
 
           {/* Итерации */}
           <div className="p-4 rounded-xl border border-border bg-card">
-            <div className="flex justify-between text-sm mb-2">
+            <div className="flex justify-between items-center text-sm mb-2">
               <span className="text-muted">Детализация</span>
-              <span className="font-mono">{maxIterations}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono">{effectiveIterations}</span>
+                <button
+                  onClick={() => setAutoIterations(!autoIterations)}
+                  className={`px-2 py-0.5 rounded text-xs transition-all ${
+                    autoIterations ? "bg-accent/20 text-accent" : "bg-muted/20"
+                  }`}
+                >
+                  {autoIterations ? "auto" : "manual"}
+                </button>
+              </div>
             </div>
-            <input
-              type="range"
-              min="50"
-              max="500"
-              step="10"
-              value={maxIterations}
-              onChange={(e) => setMaxIterations(parseInt(e.target.value))}
-              className="w-full accent-accent"
-            />
+            {!autoIterations && (
+              <input
+                type="range"
+                min="50"
+                max="2000"
+                step="50"
+                value={maxIterations}
+                onChange={(e) => setMaxIterations(parseInt(e.target.value))}
+                className="w-full accent-accent"
+              />
+            )}
+            {autoIterations && (
+              <p className="text-xs text-muted">
+                Авто-увеличение при зуме (200 + 50×log₂)
+              </p>
+            )}
           </div>
 
           {/* Пресеты */}
@@ -702,6 +1024,7 @@ export default function FractalsPage() {
                   className="px-3 py-2 rounded-lg bg-muted/10 hover:bg-muted/20 text-sm transition-all text-left"
                 >
                   {preset.name}
+                  {preset.zoom > 1e6 && <span className="text-xs text-purple-400 ml-1">HP</span>}
                 </button>
               ))}
             </div>
@@ -712,13 +1035,14 @@ export default function FractalsPage() {
             <div className="p-4 rounded-xl border border-accent/30 bg-accent/5 text-sm space-y-3">
               <h3 className="font-medium text-accent">Как это работает?</h3>
               <p className="text-xs text-muted">
-                Для каждой точки (x, y) проверяем: останется ли последовательность
-                z → z² + c ограниченной? Цвет = скорость "убегания" в бесконечность.
+                Для каждой точки проверяем: останется ли z → z² + c ограниченной?
               </p>
               <p className="text-xs text-muted">
-                <strong>Мандельброт:</strong> c = точка, z₀ = 0<br/>
-                <strong>Жюлиа:</strong> z₀ = точка, c фиксировано<br/>
-                Каждая точка внутри Мандельброта даёт связное множество Жюлиа!
+                <strong>High Precision:</strong> Emulated Double (float-float) даёт ~10¹⁴ зума
+                вместо ~10⁷ у обычного float. Чуть медленнее, но без артефактов.
+              </p>
+              <p className="text-xs text-muted">
+                <strong>Shift + колёсико:</strong> плавный зум
               </p>
             </div>
           )}
