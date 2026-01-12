@@ -235,6 +235,7 @@ export default function Game2048Page() {
   const [bestScore3x3, setBestScore3x3] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
+  const [keepPlaying, setKeepPlaying] = useState(false); // После нажатия "Продолжить"
   const [isClient, setIsClient] = useState(false);
 
   // Auth
@@ -383,7 +384,8 @@ export default function Game2048Page() {
       setGrid(gridWithNew);
       setScore(s => s + moveScore);
 
-      if (hasWon(gridWithNew, gridSize) && !won) {
+      // Показываем победу только если ещё не показывали и не нажали "Продолжить"
+      if (hasWon(gridWithNew, gridSize) && !won && !keepPlaying) {
         setWon(true);
       }
 
@@ -391,7 +393,7 @@ export default function Game2048Page() {
         setGameOver(true);
       }
     }
-  }, [grid, gameOver, won, gridSize]);
+  }, [grid, gameOver, won, keepPlaying, gridSize]);
 
   // Клавиатура
   useEffect(() => {
@@ -464,6 +466,7 @@ export default function Game2048Page() {
     setScore(0);
     setGameOver(false);
     setWon(false);
+    setKeepPlaying(false);
     setScoreSubmitted(false);
     setIsNewRecord(false);
   }, [gridSize]);
@@ -687,7 +690,7 @@ export default function Game2048Page() {
             <div className="text-white/80 mb-4">Поздравляем!</div>
             <div className="flex gap-2">
               <button
-                onClick={() => setWon(false)}
+                onClick={() => { setWon(false); setKeepPlaying(true); }}
                 className="px-4 py-2 rounded-xl bg-white/20 text-white font-bold hover:bg-white/30 transition-all"
               >
                 Продолжить
