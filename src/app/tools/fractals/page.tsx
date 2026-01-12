@@ -203,12 +203,15 @@ export default function FractalsPage() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    let gl = canvas.getContext("webgl") as WebGLRenderingContext | null;
+    if (!gl) {
+      gl = canvas.getContext("experimental-webgl") as WebGLRenderingContext | null;
+    }
     if (!gl) {
       setGlSupported(false);
       return;
     }
-    glRef.current = gl as WebGLRenderingContext;
+    glRef.current = gl;
 
     // Компиляция шейдеров
     const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
