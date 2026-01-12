@@ -391,6 +391,12 @@ const fragmentShaderSourceHP_main_WebGL1 = `
   }
 
   void main() {
+    // DEBUG: фиолетовая полоса слева для проверки что HP шейдер работает
+    if (gl_FragCoord.x < 10.0) {
+      gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+      return;
+    }
+
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float aspect = u_resolution.x / u_resolution.y;
 
@@ -529,6 +535,12 @@ const fragmentShaderSourceHP_main_WebGL2 = `
   }
 
   void main() {
+    // DEBUG: фиолетовая полоса слева для проверки что HP шейдер работает
+    if (gl_FragCoord.x < 10.0) {
+      fragColor = vec4(1.0, 0.0, 1.0, 1.0);
+      return;
+    }
+
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float aspect = u_resolution.x / u_resolution.y;
 
@@ -644,7 +656,7 @@ const fragmentShaderSourceHP_WebGL2_DEBUG = fragmentShaderSourceHP_WebGL2_full.r
 // Упаковка double в (hi, lo) для передачи в шейдер
 function packDD(x: number): [number, number] {
   const hi = Math.fround(x);
-  const lo = Math.fround(x - hi);
+  const lo = x - hi;  // БЕЗ Math.fround! lo маленькое, float32 хватит при передаче
   return [hi, lo];
 }
 
@@ -833,12 +845,17 @@ export default function FractalsPage() {
       const [juliaCYHi, juliaCYLo] = packDD(juliaC.y);
 
       // Диагностика: логируем DD-значения при глубоком зуме
-      if (zoom > 1000) {
-        console.log('HP mode diagnostics at zoom', zoom.toExponential(2), ':');
-        console.log('  scale:', scale.toExponential(6), '-> hi:', scaleHi, 'lo:', scaleLo);
-        console.log('  centerX:', center.x, '-> hi:', centerXHi, 'lo:', centerXLo);
-        console.log('  centerY:', center.y, '-> hi:', centerYHi, 'lo:', centerYLo);
-        console.log('  reconstructed centerX:', centerXHi + centerXLo, 'error:', Math.abs(center.x - (centerXHi + centerXLo)));
+      if (zoom > 1e6) {
+        const reconstructedX = centerXHi + centerXLo;
+        const relErrorX = Math.abs(center.x - reconstructedX) / Math.abs(center.x);
+        console.log('HP packDD test at zoom', zoom.toExponential(2), ':');
+        console.log('  centerX:', center.x, '→ hi:', centerXHi, 'lo:', centerXLo);
+        console.log('  reconstructed:', reconstructedX, 'relative error:', relErrorX.toExponential(2));
+        console.log('  scale:', scale.toExponential(6), '→ hi:', scaleHi, 'lo:', scaleLo);
+        // Relative error должен быть ~1e-15 или меньше
+        if (relErrorX > 1e-10) {
+          console.warn('⚠️ packDD relative error too high!');
+        }
       }
 
       gl.uniform2f(gl.getUniformLocation(program, "u_centerHi"), centerXHi, centerYHi);
