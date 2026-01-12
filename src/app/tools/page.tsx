@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route, Sparkles, Grid2X2 } from "lucide-react";
+import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route, Sparkles } from "lucide-react";
 
 const tools = [
   // === Готовые ===
@@ -85,14 +85,6 @@ const tools = [
     description: "Гравитационная симуляция: орбиты, двойные звёзды, хаос.",
     icon: Sparkles,
     href: "/tools/nbody",
-    status: "prototype" as const,
-  },
-  {
-    id: "2048",
-    title: "2048",
-    description: "Классическая головоломка. Соединяй плитки, собери 2048!",
-    icon: Grid2X2,
-    href: "/tools/2048",
     status: "prototype" as const,
   },
 ];
