@@ -128,3 +128,296 @@ export async function getScores(limit = 50): Promise<ScoreEntry[]> {
 
   return res.json();
 }
+
+// ==================== SCORES 2048 ====================
+
+export interface Score2048Entry {
+  id: string;
+  player_id: string;
+  name: string;
+  score: number;
+  max_tile: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+// 4x4 Classic
+export async function getScores2048(limit = 50): Promise<Score2048Entry[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_2048?select=*&order=score.desc&limit=${limit}`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch 2048 scores:", res.statusText);
+    return [];
+  }
+
+  return res.json();
+}
+
+// 3x3 Mini
+export async function getScores2048_3x3(limit = 50): Promise<Score2048Entry[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_2048_3x3?select=*&order=score.desc&limit=${limit}`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch 2048 3x3 scores:", res.statusText);
+    return [];
+  }
+
+  return res.json();
+}
+
+// Сохранить или обновить результат игрока
+export async function submitScore2048(
+  playerId: string,
+  name: string,
+  score: number,
+  maxTile: number
+): Promise<{ success: boolean; isNewRecord: boolean }> {
+  // Сначала проверяем, есть ли уже запись для этого игрока
+  const encodedPlayerId = encodeURIComponent(playerId);
+  const existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_2048?player_id=eq.${encodedPlayerId}&select=id,score,max_tile`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!existingRes.ok) {
+    console.error("Failed to check existing score:", existingRes.statusText);
+    return { success: false, isNewRecord: false };
+  }
+
+  const existing = await existingRes.json();
+
+  if (existing.length > 0) {
+    // Игрок уже есть - обновляем только если новый результат лучше
+    const currentBest = existing[0].score;
+    const currentMaxTile = existing[0].max_tile;
+    if (score > currentBest || maxTile > currentMaxTile) {
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/scores_2048?id=eq.${existing[0].id}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            name,
+            score: Math.max(score, currentBest),
+            max_tile: Math.max(maxTile, currentMaxTile),
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!updateRes.ok) {
+        console.error("Failed to update score:", updateRes.statusText);
+        return { success: false, isNewRecord: false };
+      }
+
+      return { success: true, isNewRecord: score > currentBest };
+    } else {
+      // Результат не лучше текущего рекорда
+      return { success: true, isNewRecord: false };
+    }
+  } else {
+    // Новый игрок - создаём запись
+    const insertRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/scores_2048`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          player_id: playerId,
+          name,
+          score,
+          max_tile: maxTile,
+        }),
+      }
+    );
+
+    if (!insertRes.ok) {
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert score:", insertRes.status, insertRes.statusText, errorBody);
+      return { success: false, isNewRecord: false };
+    }
+
+    return { success: true, isNewRecord: true };
+  }
+}
+
+// Сохранить или обновить результат игрока (3x3)
+export async function submitScore2048_3x3(
+  playerId: string,
+  name: string,
+  score: number,
+  maxTile: number
+): Promise<{ success: boolean; isNewRecord: boolean }> {
+  const encodedPlayerId = encodeURIComponent(playerId);
+  const existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_2048_3x3?player_id=eq.${encodedPlayerId}&select=id,score,max_tile`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!existingRes.ok) {
+    console.error("Failed to check existing 3x3 score:", existingRes.statusText);
+    return { success: false, isNewRecord: false };
+  }
+
+  const existing = await existingRes.json();
+
+  if (existing.length > 0) {
+    const currentBest = existing[0].score;
+    const currentMaxTile = existing[0].max_tile;
+    if (score > currentBest || maxTile > currentMaxTile) {
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/scores_2048_3x3?id=eq.${existing[0].id}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            name,
+            score: Math.max(score, currentBest),
+            max_tile: Math.max(maxTile, currentMaxTile),
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!updateRes.ok) {
+        console.error("Failed to update 3x3 score:", updateRes.statusText);
+        return { success: false, isNewRecord: false };
+      }
+
+      return { success: true, isNewRecord: score > currentBest };
+    } else {
+      return { success: true, isNewRecord: false };
+    }
+  } else {
+    const insertRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/scores_2048_3x3`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          player_id: playerId,
+          name,
+          score,
+          max_tile: maxTile,
+        }),
+      }
+    );
+
+    if (!insertRes.ok) {
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert 3x3 score:", insertRes.status, insertRes.statusText, errorBody);
+      return { success: false, isNewRecord: false };
+    }
+
+    return { success: true, isNewRecord: true };
+  }
+}
+
+// Сохранение/получение имени игрока для 2048
+export function getPlayer2048Name(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem("player2048Name") || "";
+}
+
+export function setPlayer2048Name(name: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem("player2048Name", name);
+}
+
+// ==================== PENDING RESULT для 2048 (OAuth flow) ====================
+
+export interface Pending2048Result {
+  score: number;
+  maxTile: number;
+  name: string;
+  timestamp: number;
+  gridSize?: 3 | 4;
+}
+
+const PENDING_2048_KEY = 'pending_2048_result';
+const PENDING_2048_MAX_AGE = 5 * 60 * 1000; // 5 минут
+
+export function savePending2048Result(score: number, maxTile: number, name: string, gridSize: 3 | 4 = 4): void {
+  if (typeof window === 'undefined') return;
+  const data: Pending2048Result = {
+    score,
+    maxTile,
+    name,
+    timestamp: Date.now(),
+    gridSize,
+  };
+  localStorage.setItem(PENDING_2048_KEY, JSON.stringify(data));
+}
+
+export function getPending2048Result(): Pending2048Result | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(PENDING_2048_KEY);
+  if (!raw) return null;
+
+  try {
+    const data: Pending2048Result = JSON.parse(raw);
+    if (Date.now() - data.timestamp > PENDING_2048_MAX_AGE) {
+      clearPending2048Result();
+      return null;
+    }
+    return data;
+  } catch {
+    clearPending2048Result();
+    return null;
+  }
+}
+
+export function clearPending2048Result(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PENDING_2048_KEY);
+}
