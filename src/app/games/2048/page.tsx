@@ -233,7 +233,7 @@ export default function Game2048Page() {
   // Leaderboard & Score submission
   const [leaderboard, setLeaderboard] = useState<Score2048Entry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  // Leaderboard always visible (no toggle)
   const [playerName, setPlayerNameState] = useState("");
   const [scoreSubmitting, setScoreSubmitting] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
@@ -620,88 +620,78 @@ export default function Game2048Page() {
       {/* Leaderboard */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => setShowLeaderboard(!showLeaderboard)}
-            className="flex items-center gap-2 text-lg font-bold"
-          >
+          <h2 className="flex items-center gap-2 text-lg font-bold">
             <Trophy className="w-5 h-5 text-yellow-400" />
             Таблица лидеров
-            <span className="text-xs text-muted">
-              {showLeaderboard ? "▲" : "▼"}
-            </span>
+          </h2>
+          <button
+            onClick={fetchLeaderboard}
+            disabled={leaderboardLoading}
+            className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Обновить"
+          >
+            <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? "animate-spin" : ""}`} />
           </button>
-          {showLeaderboard && (
-            <button
-              onClick={fetchLeaderboard}
-              disabled={leaderboardLoading}
-              className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-              title="Обновить"
-            >
-              <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? "animate-spin" : ""}`} />
-            </button>
-          )}
         </div>
 
-        {showLeaderboard && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="w-10 text-center p-2 text-gray-400 font-medium">#</th>
-                  <th className="text-left p-2 text-gray-400 font-medium">Игрок</th>
-                  <th className="text-center p-2 text-gray-400 font-medium">Очки</th>
-                  <th className="text-center p-2 text-gray-400 font-medium">Макс.</th>
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="w-10 text-center p-2 text-gray-400 font-medium">#</th>
+                <th className="text-left p-2 text-gray-400 font-medium">Игрок</th>
+                <th className="text-center p-2 text-gray-400 font-medium">Очки</th>
+                <th className="text-center p-2 text-gray-400 font-medium">Макс.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboardLoading ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-400">
+                    Загрузка...
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {leaderboardLoading ? (
-                  <tr>
-                    <td colSpan={4} className="p-4 text-center text-gray-400">
-                      Загрузка...
-                    </td>
-                  </tr>
-                ) : leaderboard.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-4 text-center text-gray-400">
-                      Пока нет результатов. Будьте первым!
-                    </td>
-                  </tr>
-                ) : (
-                  leaderboard.map((entry, index) => {
-                    const position = index + 1;
-                    return (
-                      <tr
-                        key={entry.id}
-                        className={`border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30 ${
-                          playerId === entry.player_id ? "bg-orange-500/10" : ""
-                        }`}
-                      >
-                        <td className="w-10 text-center p-2 text-base">
-                          {position === 1 && "🥇"}
-                          {position === 2 && "🥈"}
-                          {position === 3 && "🥉"}
-                          {position > 3 && <span className="text-gray-500">{position}</span>}
-                        </td>
-                        <td className="p-2">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                            <span className="text-white truncate">{entry.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-2 text-center font-bold text-orange-400">
-                          {entry.score.toLocaleString()}
-                        </td>
-                        <td className="p-2 text-center font-bold text-yellow-400">
-                          {entry.max_tile}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ) : leaderboard.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-400">
+                    Пока нет результатов. Будьте первым!
+                  </td>
+                </tr>
+              ) : (
+                leaderboard.map((entry, index) => {
+                  const position = index + 1;
+                  return (
+                    <tr
+                      key={entry.id}
+                      className={`border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30 ${
+                        playerId === entry.player_id ? "bg-orange-500/10" : ""
+                      }`}
+                    >
+                      <td className="w-10 text-center p-2 text-base">
+                        {position === 1 && "🥇"}
+                        {position === 2 && "🥈"}
+                        {position === 3 && "🥉"}
+                        {position > 3 && <span className="text-gray-500">{position}</span>}
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="text-white truncate">{entry.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-center font-bold text-orange-400">
+                        {entry.score.toLocaleString()}
+                      </td>
+                      <td className="p-2 text-center font-bold text-yellow-400">
+                        {entry.max_tile}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Уведомление о сохранении pending result */}

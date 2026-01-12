@@ -149,6 +149,7 @@ export async function getScores2048(limit = 50): Promise<Score2048Entry[]> {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
+      cache: 'no-store',
     }
   );
 
@@ -168,13 +169,15 @@ export async function submitScore2048(
   maxTile: number
 ): Promise<{ success: boolean; isNewRecord: boolean }> {
   // Сначала проверяем, есть ли уже запись для этого игрока
+  const encodedPlayerId = encodeURIComponent(playerId);
   const existingRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/scores_2048?player_id=eq.${playerId}&select=id,score,max_tile`,
+    `${SUPABASE_URL}/rest/v1/scores_2048?player_id=eq.${encodedPlayerId}&select=id,score,max_tile`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
+      cache: 'no-store',
     }
   );
 
