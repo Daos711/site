@@ -13,6 +13,9 @@ import {
   Zap,
 } from "lucide-react";
 
+// DEBUG: установить в true чтобы HP шейдер показывал фиолетовый цвет (тест что он работает)
+const DEBUG_HP_PURPLE = false;
+
 // Типы фракталов
 type FractalType = "mandelbrot" | "julia" | "burning-ship" | "tricorn";
 
@@ -245,8 +248,9 @@ const fragmentShaderSourceHP = `
 
   vec2 dd_mul(vec2 a, vec2 b) {
     vec2 p = twoProd(a.x, b.x);
-    float e = a.x * b.y + a.y * b.x + p.y;
-    return quickTwoSum(p.x, e);
+    float e = a.x * b.y + a.y * b.x + a.y * b.y + p.y;
+    vec2 s = twoSum(p.x, e);
+    return vec2(s.x, s.y);
   }
 
   // DD * float
@@ -373,8 +377,15 @@ const fragmentShaderSourceHP = `
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
+    // DEBUG_MARKER: для теста что HP шейдер включается
   }
 `;
+
+// Версия HP шейдера для тестирования (фиолетовый экран)
+const fragmentShaderSourceHP_DEBUG = fragmentShaderSourceHP.replace(
+  '// DEBUG_MARKER: для теста что HP шейдер включается',
+  'gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); // PURPLE TEST'
+);
 
 // Упаковка double в (hi, lo) для передачи в шейдер
 function packDD(x: number): [number, number] {
@@ -396,6 +407,8 @@ export default function FractalsPage() {
   const [glSupported, setGlSupported] = useState(true);
   const [autoIterations, setAutoIterations] = useState(true);
   const [highPrecision, setHighPrecision] = useState(false);
+  const [gpuPrecision, setGpuPrecision] = useState<number | null>(null);
+  const [isWebGL2, setIsWebGL2] = useState(false);
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -418,15 +431,31 @@ export default function FractalsPage() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let gl = canvas.getContext("webgl") as WebGLRenderingContext | null;
-    if (!gl) {
-      gl = canvas.getContext("experimental-webgl") as WebGLRenderingContext | null;
+    // Пробуем WebGL2 сначала (гарантирует настоящий highp)
+    let gl = canvas.getContext("webgl2") as WebGLRenderingContext | null;
+    let webgl2 = false;
+    if (gl) {
+      webgl2 = true;
+      setIsWebGL2(true);
+    } else {
+      gl = canvas.getContext("webgl") as WebGLRenderingContext | null;
+      if (!gl) {
+        gl = canvas.getContext("experimental-webgl") as WebGLRenderingContext | null;
+      }
     }
     if (!gl) {
       setGlSupported(false);
       return;
     }
     glRef.current = gl;
+
+    // Диагностика точности GPU
+    const precisionFormat = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    if (precisionFormat) {
+      console.log('Fragment HIGH_FLOAT precision:', precisionFormat.precision, 'bits');
+      console.log('WebGL version:', webgl2 ? '2.0' : '1.0');
+      setGpuPrecision(precisionFormat.precision);
+    }
 
     // Хелпер для проверки компиляции шейдера
     const compileShader = (type: number, source: string, name: string) => {
@@ -458,9 +487,13 @@ export default function FractalsPage() {
 
     // Компиляция High Precision шейдера
     const vertexShaderHP = compileShader(gl.VERTEX_SHADER, vertexShaderSource, "vertexHP");
-    const fragmentShaderHP = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSourceHP, "fragmentHP");
+    const hpSource = DEBUG_HP_PURPLE ? fragmentShaderSourceHP_DEBUG : fragmentShaderSourceHP;
+    const fragmentShaderHP = compileShader(gl.FRAGMENT_SHADER, hpSource, "fragmentHP");
     const programHP = linkProgram(vertexShaderHP, fragmentShaderHP, "highPrecision");
     programHPRef.current = programHP;
+    if (DEBUG_HP_PURPLE) {
+      console.log('DEBUG: HP shader compiled with PURPLE TEST mode');
+    }
 
     // Вершины (полноэкранный квад)
     const vertices = new Float32Array([
@@ -857,6 +890,11 @@ export default function FractalsPage() {
                 : "Float: зум до 10⁷ (быстрее)"
               }
             </p>
+            {/* GPU диагностика */}
+            <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted font-mono">
+              GPU highp: {gpuPrecision !== null ? `${gpuPrecision} bits` : "..."}
+              {isWebGL2 && <span className="ml-2 text-green-400">WebGL2</span>}
+            </div>
           </div>
 
           {/* Тип */}
