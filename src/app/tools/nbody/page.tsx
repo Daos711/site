@@ -43,18 +43,18 @@ function orbitalVelocity(centerMass: number, distance: number): number {
   return Math.sqrt(G * centerMass / distance) * 0.8;
 }
 
-// Пресеты систем
+// Пресеты систем (компактные, чтобы влезали на экран)
 const presets: Preset[] = [
   {
     id: "solar",
     name: "Солнечная",
     description: "Звезда и планеты на стабильных орбитах",
     bodies: [
-      { x: 0, y: 0, vx: 0, vy: 0, mass: 3000, radius: 22, color: "#fbbf24" },
-      { x: 0, y: -80, vx: orbitalVelocity(3000, 80), vy: 0, mass: 5, radius: 4, color: "#a855f7" },
-      { x: 0, y: -130, vx: orbitalVelocity(3000, 130), vy: 0, mass: 10, radius: 5, color: "#3b82f6" },
-      { x: 0, y: -190, vx: orbitalVelocity(3000, 190), vy: 0, mass: 20, radius: 7, color: "#22c55e" },
-      { x: 0, y: -260, vx: orbitalVelocity(3000, 260), vy: 0, mass: 40, radius: 9, color: "#f97316" },
+      { x: 0, y: 0, vx: 0, vy: 0, mass: 2000, radius: 18, color: "#fbbf24" },
+      { x: 0, y: -50, vx: orbitalVelocity(2000, 50), vy: 0, mass: 5, radius: 4, color: "#a855f7" },
+      { x: 0, y: -85, vx: orbitalVelocity(2000, 85), vy: 0, mass: 10, radius: 5, color: "#3b82f6" },
+      { x: 0, y: -120, vx: orbitalVelocity(2000, 120), vy: 0, mass: 15, radius: 6, color: "#22c55e" },
+      { x: 0, y: -160, vx: orbitalVelocity(2000, 160), vy: 0, mass: 25, radius: 7, color: "#f97316" },
     ],
   },
   {
@@ -62,8 +62,8 @@ const presets: Preset[] = [
     name: "Двойная звезда",
     description: "Две звезды на орбите вокруг центра масс",
     bodies: [
-      { x: -60, y: 0, vx: 0, vy: -1.2, mass: 1000, radius: 15, color: "#fbbf24" },
-      { x: 60, y: 0, vx: 0, vy: 1.2, mass: 1000, radius: 15, color: "#f97316" },
+      { x: -50, y: 0, vx: 0, vy: -1.0, mass: 800, radius: 14, color: "#fbbf24" },
+      { x: 50, y: 0, vx: 0, vy: 1.0, mass: 800, radius: 14, color: "#f97316" },
     ],
   },
   {
@@ -71,9 +71,9 @@ const presets: Preset[] = [
     name: "Тройная",
     description: "Три звезды — сложная динамика",
     bodies: [
-      { x: 0, y: -70, vx: 1.0, vy: 0, mass: 500, radius: 12, color: "#fbbf24" },
-      { x: 60, y: 35, vx: -0.5, vy: 0.87, mass: 500, radius: 12, color: "#3b82f6" },
-      { x: -60, y: 35, vx: -0.5, vy: -0.87, mass: 500, radius: 12, color: "#22c55e" },
+      { x: 0, y: -50, vx: 0.8, vy: 0, mass: 400, radius: 11, color: "#fbbf24" },
+      { x: 43, y: 25, vx: -0.4, vy: 0.7, mass: 400, radius: 11, color: "#3b82f6" },
+      { x: -43, y: 25, vx: -0.4, vy: -0.7, mass: 400, radius: 11, color: "#22c55e" },
     ],
   },
   {
@@ -81,9 +81,9 @@ const presets: Preset[] = [
     name: "Планета с луной",
     description: "Звезда, планета и её спутник",
     bodies: [
-      { x: 0, y: 0, vx: 0, vy: 0, mass: 3000, radius: 20, color: "#fbbf24" },
-      { x: 0, y: -150, vx: orbitalVelocity(3000, 150), vy: 0, mass: 50, radius: 8, color: "#3b82f6" },
-      { x: 0, y: -170, vx: orbitalVelocity(3000, 150) + orbitalVelocity(50, 20), vy: 0, mass: 2, radius: 3, color: "#94a3b8" },
+      { x: 0, y: 0, vx: 0, vy: 0, mass: 2000, radius: 16, color: "#fbbf24" },
+      { x: 0, y: -100, vx: orbitalVelocity(2000, 100), vy: 0, mass: 40, radius: 7, color: "#3b82f6" },
+      { x: 0, y: -118, vx: orbitalVelocity(2000, 100) + orbitalVelocity(40, 18), vy: 0, mass: 2, radius: 3, color: "#94a3b8" },
     ],
   },
 ];
