@@ -160,39 +160,149 @@ export async function getScores2048(limit = 50): Promise<Score2048Entry[]> {
   return res.json();
 }
 
-export async function saveScore2048(
+// Сохранить или обновить результат игрока
+export async function submitScore2048(
   playerId: string,
   name: string,
   score: number,
   maxTile: number
-): Promise<boolean> {
-  const { data: session } = await supabase.auth.getSession();
-  if (!session.session) {
-    console.error("Not authenticated");
-    return false;
-  }
-
-  // Upsert — обновить если рекорд выше
-  const { error } = await supabase
-    .from('scores_2048')
-    .upsert(
-      {
-        player_id: playerId,
-        name,
-        score,
-        max_tile: maxTile,
-        updated_at: new Date().toISOString(),
+): Promise<{ success: boolean; isNewRecord: boolean }> {
+  // Сначала проверяем, есть ли уже запись для этого игрока
+  const existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_2048?player_id=eq.${playerId}&select=id,score,max_tile`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      {
-        onConflict: 'player_id',
-      }
-    )
-    .select();
+    }
+  );
 
-  if (error) {
-    console.error("Failed to save 2048 score:", error);
-    return false;
+  if (!existingRes.ok) {
+    console.error("Failed to check existing score:", existingRes.statusText);
+    return { success: false, isNewRecord: false };
   }
 
-  return true;
+  const existing = await existingRes.json();
+
+  if (existing.length > 0) {
+    // Игрок уже есть - обновляем только если новый результат лучше
+    const currentBest = existing[0].score;
+    const currentMaxTile = existing[0].max_tile;
+    if (score > currentBest || maxTile > currentMaxTile) {
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/scores_2048?id=eq.${existing[0].id}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            name,
+            score: Math.max(score, currentBest),
+            max_tile: Math.max(maxTile, currentMaxTile),
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!updateRes.ok) {
+        console.error("Failed to update score:", updateRes.statusText);
+        return { success: false, isNewRecord: false };
+      }
+
+      return { success: true, isNewRecord: score > currentBest };
+    } else {
+      // Результат не лучше текущего рекорда
+      return { success: true, isNewRecord: false };
+    }
+  } else {
+    // Новый игрок - создаём запись
+    const insertRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/scores_2048`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          player_id: playerId,
+          name,
+          score,
+          max_tile: maxTile,
+        }),
+      }
+    );
+
+    if (!insertRes.ok) {
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert score:", insertRes.status, insertRes.statusText, errorBody);
+      return { success: false, isNewRecord: false };
+    }
+
+    return { success: true, isNewRecord: true };
+  }
+}
+
+// Сохранение/получение имени игрока для 2048
+export function getPlayer2048Name(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem("player2048Name") || "";
+}
+
+export function setPlayer2048Name(name: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem("player2048Name", name);
+}
+
+// ==================== PENDING RESULT для 2048 (OAuth flow) ====================
+
+export interface Pending2048Result {
+  score: number;
+  maxTile: number;
+  name: string;
+  timestamp: number;
+}
+
+const PENDING_2048_KEY = 'pending_2048_result';
+const PENDING_2048_MAX_AGE = 5 * 60 * 1000; // 5 минут
+
+export function savePending2048Result(score: number, maxTile: number, name: string): void {
+  if (typeof window === 'undefined') return;
+  const data: Pending2048Result = {
+    score,
+    maxTile,
+    name,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(PENDING_2048_KEY, JSON.stringify(data));
+}
+
+export function getPending2048Result(): Pending2048Result | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(PENDING_2048_KEY);
+  if (!raw) return null;
+
+  try {
+    const data: Pending2048Result = JSON.parse(raw);
+    if (Date.now() - data.timestamp > PENDING_2048_MAX_AGE) {
+      clearPending2048Result();
+      return null;
+    }
+    return data;
+  } catch {
+    clearPending2048Result();
+    return null;
+  }
+}
+
+export function clearPending2048Result(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PENDING_2048_KEY);
 }

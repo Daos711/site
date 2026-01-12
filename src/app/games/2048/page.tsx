@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { RotateCcw, Trophy, LogIn, Medal, User } from "lucide-react";
+import { RotateCcw, Trophy, User, RefreshCw } from "lucide-react";
+import { useAuth } from "@/components/AuthProvider";
 import {
-  AuthUser,
-  onAuthStateChange,
-  signInWithGoogle,
   getScores2048,
-  saveScore2048,
+  submitScore2048,
   Score2048Entry,
+  getPlayer2048Name,
+  setPlayer2048Name,
+  savePending2048Result,
+  getPending2048Result,
+  clearPending2048Result,
 } from "@/lib/supabase";
 
 const GRID_SIZE = 4;
@@ -224,33 +227,83 @@ export default function Game2048Page() {
   const [won, setWon] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Auth & Leaderboard
-  const [user, setUser] = useState<AuthUser | null>(null);
+  // Auth
+  const { user: authUser, playerId, signIn } = useAuth();
+
+  // Leaderboard & Score submission
   const [leaderboard, setLeaderboard] = useState<Score2048Entry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [scoreSaved, setScoreSaved] = useState(false);
+  const [playerName, setPlayerNameState] = useState("");
+  const [scoreSubmitting, setScoreSubmitting] = useState(false);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [isNewRecord, setIsNewRecord] = useState(false);
+
+  // Pending result notification
+  const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
+  const pendingResultSubmittedRef = useRef(false);
 
   // Инициализация
   useEffect(() => {
     const saved = localStorage.getItem("2048-best");
     if (saved) setBestScore(parseInt(saved));
 
+    // Загрузить сохранённое имя
+    const savedName = getPlayer2048Name();
+    if (savedName) setPlayerNameState(savedName);
+
     let newGrid = createEmptyGrid();
     newGrid = addRandomTile(newGrid);
     newGrid = addRandomTile(newGrid);
     setGrid(newGrid);
     setIsClient(true);
+
+    fetchLeaderboard();
   }, []);
 
-  // Auth state
+  // Проверка и отправка pending result после OAuth
   useEffect(() => {
-    return onAuthStateChange(setUser);
-  }, []);
+    if (pendingResultSubmittedRef.current) return;
+    if (authUser && playerId) {
+      const pending = getPending2048Result();
+      if (pending && pending.name && pending.name.trim() && pending.score > 0) {
+        pendingResultSubmittedRef.current = true;
+        (async () => {
+          try {
+            const result = await submitScore2048(playerId, pending.name.trim(), pending.score, pending.maxTile);
+            clearPending2048Result();
+            if (result.success) {
+              setPendingResultMessage(result.isNewRecord
+                ? `Новый рекорд сохранён! ${pending.score} очков`
+                : `Результат сохранён! ${pending.score} очков`);
+              await fetchLeaderboard();
+            } else {
+              setPendingResultMessage('Ошибка сохранения результата');
+            }
+            setTimeout(() => setPendingResultMessage(null), 5000);
+          } catch {
+            clearPending2048Result();
+            setPendingResultMessage('Ошибка сохранения результата');
+            setTimeout(() => setPendingResultMessage(null), 5000);
+          }
+        })();
+      } else if (pending) {
+        clearPending2048Result();
+      }
+    }
+  }, [authUser, playerId]);
 
-  // Fetch leaderboard
-  useEffect(() => {
-    getScores2048(10).then(setLeaderboard);
-  }, []);
+  const fetchLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    try {
+      const scores = await getScores2048(20);
+      setLeaderboard(scores);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
 
   // Get max tile
   const getMaxTile = useCallback((g: (Tile | null)[][]) => {
@@ -263,19 +316,26 @@ export default function Game2048Page() {
     return max;
   }, []);
 
-  // Save score when game over and user is logged in
-  useEffect(() => {
-    if (gameOver && user && !scoreSaved && score > 0) {
+  // Submit score (для авторизованных)
+  const handleSubmitScore = async () => {
+    if (!authUser || !playerName.trim() || score === 0 || scoreSubmitting || scoreSubmitted) return;
+
+    setScoreSubmitting(true);
+    try {
       const maxTile = getMaxTile(grid);
-      saveScore2048(user.id, user.name || "Игрок", score, maxTile).then((success) => {
-        if (success) {
-          setScoreSaved(true);
-          // Refresh leaderboard
-          getScores2048(10).then(setLeaderboard);
-        }
-      });
+      const result = await submitScore2048(playerId, playerName.trim(), score, maxTile);
+      if (result.success) {
+        setScoreSubmitted(true);
+        setIsNewRecord(result.isNewRecord);
+        setPlayer2048Name(playerName.trim());
+        await fetchLeaderboard();
+      }
+    } catch (error) {
+      console.error("Failed to submit score:", error);
+    } finally {
+      setScoreSubmitting(false);
     }
-  }, [gameOver, user, scoreSaved, score, grid, getMaxTile]);
+  };
 
   // Сохранение лучшего счёта
   useEffect(() => {
@@ -364,7 +424,8 @@ export default function Game2048Page() {
     setScore(0);
     setGameOver(false);
     setWon(false);
-    setScoreSaved(false);
+    setScoreSubmitted(false);
+    setIsNewRecord(false);
   };
 
   return (
@@ -444,28 +505,85 @@ export default function Game2048Page() {
 
         {/* Game Over */}
         {gameOver && (
-          <div className="absolute inset-0 bg-black/80 rounded-2xl flex flex-col items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 rounded-2xl flex flex-col items-center justify-center p-4 overflow-y-auto">
             <div className="text-3xl font-bold text-white mb-2">Игра окончена!</div>
-            <div className="text-muted mb-4">Счёт: {score}</div>
+            <div className="text-xl text-gray-300 mb-4">
+              Счёт: <span className="text-orange-400 font-bold">{score}</span>
+              {" · "}
+              Макс: <span className="text-yellow-400 font-bold">{getMaxTile(grid)}</span>
+            </div>
 
-            {!user && (
-              <button
-                onClick={() => signInWithGoogle()}
-                className="mb-3 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all flex items-center gap-2"
-              >
-                <LogIn size={18} />
-                Войти чтобы сохранить результат
-              </button>
+            {/* Форма сохранения (для авторизованных) */}
+            {score > 0 && !scoreSubmitted && authUser && (
+              <div className="bg-gray-800/90 rounded-lg p-4 mb-4 w-full max-w-xs">
+                <h3 className="text-sm text-gray-400 text-center mb-3">Сохранить результат</h3>
+                <input
+                  type="text"
+                  placeholder="Ваше имя"
+                  value={playerName}
+                  onChange={(e) => setPlayerNameState(e.target.value)}
+                  maxLength={20}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 mb-3"
+                />
+                <button
+                  onClick={handleSubmitScore}
+                  disabled={!playerName.trim() || scoreSubmitting}
+                  className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+                >
+                  {scoreSubmitting ? "Сохранение..." : "Сохранить"}
+                </button>
+              </div>
             )}
 
-            {user && scoreSaved && (
-              <div className="mb-3 text-green-400 text-sm">Результат сохранён!</div>
+            {/* Приглашение войти (для неавторизованных) */}
+            {score > 0 && !scoreSubmitted && !authUser && (
+              <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg p-4 mb-4 w-full max-w-xs">
+                <p className="text-sm text-amber-400 mb-3 text-center">
+                  Войдите, чтобы сохранить результат в рейтинг
+                </p>
+                <input
+                  type="text"
+                  placeholder="Ваше имя"
+                  value={playerName}
+                  onChange={(e) => setPlayerNameState(e.target.value)}
+                  maxLength={20}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-amber-500 mb-3"
+                />
+                <button
+                  onClick={() => {
+                    if (!playerName.trim()) return;
+                    setPlayer2048Name(playerName.trim());
+                    savePending2048Result(score, getMaxTile(grid), playerName.trim());
+                    signIn();
+                  }}
+                  disabled={!playerName.trim()}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg text-gray-900 font-medium transition-colors"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  Войти через Google
+                </button>
+              </div>
+            )}
+
+            {/* Подтверждение сохранения */}
+            {scoreSubmitted && (
+              <div className="bg-green-800/50 border border-green-600 rounded-lg p-3 mb-4 text-center">
+                <p className="text-green-400">
+                  {isNewRecord ? "Новый рекорд сохранён!" : "Результат сохранён!"}
+                </p>
+              </div>
             )}
 
             <button
               onClick={handleNewGame}
-              className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all"
+              className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all flex items-center gap-2"
             >
+              <RotateCcw size={18} />
               Играть снова
             </button>
           </div>
@@ -499,58 +617,107 @@ export default function Game2048Page() {
         Используй стрелки или свайпы для перемещения плиток
       </div>
 
-      {/* Leaderboard toggle */}
+      {/* Leaderboard */}
       <div className="mt-6">
-        <button
-          onClick={() => setShowLeaderboard(!showLeaderboard)}
-          className="w-full px-4 py-3 rounded-xl bg-card border border-border hover:bg-card-hover transition-all flex items-center justify-center gap-2"
-        >
-          <Medal size={18} />
-          {showLeaderboard ? "Скрыть таблицу лидеров" : "Таблица лидеров"}
-        </button>
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setShowLeaderboard(!showLeaderboard)}
+            className="flex items-center gap-2 text-lg font-bold"
+          >
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            Таблица лидеров
+            <span className="text-xs text-muted">
+              {showLeaderboard ? "▲" : "▼"}
+            </span>
+          </button>
+          {showLeaderboard && (
+            <button
+              onClick={fetchLeaderboard}
+              disabled={leaderboardLoading}
+              className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              title="Обновить"
+            >
+              <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? "animate-spin" : ""}`} />
+            </button>
+          )}
+        </div>
 
         {showLeaderboard && (
-          <div className="mt-4 bg-card border border-border rounded-xl overflow-hidden">
-            <div className="p-3 border-b border-border bg-card-hover">
-              <div className="text-sm font-medium">Топ-10 игроков</div>
-            </div>
-            {leaderboard.length === 0 ? (
-              <div className="p-4 text-center text-muted text-sm">
-                Пока нет результатов
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {leaderboard.map((entry, idx) => (
-                  <div
-                    key={entry.id}
-                    className={`flex items-center gap-3 p-3 ${
-                      user?.id === entry.player_id ? "bg-orange-500/10" : ""
-                    }`}
-                  >
-                    <div className={`w-6 text-center font-bold ${
-                      idx === 0 ? "text-yellow-500" :
-                      idx === 1 ? "text-slate-400" :
-                      idx === 2 ? "text-amber-600" : "text-muted"
-                    }`}>
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <User size={14} className="text-muted" />
-                        <span className="truncate">{entry.name}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-accent">{entry.score.toLocaleString()}</div>
-                      <div className="text-xs text-muted">макс: {entry.max_tile}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-700">
+                  <th className="w-10 text-center p-2 text-gray-400 font-medium">#</th>
+                  <th className="text-left p-2 text-gray-400 font-medium">Игрок</th>
+                  <th className="text-center p-2 text-gray-400 font-medium">Очки</th>
+                  <th className="text-center p-2 text-gray-400 font-medium">Макс.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboardLoading ? (
+                  <tr>
+                    <td colSpan={4} className="p-4 text-center text-gray-400">
+                      Загрузка...
+                    </td>
+                  </tr>
+                ) : leaderboard.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-4 text-center text-gray-400">
+                      Пока нет результатов. Будьте первым!
+                    </td>
+                  </tr>
+                ) : (
+                  leaderboard.map((entry, index) => {
+                    const position = index + 1;
+                    return (
+                      <tr
+                        key={entry.id}
+                        className={`border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30 ${
+                          playerId === entry.player_id ? "bg-orange-500/10" : ""
+                        }`}
+                      >
+                        <td className="w-10 text-center p-2 text-base">
+                          {position === 1 && "🥇"}
+                          {position === 2 && "🥈"}
+                          {position === 3 && "🥉"}
+                          {position > 3 && <span className="text-gray-500">{position}</span>}
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                            <span className="text-white truncate">{entry.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-2 text-center font-bold text-orange-400">
+                          {entry.score.toLocaleString()}
+                        </td>
+                        <td className="p-2 text-center font-bold text-yellow-400">
+                          {entry.max_tile}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      {/* Уведомление о сохранении pending result */}
+      {pendingResultMessage && (
+        <div
+          className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl font-semibold text-sm shadow-lg"
+          style={{
+            background: pendingResultMessage.includes('Ошибка')
+              ? 'rgba(255, 59, 77, 0.95)'
+              : 'rgba(46, 204, 113, 0.95)',
+            color: '#fff',
+          }}
+        >
+          {pendingResultMessage}
+        </div>
+      )}
 
       {/* CSS анимации */}
       <style jsx global>{`
