@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3 } from "lucide-react";
+import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3 } from "lucide-react";
 
 const tools = [
   // === Готовые ===
@@ -61,6 +61,14 @@ const tools = [
     description: "Клеточный автомат Конвея. Эмерджентность из простых правил.",
     icon: Grid3X3,
     href: "/tools/game-of-life",
+    status: "prototype" as const,
+  },
+  {
+    id: "sorting",
+    title: "Сортировки",
+    description: "Визуализация алгоритмов сортировки: пузырьковая, быстрая, слиянием и др.",
+    icon: BarChart3,
+    href: "/tools/sorting",
     status: "prototype" as const,
   },
 ];
