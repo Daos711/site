@@ -407,14 +407,24 @@ export default function Game2048Page() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleMove]);
 
-  // Свайпы
+  // Свайпы на игровом поле
+  const gameAreaRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    const gameArea = gameAreaRef.current;
+    if (!gameArea) return;
+
     let touchStartX = 0;
     let touchStartY = 0;
 
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Предотвращаем скролл страницы при свайпе по игровому полю
+      e.preventDefault();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -433,11 +443,13 @@ export default function Game2048Page() {
       }
     };
 
-    window.addEventListener("touchstart", handleTouchStart);
-    window.addEventListener("touchend", handleTouchEnd);
+    gameArea.addEventListener("touchstart", handleTouchStart, { passive: true });
+    gameArea.addEventListener("touchmove", handleTouchMove, { passive: false });
+    gameArea.addEventListener("touchend", handleTouchEnd, { passive: true });
     return () => {
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchend", handleTouchEnd);
+      gameArea.removeEventListener("touchstart", handleTouchStart);
+      gameArea.removeEventListener("touchmove", handleTouchMove);
+      gameArea.removeEventListener("touchend", handleTouchEnd);
     };
   }, [handleMove]);
 
@@ -525,7 +537,7 @@ export default function Game2048Page() {
       </div>
 
       {/* Игровое поле */}
-      <div className="relative">
+      <div className="relative" ref={gameAreaRef}>
         <div
           className={`grid gap-2 p-3 rounded-2xl ${gridSize === 3 ? "bg-purple-900/30" : "bg-slate-700/50"}`}
           style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
