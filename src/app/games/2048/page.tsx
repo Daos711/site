@@ -7,6 +7,8 @@ import { useAuth } from "@/components/AuthProvider";
 import {
   getScores2048,
   submitScore2048,
+  getScores2048_3x3,
+  submitScore2048_3x3,
   Score2048Entry,
   getPlayer2048Name,
   setPlayer2048Name,
@@ -15,7 +17,7 @@ import {
   clearPending2048Result,
 } from "@/lib/supabase";
 
-const GRID_SIZE = 4;
+type GridSize = 3 | 4;
 
 type Tile = {
   id: number;
@@ -47,7 +49,12 @@ function getTileStyle(value: number) {
   return tileColors[value] || { bg: "bg-slate-800", text: "text-white" };
 }
 
-function getFontSize(value: number) {
+function getFontSize(value: number, gridSize: GridSize) {
+  if (gridSize === 3) {
+    if (value >= 1000) return "text-3xl";
+    if (value >= 100) return "text-4xl";
+    return "text-5xl";
+  }
   if (value >= 1000) return "text-2xl";
   if (value >= 100) return "text-3xl";
   return "text-4xl";
@@ -59,16 +66,16 @@ function getNewTileId() {
 }
 
 // Создание пустой сетки
-function createEmptyGrid(): (Tile | null)[][] {
-  return Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+function createEmptyGrid(size: GridSize): (Tile | null)[][] {
+  return Array(size).fill(null).map(() => Array(size).fill(null));
 }
 
 // Добавление случайной плитки
-function addRandomTile(grid: (Tile | null)[][]): (Tile | null)[][] {
+function addRandomTile(grid: (Tile | null)[][], size: GridSize): (Tile | null)[][] {
   const emptyCells: [number, number][] = [];
 
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
       if (!grid[row][col]) {
         emptyCells.push([row, col]);
       }
@@ -91,7 +98,7 @@ function addRandomTile(grid: (Tile | null)[][]): (Tile | null)[][] {
 }
 
 // Сдвиг строки влево
-function slideRow(row: (Tile | null)[]): { newRow: (Tile | null)[]; score: number } {
+function slideRow(row: (Tile | null)[], size: GridSize): { newRow: (Tile | null)[]; score: number } {
   // Убираем пустые
   const filtered = row.filter(cell => cell !== null) as Tile[];
   let score = 0;
@@ -123,7 +130,7 @@ function slideRow(row: (Tile | null)[]): { newRow: (Tile | null)[]; score: numbe
   }
 
   // Дополняем пустыми
-  while (merged.length < GRID_SIZE) {
+  while (merged.length < size) {
     merged.push(null);
   }
 
@@ -131,18 +138,18 @@ function slideRow(row: (Tile | null)[]): { newRow: (Tile | null)[]; score: numbe
 }
 
 // Поворот сетки на 90 градусов по часовой
-function rotateGrid(grid: (Tile | null)[][]): (Tile | null)[][] {
-  const newGrid = createEmptyGrid();
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      newGrid[col][GRID_SIZE - 1 - row] = grid[row][col];
+function rotateGrid(grid: (Tile | null)[][], size: GridSize): (Tile | null)[][] {
+  const newGrid = createEmptyGrid(size);
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      newGrid[col][size - 1 - row] = grid[row][col];
     }
   }
   return newGrid;
 }
 
 // Движение
-function move(grid: (Tile | null)[][], direction: "left" | "right" | "up" | "down"): { newGrid: (Tile | null)[][]; score: number; moved: boolean } {
+function move(grid: (Tile | null)[][], direction: "left" | "right" | "up" | "down", size: GridSize): { newGrid: (Tile | null)[][]; score: number; moved: boolean } {
   let rotations = 0;
   switch (direction) {
     case "left": rotations = 0; break;
@@ -154,14 +161,14 @@ function move(grid: (Tile | null)[][], direction: "left" | "right" | "up" | "dow
   // Поворачиваем чтобы всегда двигать влево
   let workGrid = grid;
   for (let i = 0; i < rotations; i++) {
-    workGrid = rotateGrid(workGrid);
+    workGrid = rotateGrid(workGrid, size);
   }
 
   let totalScore = 0;
-  const newGrid = createEmptyGrid();
+  const newGrid = createEmptyGrid(size);
 
-  for (let row = 0; row < GRID_SIZE; row++) {
-    const { newRow, score } = slideRow(workGrid[row]);
+  for (let row = 0; row < size; row++) {
+    const { newRow, score } = slideRow(workGrid[row], size);
     newGrid[row] = newRow;
     totalScore += score;
   }
@@ -169,12 +176,12 @@ function move(grid: (Tile | null)[][], direction: "left" | "right" | "up" | "dow
   // Поворачиваем обратно
   let finalGrid = newGrid;
   for (let i = 0; i < (4 - rotations) % 4; i++) {
-    finalGrid = rotateGrid(finalGrid);
+    finalGrid = rotateGrid(finalGrid, size);
   }
 
   // Обновляем координаты
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
       if (finalGrid[row][col]) {
         finalGrid[row][col] = { ...finalGrid[row][col]!, row, col };
       }
@@ -189,40 +196,43 @@ function move(grid: (Tile | null)[][], direction: "left" | "right" | "up" | "dow
 }
 
 // Проверка на возможность хода
-function canMove(grid: (Tile | null)[][]): boolean {
+function canMove(grid: (Tile | null)[][], size: GridSize): boolean {
   // Есть пустые клетки
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
       if (!grid[row][col]) return true;
     }
   }
 
   // Есть соседние одинаковые
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
       const value = grid[row][col]?.value;
-      if (col < GRID_SIZE - 1 && grid[row][col + 1]?.value === value) return true;
-      if (row < GRID_SIZE - 1 && grid[row + 1][col]?.value === value) return true;
+      if (col < size - 1 && grid[row][col + 1]?.value === value) return true;
+      if (row < size - 1 && grid[row + 1][col]?.value === value) return true;
     }
   }
 
   return false;
 }
 
-// Проверка на победу
-function hasWon(grid: (Tile | null)[][]): boolean {
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      if (grid[row][col]?.value === 2048) return true;
+// Проверка на победу (512 для 3x3, 2048 для 4x4)
+function hasWon(grid: (Tile | null)[][], size: GridSize): boolean {
+  const winValue = size === 3 ? 512 : 2048;
+  for (let row = 0; row < size; row++) {
+    for (let col = 0; col < size; col++) {
+      if (grid[row][col]?.value === winValue) return true;
     }
   }
   return false;
 }
 
 export default function Game2048Page() {
-  const [grid, setGrid] = useState<(Tile | null)[][]>(createEmptyGrid);
+  const [gridSize, setGridSize] = useState<GridSize>(4);
+  const [grid, setGrid] = useState<(Tile | null)[][]>(() => createEmptyGrid(4));
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
+  const [bestScore3x3, setBestScore3x3] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [won, setWon] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -232,8 +242,8 @@ export default function Game2048Page() {
 
   // Leaderboard & Score submission
   const [leaderboard, setLeaderboard] = useState<Score2048Entry[]>([]);
+  const [leaderboard3x3, setLeaderboard3x3] = useState<Score2048Entry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
-  // Leaderboard always visible (no toggle)
   const [playerName, setPlayerNameState] = useState("");
   const [scoreSubmitting, setScoreSubmitting] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
@@ -245,20 +255,22 @@ export default function Game2048Page() {
 
   // Инициализация
   useEffect(() => {
-    const saved = localStorage.getItem("2048-best");
-    if (saved) setBestScore(parseInt(saved));
+    const saved4x4 = localStorage.getItem("2048-best");
+    const saved3x3 = localStorage.getItem("2048-best-3x3");
+    if (saved4x4) setBestScore(parseInt(saved4x4));
+    if (saved3x3) setBestScore3x3(parseInt(saved3x3));
 
     // Загрузить сохранённое имя
     const savedName = getPlayer2048Name();
     if (savedName) setPlayerNameState(savedName);
 
-    let newGrid = createEmptyGrid();
-    newGrid = addRandomTile(newGrid);
-    newGrid = addRandomTile(newGrid);
+    let newGrid = createEmptyGrid(4);
+    newGrid = addRandomTile(newGrid, 4);
+    newGrid = addRandomTile(newGrid, 4);
     setGrid(newGrid);
     setIsClient(true);
 
-    fetchLeaderboard();
+    fetchAllLeaderboards();
   }, []);
 
   // Проверка и отправка pending result после OAuth
@@ -270,13 +282,16 @@ export default function Game2048Page() {
         pendingResultSubmittedRef.current = true;
         (async () => {
           try {
-            const result = await submitScore2048(playerId, pending.name.trim(), pending.score, pending.maxTile);
+            // Определяем режим по сохранённому gridSize (если есть)
+            const pendingGridSize = pending.gridSize || 4;
+            const submitFn = pendingGridSize === 3 ? submitScore2048_3x3 : submitScore2048;
+            const result = await submitFn(playerId, pending.name.trim(), pending.score, pending.maxTile);
             clearPending2048Result();
             if (result.success) {
               setPendingResultMessage(result.isNewRecord
                 ? `Новый рекорд сохранён! ${pending.score} очков`
                 : `Результат сохранён! ${pending.score} очков`);
-              await fetchLeaderboard();
+              await fetchAllLeaderboards();
             } else {
               setPendingResultMessage('Ошибка сохранения результата');
             }
@@ -293,11 +308,15 @@ export default function Game2048Page() {
     }
   }, [authUser, playerId]);
 
-  const fetchLeaderboard = async () => {
+  const fetchAllLeaderboards = async () => {
     setLeaderboardLoading(true);
     try {
-      const scores = await getScores2048(20);
-      setLeaderboard(scores);
+      const [scores4x4, scores3x3] = await Promise.all([
+        getScores2048(20),
+        getScores2048_3x3(20),
+      ]);
+      setLeaderboard(scores4x4);
+      setLeaderboard3x3(scores3x3);
     } catch (error) {
       console.error("Failed to fetch leaderboard:", error);
     } finally {
@@ -316,19 +335,20 @@ export default function Game2048Page() {
     return max;
   }, []);
 
-  // Submit score (для авторизованных)
+  // Submit score
   const handleSubmitScore = async () => {
     if (!authUser || !playerName.trim() || score === 0 || scoreSubmitting || scoreSubmitted) return;
 
     setScoreSubmitting(true);
     try {
       const maxTile = getMaxTile(grid);
-      const result = await submitScore2048(playerId, playerName.trim(), score, maxTile);
+      const submitFn = gridSize === 3 ? submitScore2048_3x3 : submitScore2048;
+      const result = await submitFn(playerId, playerName.trim(), score, maxTile);
       if (result.success) {
         setScoreSubmitted(true);
         setIsNewRecord(result.isNewRecord);
         setPlayer2048Name(playerName.trim());
-        await fetchLeaderboard();
+        await fetchAllLeaderboards();
       }
     } catch (error) {
       console.error("Failed to submit score:", error);
@@ -339,32 +359,39 @@ export default function Game2048Page() {
 
   // Сохранение лучшего счёта
   useEffect(() => {
-    if (score > bestScore) {
-      setBestScore(score);
-      localStorage.setItem("2048-best", score.toString());
+    if (gridSize === 4) {
+      if (score > bestScore) {
+        setBestScore(score);
+        localStorage.setItem("2048-best", score.toString());
+      }
+    } else {
+      if (score > bestScore3x3) {
+        setBestScore3x3(score);
+        localStorage.setItem("2048-best-3x3", score.toString());
+      }
     }
-  }, [score, bestScore]);
+  }, [score, bestScore, bestScore3x3, gridSize]);
 
   // Обработка хода
   const handleMove = useCallback((direction: "left" | "right" | "up" | "down") => {
     if (gameOver) return;
 
-    const { newGrid, score: moveScore, moved } = move(grid, direction);
+    const { newGrid, score: moveScore, moved } = move(grid, direction, gridSize);
 
     if (moved) {
-      const gridWithNew = addRandomTile(newGrid);
+      const gridWithNew = addRandomTile(newGrid, gridSize);
       setGrid(gridWithNew);
       setScore(s => s + moveScore);
 
-      if (hasWon(gridWithNew) && !won) {
+      if (hasWon(gridWithNew, gridSize) && !won) {
         setWon(true);
       }
 
-      if (!canMove(gridWithNew)) {
+      if (!canMove(gridWithNew, gridSize)) {
         setGameOver(true);
       }
     }
-  }, [grid, gameOver, won]);
+  }, [grid, gameOver, won, gridSize]);
 
   // Клавиатура
   useEffect(() => {
@@ -414,43 +441,83 @@ export default function Game2048Page() {
     };
   }, [handleMove]);
 
-  // Новая игра
-  const handleNewGame = () => {
+  // Новая игра (с текущим размером)
+  const handleNewGame = useCallback((size: GridSize = gridSize) => {
     tileIdCounter = 0;
-    let newGrid = createEmptyGrid();
-    newGrid = addRandomTile(newGrid);
-    newGrid = addRandomTile(newGrid);
+    let newGrid = createEmptyGrid(size);
+    newGrid = addRandomTile(newGrid, size);
+    newGrid = addRandomTile(newGrid, size);
     setGrid(newGrid);
+    setGridSize(size);
     setScore(0);
     setGameOver(false);
     setWon(false);
     setScoreSubmitted(false);
     setIsNewRecord(false);
+  }, [gridSize]);
+
+  // Переключение режима
+  const handleModeChange = (newSize: GridSize) => {
+    if (newSize !== gridSize) {
+      handleNewGame(newSize);
+    }
   };
+
+  const currentBestScore = gridSize === 4 ? bestScore : bestScore3x3;
+  const currentLeaderboard = gridSize === 4 ? leaderboard : leaderboard3x3;
+  const winValue = gridSize === 3 ? 512 : 2048;
 
   return (
     <div className="max-w-lg mx-auto">
       <PageHeader
         title="2048"
-        description="Соединяй плитки, собери 2048!"
+        description={gridSize === 3 ? "Мини-режим 3×3. Собери 512!" : "Соединяй плитки, собери 2048!"}
       />
+
+      {/* Mode Selector */}
+      <div className="flex gap-2 mb-4 justify-center">
+        <button
+          onClick={() => handleModeChange(4)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            gridSize === 4
+              ? "bg-orange-500 text-white"
+              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+          }`}
+        >
+          4×4 Classic
+        </button>
+        <button
+          onClick={() => handleModeChange(3)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            gridSize === 3
+              ? "bg-purple-500 text-white"
+              : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+          }`}
+        >
+          3×3 Mini
+        </button>
+      </div>
 
       {/* Счёт */}
       <div className="flex gap-4 mb-4">
         <div className="flex-1 bg-card border border-border rounded-xl p-4 text-center">
           <div className="text-xs text-muted uppercase tracking-wide">Счёт</div>
-          <div className="text-2xl font-bold text-accent">{score}</div>
+          <div className={`text-2xl font-bold ${gridSize === 3 ? "text-purple-400" : "text-accent"}`}>{score}</div>
         </div>
         <div className="flex-1 bg-card border border-border rounded-xl p-4 text-center">
           <div className="text-xs text-muted uppercase tracking-wide flex items-center justify-center gap-1">
             <Trophy size={12} />
             Лучший
           </div>
-          <div className="text-2xl font-bold text-yellow-500">{bestScore}</div>
+          <div className="text-2xl font-bold text-yellow-500">{currentBestScore}</div>
         </div>
         <button
-          onClick={handleNewGame}
-          className="px-4 rounded-xl bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-all flex items-center gap-2"
+          onClick={() => handleNewGame()}
+          className={`px-4 rounded-xl transition-all flex items-center gap-2 ${
+            gridSize === 3
+              ? "bg-purple-500/20 text-purple-400 hover:bg-purple-500/30"
+              : "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
+          }`}
         >
           <RotateCcw size={18} />
           <span className="hidden sm:inline">Новая</span>
@@ -460,14 +527,14 @@ export default function Game2048Page() {
       {/* Игровое поле */}
       <div className="relative">
         <div
-          className="grid gap-2 p-3 rounded-2xl bg-slate-700/50"
-          style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
+          className={`grid gap-2 p-3 rounded-2xl ${gridSize === 3 ? "bg-purple-900/30" : "bg-slate-700/50"}`}
+          style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
         >
           {/* Фоновые ячейки */}
-          {Array(GRID_SIZE * GRID_SIZE).fill(null).map((_, i) => (
+          {Array(gridSize * gridSize).fill(null).map((_, i) => (
             <div
               key={i}
-              className="aspect-square rounded-lg bg-slate-600/50"
+              className={`aspect-square rounded-lg ${gridSize === 3 ? "bg-purple-800/30" : "bg-slate-600/50"}`}
             />
           ))}
         </div>
@@ -477,16 +544,16 @@ export default function Game2048Page() {
           <div className="absolute inset-3">
             <div
               className="grid gap-2"
-              style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}
+              style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)` }}
             >
               {grid.flat().map((tile, i) => {
-                const row = Math.floor(i / GRID_SIZE);
-                const col = i % GRID_SIZE;
+                const row = Math.floor(i / gridSize);
+                const col = i % gridSize;
 
                 if (!tile) return <div key={`empty-${row}-${col}`} className="aspect-square" />;
 
                 const style = getTileStyle(tile.value);
-                const fontSize = getFontSize(tile.value);
+                const fontSize = getFontSize(tile.value, gridSize);
 
                 return (
                   <div
@@ -508,7 +575,7 @@ export default function Game2048Page() {
           <div className="absolute inset-0 bg-black/80 rounded-2xl flex flex-col items-center justify-center p-4 overflow-y-auto">
             <div className="text-3xl font-bold text-white mb-2">Игра окончена!</div>
             <div className="text-xl text-gray-300 mb-4">
-              Счёт: <span className="text-orange-400 font-bold">{score}</span>
+              Счёт: <span className={`font-bold ${gridSize === 3 ? "text-purple-400" : "text-orange-400"}`}>{score}</span>
               {" · "}
               Макс: <span className="text-yellow-400 font-bold">{getMaxTile(grid)}</span>
             </div>
@@ -523,12 +590,18 @@ export default function Game2048Page() {
                   value={playerName}
                   onChange={(e) => setPlayerNameState(e.target.value)}
                   maxLength={20}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-orange-500 mb-3"
+                  className={`w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none mb-3 ${
+                    gridSize === 3 ? "focus:border-purple-500" : "focus:border-orange-500"
+                  }`}
                 />
                 <button
                   onClick={handleSubmitScore}
                   disabled={!playerName.trim() || scoreSubmitting}
-                  className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+                  className={`w-full px-4 py-2 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors ${
+                    gridSize === 3
+                      ? "bg-purple-600 hover:bg-purple-700"
+                      : "bg-orange-600 hover:bg-orange-700"
+                  }`}
                 >
                   {scoreSubmitting ? "Сохранение..." : "Сохранить"}
                 </button>
@@ -553,7 +626,7 @@ export default function Game2048Page() {
                   onClick={() => {
                     if (!playerName.trim()) return;
                     setPlayer2048Name(playerName.trim());
-                    savePending2048Result(score, getMaxTile(grid), playerName.trim());
+                    savePending2048Result(score, getMaxTile(grid), playerName.trim(), gridSize);
                     signIn();
                   }}
                   disabled={!playerName.trim()}
@@ -580,8 +653,12 @@ export default function Game2048Page() {
             )}
 
             <button
-              onClick={handleNewGame}
-              className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all flex items-center gap-2"
+              onClick={() => handleNewGame()}
+              className={`px-6 py-3 rounded-xl text-white font-bold transition-all flex items-center gap-2 ${
+                gridSize === 3
+                  ? "bg-purple-500 hover:bg-purple-600"
+                  : "bg-orange-500 hover:bg-orange-600"
+              }`}
             >
               <RotateCcw size={18} />
               Играть снова
@@ -591,8 +668,10 @@ export default function Game2048Page() {
 
         {/* Win */}
         {won && !gameOver && (
-          <div className="absolute inset-0 bg-yellow-500/80 rounded-2xl flex flex-col items-center justify-center animate-fade-in">
-            <div className="text-4xl font-bold text-white mb-2">2048!</div>
+          <div className={`absolute inset-0 rounded-2xl flex flex-col items-center justify-center animate-fade-in ${
+            gridSize === 3 ? "bg-purple-500/80" : "bg-yellow-500/80"
+          }`}>
+            <div className="text-4xl font-bold text-white mb-2">{winValue}!</div>
             <div className="text-white/80 mb-4">Поздравляем!</div>
             <div className="flex gap-2">
               <button
@@ -602,8 +681,10 @@ export default function Game2048Page() {
                 Продолжить
               </button>
               <button
-                onClick={handleNewGame}
-                className="px-4 py-2 rounded-xl bg-white text-yellow-600 font-bold hover:bg-white/90 transition-all"
+                onClick={() => handleNewGame()}
+                className={`px-4 py-2 rounded-xl bg-white font-bold hover:bg-white/90 transition-all ${
+                  gridSize === 3 ? "text-purple-600" : "text-yellow-600"
+                }`}
               >
                 Новая игра
               </button>
@@ -621,11 +702,11 @@ export default function Game2048Page() {
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="flex items-center gap-2 text-lg font-bold">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            Таблица лидеров
+            <Trophy className={`w-5 h-5 ${gridSize === 3 ? "text-purple-400" : "text-yellow-400"}`} />
+            Таблица лидеров {gridSize === 3 ? "(3×3)" : "(4×4)"}
           </h2>
           <button
-            onClick={fetchLeaderboard}
+            onClick={fetchAllLeaderboards}
             disabled={leaderboardLoading}
             className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
             title="Обновить"
@@ -634,10 +715,14 @@ export default function Game2048Page() {
           </button>
         </div>
 
-        <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+        <div className={`border rounded-lg overflow-hidden ${
+          gridSize === 3
+            ? "bg-purple-900/20 border-purple-700/50"
+            : "bg-gray-800/50 border-gray-700"
+        }`}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-700">
+              <tr className={`border-b ${gridSize === 3 ? "border-purple-700/50" : "border-gray-700"}`}>
                 <th className="w-10 text-center p-2 text-gray-400 font-medium">#</th>
                 <th className="text-left p-2 text-gray-400 font-medium">Игрок</th>
                 <th className="text-center p-2 text-gray-400 font-medium">Очки</th>
@@ -651,20 +736,24 @@ export default function Game2048Page() {
                     Загрузка...
                   </td>
                 </tr>
-              ) : leaderboard.length === 0 ? (
+              ) : currentLeaderboard.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="p-4 text-center text-gray-400">
                     Пока нет результатов. Будьте первым!
                   </td>
                 </tr>
               ) : (
-                leaderboard.map((entry, index) => {
+                currentLeaderboard.map((entry, index) => {
                   const position = index + 1;
                   return (
                     <tr
                       key={entry.id}
-                      className={`border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30 ${
-                        playerId === entry.player_id ? "bg-orange-500/10" : ""
+                      className={`border-b last:border-0 hover:bg-gray-700/30 ${
+                        gridSize === 3 ? "border-purple-700/30" : "border-gray-700/50"
+                      } ${
+                        playerId === entry.player_id
+                          ? gridSize === 3 ? "bg-purple-500/10" : "bg-orange-500/10"
+                          : ""
                       }`}
                     >
                       <td className="w-10 text-center p-2 text-base">
@@ -679,7 +768,7 @@ export default function Game2048Page() {
                           <span className="text-white truncate">{entry.name}</span>
                         </div>
                       </td>
-                      <td className="p-2 text-center font-bold text-orange-400">
+                      <td className={`p-2 text-center font-bold ${gridSize === 3 ? "text-purple-400" : "text-orange-400"}`}>
                         {entry.score.toLocaleString()}
                       </td>
                       <td className="p-2 text-center font-bold text-yellow-400">
