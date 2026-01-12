@@ -35,6 +35,7 @@ export interface ActiveBarrier {
   moduleId: string;
   x: number;           // позиция по X на КАНАЛЕ (не модуля!)
   y: number;           // позиция по Y на КАНАЛЕ (не модуля!)
+  pathProgress: number; // позиция на пути (0-1) для блокировки врагов
   duration: number;    // оставшаяся длительность
   maxDuration: number; // изначальная длительность
   createdAt: number;   // timestamp создания
