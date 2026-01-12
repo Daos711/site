@@ -197,7 +197,8 @@ const fragmentShaderSource = `
       float log_zn = log(z.x * z.x + z.y * z.y) / 2.0;
       float nu = log(log_zn / log(2.0)) / log(2.0);
       iter = iter + 1.0 - nu;
-      float t = iter / maxIter;
+      // Логарифмическая нормализация для стабильных цветов при изменении maxIter
+      float t = log(iter + 1.0) / log(maxIter + 1.0);
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
@@ -500,7 +501,8 @@ const fragmentShaderSourceHP_main_WebGL1 = `
       float log_zn = log(zx * zx + zy * zy) / 2.0;
       float nu = log(log_zn / log(2.0)) / log(2.0);
       iter = iter + 1.0 - nu;
-      float t = iter / maxIter;
+      // Логарифмическая нормализация для стабильных цветов
+      float t = log(iter + 1.0) / log(maxIter + 1.0);
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
@@ -656,7 +658,8 @@ const fragmentShaderSourceHP_main_WebGL2 = `
       float log_zn = log(zx * zx + zy * zy) / 2.0;
       float nu = log(log_zn / log(2.0)) / log(2.0);
       iter = iter + 1.0 - nu;
-      float t = iter / maxIter;
+      // Логарифмическая нормализация для стабильных цветов
+      float t = log(iter + 1.0) / log(maxIter + 1.0);
       vec3 color = palette(t, u_colorScheme);
       fragColor = vec4(color, 1.0);
     }
@@ -880,7 +883,8 @@ void main() {
     float log_zn = log(fullX * fullX + fullY * fullY) / 2.0;
     float nu = log(log_zn / log(2.0)) / log(2.0);
     iter = iter + 1.0 - nu;
-    float t = iter / maxIter;
+    // Логарифмическая нормализация для стабильных цветов
+    float t = log(iter + 1.0) / log(maxIter + 1.0);
     vec3 color = palette(t, u_colorScheme);
     fragColor = vec4(color, 1.0);
   }
