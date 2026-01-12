@@ -382,17 +382,31 @@ const fragmentShaderSourceHP_main_WebGL1 = `
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float aspect = u_resolution.x / u_resolution.y;
 
-    // Смещение в DD
-    float offsetX = (uv.x - 0.5) * aspect;
-    float offsetY = (uv.y - 0.5);
+    // Вычисляем offset в DD для максимальной точности
+    // offsetX = (gl_FragCoord.x / resolution.x - 0.5) * aspect
+    // Разбиваем на шаги чтобы сохранить точность
+
+    // Шаг 1: gl_FragCoord.x - resolution.x * 0.5 (центрирование в пиксельных координатах)
+    float centerPixelX = u_resolution.x * 0.5;
+    float centerPixelY = u_resolution.y * 0.5;
+    vec2 pixelOffsetX = twoSum(gl_FragCoord.x, -centerPixelX);
+    vec2 pixelOffsetY = twoSum(gl_FragCoord.y, -centerPixelY);
+
+    // Шаг 2: делим на resolution и умножаем на aspect (для X)
+    // offsetX_DD = pixelOffsetX / resolution.x * aspect = pixelOffsetX * (aspect / resolution.x)
+    float scaleFactorX = aspect / u_resolution.x;
+    float scaleFactorY = 1.0 / u_resolution.y;
+
+    vec2 offsetX_DD = dd_mul_f(pixelOffsetX, scaleFactorX);
+    vec2 offsetY_DD = dd_mul_f(pixelOffsetY, scaleFactorY);
 
     // scale как DD
     vec2 scaleDD = vec2(u_scaleHi.x, u_scaleLo.x);
 
-    // c.x = centerX + offsetX * scale (в DD)
-    vec2 cxDD = dd_add(vec2(u_centerHi.x, u_centerLo.x), dd_mul_f(scaleDD, offsetX));
-    // c.y = centerY + offsetY * scale (в DD)
-    vec2 cyDD = dd_add(vec2(u_centerHi.y, u_centerLo.y), dd_mul_f(scaleDD, offsetY));
+    // c.x = centerX + offsetX * scale (всё в DD)
+    vec2 cxDD = dd_add(vec2(u_centerHi.x, u_centerLo.x), dd_mul(scaleDD, offsetX_DD));
+    // c.y = centerY + offsetY * scale (всё в DD)
+    vec2 cyDD = dd_add(vec2(u_centerHi.y, u_centerLo.y), dd_mul(scaleDD, offsetY_DD));
 
     vec2 zxDD, zyDD;
     vec2 jcxDD = vec2(u_juliaCHi.x, u_juliaCLo.x);
@@ -506,17 +520,31 @@ const fragmentShaderSourceHP_main_WebGL2 = `
     vec2 uv = gl_FragCoord.xy / u_resolution;
     float aspect = u_resolution.x / u_resolution.y;
 
-    // Смещение в DD
-    float offsetX = (uv.x - 0.5) * aspect;
-    float offsetY = (uv.y - 0.5);
+    // Вычисляем offset в DD для максимальной точности
+    // offsetX = (gl_FragCoord.x / resolution.x - 0.5) * aspect
+    // Разбиваем на шаги чтобы сохранить точность
+
+    // Шаг 1: gl_FragCoord.x - resolution.x * 0.5 (центрирование в пиксельных координатах)
+    float centerPixelX = u_resolution.x * 0.5;
+    float centerPixelY = u_resolution.y * 0.5;
+    vec2 pixelOffsetX = twoSum(gl_FragCoord.x, -centerPixelX);
+    vec2 pixelOffsetY = twoSum(gl_FragCoord.y, -centerPixelY);
+
+    // Шаг 2: делим на resolution и умножаем на aspect (для X)
+    // offsetX_DD = pixelOffsetX / resolution.x * aspect = pixelOffsetX * (aspect / resolution.x)
+    float scaleFactorX = aspect / u_resolution.x;
+    float scaleFactorY = 1.0 / u_resolution.y;
+
+    vec2 offsetX_DD = dd_mul_f(pixelOffsetX, scaleFactorX);
+    vec2 offsetY_DD = dd_mul_f(pixelOffsetY, scaleFactorY);
 
     // scale как DD
     vec2 scaleDD = vec2(u_scaleHi.x, u_scaleLo.x);
 
-    // c.x = centerX + offsetX * scale (в DD)
-    vec2 cxDD = dd_add(vec2(u_centerHi.x, u_centerLo.x), dd_mul_f(scaleDD, offsetX));
-    // c.y = centerY + offsetY * scale (в DD)
-    vec2 cyDD = dd_add(vec2(u_centerHi.y, u_centerLo.y), dd_mul_f(scaleDD, offsetY));
+    // c.x = centerX + offsetX * scale (всё в DD)
+    vec2 cxDD = dd_add(vec2(u_centerHi.x, u_centerLo.x), dd_mul(scaleDD, offsetX_DD));
+    // c.y = centerY + offsetY * scale (всё в DD)
+    vec2 cyDD = dd_add(vec2(u_centerHi.y, u_centerLo.y), dd_mul(scaleDD, offsetY_DD));
 
     vec2 zxDD, zyDD;
     vec2 jcxDD = vec2(u_juliaCHi.x, u_juliaCLo.x);
