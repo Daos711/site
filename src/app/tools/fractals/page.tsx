@@ -325,20 +325,40 @@ export default function FractalsPage() {
     }
   }, [mode, fractalType, screenToFractal]);
 
-  // Зум колёсиком
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
+  // Зум колёсиком (нужен отдельный useEffect для passive: false)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const coords = screenToFractal(e.clientX, e.clientY);
-    const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
-    const newZoom = Math.max(0.5, Math.min(100000000, zoom * factor));
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    setCenter({
-      x: coords.x + (center.x - coords.x) / factor,
-      y: coords.y + (center.y - coords.y) / factor,
-    });
-    setZoom(newZoom);
-  }, [zoom, center, screenToFractal]);
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      const scale = 3.0 / zoom;
+      const aspect = rect.width / rect.height;
+
+      const coords = {
+        x: center.x + (px / rect.width - 0.5) * scale * aspect,
+        y: center.y + (1 - py / rect.height - 0.5) * scale,
+      };
+
+      const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+      const newZoom = Math.max(0.5, Math.min(100000000, zoom * factor));
+
+      setCenter({
+        x: coords.x + (center.x - coords.x) / factor,
+        y: coords.y + (center.y - coords.y) / factor,
+      });
+      setZoom(newZoom);
+    };
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, [zoom, center]);
 
   // Перетаскивание
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -467,7 +487,6 @@ export default function FractalsPage() {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onClick={handleClick}
-            onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleMouseUp}
