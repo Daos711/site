@@ -215,62 +215,61 @@ const fragmentShaderSourceHP_WebGL1 = `
   uniform int u_colorScheme;
 
   // ============ Double-Double Arithmetic (Veltkamp-Dekker) ============
-  // Число представляется как vec2(hi, lo) где value ≈ hi + lo
+  // БЕЗ fma() - работает на всех GPU
 
   vec2 twoSum(float a, float b) {
     float s = a + b;
-    float bb = s - a;
-    float err = (a - (s - bb)) + (b - bb);
-    return vec2(s, err);
+    float v = s - a;
+    float e = (a - (s - v)) + (b - v);
+    return vec2(s, e);
   }
 
   vec2 quickTwoSum(float a, float b) {
     float s = a + b;
-    float err = b - (s - a);
-    return vec2(s, err);
+    float e = b - (s - a);
+    return vec2(s, e);
   }
 
   vec2 dd_add(vec2 a, vec2 b) {
     vec2 s = twoSum(a.x, b.x);
-    float e = a.y + b.y + s.y;
-    return quickTwoSum(s.x, e);
+    vec2 t = twoSum(a.y, b.y);
+    s.y += t.x;
+    s = quickTwoSum(s.x, s.y);
+    s.y += t.y;
+    return quickTwoSum(s.x, s.y);
   }
 
   vec2 dd_sub(vec2 a, vec2 b) {
     return dd_add(a, vec2(-b.x, -b.y));
   }
 
-  const float SPLIT = 4097.0; // 2^12 + 1
-
-  // twoProd Veltkamp-Dekker (WebGL1 не имеет fma)
-  vec2 twoProd(float a, float b) {
-    float t[2];
-    float p = a * b;
-    t[0] = a * SPLIT;
-    float a1 = t[0];
-    t[1] = a1 - a;
-    float a_hi = a1 - t[1];
+  // Veltkamp split - разделяет float на две половины без fma
+  // SPLIT = 2^12 + 1 = 4097 для float32 (23 бита мантиссы)
+  vec2 split(float a) {
+    float c = 4097.0 * a;
+    float a_hi = c - (c - a);
     float a_lo = a - a_hi;
-    t[0] = b * SPLIT;
-    float b1 = t[0];
-    t[1] = b1 - b;
-    float b_hi = b1 - t[1];
-    float b_lo = b - b_hi;
-    float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
+    return vec2(a_hi, a_lo);
+  }
+
+  vec2 twoProd(float a, float b) {
+    float p = a * b;
+    vec2 aa = split(a);
+    vec2 bb = split(b);
+    float err = ((aa.x * bb.x - p) + aa.x * bb.y + aa.y * bb.x) + aa.y * bb.y;
     return vec2(p, err);
   }
 
   vec2 dd_mul(vec2 a, vec2 b) {
     vec2 p = twoProd(a.x, b.x);
-    float e = a.x * b.y + a.y * b.x + a.y * b.y + p.y;
-    return quickTwoSum(p.x, e);
+    p.y += a.x * b.y + a.y * b.x;
+    return quickTwoSum(p.x, p.y);
   }
 
-  // DD * float
   vec2 dd_mul_f(vec2 a, float b) {
     vec2 p = twoProd(a.x, b);
-    float e = a.y * b + p.y;
-    return quickTwoSum(p.x, e);
+    p.y += a.y * b;
+    return quickTwoSum(p.x, p.y);
   }`;
 
 // High Precision шейдер с Double-Double арифметикой (WebGL2 - тот же алгоритм, другой синтаксис)
@@ -291,53 +290,61 @@ const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
   out vec4 fragColor;
 
   // ============ Double-Double Arithmetic (Veltkamp-Dekker) ============
-  // Число представляется как vec2(hi, lo) где value ≈ hi + lo
+  // БЕЗ fma() - работает на всех GPU
 
   vec2 twoSum(float a, float b) {
     float s = a + b;
-    float bb = s - a;
-    float err = (a - (s - bb)) + (b - bb);
-    return vec2(s, err);
+    float v = s - a;
+    float e = (a - (s - v)) + (b - v);
+    return vec2(s, e);
   }
 
   vec2 quickTwoSum(float a, float b) {
     float s = a + b;
-    float err = b - (s - a);
-    return vec2(s, err);
+    float e = b - (s - a);
+    return vec2(s, e);
   }
 
   vec2 dd_add(vec2 a, vec2 b) {
     vec2 s = twoSum(a.x, b.x);
-    float e = a.y + b.y + s.y;
-    return quickTwoSum(s.x, e);
+    vec2 t = twoSum(a.y, b.y);
+    s.y += t.x;
+    s = quickTwoSum(s.x, s.y);
+    s.y += t.y;
+    return quickTwoSum(s.x, s.y);
   }
 
   vec2 dd_sub(vec2 a, vec2 b) {
     return dd_add(a, vec2(-b.x, -b.y));
   }
 
-  const float SPLIT = 4097.0; // 2^12 + 1
+  // Veltkamp split - разделяет float на две половины без fma
+  // SPLIT = 2^12 + 1 = 4097 для float32 (23 бита мантиссы)
+  vec2 split(float a) {
+    float c = 4097.0 * a;
+    float a_hi = c - (c - a);
+    float a_lo = a - a_hi;
+    return vec2(a_hi, a_lo);
+  }
 
-  // twoProd с использованием fma() - правильный способ на GPU с FMA
-  // fma(a, b, c) = a*b + c с одним округлением в конце
   vec2 twoProd(float a, float b) {
     float p = a * b;
-    float err = fma(a, b, -p);  // Вычисляет a*b - p точно!
+    vec2 aa = split(a);
+    vec2 bb = split(b);
+    float err = ((aa.x * bb.x - p) + aa.x * bb.y + aa.y * bb.x) + aa.y * bb.y;
     return vec2(p, err);
   }
 
   vec2 dd_mul(vec2 a, vec2 b) {
     vec2 p = twoProd(a.x, b.x);
-    // e = a.x*b.y + a.y*b.x + a.y*b.y + p.y - используем fma для точности
-    float e = fma(a.x, b.y, fma(a.y, b.x, fma(a.y, b.y, p.y)));
-    return quickTwoSum(p.x, e);
+    p.y += a.x * b.y + a.y * b.x;
+    return quickTwoSum(p.x, p.y);
   }
 
-  // DD * float
   vec2 dd_mul_f(vec2 a, float b) {
     vec2 p = twoProd(a.x, b);
-    float e = fma(a.y, b, p.y);
-    return quickTwoSum(p.x, e);
+    p.y += a.y * b;
+    return quickTwoSum(p.x, p.y);
   }`;
 
 // Общая логика main() для HP шейдера (WebGL1 версия)
