@@ -268,7 +268,7 @@ const fragmentShaderSourceHP_WebGL1 = `
     return quickTwoSum(p.x, e);
   }`;
 
-// High Precision шейдер с Double-Double арифметикой (WebGL2 - использует fma())
+// High Precision шейдер с Double-Double арифметикой (WebGL2 - тот же алгоритм, другой синтаксис)
 const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
   precision highp float;
 
@@ -285,7 +285,7 @@ const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
 
   out vec4 fragColor;
 
-  // ============ Double-Double Arithmetic (с fma для точности) ============
+  // ============ Double-Double Arithmetic (Veltkamp-Dekker) ============
   // Число представляется как vec2(hi, lo) где value ≈ hi + lo
 
   vec2 twoSum(float a, float b) {
@@ -311,16 +311,23 @@ const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
     return dd_add(a, vec2(-b.x, -b.y));
   }
 
-  // twoProd с использованием fma() - более надёжно на GPU с FMA
+  const float SPLIT = 4097.0; // 2^12 + 1
+
   vec2 twoProd(float a, float b) {
     float p = a * b;
-    float err = fma(a, b, -p);  // fma(a,b,c) = a*b+c с одним округлением
+    float a1 = a * SPLIT;
+    float a_hi = a1 - (a1 - a);
+    float a_lo = a - a_hi;
+    float b1 = b * SPLIT;
+    float b_hi = b1 - (b1 - b);
+    float b_lo = b - b_hi;
+    float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
     return vec2(p, err);
   }
 
   vec2 dd_mul(vec2 a, vec2 b) {
     vec2 p = twoProd(a.x, b.x);
-    float e = fma(a.x, b.y, fma(a.y, b.x, fma(a.y, b.y, p.y)));
+    float e = a.x * b.y + a.y * b.x + a.y * b.y + p.y;
     vec2 s = twoSum(p.x, e);
     return vec2(s.x, s.y);
   }
@@ -328,7 +335,7 @@ const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
   // DD * float
   vec2 dd_mul_f(vec2 a, float b) {
     vec2 p = twoProd(a.x, b);
-    float e = fma(a.y, b, p.y);
+    float e = a.y * b + p.y;
     return quickTwoSum(p.x, e);
   }`;
 
@@ -701,13 +708,13 @@ export default function FractalsPage() {
       hpFragmentSource = DEBUG_HP_PURPLE
         ? fragmentShaderSourceHP_WebGL2_DEBUG
         : fragmentShaderSourceHP_WebGL2_full;
-      console.log('Using WebGL2 HP shader with fma() for precise twoProd');
+      console.log('Using WebGL2 HP shader (GLSL ES 3.0)');
     } else {
       hpVertexSource = vertexShaderSource;
       hpFragmentSource = DEBUG_HP_PURPLE
         ? fragmentShaderSourceHP_WebGL1_DEBUG
         : fragmentShaderSourceHP_WebGL1_full;
-      console.log('Using WebGL1 HP shader with Veltkamp-Dekker splitting');
+      console.log('Using WebGL1 HP shader');
     }
 
     const vertexShaderHP = compileShader(gl.VERTEX_SHADER, hpVertexSource, "vertexHP");
