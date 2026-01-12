@@ -4,6 +4,7 @@
 
 import type { BeamInput, BeamResult, Reactions, Load } from "./types";
 import { buildIntervals, buildSectionFormulas, formatNumber, formatQFormula, formatMFormula, type ForceContribution } from "./sections";
+import { getProfileTypeName, getProfileW, getProfileI } from "./gost-profiles";
 
 /**
  * Оценивает ширину LaTeX терма в условных единицах (примерно символах)
@@ -234,7 +235,7 @@ const SVG_COLORS = {
   moment: "#a855f7",
   reaction: "#22c55e",
   text: "#1f2937",
-  background: "#f8fafc",
+  background: "#ffffff",
 };
 
 interface DiagramImages {
@@ -580,7 +581,10 @@ function buildReportHTML(data: ReportData): string {
 
   // Флаги для определения наличия разделов
   const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
-  const hasCrossSection = !!(result.diameter && result.W && result.I);
+  const hasCrossSection = !!(
+    (result.diameter && result.W && result.I) || // круглое сечение
+    (result.selectedProfile && result.I) // профиль из ГОСТ (двутавр/швеллер)
+  );
   const hasDeflection = !!y;
 
   return `<!DOCTYPE html>
@@ -650,7 +654,7 @@ function buildReportHTML(data: ReportData): string {
 
   <h1>Расчёт балки методом сечений</h1>
 
-  ${buildProblemStatement(input, hasDeflection, hasCrossSection)}
+  ${buildProblemStatement(input, result, hasDeflection, hasCrossSection)}
 
   <h2>1. Исходные данные</h2>
   ${buildInputDataSection(input)}
@@ -716,6 +720,23 @@ function buildReportHTML(data: ReportData): string {
 
     if (hasDeflection) {
       html += buildMNPSection(input, result, sectionNum);
+      sectionNum++;
+    }
+
+    // Метод Верещагина и ударное нагружение (если есть)
+    if (result.loadMode === 'impact' && result.Kd !== undefined) {
+      // Находим точку удара
+      const forces = input.loads.filter(l => l.type === 'force');
+      const forceIndex = input.impactForceIndex ?? 0;
+      const impactX = forces.length > forceIndex ? (forces[forceIndex] as { x: number }).x : 0;
+
+      // Метод Верещагина
+      html += buildVereshchaginSection(input, result, sectionNum, impactX);
+      sectionNum++;
+
+      // Ударное нагружение
+      html += buildImpactLoadingSection(input, result, sectionNum);
+      sectionNum++;
     }
 
     return html;
@@ -762,18 +783,58 @@ function buildReportHTML(data: ReportData): string {
 /**
  * Раздел "Постановка задачи"
  */
-function buildProblemStatement(input: BeamInput, hasDeflection: boolean, hasCrossSection: boolean): string {
+function buildProblemStatement(input: BeamInput, result: BeamResult, hasDeflection: boolean, hasCrossSection: boolean): string {
   const tasks: string[] = [
     "Определить реакции опор",
     "Построить эпюры поперечных сил \\(Q\\) и изгибающих моментов \\(M\\)"
   ];
 
   if (hasCrossSection) {
-    tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+    const sectionType = result.sectionType ?? 'round';
+    const sectionMode = result.sectionMode ?? 'select';
+
+    if (sectionMode === 'given') {
+      // Режим "Заданное сечение" - определяем напряжения
+      if (sectionType === 'round') {
+        tasks.push("Определить максимальные напряжения для заданного круглого сечения");
+      } else if (sectionType === 'i-beam') {
+        tasks.push("Определить максимальные напряжения для заданного двутавра");
+      } else if (sectionType === 'channel-u' || sectionType === 'channel-p') {
+        tasks.push("Определить максимальные напряжения для заданного швеллера");
+      } else {
+        tasks.push("Определить максимальные напряжения для заданного сечения");
+      }
+    } else {
+      // Режим "Подбор сечения"
+      if (sectionType === 'round') {
+        tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+      } else if (sectionType === 'i-beam') {
+        tasks.push("Подобрать номер стального двутавра из условия прочности");
+      } else if (sectionType === 'channel-u' || sectionType === 'channel-p') {
+        tasks.push("Подобрать номер стального швеллера из условия прочности");
+      } else {
+        tasks.push("Подобрать сечение из условия прочности");
+      }
+    }
+
+    // Добавляем задачу про эпюру напряжений для профилей
+    if (sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') {
+      tasks.push("Построить эпюру нормальных напряжений в опасном сечении");
+    }
   }
 
   if (hasDeflection) {
     tasks.push("Определить прогибы и найти максимальный прогиб балки");
+  }
+
+  // Ударное нагружение
+  if (result.loadMode === 'impact') {
+    tasks.push("Определить коэффициент динамичности при ударном нагружении");
+    tasks.push("Определить напряжения и прогиб при ударе");
+    if (result.springStiffness && result.springStiffness > 0) {
+      tasks.push("Учесть податливость пружинной опоры");
+    }
+    tasks.push("Сравнить статическое и динамическое нагружение");
   }
 
   return `
@@ -841,6 +902,17 @@ function buildInputDataSection(input: BeamInput): string {
       const qLabel = resultingLoads.length === 1 ? "q" : `q_{${i + 1}}`;
       return `<tr><td>\\(${qLabel}\\)</td><td>\\(${formatNumber(Math.abs(seg.q))}\\) кН/м</td><td>${seg.q >= 0 ? "↓ вниз" : "↑ вверх"}</td><td>от \\(${formatNumber(seg.a)}\\) до \\(${formatNumber(seg.b)}\\) м</td></tr>`;
     }).join("\n    ")}
+  </table>`;
+  }
+
+  // Параметры ударного нагружения
+  if (input.loadMode === 'impact' && input.impactHeight !== undefined) {
+    html += `
+  <h3>Параметры ударного нагружения</h3>
+  <table>
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Высота падения груза \\(H\\)</td><td>\\(${formatNumber(input.impactHeight * 100)}\\) см = \\(${formatNumber(input.impactHeight, 3)}\\) м</td></tr>
+    ${input.springStiffness && input.springStiffness > 0 ? `<tr><td>Коэффициент податливости пружины \\(\\alpha\\)</td><td>\\(${formatNumber(input.springStiffness)}\\) см/кН</td></tr>` : ""}
   </table>`;
   }
 
@@ -1072,12 +1144,14 @@ function buildQDerivation(
 
   for (const f of forces) {
     if (f.type === "reaction") {
-      // Реакция: знак определяется направлением (вверх = +, вниз = -)
-      // В формуле пишем знак отдельно, значение по модулю
-      const isUpward = f.value >= 0;
-      const sign = isUpward ? "+" : "-";
-      symbolicTerms.push(`${sign} ${f.label}`);
-      numericTerms.push(`${sign} ${formatNumber(Math.abs(f.value))}`);
+      // Реакция хранится со знаком: вверх = +, вниз = -
+      // В символьной формуле всегда +R, знак приходит из значения при подстановке
+      symbolicTerms.push(`+ ${f.label}`);
+      if (f.value >= 0) {
+        numericTerms.push(`+ ${formatNumber(f.value)}`);
+      } else {
+        numericTerms.push(`- ${formatNumber(Math.abs(f.value))}`);
+      }
     } else if (f.type === "force") {
       // force: если F > 0 (вниз), то -F; если F < 0 (вверх), то +|F|
       const sign = f.value >= 0 ? "-" : "+";
@@ -1093,11 +1167,13 @@ function buildQDerivation(
     }
   }
 
-  // Активная q на участке
+  // Активная q на участке: Q' = -q, поэтому член -q·s
+  // Символьная формула всегда -q·s, числовая подстановка даёт знак автоматически
   if (Math.abs(activeQ) > 1e-9) {
-    const sign = activeQ >= 0 ? "-" : "+";
-    symbolicTerms.push(`${sign} q \\cdot ${varName}`);
-    numericTerms.push(`${sign} ${formatNumber(Math.abs(activeQ))} \\cdot ${varName}`);
+    symbolicTerms.push(`- q \\cdot ${varName}`);
+    // -q·s: если q > 0, то -q·s < 0; если q < 0, то -q·s > 0
+    const numSign = activeQ >= 0 ? "-" : "+";
+    numericTerms.push(`${numSign} ${formatNumber(Math.abs(activeQ))} \\cdot ${varName}`);
   }
 
   // Форматируем с переносами если формула длинная
@@ -1139,19 +1215,19 @@ function buildMDerivation(
 
   for (const c of contributions) {
     if (c.type === "reaction") {
-      // Реакция: знак определяется направлением (вверх = +, вниз = -)
-      // В формуле пишем знак отдельно, значение по модулю
+      // Реакция хранится со знаком: вверх = +, вниз = -
+      // В символьной формуле всегда +R, знак приходит из значения при подстановке
       const arm = sectionStart - c.x;
-      const isUpward = c.value >= 0;
-      const sign = isUpward ? "+" : "-";
+      const numSign = c.value >= 0 ? "+" : "-";
+      const numVal = formatNumber(Math.abs(c.value));
 
       if (Math.abs(arm) < 1e-9) {
         // Реакция прямо в начале участка - плечо = s
-        symbolicTerms.push(`${sign} ${c.label} \\cdot ${varName}`);
-        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot ${varName}`);
+        symbolicTerms.push(`+ ${c.label} \\cdot ${varName}`);
+        numericTerms.push(`${numSign} ${numVal} \\cdot ${varName}`);
       } else {
-        symbolicTerms.push(`${sign} ${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
-        numericTerms.push(`${sign} ${formatNumber(Math.abs(c.value))} \\cdot (${formatNumber(arm)} + ${varName})`);
+        symbolicTerms.push(`+ ${c.label} \\cdot (${formatNumber(arm)} + ${varName})`);
+        numericTerms.push(`${numSign} ${numVal} \\cdot (${formatNumber(arm)} + ${varName})`);
       }
     } else if (c.type === "force") {
       // Сила вниз (F > 0) создаёт отрицательный момент: -F·(a + z)
@@ -1190,11 +1266,12 @@ function buildMDerivation(
     }
   }
 
-  // Активная q на участке: -q·z²/2 (если q вниз)
+  // Активная q на участке: M'' = -q, поэтому член -q·s²/2
+  // Символьная формула всегда -q·s²/2, числовая подстановка даёт знак автоматически
   if (Math.abs(activeQ) > 1e-9) {
-    const sign = activeQ >= 0 ? "-" : "+";
-    symbolicTerms.push(`${sign} \\frac{q \\cdot ${varName}^2}{2}`);
-    numericTerms.push(`${sign} \\frac{${formatNumber(Math.abs(activeQ))} \\cdot ${varName}^2}{2}`);
+    symbolicTerms.push(`- \\frac{q \\cdot ${varName}^2}{2}`);
+    const numSign = activeQ >= 0 ? "-" : "+";
+    numericTerms.push(`${numSign} \\frac{${formatNumber(Math.abs(activeQ))} \\cdot ${varName}^2}{2}`);
   }
 
   // Форматируем с переносами если формула длинная
@@ -1216,29 +1293,386 @@ function buildMDerivation(
 }
 
 /**
- * Раздел "Подбор сечения"
+ * Раздел "Подбор сечения" или "Заданное сечение"
  */
 function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { value: number; x: number }, sectionNum: number): string {
-  const W_cm3 = formatNumber(result.W! * 1e6, 4);
-  const d_mm = formatNumber(result.diameter! * 1000, 2);
-  const I_cm4 = formatNumber(result.I! * 1e8, 4);
-  const sigma_MPa = formatNumber((input.sigma ?? 0) / 1e6);
+  const sectionType = result.sectionType ?? 'round';
+  const sectionMode = result.sectionMode ?? 'select';
+  const MmaxNm = Math.abs(Mmax.value) * 1000; // Н·м
 
-  return `
+  let html = '';
+
+  if (sectionMode === 'given') {
+    // Режим "Заданное сечение" - вычисляем σmax
+    const sigmaMax_MPa = formatNumber(result.sigmaMax ?? 0, 2);
+    const W_cm3 = formatNumber((result.W ?? 0) * 1e6, 4);
+
+    html = `
+  <h2>${sectionNum}. Заданное сечение</h2>
+  <p>Для заданного сечения вычисляем максимальное нормальное напряжение:</p>
+  <div class="formula">
+    \\[\\sigma_{\\max} = \\frac{|M|_{\\max}}{W} = \\frac{${formatNumber(Math.abs(Mmax.value))} \\cdot 10^6}{${W_cm3} \\cdot 10^3} = ${sigmaMax_MPa} \\text{ МПа}\\]
+  </div>
+  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м, \\(W = ${W_cm3}\\) см³.</p>`;
+
+  } else {
+    // Режим "Подбор сечения"
+    const sigma_MPa = formatNumber((input.sigma ?? 0) / 1e6);
+    const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+    const Wreq_str = formatNumber(Wreq_cm3, 2);
+
+    html = `
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
-    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(Math.abs(Mmax.value) * 1000)}}{${sigma_MPa}} = ${W_cm3} \\text{ см}^3\\]
+    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(MmaxNm)}}{${sigma_MPa} \\cdot 10^6} \\cdot 10^6 = ${Wreq_str} \\text{ см}^3\\]
   </div>
-  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value) * 1000)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>
+  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м \\(= ${formatNumber(MmaxNm)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>`;
+  }
+
+  if (sectionType === 'round') {
+    // Круглое сечение
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const d_mm = formatNumber(result.diameter! * 1000, 2);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Круглое сплошное сечение</h3>
+  <p>Диаметр: \\(d = ${d_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[W = \\frac{\\pi d^3}{32} = \\frac{\\pi \\cdot ${d_mm}^3}{32} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    } else {
+      html += `
   <p>Для круглого сплошного сечения \\(W = \\frac{\\pi d^3}{32}\\), откуда:</p>
   <div class="formula">
-    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = ${d_mm} \\text{ мм}}\\]
+    \\[\\boxed{d_{\\min} = \\sqrt[3]{\\frac{32W}{\\pi}} = \\sqrt[3]{\\frac{32 \\cdot ${W_cm3}}{\\pi}} = ${d_mm} \\text{ мм}}\\]
   </div>
-  <p>Момент инерции:</p>
+  <p>Момент инерции круглого сечения:</p>
   <div class="formula">
-    \\[I = \\frac{\\pi d^4}{64} = ${I_cm4} \\text{ см}^4\\]
+    \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
   </div>`;
+    }
+
+  } else if (sectionType === 'square' && result.squareSide) {
+    // Квадратное сечение
+    const a_mm = formatNumber(result.squareSide * 1000, 2);
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Квадратное сечение</h3>
+  <p>Сторона: \\(a = ${a_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[W = \\frac{a^3}{6} = \\frac{${a_mm}^3}{6} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    } else {
+      html += `
+  <p>Для квадратного сечения со стороной \\(a\\): \\(W = \\frac{a^3}{6}\\), откуда:</p>
+  <div class="formula">
+    \\[\\boxed{a = \\sqrt[3]{6W} = \\sqrt[3]{6 \\cdot ${W_cm3}} = ${a_mm} \\text{ мм}}\\]
+  </div>
+  <p>Момент инерции квадратного сечения:</p>
+  <div class="formula">
+    \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    }
+
+  } else if (sectionType === 'rectangle' && result.rectWidth && result.rectHeight) {
+    // Прямоугольное сечение
+    const b_mm = formatNumber(result.rectWidth * 1000, 2);
+    const h_mm = formatNumber(result.rectHeight * 1000, 2);
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Прямоугольное сечение</h3>
+  <p>Размеры: \\(b = ${b_mm}\\) мм, \\(h = ${h_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[W = \\frac{b \\cdot h^2}{6} = \\frac{${b_mm} \\cdot ${h_mm}^2}{6} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    } else {
+      html += `
+  <p>Для прямоугольного сечения \\(b \\times h\\): \\(W = \\frac{b \\cdot h^2}{6}\\).</p>
+  <p>Принимая соотношение \\(h/b = ${formatNumber(result.rectHeight / result.rectWidth, 1)}\\), получаем:</p>
+  <div class="formula">
+    \\[\\boxed{b = ${b_mm} \\text{ мм}, \\quad h = ${h_mm} \\text{ мм}}\\]
+  </div>
+  <p>Момент сопротивления и момент инерции:</p>
+  <div class="formula">
+    \\[W = \\frac{b \\cdot h^2}{6} = \\frac{${b_mm} \\cdot ${h_mm}^2}{6} = ${W_cm3} \\text{ см}^3\\]
+  </div>
+  <div class="formula">
+    \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>`;
+    }
+
+  } else if (sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness) {
+    // Прямоугольная труба
+    const B_mm = formatNumber(result.tubeOuterWidth * 1000, 2);
+    const H_mm = formatNumber(result.tubeOuterHeight * 1000, 2);
+    const t_mm = formatNumber(result.tubeThickness * 1000, 1);
+    const W_cm3 = formatNumber(result.W! * 1e6, 4);
+    const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    if (sectionMode === 'given') {
+      html += `
+  <h3>Прямоугольная труба</h3>
+  <p>Размеры: \\(B = ${B_mm}\\) мм, \\(H = ${H_mm}\\) мм, \\(t = ${t_mm}\\) мм</p>
+  <p>Геометрические характеристики:</p>
+  <div class="formula">
+    \\[I = \\frac{B \\cdot H^3 - (B-2t)(H-2t)^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>
+  <div class="formula">
+    \\[W = \\frac{2I}{H} = ${W_cm3} \\text{ см}^3\\]
+  </div>`;
+    } else {
+      html += `
+  <p>Для прямоугольной трубы \\(B \\times H \\times t\\):</p>
+  <div class="formula">
+    \\[\\boxed{B = ${B_mm} \\text{ мм}, \\quad H = ${H_mm} \\text{ мм}, \\quad t = ${t_mm} \\text{ мм}}\\]
+  </div>
+  <p>Момент инерции прямоугольной трубы:</p>
+  <div class="formula">
+    \\[I = \\frac{B \\cdot H^3 - (B-2t)(H-2t)^3}{12} = ${I_cm4} \\text{ см}^4\\]
+  </div>
+  <p>Момент сопротивления:</p>
+  <div class="formula">
+    \\[W = \\frac{2I}{H} = ${W_cm3} \\text{ см}^3\\]
+  </div>`;
+    }
+
+  } else if (result.selectedProfile) {
+    // Профиль из ГОСТ (двутавр или швеллер)
+    const profile = result.selectedProfile;
+    const profileTypeName = getProfileTypeName(profile.type);
+    const axis = result.bendingAxis ?? 'x';
+    const axisLabel = axis.toUpperCase();
+    const W_axis = getProfileW(profile, axis);
+    const I_axis = getProfileI(profile, axis);
+    const axisNote = axis === 'y' ? ' (профиль повёрнут на 90°)' : '';
+
+    if (sectionMode === 'given') {
+      html += `
+  <h3>${profileTypeName} № ${profile.number} по ${profile.gost}${axisNote}</h3>
+
+  <div class="profile-selection" style="padding: 15px 0; margin: 15px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 5px 10px;">Высота \\(h\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.h} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина стенки \\(s\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.s} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Ширина полки \\(b\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.b} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина полки \\(t\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.t} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент сопротивления \\(W_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(W_axis)} см³</strong></td>
+        <td style="padding: 5px 10px;">Площадь \\(A\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.A)} см²</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент инерции \\(I_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(I_axis)} см⁴</strong></td>
+        <td style="padding: 5px 10px;"></td>
+        <td style="padding: 5px 10px;"></td>
+      </tr>
+    </table>
+  </div>`;
+    } else {
+      const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+      const Wreq_str = formatNumber(Wreq_cm3, 2);
+
+      html += `
+  <h3>Подбор ${profile.type === 'i-beam' ? 'двутавра' : 'швеллера'} по ${profile.gost}${axisNote}</h3>
+  <p>Из сортамента по ${profile.gost} выбираем ${profileTypeName.toLowerCase()} с \\(W_${axis} \\geq ${Wreq_str}\\) см³.</p>
+
+  <div class="profile-selection" style="padding: 15px 0; margin: 15px 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+    <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>Принимаем: ${profileTypeName} № ${profile.number}</strong>${axis === 'y' ? ' <span style="color: #666;">(изгиб относительно оси Y)</span>' : ''}</p>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 5px 10px;">Высота \\(h\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.h} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина стенки \\(s\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.s} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Ширина полки \\(b\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.b} мм</strong></td>
+        <td style="padding: 5px 10px;">Толщина полки \\(t\\)</td>
+        <td style="padding: 5px 10px;"><strong>${profile.t} мм</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент сопротивления \\(W_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(W_axis)} см³</strong></td>
+        <td style="padding: 5px 10px;">Площадь \\(A\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(profile.A)} см²</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 10px;">Момент инерции \\(I_${axis}\\)</td>
+        <td style="padding: 5px 10px;"><strong>${formatNumber(I_axis)} см⁴</strong></td>
+        <td style="padding: 5px 10px;"></td>
+        <td style="padding: 5px 10px;"></td>
+      </tr>
+    </table>
+  </div>
+
+  <p>Проверка: \\(W_${axis} = ${formatNumber(W_axis)}\\) см³ \\(\\geq W_{\\text{треб}} = ${Wreq_str}\\) см³ ✓</p>
+  <div class="formula">
+    \\[\\boxed{\\text{${profileTypeName} № ${profile.number}, } I_${axis} = ${formatNumber(I_axis)} \\text{ см}^4}\\]
+  </div>`;
+    }
+
+    // Добавляем раздел с эпюрой нормальных напряжений
+    html += buildStressDiagramSection(profile, Mmax, sectionNum, axis);
+
+  } else if (sectionMode === 'select') {
+    // Профиль не найден (только в режиме подбора)
+    const Wreq_cm3 = result.Wreq ?? (result.W ? result.W * 1e6 : MmaxNm / ((input.sigma ?? 1) / 1e6));
+    const Wreq_str = formatNumber(Wreq_cm3, 2);
+    html += `
+  <p style="color: red;"><strong>Внимание:</strong> Требуемый момент сопротивления \\(W_{\\text{треб}} = ${Wreq_str}\\) см³
+  превышает максимальное значение в сортаменте. Необходимо использовать составное сечение или сечение большего типоразмера.</p>`;
+  }
+
+  return html;
+}
+
+/**
+ * Построение раздела с эпюрой нормальных напряжений в сечении
+ */
+function buildStressDiagramSection(
+  profile: NonNullable<BeamResult['selectedProfile']>,
+  Mmax: { value: number; x: number },
+  sectionNum: number,
+  axis: 'x' | 'y' = 'x'
+): string {
+  const W_val = getProfileW(profile, axis); // см³
+  const I_val = getProfileI(profile, axis); // см⁴
+  const MmaxKNm = Math.abs(Mmax.value); // кН·м
+
+  // Размер сечения в направлении изгиба (для рисунка)
+  const sizeLabel = axis === 'x' ? 'h' : 'b';
+  const h = axis === 'x' ? profile.h : profile.b; // мм - геометрический размер
+
+  // y_max = I / W (в см → мм) - корректное значение из соотношения W = I / y_max
+  const y_max_cm = I_val / W_val; // см
+  const y_max_mm = y_max_cm * 10; // мм
+
+  // σ = M·y / I
+  // σ_max = M / W * 1000 (МПа), где M в кН·м, W в см³
+
+  const sigmaMax = MmaxKNm * 1000 / W_val; // МПа
+  const sigmaMaxStr = formatNumber(sigmaMax, 2);
+
+  return `
+  <h3>${sectionNum}.1. Нормальные напряжения в опасном сечении</h3>
+  <p>Опасное сечение находится в точке \\(x = ${formatNumber(Mmax.x)}\\) м, где \\(|M|_{\\max} = ${formatNumber(MmaxKNm)}\\) кН·м.</p>
+  <p>Нормальные напряжения по высоте сечения распределяются по закону:</p>
+  <div class="formula">
+    \\[\\sigma(y) = \\frac{M \\cdot y}{I_${axis}}\\]
+  </div>
+  <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm y_{\\max} = \\pm ${formatNumber(y_max_mm, 1)}\\) мм, где \\(y_{\\max} = I_${axis}/W_${axis}\\)):</p>
+  <div class="formula">
+    \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_${axis}} = \\frac{${formatNumber(MmaxKNm)} \\cdot 10^6}{${formatNumber(W_val)} \\cdot 10^3} = ${sigmaMaxStr} \\text{ МПа}\\]
+  </div>
+
+  <div class="stress-diagram" style="display: flex; justify-content: center; margin: 20px 0;">
+    <svg viewBox="0 0 450 220" style="max-width: 450px; width: 100%;">
+      <!-- Сечение (слева) -->
+      ${profile.type === 'i-beam' ? `
+      <!-- Двутавр -->
+      <rect x="40" y="30" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="60" y="38" width="10" height="144" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      <rect x="40" y="182" width="50" height="8" fill="#2196F3" stroke="#1565C0" stroke-width="1"/>
+      ` : axis === 'y' ? `
+      <!-- Швеллер повёрнутый (ось Y) - как буква U, полки вертикально -->
+      <!-- Левая полка (вертикально) -->
+      <rect x="30" y="30" width="8" height="160" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <!-- Правая полка (вертикально) -->
+      <rect x="82" y="30" width="8" height="160" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <!-- Стенка (горизонтально снизу) -->
+      <rect x="30" y="182" width="60" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      ` : `
+      <!-- Швеллер обычный (ось X) - как буква [ -->
+      <rect x="40" y="30" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="40" y="38" width="8" height="144" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      <rect x="40" y="182" width="45" height="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+      `}
+
+      <!-- Нейтральная ось (пунктир через сечение и эпюру) -->
+      <line x1="30" y1="110" x2="380" y2="110" stroke="#666" stroke-width="1" stroke-dasharray="5,5"/>
+
+      <!-- Вертикальная ось эпюры -->
+      <line x1="130" y1="25" x2="130" y2="195" stroke="#333" stroke-width="1.5"/>
+
+      <!-- Эпюра напряжений: верхний треугольник (растяжение, красный) -->
+      <!-- Вершина на нейтральной оси (130,110), основание вверху -->
+      <polygon points="130,110 130,30 320,30" fill="rgba(244,67,54,0.25)" stroke="#E53935" stroke-width="2"/>
+
+      <!-- Эпюра напряжений: нижний треугольник (сжатие, синий) -->
+      <!-- Вершина на нейтральной оси (130,110), основание внизу -->
+      <polygon points="130,110 130,190 320,190" fill="rgba(33,150,243,0.25)" stroke="#1E88E5" stroke-width="2"/>
+
+      <!-- Стрелки показывают направление напряжений -->
+      <line x1="320" y1="30" x2="340" y2="30" stroke="#E53935" stroke-width="2" marker-end="url(#arrowRed)"/>
+      <line x1="320" y1="190" x2="340" y2="190" stroke="#1E88E5" stroke-width="2" marker-end="url(#arrowBlue)"/>
+
+      <!-- Маркеры стрелок -->
+      <defs>
+        <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L9,3 z" fill="#E53935"/>
+        </marker>
+        <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L9,3 z" fill="#1E88E5"/>
+        </marker>
+      </defs>
+
+      <!-- Подписи значений -->
+      <text x="350" y="35" font-size="13" fill="#E53935" font-weight="bold">+σ = ${sigmaMaxStr} МПа</text>
+      <text x="350" y="195" font-size="13" fill="#1E88E5" font-weight="bold">−σ = ${sigmaMaxStr} МПа</text>
+
+      <!-- Подпись нейтральной оси -->
+      <text x="385" y="114" font-size="11" fill="#666">н.о.</text>
+      <text x="385" y="126" font-size="10" fill="#666">(σ=0)</text>
+
+      <!-- Ось y (слева от сечения) -->
+      <line x1="20" y1="30" x2="20" y2="190" stroke="#333" stroke-width="1"/>
+      <line x1="17" y1="30" x2="23" y2="30" stroke="#333" stroke-width="1"/>
+      <line x1="17" y1="190" x2="23" y2="190" stroke="#333" stroke-width="1"/>
+      <line x1="17" y1="110" x2="23" y2="110" stroke="#333" stroke-width="1"/>
+      <text x="0" y="35" font-size="10" fill="#333">+y</text>
+      <text x="0" y="195" font-size="10" fill="#333">−y</text>
+      <text x="4" y="114" font-size="10" fill="#333">0</text>
+
+      <!-- Подпись y_max (расстояние до крайнего волокна) -->
+      <text x="75" y="15" font-size="11" fill="#333">y_max = ${formatNumber(y_max_mm, 1)} мм</text>
+    </svg>
+  </div>
+
+  <p><strong>Эпюра нормальных напряжений \\(\\sigma(y)\\):</strong> линейное распределение по высоте сечения.
+  На нейтральной оси (\\(y = 0\\)) напряжения равны нулю. На крайних волокнах (\\(y = \\pm y_{\\max} = \\pm ${formatNumber(y_max_mm, 1)}\\) мм) напряжения максимальны:
+  растяжение (\\(+\\sigma\\)) в верхней зоне, сжатие (\\(-\\sigma\\)) в нижней.</p>`;
 }
 
 /**
@@ -1446,12 +1880,12 @@ function buildMNPSection(
   if (result.reactions.RA !== undefined) {
     const dir = result.reactions.RA >= 0 ? "↑" : "↓";
     const sign = result.reactions.RA >= 0 ? "+" : "-";
-    loadsList.push(`\\(R_A = ${formatNumber(Math.abs(result.reactions.RA))}\\) кН (${dir}) — ${result.reactions.RA >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
+    loadsList.push(`\\(R_A = ${formatNumber(result.reactions.RA)}\\) кН (${dir}) — ${result.reactions.RA >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
   }
   if (result.reactions.RB !== undefined) {
     const dir = result.reactions.RB >= 0 ? "↑" : "↓";
     const sign = result.reactions.RB >= 0 ? "+" : "-";
-    loadsList.push(`\\(R_B = ${formatNumber(Math.abs(result.reactions.RB))}\\) кН (${dir}) — ${result.reactions.RB >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
+    loadsList.push(`\\(R_B = ${formatNumber(result.reactions.RB)}\\) кН (${dir}) — ${result.reactions.RB >= 0 ? "растягивает" : "сжимает"} нижние волокна → «${sign}»`);
   }
 
   // Внешние нагрузки — с индексами для множественных нагрузок
@@ -1473,11 +1907,10 @@ function buildMNPSection(
       const mLabel = momentLoadsSign.length === 1 ? "M" : `M_{${momentIdxSign++}}`;
       loadsList.push(`\\(${mLabel} = ${formatNumber(Math.abs(load.M))}\\) кН·м в \\(x = ${formatNumber(load.x)}\\) (${dir}) — ${load.M >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     } else if (load.type === "distributed") {
-      const dir = load.q >= 0 ? "↓" : "↑";
       const sign = load.q >= 0 ? "-" : "+";
       // Используем верхний индекс в скобках q^{(n)} для оригинальных нагрузок
       const qLabel = distLoadsSign.length === 1 ? "q" : `q^{(${distIdxSign++})}`;
-      loadsList.push(`\\(${qLabel} = ${formatNumber(Math.abs(load.q))}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) (${dir}) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
+      loadsList.push(`\\(${qLabel} = ${formatNumber(load.q)}\\) кН/м на \\([${formatNumber(load.a)}; ${formatNumber(load.b)}]\\) — ${load.q >= 0 ? "сжимает" : "растягивает"} нижние волокна → «${sign}»`);
     }
   }
 
@@ -1773,14 +2206,10 @@ function buildTheta0Derivation(
     // Вычитание с корректными знаками
     const sumAtADisplay = sumAtA >= 0 ? `${formatNumber(sumAtA)}` : `(${formatNumber(sumAtA)})`;
 
-    // Форматируем правую часть: -deltaSum/EI
-    // Если deltaSum >= 0: результат отрицательный → пишем -deltaSum/EI
-    // Если deltaSum < 0: результат положительный → пишем |deltaSum|/EI (без знака)
-    const rhsPrefix = deltaSum >= 0 ? "-" : "";
-    const rhsValue = Math.abs(deltaSum);
-
-    // Вычисляем θ₀ как в solver.ts
+    // Вычисляем θ₀ как в solver.ts: θ₀ = -deltaSum / (deltaX · EI)
     const computedTheta0 = -deltaSum / EI / deltaX;
+    const deltaSumFormatted = formatNumber(deltaSum);
+    const absDeltaSum = Math.abs(deltaSum);
 
     html += `
   <p><strong>Вычитаем (1) из (2):</strong></p>
@@ -1788,13 +2217,13 @@ function buildTheta0Derivation(
     \\[\\theta_0 \\cdot (${formatNumber(xB)} - ${formatNumber(xA)}) + \\frac{1}{EI}\\left(${formatNumber(sumAtB)} - ${sumAtADisplay}\\right) = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${formatNumber(deltaSum)}}{EI} = 0\\]
+    \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${deltaSumFormatted}}{EI} = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(deltaX)} \\cdot EI} = ${rhsPrefix}\\frac{${formatNumber(rhsValue)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${deltaSumFormatted}}{${formatNumber(deltaX)} \\cdot EI} = \\frac{${formatNumber(absDeltaSum)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад}\\]
+    \\[\\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад}\\]
   </div>`;
 
     // Вычисляем y₀ как в solver.ts
@@ -1880,21 +2309,21 @@ function buildTheta0Derivation(
   // Сумма слагаемых
   const sumTerms = terms.reduce((acc, t) => acc + t.value, 0);
 
-  // Форматируем: -sumTerms/(xB·EI)
-  // Если sumTerms >= 0: результат отрицательный → пишем -sumTerms/...
-  // Если sumTerms < 0: результат положительный → пишем |sumTerms|/... (без знака)
-  const thetaPrefix = sumTerms >= 0 ? "-" : "";
-  const thetaValue = Math.abs(sumTerms);
-
   // Формула с переносом строк при большом количестве слагаемых
-  const formulaTerms = terms.map(t => t.symbolic);
+  // Первый терм — EI·θ₀·x, остальные — от нагрузок
+  const allTerms = [`+ EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)}`, ...terms.map(t => t.symbolic)];
   const { latex: thetaFormula, isMultiline: thetaMultiline } = formatLongFormula(
-    `0 = EI \\cdot \\theta_0 \\cdot ${formatNumber(xB)}`,
-    formulaTerms
+    `0`,
+    allTerms
   );
 
-  // Вычисляем θ₀ из формулы
+  // Вычисляем θ₀ из формулы: θ₀ = -sumTerms / (xB · EI)
   const computedTheta0 = -sumTerms / (xB * EI);
+
+  // Формируем вывод формулы: всегда показываем -sumTerms/(xB·EI)
+  // Если sumTerms отрицательный, получается -(-X) = X
+  const sumTermsFormatted = formatNumber(sumTerms);
+  const absResult = Math.abs(sumTerms);
 
   html += `
   <div class="formula${thetaMultiline ? " formula-multiline" : ""}">
@@ -1904,13 +2333,13 @@ function buildTheta0Derivation(
   <ul>
     ${terms.map(t => `<li>\\(${t.symbolic} = ${formatNumber(t.value)}\\) Н·м³</li>`).join("\n    ")}
   </ul>
-  <p>Сумма: \\(${formatNumber(sumTerms)}\\) Н·м³</p>
+  <p>Сумма: \\(${sumTermsFormatted}\\) Н·м³</p>
   <div class="formula">
-    \\[\\theta_0 = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot EI} = ${thetaPrefix}\\frac{${formatNumber(thetaValue)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${sumTermsFormatted}}{${formatNumber(xB)} \\cdot EI} = \\frac{${formatNumber(absResult)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 3)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber(computedTheta0 * 180 / Math.PI, 2)}°}\\]
+    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber(computedTheta0 * 180 / Math.PI, 1)}°}\\]
   </div>`;
 
   return html;
@@ -2067,14 +2496,14 @@ function buildCantileverRightDerivation(
     }
   }
 
-  // Вычисляем θ₀ из формулы
+  // Вычисляем θ₀ из формулы: θ₀ = -sumTheta / EI
   const computedTheta0 = -sumTheta / EI;
-  const thetaRhsPrefix = sumTheta >= 0 ? "-" : "";
-  const thetaRhsValue = Math.abs(sumTheta);
+  const sumThetaFormatted = formatNumber(sumTheta);
+  const absThetaResult = Math.abs(sumTheta);
 
   html += `
   <div class="formula">
-    \\[\\theta_0 = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{EI} = ${thetaRhsPrefix}\\frac{${formatNumber(thetaRhsValue)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 6)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${sumThetaFormatted}}{EI} = \\frac{${formatNumber(absThetaResult)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>`;
 
   html += `
@@ -2117,6 +2546,620 @@ function buildCantileverRightDerivation(
 }
 
 /**
+ * Раздел "Метод Верещагина" для нахождения прогиба в точке удара
+ */
+function buildVereshchaginSection(
+  input: BeamInput,
+  result: BeamResult,
+  sectionNum: number,
+  impactX: number
+): string {
+  const { L } = input;
+  const E = input.E ?? 2e11; // Па
+  const I = result.I ?? input.I ?? 1e-6; // м⁴
+  const EI = E * I;
+
+  // Функция M(x) от внешней нагрузки уже есть в result
+  const M = result.M;
+  if (!M) return '';
+
+  // Вспомогательная функция: форматирование числа со скобками для отрицательных
+  const formatSigned = (n: number, decimals = 4): string => {
+    const formatted = formatNumber(n, decimals);
+    return n < 0 ? `(${formatted})` : formatted;
+  };
+
+  // Форматирование (x - c): если c = 0, возвращает просто "x"
+  const formatXMinusC = (c: number): string => {
+    if (Math.abs(c) < 1e-9) return 'x';
+    return `(x - ${formatNumber(c)})`;
+  };
+
+  // Форматирование -(x - c): если c = 0, возвращает "-x"
+  const formatNegXMinusC = (c: number): string => {
+    if (Math.abs(c) < 1e-9) return '-x';
+    return `-(x - ${formatNumber(c)})`;
+  };
+
+  // Форматирование разности (a - b) без лишних нулей, с скобками если нужно для умножения
+  const formatDiff = (a: number, b: number, withParens = false): string => {
+    if (Math.abs(b) < 1e-9) return formatNumber(a);
+    const result = `${formatNumber(a)} - ${formatNumber(b)}`;
+    return withParens ? `(${result})` : result;
+  };
+
+  // Форматирование линейного выражения ax + b без двойных знаков
+  const formatLinear = (a: number, b: number, decimalsA = 4, decimalsB = 2): string => {
+    const aStr = formatNumber(a, decimalsA);
+    if (Math.abs(b) < 1e-9) {
+      return `${aStr}x`;
+    } else if (b > 0) {
+      return `${aStr}x + ${formatNumber(b, decimalsB)}`;
+    } else {
+      return `${aStr}x - ${formatNumber(Math.abs(b), decimalsB)}`;
+    }
+  };
+
+  // Находим реакции от единичной силы X=1 в точке impactX
+  const isCantilever = input.beamType.startsWith('cantilever');
+
+  let RA_unit: number, RB_unit: number;
+  let xA: number, xB: number;
+
+  if (isCantilever) {
+    xA = result.reactions.xf ?? (input.beamType === 'cantilever-left' ? L : 0);
+    xB = xA;
+    RA_unit = 1;
+    RB_unit = 0;
+  } else {
+    xA = result.reactions.xA ?? 0;
+    xB = result.reactions.xB ?? L;
+    const span = xB - xA;
+    RB_unit = (impactX - xA) / span;
+    RA_unit = 1 - RB_unit;
+  }
+
+  // Определяем тип конфигурации: консоль слева, справа, или между опорами
+  const isOverhangLeft = impactX < xA;  // Удар на левой консоли
+  const isOverhangRight = impactX > xB; // Удар на правой консоли
+  const isBetweenSupports = impactX >= xA && impactX <= xB;
+
+  // Функция m(x) - момент от единичной силы в точке impactX
+  // МЕТОД СЕЧЕНИЙ: суммируем моменты от всех сил слева от сечения
+  const m = (x: number): number => {
+    if (isCantilever) {
+      if (input.beamType === 'cantilever-left') {
+        if (x <= impactX) return 0;
+        return -(x - impactX);
+      } else {
+        if (x >= impactX) return 0;
+        return -(impactX - x);
+      }
+    } else if (isOverhangLeft) {
+      // Удар на левой консоли (impactX < xA)
+      // Знак: сила вниз создаёт отрицательный момент (сжатие нижнего волокна)
+      if (x <= impactX) {
+        // Левее точки удара - момент 0
+        return 0;
+      } else if (x <= xA) {
+        // Между точкой удара и опорой A: только единичная сила слева (вниз → минус)
+        return -1 * (x - impactX);
+      } else {
+        // Между опорами: единичная сила (вниз) + реакция RA (вверх)
+        return -1 * (x - impactX) + RA_unit * (x - xA);
+      }
+    } else if (isOverhangRight) {
+      // Удар на правой консоли (impactX > xB)
+      if (x >= impactX) {
+        return 0;
+      } else if (x >= xB) {
+        return -1 * (impactX - x);
+      } else {
+        return -1 * (impactX - x) + RB_unit * (xB - x);
+      }
+    } else {
+      // Удар между опорами
+      if (x <= impactX) {
+        // Слева от удара: только реакция RA
+        return RA_unit * (x - xA);
+      } else {
+        // Справа от удара: реакция RA + единичная сила
+        return RA_unit * (x - xA) - 1 * (x - impactX);
+      }
+    }
+  };
+
+  // Численное интегрирование методом трапеций
+  const n = 200;
+  const dx = L / n;
+  let integral = 0;
+  for (let i = 0; i <= n; i++) {
+    const x = i * dx;
+    const Mx = M(x);
+    const mx = m(x);
+    const weight = (i === 0 || i === n) ? 0.5 : 1;
+    integral += weight * Mx * mx * dx;
+  }
+
+  const delta_m = (integral * 1000) / EI;
+  const delta_mm = Math.abs(delta_m) * 1000;
+  const EI_formatted = formatNumber(EI / 1e6, 4);
+
+  let html = `
+  <h2>${sectionNum}. Метод Верещагина</h2>
+  <p>Для нахождения прогиба в точке удара (\\(x = ${formatNumber(impactX)}\\) м) применим метод Верещагина:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}} = \\frac{1}{EI} \\int_0^L M(x) \\cdot m(x) \\, dx\\]
+  </div>
+  <p>где \\(M(x)\\) — эпюра изгибающих моментов от внешней нагрузки, \\(m(x)\\) — эпюра моментов от единичной силы \\(X = 1\\), приложенной в точке измерения прогиба.</p>
+
+  <h3>${sectionNum}.1. Реакции от единичной силы \\(X = 1\\)</h3>`;
+
+  if (isCantilever) {
+    html += `
+  <p>Для консольной балки единичная сила полностью воспринимается заделкой:</p>
+  <div class="formula">
+    \\[R^{(1)} = 1, \\quad M^{(1)} = 1 \\cdot ${formatNumber(Math.abs(impactX - (result.reactions.xf ?? L)))} = ${formatNumber(Math.abs(impactX - (result.reactions.xf ?? L)))} \\text{ (безразм.)}\\]
+  </div>`;
+  } else {
+    // Расстояние от опоры A до точки удара
+    const distFromA = impactX - xA;
+    const span = xB - xA;
+
+    html += `
+  <p>Из уравнений равновесия для единичной силы \\(X = 1\\) в точке \\(x = ${formatNumber(impactX)}\\) м:</p>
+  <p>Опоры расположены в точках: \\(x_A = ${formatNumber(xA)}\\) м, \\(x_B = ${formatNumber(xB)}\\) м. Пролёт \\(l = ${formatNumber(span)}\\) м.</p>
+  <div class="formula">
+    \\[\\sum M_A = 0: \\quad 1 \\cdot ${formatDiff(impactX, xA, true)} - R_B^{(1)} \\cdot ${formatNumber(span)} = 0\\]
+  </div>
+  <div class="formula">
+    \\[R_B^{(1)} = \\frac{${formatNumber(distFromA)}}{${formatNumber(span)}} = ${formatNumber(RB_unit, 4)}\\]
+  </div>
+  <div class="formula">
+    \\[R_A^{(1)} = 1 - R_B^{(1)} = ${formatNumber(RA_unit, 4)}\\]
+  </div>`;
+  }
+
+  html += `
+  <h3>${sectionNum}.2. Эпюра \\(m(x)\\) от единичной силы</h3>`;
+
+  if (isCantilever) {
+    if (input.beamType === 'cantilever-left') {
+      html += `
+  <p>Участок 1 (\\(0 \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <div class="formula">
+    \\[m_1(x) = 0\\]
+  </div>
+  <p>Участок 2 (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(L)}\\)):</p>
+  <div class="formula">
+    \\[m_2(x) = -1 \\cdot ${formatXMinusC(impactX)} = ${formatNegXMinusC(impactX)}\\]
+  </div>`;
+    }
+  } else if (isOverhangLeft) {
+    // Удар на левой консоли
+    // Сила вниз → отрицательный момент (сжатие нижнего волокна)
+    const m_at_xA = -1 * (xA - impactX); // m(xA) - минимум на первом участке (отрицательный)
+    const a2 = -1 + RA_unit; // коэффициент при x на втором участке
+    const b2 = impactX - RA_unit * xA; // свободный член
+
+    html += `
+  <p><strong>Участок 1</strong> (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xA)}\\)) — консольная часть:</p>
+  <p>Рассматриваем сечение: слева только единичная сила \\(X = 1\\) (направлена вниз) в точке \\(x = ${formatNumber(impactX)}\\).</p>
+  <p>Сила вниз создаёт отрицательный момент (сжатие нижнего волокна):</p>
+  <div class="formula">
+    \\[m_1(x) = -1 \\cdot ${formatXMinusC(impactX)} = ${formatNegXMinusC(impactX)}\\]
+  </div>
+  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = 0\\)</p>
+  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = -${formatDiff(xA, impactX)} = ${formatNumber(m_at_xA, 4)}\\)</p>
+
+  <p><strong>Участок 2</strong> (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(xB)}\\)) — между опорами:</p>
+  <p>Слева от сечения: единичная сила (вниз) и реакция \\(R_A^{(1)} = ${formatNumber(RA_unit, 4)}\\) (вверх):</p>
+  <div class="formula">
+    \\[m_2(x) = -1 \\cdot ${formatXMinusC(impactX)} + R_A^{(1)} \\cdot (x - ${formatNumber(xA)})\\]
+  </div>
+  <div class="formula">
+    \\[m_2(x) = ${formatNegXMinusC(impactX)} + ${formatNumber(RA_unit, 4)} \\cdot (x - ${formatNumber(xA)})\\]
+  </div>
+  <p>После приведения подобных:</p>
+  <div class="formula">
+    \\[m_2(x) = ${formatLinear(a2, b2)}\\]
+  </div>
+  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_2(${formatNumber(xA)}) = ${formatNumber(m_at_xA, 4)}\\) (совпадает с \\(m_1\\))</p>
+  <p>При \\(x = ${formatNumber(xB)}\\): \\(m_2(${formatNumber(xB)}) = 0\\) (на опоре B)</p>`;
+  } else {
+    // Удар между опорами
+    const m_at_impact = RA_unit * (impactX - xA); // m(impactX) - максимум
+    const a2 = RA_unit - 1; // коэффициент при x на втором участке
+    const b2 = -RA_unit * xA + impactX; // свободный член
+
+    html += `
+  <p><strong>Участок 1</strong> (\\(${formatNumber(xA)} \\leq x \\leq ${formatNumber(impactX)}\\)):</p>
+  <p>Слева от сечения только реакция \\(R_A^{(1)}\\):</p>
+  <div class="formula">
+    \\[m_1(x) = R_A^{(1)} \\cdot ${formatXMinusC(xA)} = ${formatNumber(RA_unit, 4)} \\cdot ${formatXMinusC(xA)}\\]
+  </div>
+  <p>При \\(x = ${formatNumber(xA)}\\): \\(m_1(${formatNumber(xA)}) = 0\\)</p>
+  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_1(${formatNumber(impactX)}) = ${formatNumber(RA_unit, 4)} \\cdot ${formatDiff(impactX, xA)} = ${formatNumber(m_at_impact, 4)}\\)</p>
+
+  <p><strong>Участок 2</strong> (\\(${formatNumber(impactX)} \\leq x \\leq ${formatNumber(xB)}\\)):</p>
+  <p>Слева от сечения: реакция \\(R_A^{(1)}\\) и единичная сила:</p>
+  <div class="formula">
+    \\[m_2(x) = R_A^{(1)} \\cdot ${formatXMinusC(xA)} - 1 \\cdot ${formatXMinusC(impactX)}\\]
+  </div>
+  <p>После приведения подобных:</p>
+  <div class="formula">
+    \\[m_2(x) = ${formatLinear(a2, b2)}\\]
+  </div>
+  <p>При \\(x = ${formatNumber(impactX)}\\): \\(m_2(${formatNumber(impactX)}) = ${formatNumber(m_at_impact, 4)}\\) (совпадает)</p>
+  <p>При \\(x = ${formatNumber(xB)}\\): \\(m_2(${formatNumber(xB)}) = 0\\)</p>`;
+  }
+
+  // SVG рисунок с эпюрами M(x) и m(x)
+  const svgWidth = 500;
+  const svgHeight = 350;
+  const margin = { left: 50, right: 30, top: 30, bottom: 90 };
+  const plotW = svgWidth - margin.left - margin.right;
+  const plotH = (svgHeight - margin.top - margin.bottom) / 2 - 20;
+
+  const scaleX = (x: number) => margin.left + (x / L) * plotW;
+
+  // Находим max значения для масштабирования и позиции экстремумов
+  let maxM = 0, maxm = 0;
+  let maxM_x = 0, maxm_x = 0;  // Позиции экстремумов
+  let maxM_val = 0, maxm_val = 0;  // Значения в экстремумах (со знаком)
+
+  // Критические точки: опоры и точка удара - именно там экстремумы M(x) и m(x)
+  const criticalPoints = [0, impactX, xA, xB, L];
+
+  // Проверяем критические точки + регулярную сетку для масштабирования
+  for (let i = 0; i <= 50; i++) {
+    criticalPoints.push((i / 50) * L);
+  }
+
+  for (const x of criticalPoints) {
+    if (x < 0 || x > L) continue;
+    const Mval = M(x);
+    const mval = m(x);
+    if (Math.abs(Mval) > maxM) {
+      maxM = Math.abs(Mval);
+      maxM_x = x;
+      maxM_val = Mval;
+    }
+    if (Math.abs(mval) > maxm) {
+      maxm = Math.abs(mval);
+      maxm_x = x;
+      maxm_val = mval;
+    }
+  }
+  if (maxM === 0) maxM = 1;
+  if (maxm === 0) maxm = 1;
+
+  const baselineM = margin.top + plotH / 2;
+  const baselinem = margin.top + plotH + 50 + plotH / 2;
+  const scaleM = (v: number) => baselineM - (v / maxM) * (plotH / 2 - 10);
+  const scalem = (v: number) => baselinem - (v / maxm) * (plotH / 2 - 10);
+
+  // Строим path для эпюр
+  let pathM = `M ${scaleX(0)} ${scaleM(M(0))}`;
+  let pathm = `M ${scaleX(0)} ${scalem(m(0))}`;
+  for (let i = 1; i <= 100; i++) {
+    const x = (i / 100) * L;
+    pathM += ` L ${scaleX(x)} ${scaleM(M(x))}`;
+    pathm += ` L ${scaleX(x)} ${scalem(m(x))}`;
+  }
+
+  // Центры тяжести треугольников эпюры m(x)
+  // Зависят от конфигурации балки
+  let xc1: number, xc2: number;
+  let seg1Start: number, seg1End: number, seg2Start: number, seg2End: number;
+  let m_max_at_junction: number; // Максимум m(x) на стыке участков
+
+  if (isOverhangLeft) {
+    // Удар на левой консоли: треугольник 1 от impactX до xA, треугольник 2 от xA до xB
+    seg1Start = impactX;
+    seg1End = xA;
+    seg2Start = xA;
+    seg2End = xB;
+    // m(xA) = -(xA - impactX) — отрицательное значение (знаковая площадь)
+    m_max_at_junction = -(xA - impactX);
+    // Треугольник 1: нуль в impactX, минимум в xA → центр на 2/3 от impactX
+    xc1 = impactX + (2/3) * (xA - impactX);
+    // Треугольник 2: минимум в xA, нуль в xB → центр на 1/3 от xA
+    xc2 = xA + (1/3) * (xB - xA);
+  } else if (isOverhangRight) {
+    // Удар на правой консоли: треугольник 1 от xA до xB, треугольник 2 от xB до impactX
+    seg1Start = xA;
+    seg1End = xB;
+    seg2Start = xB;
+    seg2End = impactX;
+    // m(xB) — значение на правой опоре (максимум эпюры m)
+    m_max_at_junction = m(xB);
+    // Треугольник 1: нуль в xA, максимум в xB → центр на 2/3 от xA
+    xc1 = xA + (2/3) * (xB - xA);
+    // Треугольник 2: максимум в xB, нуль в impactX → центр на 1/3 от xB
+    xc2 = xB + (1/3) * (impactX - xB);
+  } else {
+    // Удар между опорами: треугольник 1 от xA до impactX, треугольник 2 от impactX до xB
+    seg1Start = xA;
+    seg1End = impactX;
+    seg2Start = impactX;
+    seg2End = xB;
+    m_max_at_junction = RA_unit * (impactX - xA); // m(impactX)
+    // Треугольник 1: нуль в xA, максимум в impactX → центр на 2/3 от xA
+    xc1 = xA + (2/3) * (impactX - xA);
+    // Треугольник 2: максимум в impactX, нуль в xB → центр на 1/3 от impactX
+    xc2 = impactX + (1/3) * (xB - impactX);
+  }
+
+  // Длины участков
+  const len1 = seg1End - seg1Start;
+  const len2 = seg2End - seg2Start;
+
+  html += `
+  <h3>${sectionNum}.3. Графическое представление</h3>
+  <div style="display: flex; justify-content: center; margin: 20px 0;">
+    <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="max-width: ${svgWidth}px; width: 100%; background: white; border: 1px solid #ddd;">
+      <!-- Эпюра M(x) -->
+      <text x="${margin.left - 10}" y="${baselineM}" font-size="12" text-anchor="end" fill="#333">M(x)</text>
+      <line x1="${margin.left}" y1="${baselineM}" x2="${margin.left + plotW}" y2="${baselineM}" stroke="#666" stroke-width="1"/>
+      <path d="${pathM} L ${scaleX(L)} ${baselineM} L ${scaleX(0)} ${baselineM} Z" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="2"/>
+      <!-- Подпись максимума M(x) -->
+      <text x="${scaleX(maxM_x)}" y="${scaleM(maxM_val) + (maxM_val >= 0 ? -5 : 12)}" font-size="9" text-anchor="middle" fill="#ef4444" font-weight="bold">${formatNumber(maxM_val, 2)}</text>
+
+      <!-- Эпюра m(x) -->
+      <text x="${margin.left - 10}" y="${baselinem}" font-size="12" text-anchor="end" fill="#333">m(x)</text>
+      <line x1="${margin.left}" y1="${baselinem}" x2="${margin.left + plotW}" y2="${baselinem}" stroke="#666" stroke-width="1"/>
+      <path d="${pathm} L ${scaleX(L)} ${baselinem} L ${scaleX(0)} ${baselinem} Z" fill="rgba(34,197,94,0.2)" stroke="#22c55e" stroke-width="2"/>
+      <!-- Подпись экстремума m(x) -->
+      <text x="${scaleX(maxm_x)}" y="${scalem(maxm_val) + (maxm_val >= 0 ? -5 : 12)}" font-size="9" text-anchor="middle" fill="#22c55e" font-weight="bold">${formatNumber(maxm_val, 2)}</text>
+
+      <!-- Пунктирные линии центров тяжести - через оба графика -->
+      <line x1="${scaleX(xc1)}" y1="${margin.top}" x2="${scaleX(xc1)}" y2="${baselinem + plotH/2}" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="${scaleX(xc1)}" y="${baselinem + plotH/2 + 15}" font-size="9" text-anchor="middle" fill="#9333ea">x̄₁=${formatNumber(xc1, 2)}</text>
+      <line x1="${scaleX(xc2)}" y1="${margin.top}" x2="${scaleX(xc2)}" y2="${baselinem + plotH/2}" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="${scaleX(xc2)}" y="${baselinem + plotH/2 + 15}" font-size="9" text-anchor="middle" fill="#9333ea">x̄₂=${formatNumber(xc2, 2)}</text>
+
+      <!-- Граница участков (точка приложения единичной силы) -->
+      <line x1="${scaleX(impactX)}" y1="${margin.top}" x2="${scaleX(impactX)}" y2="${baselinem + plotH/2}" stroke="#f97316" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="${scaleX(impactX)}" y="${svgHeight - 15}" font-size="10" text-anchor="middle" fill="#f97316">x=${formatNumber(impactX)} (X=1)</text>
+
+      <!-- Ось X -->
+      <text x="${margin.left + plotW / 2}" y="${svgHeight - 3}" font-size="11" text-anchor="middle" fill="#333">x, м</text>
+      <text x="${margin.left}" y="${svgHeight - 30}" font-size="10" text-anchor="middle" fill="#333">0</text>
+      <text x="${margin.left + plotW}" y="${svgHeight - 30}" font-size="10" text-anchor="middle" fill="#333">${formatNumber(L)}</text>
+    </svg>
+  </div>
+  <p class="figure-caption" style="text-align: center;">Эпюры \\(M(x)\\) и \\(m(x)\\). Пунктирные линии — центры тяжести треугольников эпюры \\(m(x)\\)</p>
+
+  <h3>${sectionNum}.4. Вычисление интеграла методом Верещагина</h3>
+  <p>Эпюра \\(m(x)\\) состоит из двух треугольников с общей вершиной. Применяем формулу Верещагина: умножаем площадь фигуры \\(m(x)\\) на ординату эпюры \\(M(x)\\) в центре тяжести этой фигуры.</p>`;
+
+  // Вычисляем площади треугольников m(x)
+  const A1 = 0.5 * len1 * m_max_at_junction;
+  const A2 = 0.5 * len2 * m_max_at_junction;
+
+  // Значения M(x) в центрах тяжести
+  const M_at_xc1 = M(xc1);
+  const M_at_xc2 = M(xc2);
+
+  // Вклады в интеграл
+  const contrib1 = A1 * M_at_xc1;
+  const contrib2 = A2 * M_at_xc2;
+  const totalIntegral = contrib1 + contrib2;
+
+  if (!isCantilever) {
+    // Формулы центров тяжести зависят от конфигурации
+    let centroidFormula1: string, centroidFormula2: string;
+    if (isOverhangLeft) {
+      // Треугольник 1: от impactX до xA, центр на 2/3 от impactX
+      centroidFormula1 = `${formatNumber(impactX)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
+      // Треугольник 2: от xA до xB, центр на 1/3 от xA
+      centroidFormula2 = `${formatNumber(xA)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    } else if (isOverhangRight) {
+      // Треугольник 1: от xA до xB, центр на 2/3 от xA
+      centroidFormula1 = `${formatNumber(xA)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
+      // Треугольник 2: от xB до impactX, центр на 1/3 от xB
+      centroidFormula2 = `${formatNumber(xB)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    } else {
+      // Между опорами: треугольник 1 от xA до impactX, треугольник 2 от impactX до xB
+      centroidFormula1 = `${formatNumber(xA)} + \\frac{2}{3} \\cdot ${formatNumber(len1)}`;
+      centroidFormula2 = `${formatNumber(impactX)} + \\frac{1}{3} \\cdot ${formatNumber(len2)}`;
+    }
+
+    html += `
+  <p><strong>Треугольник 1</strong> (участок \\(${formatNumber(seg1Start)} \\leq x \\leq ${formatNumber(seg1End)}\\)):</p>
+  <ul>
+    <li>Основание: \\(${formatNumber(len1)}\\) м, значение \\(m\\) на стыке: \\(${formatNumber(m_max_at_junction, 4)}\\)</li>
+    <li>Площадь (знаковая): \\(A_1 = \\frac{1}{2} \\cdot ${formatNumber(len1)} \\cdot ${formatSigned(m_max_at_junction, 4)} = ${formatNumber(A1, 4)}\\) м²</li>
+    <li>Центр тяжести: \\(\\bar{x}_1 = ${centroidFormula1} = ${formatNumber(xc1, 4)}\\) м</li>
+    <li>Ордината \\(M(\\bar{x}_1)\\): \\(M(${formatNumber(xc1, 2)}) = ${formatNumber(M_at_xc1, 4)}\\) кН·м</li>
+    <li>Вклад: \\(A_1 \\cdot M(\\bar{x}_1) = ${formatSigned(A1, 4)} \\cdot ${formatSigned(M_at_xc1)} = ${formatNumber(contrib1, 4)}\\) кН·м³</li>
+  </ul>
+
+  <p><strong>Треугольник 2</strong> (участок \\(${formatNumber(seg2Start)} \\leq x \\leq ${formatNumber(seg2End)}\\)):</p>
+  <ul>
+    <li>Основание: \\(${formatNumber(len2)}\\) м, значение \\(m\\) на стыке: \\(${formatNumber(m_max_at_junction, 4)}\\)</li>
+    <li>Площадь (знаковая): \\(A_2 = \\frac{1}{2} \\cdot ${formatNumber(len2)} \\cdot ${formatSigned(m_max_at_junction, 4)} = ${formatNumber(A2, 4)}\\) м²</li>
+    <li>Центр тяжести: \\(\\bar{x}_2 = ${centroidFormula2} = ${formatNumber(xc2, 4)}\\) м</li>
+    <li>Ордината \\(M(\\bar{x}_2)\\): \\(M(${formatNumber(xc2, 2)}) = ${formatNumber(M_at_xc2, 4)}\\) кН·м</li>
+    <li>Вклад: \\(A_2 \\cdot M(\\bar{x}_2) = ${formatSigned(A2, 4)} \\cdot ${formatSigned(M_at_xc2)} = ${formatNumber(contrib2, 4)}\\) кН·м³</li>
+  </ul>
+
+  <p><strong>Сумма вкладов:</strong></p>
+  <div class="formula">
+    \\[\\int_0^L M(x) \\cdot m(x) \\, dx = A_1 \\cdot M(\\bar{x}_1) + A_2 \\cdot M(\\bar{x}_2) = ${formatNumber(contrib1, 4)} + ${formatSigned(contrib2)} = ${formatNumber(totalIntegral, 4)} \\text{ кН} \\cdot \\text{м}^3\\]
+  </div>`;
+  }
+
+  html += `
+  <h3>${sectionNum}.5. Результат</h3>
+  <p>Статический прогиб в точке удара:</p>
+  <div class="formula">
+    \\[\\delta_{\\text{ст}} = \\frac{1}{EI} \\int_0^L M(x) \\cdot m(x) \\, dx\\]
+  </div>
+  <p>При \\(EI = ${EI_formatted} \\cdot 10^6\\) Н·м² = \\(${EI_formatted}\\) МН·м²:</p>
+  <div class="formula">
+    \\[|\\delta_{\\text{ст}}| = \\frac{${formatNumber(Math.abs(integral * 1000), 2)}}{${EI_formatted} \\cdot 10^6} = ${formatNumber(Math.abs(delta_m), 6)} \\text{ м} = ${formatNumber(delta_mm, 4)} \\text{ мм}\\]
+  </div>
+  <p><em>Примечание: значение совпадает с результатом, полученным методом начальных параметров.</em></p>`;
+
+  return html;
+}
+
+/**
+ * Раздел "Ударное нагружение"
+ */
+function buildImpactLoadingSection(
+  input: BeamInput,
+  result: BeamResult,
+  sectionNum: number
+): string {
+  if (result.loadMode !== 'impact' || result.Kd === undefined) {
+    return '';
+  }
+
+  const H_cm = (result.impactHeight ?? 0) * 100; // м → см
+  const H_m = result.impactHeight ?? 0;
+  const yStaticAtImpact_mm = (result.yStaticAtImpact ?? 0) * 1000; // м → мм
+  const yStaticAtImpact_cm = yStaticAtImpact_mm / 10;
+  const Kd = result.Kd;
+  const sigmaMax = result.sigmaMax ?? 0; // МПа
+  const sigmaDynamic = result.sigmaDynamic ?? 0; // МПа
+  const yDynamic_mm = (result.yDynamic ?? 0) * 1000;
+  const springStiffness = result.springStiffness; // см/кН
+  const springDeflection_mm = (result.springDeflection ?? 0) * 1000;
+
+  // Вспомогательная функция для форматирования со скобками для отрицательных
+  const formatSigned = (n: number, decimals = 4): string => {
+    const formatted = formatNumber(n, decimals);
+    return n < 0 ? `(${formatted})` : formatted;
+  };
+
+  // Находим силу удара
+  const forces = input.loads.filter(l => l.type === 'force');
+  const forceIndex = input.impactForceIndex ?? 0;
+  const impactForce = forces.length > forceIndex ? Math.abs((forces[forceIndex] as { F: number }).F) : 0;
+
+  // Точка приложения удара
+  const impactX = forces.length > forceIndex ? (forces[forceIndex] as { x: number }).x : 0;
+
+  let html = `
+  <h2>${sectionNum}. Ударное нагружение</h2>
+  <p>На балку действует груз \\(P = ${formatNumber(impactForce)}\\) кН, падающий с высоты \\(H = ${formatNumber(H_cm)}\\) см = \\(${formatNumber(H_m, 3)}\\) м в точке \\(x = ${formatNumber(impactX)}\\) м.</p>
+
+  <h3>${sectionNum}.1. Статический прогиб в точке удара</h3>
+  <p>Статический прогиб \\(\\delta_{\\text{ст}}\\) — прогиб балки в точке приложения силы при статическом действии нагрузки (определён методом Верещагина и МНП в предыдущих разделах):</p>
+  <div class="formula">
+    \\[|\\delta_{\\text{ст}}| = ${formatNumber(yStaticAtImpact_mm, 4)} \\text{ мм} = ${formatNumber(yStaticAtImpact_cm / 100, 6)} \\text{ м}\\]
+  </div>`;
+
+  // Коэффициент динамичности - используем только прогиб балки (без пружины)
+  const subsectionNum = 2;
+  const deltaForKd = yStaticAtImpact_cm; // Только прогиб балки в точке удара
+
+  // Промежуточные значения для Kд
+  const deltaForKd_m = deltaForKd / 100; // см → м
+  const ratioUnderSqrt = (2 * H_m) / deltaForKd_m;
+  const valueUnderSqrt = 1 + ratioUnderSqrt;
+  const sqrtValue = Math.sqrt(valueUnderSqrt);
+
+  html += `
+  <h3>${sectionNum}.${subsectionNum}. Коэффициент динамичности</h3>
+  <p>Коэффициент динамичности при ударе с высоты \\(H\\) определяется по формуле:</p>
+  <div class="formula">
+    \\[K_д = 1 + \\sqrt{1 + \\frac{2H}{|\\delta_{\\text{ст}}|}}\\]
+  </div>
+  <p>Подставляя значения (\\(|\\delta_{\\text{ст}}| = ${formatNumber(deltaForKd_m, 6)}\\) м, \\(H = ${formatNumber(H_m, 3)}\\) м):</p>
+  <div class="formula">
+    \\[K_д = 1 + \\sqrt{1 + \\frac{2 \\cdot ${formatNumber(H_m, 3)}}{${formatNumber(deltaForKd_m, 6)}}} = 1 + \\sqrt{1 + ${formatNumber(ratioUnderSqrt, 3)}} = 1 + \\sqrt{${formatNumber(valueUnderSqrt, 3)}} = 1 + ${formatNumber(sqrtValue, 4)} = ${formatNumber(Kd, 4)}\\]
+  </div>`;
+
+  // Динамические напряжения
+  const subsectionSigma = subsectionNum + 1;
+  html += `
+  <h3>${sectionNum}.${subsectionSigma}. Динамические напряжения</h3>
+  <p>Статическое напряжение (при статическом действии нагрузки):</p>
+  <div class="formula">
+    \\[\\sigma_{\\text{ст}} = ${formatNumber(sigmaMax, 2)} \\text{ МПа}\\]
+  </div>
+  <p>Максимальное нормальное напряжение при ударе:</p>
+  <div class="formula">
+    \\[\\sigma_{\\text{дин}} = K_д \\cdot \\sigma_{\\text{ст}} = ${formatNumber(Kd, 3)} \\cdot ${formatNumber(sigmaMax, 2)} = ${formatNumber(sigmaDynamic, 2)} \\text{ МПа}\\]
+  </div>`;
+
+  // Динамический прогиб
+  const subsectionDefl = subsectionSigma + 1;
+  html += `
+  <h3>${sectionNum}.${subsectionDefl}. Динамический прогиб</h3>
+  <p>Максимальный прогиб балки при ударе:</p>
+  <div class="formula">
+    \\[y_{\\text{дин}} = K_д \\cdot \\delta_{\\text{ст}} = ${formatNumber(Kd, 3)} \\cdot ${formatNumber(yStaticAtImpact_mm, 4)} = ${formatNumber(yDynamic_mm, 4)} \\text{ мм}\\]
+  </div>`;
+
+  // Осадки пружин (если есть)
+  let subsectionSpring = subsectionDefl;
+  if (springStiffness && springStiffness > 0) {
+    subsectionSpring = subsectionDefl + 1;
+    const RA = result.reactions.RA ?? 0;
+    const RB = result.reactions.RB ?? 0;
+
+    // Статические осадки: s = α × R
+    const sA_st = springStiffness * RA; // см
+    const sB_st = springStiffness * RB; // см
+
+    // Динамические осадки: s_уд = k_уд × s_ст
+    const sA_dyn = Kd * sA_st;
+    const sB_dyn = Kd * sB_st;
+
+    html += `
+  <h3>${sectionNum}.${subsectionSpring}. Осадки пружинных опор</h3>
+  <p>Осадка пружины определяется по формуле \\(s = \\alpha \\cdot R\\), где \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН, \\(R\\) — реакция опоры в кН.</p>
+
+  <p><strong>Статические осадки:</strong></p>
+  <div class="formula">
+    \\[s_{A,\\text{ст}} = \\alpha \\cdot R_A = ${formatNumber(springStiffness)} \\cdot ${formatNumber(RA)} = ${formatNumber(sA_st, 4)} \\text{ см}\\]
+  </div>
+  <div class="formula">
+    \\[s_{B,\\text{ст}} = \\alpha \\cdot R_B = ${formatNumber(springStiffness)} \\cdot ${formatSigned(RB)} = ${formatNumber(sB_st, 4)} \\text{ см}\\]
+  </div>
+
+  <p><strong>Динамические осадки</strong> (при ударе реакции масштабируются на \\(K_д\\)):</p>
+  <div class="formula">
+    \\[s_{A,\\text{уд}} = K_д \\cdot s_{A,\\text{ст}} = ${formatNumber(Kd, 4)} \\cdot ${formatNumber(sA_st, 4)} = ${formatNumber(sA_dyn, 2)} \\text{ см}\\]
+  </div>
+  <div class="formula">
+    \\[s_{B,\\text{уд}} = K_д \\cdot s_{B,\\text{ст}} = ${formatNumber(Kd, 4)} \\cdot ${formatSigned(sB_st, 4)} = ${formatNumber(sB_dyn, 2)} \\text{ см}\\]
+  </div>
+  ${RB < 0 || RA < 0 ? `<p><em>Знак минус означает, что реакция направлена противоположно ожидаемому (отрыв).</em></p>` : ""}`;
+  }
+
+  // Сравнение статики и динамики
+  const subsectionCompare = subsectionSpring + 1;
+  const stressDiff = sigmaDynamic - sigmaMax;
+  const stressRatio = sigmaMax > 0 ? (sigmaDynamic / sigmaMax - 1) * 100 : 0;
+  html += `
+  <h3>${sectionNum}.${subsectionCompare}. Сравнение статического и динамического нагружения</h3>
+  <table>
+    <tr><th>Параметр</th><th>Статика</th><th>Удар</th><th>Увеличение</th></tr>
+    <tr>
+      <td>Напряжение \\(\\sigma\\), МПа</td>
+      <td>\\(${formatNumber(sigmaMax, 2)}\\)</td>
+      <td>\\(${formatNumber(sigmaDynamic, 2)}\\)</td>
+      <td>\\(${formatNumber(stressDiff, 2)}\\) МПа (${formatNumber(stressRatio, 1)}%)</td>
+    </tr>
+    <tr>
+      <td>Прогиб \\(y\\), мм</td>
+      <td>\\(${formatNumber(yStaticAtImpact_mm, 4)}\\)</td>
+      <td>\\(${formatNumber(yDynamic_mm, 4)}\\)</td>
+      <td>в \\(K_д = ${formatNumber(Kd, 3)}\\) раз</td>
+    </tr>
+  </table>
+  <p><strong>Вывод:</strong> При ударном нагружении напряжения и прогибы увеличиваются в \\(K_д = ${formatNumber(Kd, 3)}\\) раз по сравнению со статическим нагружением.</p>`;
+
+  return html;
+}
+
+/**
  * Раздел "Выводы"
  */
 function buildConclusionsSection(
@@ -2148,6 +3191,17 @@ function buildConclusionsSection(
   // Прогиб
   if (hasDeflection && Math.abs(yMax.value) > 1e-9) {
     conclusions.push(`Максимальный прогиб: \\(|y|_{\\max} = ${formatNumber(Math.abs(yMax.value) * 1000)}\\) мм при \\(x = ${formatNumber(yMax.x)}\\) м`);
+  }
+
+  // Ударное нагружение
+  if (result.loadMode === 'impact' && result.Kd !== undefined) {
+    conclusions.push(`Коэффициент динамичности: \\(K_д = ${formatNumber(result.Kd, 3)}\\)`);
+    if (result.sigmaDynamic !== undefined) {
+      conclusions.push(`Динамическое напряжение: \\(\\sigma_{\\text{дин}} = ${formatNumber(result.sigmaDynamic, 2)}\\) МПа`);
+    }
+    if (result.yDynamic !== undefined) {
+      conclusions.push(`Динамический прогиб: \\(y_{\\text{дин}} = ${formatNumber(result.yDynamic * 1000, 4)}\\) мм`);
+    }
   }
 
   // Проверки
@@ -2265,7 +3319,7 @@ function buildCantileverReactions(
   const L = input.L;
 
   let html = `
-  <p><strong>Соглашения знаков:</strong> силы вверх «+», моменты против часовой стрелки «+».</p>
+  <p><strong>Соглашения знаков:</strong> реакции вверх «+»; внешние нагрузки: вниз «+», вверх «-»; моменты против часовой стрелки «+».</p>
   <p>Заделка расположена в точке \\(x = ${formatNumber(xf)}\\) м.</p>`;
 
   // Показываем равнодействующие распределённых нагрузок
@@ -2400,7 +3454,7 @@ function buildSimplySupportedReactions(
   const span = xB - xA;
 
   let html = `
-  <p><strong>Соглашения знаков:</strong> силы вверх «+», моменты против часовой стрелки «+».</p>
+  <p><strong>Соглашения знаков:</strong> реакции вверх «+»; внешние нагрузки: вниз «+», вверх «-»; моменты против часовой стрелки «+».</p>
   <p>Опора A в точке \\(x_A = ${formatNumber(xA)}\\) м, опора B в точке \\(x_B = ${formatNumber(xB)}\\) м.</p>`;
 
   // Показываем равнодействующие распределённых нагрузок

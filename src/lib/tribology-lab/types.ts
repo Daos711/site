@@ -6,7 +6,7 @@ export type ModuleType = 'magnet' | 'cooler' | 'filter' | 'lubricant' | 'ultraso
 export type EnemyType = 'dust' | 'abrasive' | 'heat' | 'metal' | 'corrosion' | 'moisture' | 'static' | 'boss_wear' | 'boss_pitting';
 
 export type EffectType = 'slow' | 'burn' | 'marked' | 'coated'
-  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback' | 'blocked';
+  | 'dry' | 'protected' | 'held' | 'antiPush' | 'antiHold' | 'pushback' | 'blocked' | 'resonance';
 
 export type UpgradeRarity = 'common' | 'rare' | 'epic';
 
@@ -35,7 +35,6 @@ export interface ActiveBarrier {
   moduleId: string;
   x: number;           // позиция по X на КАНАЛЕ (не модуля!)
   y: number;           // позиция по Y на КАНАЛЕ (не модуля!)
-  pathProgress: number; // позиция на пути (0-1) для блокировки врагов
   duration: number;    // оставшаяся длительность
   maxDuration: number; // изначальная длительность
   createdAt: number;   // timestamp создания
@@ -206,7 +205,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Сепаратор',
     icon: '🧲',
     basePrice: 50,
-    baseDamage: 24,
+    baseDamage: 31,   // было 24, +30%
     range: 150,
     attackSpeed: 1.0,
     color: '#8b5cf6',  // фиолетовый
@@ -219,7 +218,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Охладитель',
     icon: '❄️',
     basePrice: 50,
-    baseDamage: 5,    // было 8, нерф DPS
+    baseDamage: 7,    // было 5, +30%
     range: 180,       // большой радиус для замедления
     attackSpeed: 0.7, // было 0.8, нерф скорости
     color: '#38bdf8',  // голубой
@@ -236,7 +235,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Фильтр',
     icon: '🛡️',
     basePrice: 75,
-    baseDamage: 18,
+    baseDamage: 23,   // было 18, +30%
     range: 170,       // средний радиус
     attackSpeed: 1.2,
     color: '#fbbf24',  // золотой
@@ -249,7 +248,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Смазка',
     icon: '💧',
     basePrice: 65,
-    baseDamage: 4,    // Пониженный урон, зато дебафф
+    baseDamage: 5,    // было 4, +30% (дебафф важнее)
     range: 140,       // ближний бой, но достаёт до края
     attackSpeed: 0.6,
     color: '#a855f7',  // пурпурный
@@ -264,23 +263,25 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'ultrasonic',
     name: 'Ультразвук',
     icon: '📡',
-    basePrice: 80,
-    baseDamage: 10,
+    basePrice: 100,
+    baseDamage: 13,   // было 10, +30%
     range: 200,       // большой радиус для AOE
-    attackSpeed: 0.4,
+    attackSpeed: 0.5, // было 0.4, чуть быстрее для ощутимости
     color: '#2dd4bf',  // бирюзовый
-    description: 'AOE урон в радиусе 120px',
+    description: 'AOE + Резонанс: +15% урона от всех',
     attackType: 'aoe',
-    aoeRadius: 120,   // базовый радиус AOE (было 80 → теперь 120 → 138 → 159 → 183 → 210px)
+    aoeRadius: 120,   // базовый радиус AOE
+    effectType: 'resonance',
+    effectDuration: 3000,  // 3 секунды
+    effectStrength: 15,    // +15% входящего урона
     tagBonuses: { dusty: 1.2 },  // +20% по пыльным
-    // Особенность: урон растёт от количества врагов (+15% за каждого, макс +75%)
   },
   laser: {
     id: 'laser',
     name: 'Лазер',
     icon: '🔬',
     basePrice: 110,
-    baseDamage: 15,
+    baseDamage: 20,   // было 15, +30%
     range: 250,       // максимальный радиус для снайпера
     attackSpeed: 0.3,
     color: '#ef4444',  // красный
@@ -298,7 +299,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Ингибитор',
     icon: '🛢️',
     basePrice: 95,
-    baseDamage: 3,
+    baseDamage: 4,    // было 3, +30%
     range: 120,
     attackSpeed: 0.6,
     color: '#C7B56A',
@@ -310,7 +311,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Деэмульгатор',
     icon: '🧪',
     basePrice: 90,
-    baseDamage: 9,
+    baseDamage: 12,   // было 9, +30%
     range: 180,
     attackSpeed: 0.8,
     color: '#A7E8C2',
@@ -326,7 +327,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Анализатор',
     icon: '🎯',
     basePrice: 110,
-    baseDamage: 5,
+    baseDamage: 7,    // было 5, +30%
     range: 220,
     attackSpeed: 0.5,
     color: '#E6EEF7',
@@ -341,21 +342,21 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     name: 'Центрифуга',
     icon: '🌀',
     basePrice: 105,
-    baseDamage: 6,
+    baseDamage: 8,    // было 6, +30%
     range: 170,
     attackSpeed: 0.35,
     color: '#FF9F43',
     description: 'Откатывает врагов в радиусе 60px',
     attackType: 'aoe',
     aoeRadius: 60,     // радиус AOE отката
-    effectStrength: 6, // Базовый откат 6%, +1% за уровень (L5=10%)
+    effectStrength: 8, // Базовый откат 8%, масштабируется с уровнем
   },
   electrostatic: {
     id: 'electrostatic',
     name: 'Электростат',
     icon: '⚡',
     basePrice: 100,
-    baseDamage: 8,
+    baseDamage: 10,   // было 8, +30%
     range: 200,
     attackSpeed: 0.9,
     color: '#F5E663',

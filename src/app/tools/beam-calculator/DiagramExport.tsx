@@ -83,6 +83,19 @@ export function DiagramExport({
 
   const formatNum = (val: number): string => {
     if (Math.abs(val) < 1e-10) return "0";
+
+    // Округляем floating-point шум: только явные ошибки типа 20.03
+    const snapThreshold = 0.002; // 0.2% допуск
+    const roundToNearest = (v: number, step: number): number => {
+      const rounded = Math.round(v / step) * step;
+      const relError = Math.abs(v - rounded) / Math.max(Math.abs(v), 1);
+      return relError < snapThreshold ? rounded : v;
+    };
+    let snapped = roundToNearest(val, 1);
+    if (snapped === val) snapped = roundToNearest(val, 0.5);
+    if (snapped === val) snapped = roundToNearest(val, 0.25);
+    val = snapped;
+
     const absVal = Math.abs(val);
     let decimals = 2;
     if (absVal < 0.001) decimals = 5;

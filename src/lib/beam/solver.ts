@@ -1,5 +1,6 @@
 import { macaulay, macaulayIntegral, macaulayDoubleIntegral } from "./macaulay";
-import type { BeamInput, BeamResult, Reactions } from "./types";
+import type { BeamInput, BeamResult, Reactions, SectionType, SectionMode, BendingAxis, LoadMode } from "./types";
+import { selectProfile, getProfileI, getProfileW, getProfileByNumber, type ProfileData, type ProfileType } from "./gost-profiles";
 
 /** Точность для сравнения с нулём */
 const EPS = 1e-6;
@@ -34,25 +35,201 @@ export function solveBeam(input: BeamInput): BeamResult {
   const Qmax = findQExtremum(L, events, Q);
   const Mmax = findMExtremum(input.loads, events, Q, M);
 
-  // Подбор сечения по [σ] (если задано)
+  // Подбор или расчёт сечения
   let diameter: number | undefined;
   let W: number | undefined;
   let I_computed: number | undefined;
+  let selectedProfile: ProfileData | undefined;
+  let Wreq: number | undefined;
+  let rectWidth: number | undefined;
+  let rectHeight: number | undefined;
+  let tubeOuterWidth: number | undefined;
+  let tubeOuterHeight: number | undefined;
+  let tubeThickness: number | undefined;
+  let squareSide: number | undefined;
+  let sigmaMax: number | undefined;
+  const sectionType: SectionType = input.sectionType ?? 'round';
+  const sectionMode = input.sectionMode ?? 'select';
+  const bendingAxis: BendingAxis = input.bendingAxis ?? 'x';
 
-  if (input.sigma) {
+  if (sectionMode === 'given') {
+    // Режим "заданное сечение" — используем заданные параметры, вычисляем σmax
+    if (sectionType === 'round' && input.diameter) {
+      // Круглое сечение
+      diameter = input.diameter;
+      // W = π·d³/32
+      W = (Math.PI * Math.pow(diameter, 3)) / 32;
+      // I = π·d⁴/64
+      I_computed = (Math.PI * Math.pow(diameter, 4)) / 64;
+
+    } else if (sectionType === 'rectangle' && input.rectWidth && input.rectHeight) {
+      // Прямоугольное сечение b×h
+      rectWidth = input.rectWidth;
+      rectHeight = input.rectHeight;
+      // W = b·h²/6
+      W = (rectWidth * Math.pow(rectHeight, 2)) / 6;
+      // I = b·h³/12
+      I_computed = (rectWidth * Math.pow(rectHeight, 3)) / 12;
+
+    } else if (sectionType === 'rectangular-tube' && input.tubeOuterWidth && input.tubeOuterHeight && input.tubeThickness) {
+      // Прямоугольная труба B×H×t
+      tubeOuterWidth = input.tubeOuterWidth;
+      tubeOuterHeight = input.tubeOuterHeight;
+      tubeThickness = input.tubeThickness;
+      const B = tubeOuterWidth;
+      const H = tubeOuterHeight;
+      const t = tubeThickness;
+      // I = (B·H³ - (B-2t)·(H-2t)³) / 12
+      const I_outer = B * Math.pow(H, 3) / 12;
+      const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+      I_computed = I_outer - I_inner;
+      W = 2 * I_computed / H;
+
+    } else if (sectionType === 'square' && input.squareSide) {
+      // Квадратное сечение a×a
+      squareSide = input.squareSide;
+      // W = a³/6
+      W = Math.pow(squareSide, 3) / 6;
+      // I = a⁴/12
+      I_computed = Math.pow(squareSide, 4) / 12;
+
+    } else if ((sectionType === 'i-beam' || sectionType === 'channel-u' || sectionType === 'channel-p') && input.profileNumber) {
+      // Профиль из ГОСТ
+      const profile = getProfileByNumber(sectionType as ProfileType, input.profileNumber);
+      if (profile) {
+        selectedProfile = profile;
+        // W и I в зависимости от оси
+        W = getProfileW(profile, bendingAxis) / 1e6; // см³ → м³
+        I_computed = getProfileI(profile, bendingAxis) * 1e-8; // см⁴ → м⁴
+      }
+    }
+
+    // Вычисляем σmax = |M|max / W
+    if (W && Math.abs(Mmax.value) > 0) {
+      const MmaxNm = Math.abs(Mmax.value) * 1000; // кН·м → Н·м
+      const sigmaMax_Pa = MmaxNm / W; // Па
+      sigmaMax = sigmaMax_Pa / 1e6; // Па → МПа
+    }
+
+  } else if (input.sigma) {
     // |M|max в кН·м, sigma в Па
     // W = |M|max / sigma, но нужно согласовать единицы
     // |M|max в кН·м = |M|max * 1000 Н·м
     // W = |M|max * 1000 / sigma (в м³)
     const MmaxNm = Math.abs(Mmax.value) * 1000; // Н·м
-    W = MmaxNm / input.sigma; // м³
+    const W_m3 = MmaxNm / input.sigma; // м³
 
-    // Для круглого сечения: W = π·d³/32
-    // d = ∛(32·W/π)
-    diameter = Math.pow((32 * W) / Math.PI, 1 / 3); // м
+    if (sectionType === 'round') {
+      // Для круглого сечения: W = π·d³/32
+      // d = ∛(32·W/π)
+      W = W_m3;
+      diameter = Math.pow((32 * W) / Math.PI, 1 / 3); // м
 
-    // Момент инерции: I = π·d⁴/64
-    I_computed = (Math.PI * Math.pow(diameter, 4)) / 64; // м⁴
+      // Момент инерции: I = π·d⁴/64
+      I_computed = (Math.PI * Math.pow(diameter, 4)) / 64; // м⁴
+
+    } else if (sectionType === 'rectangle') {
+      // Прямоугольное сечение b×h
+      // Используем заданные пропорции или h/b = 2 по умолчанию
+      const ratio = input.rectHeight && input.rectWidth
+        ? input.rectHeight / input.rectWidth
+        : 2;
+
+      // W = b·h²/6, h = ratio·b
+      // W = b·(ratio·b)²/6 = ratio²·b³/6
+      // b = ∛(6·W/ratio²)
+      const b = Math.pow((6 * W_m3) / (ratio * ratio), 1 / 3);
+      const h = ratio * b;
+
+      rectWidth = b;
+      rectHeight = h;
+      W = W_m3;
+
+      // I = b·h³/12
+      I_computed = (b * Math.pow(h, 3)) / 12;
+
+    } else if (sectionType === 'rectangular-tube') {
+      // Прямоугольная труба B×H×t
+      // Если заданы параметры, вычисляем W и I, иначе подбираем
+      if (input.tubeOuterWidth && input.tubeOuterHeight && input.tubeThickness) {
+        const B = input.tubeOuterWidth;
+        const H = input.tubeOuterHeight;
+        const t = input.tubeThickness;
+
+        tubeOuterWidth = B;
+        tubeOuterHeight = H;
+        tubeThickness = t;
+
+        // I = (B·H³ - (B-2t)·(H-2t)³) / 12
+        const I_outer = B * Math.pow(H, 3) / 12;
+        const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+        I_computed = I_outer - I_inner;
+
+        W = 2 * I_computed / H;
+      } else {
+        // Подбор: фиксируем t/H = 0.1, H/B = 1.5
+        const tRatio = 0.1;
+        const aspectRatio = 1.5;
+
+        // W ≈ (B·H³ - (B-2t)·(H-2t)³) / (6H), упрощённо
+        // Численно подбираем H
+        let H = 0.05; // начальное приближение
+        for (let iter = 0; iter < 20; iter++) {
+          const B = H / aspectRatio;
+          const t = H * tRatio;
+          const I_outer = B * Math.pow(H, 3) / 12;
+          const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+          const W_cur = 2 * (I_outer - I_inner) / H;
+
+          if (W_cur >= W_m3) break;
+          H *= 1.1;
+        }
+
+        const B = H / aspectRatio;
+        const t = H * tRatio;
+
+        tubeOuterWidth = B;
+        tubeOuterHeight = H;
+        tubeThickness = t;
+
+        const I_outer = B * Math.pow(H, 3) / 12;
+        const I_inner = (B - 2*t) * Math.pow(H - 2*t, 3) / 12;
+        I_computed = I_outer - I_inner;
+        W = 2 * I_computed / H;
+      }
+
+    } else if (sectionType === 'square') {
+      // Квадратное сечение a×a
+      // W = a³/6
+      // a = ∛(6·W)
+      const a = Math.pow(6 * W_m3, 1 / 3);
+
+      squareSide = a;
+      W = W_m3;
+
+      // I = a⁴/12
+      I_computed = Math.pow(a, 4) / 12;
+
+    } else {
+      // Для профилей из ГОСТ (двутавр, швеллер)
+      // Переводим W из м³ в см³: W_см³ = W_м³ * 10^6
+      const W_cm3 = W_m3 * 1e6;
+      Wreq = W_cm3;
+
+      // Подбираем профиль из сортамента с учётом оси
+      const profile = selectProfile(sectionType as ProfileType, W_cm3, bendingAxis);
+      if (profile) {
+        selectedProfile = profile;
+        // Используем W и I для выбранной оси
+        W = getProfileW(profile, bendingAxis) / 1e6; // переводим см³ в м³
+        // Переводим момент инерции из см⁴ в м⁴: I_м⁴ = I_см⁴ * 10^(-8)
+        I_computed = getProfileI(profile, bendingAxis) * 1e-8;
+      } else {
+        // Профиль не найден — Wreq слишком большой для сортамента
+        // Оставляем I_computed = undefined, прогибы не будут рассчитаны
+        W = W_m3;
+      }
+    }
   }
 
   // Момент инерции: либо из подбора, либо заданный вручную
@@ -73,6 +250,51 @@ export function solveBeam(input: BeamInput): BeamResult {
     C2 = deflectionResult.C2;
   }
 
+  // Ударное нагружение
+  const loadMode: LoadMode = input.loadMode ?? 'static';
+  let yStaticAtImpact: number | undefined;
+  let Kd: number | undefined;
+  let sigmaDynamic: number | undefined;
+  let yDynamic: number | undefined;
+  let springDeflection: number | undefined;
+
+  if (loadMode === 'impact' && input.impactHeight !== undefined && y) {
+    // Находим точку приложения ударной силы
+    // По умолчанию берём первую сосредоточенную силу или середину балки
+    let impactX = input.L / 2;
+    const forceIndex = input.impactForceIndex ?? 0;
+    const forces = input.loads.filter(l => l.type === 'force');
+    if (forces.length > forceIndex) {
+      impactX = (forces[forceIndex] as { x: number }).x;
+    }
+
+    // Статический прогиб в точке удара (берём по модулю)
+    yStaticAtImpact = Math.abs(y(impactX));
+
+    // Учёт податливости пружины (если задана)
+    // Осадка пружины s = α × R (реакция), НЕ используется для Kd
+    if (input.springStiffness && input.springStiffness > 0) {
+      // Сохраняем springStiffness для отчёта, но не добавляем к прогибу для Kd
+      // Осадки пружин рассчитываются отдельно как s = α × R в отчёте
+      springDeflection = 0; // Будет рассчитано в отчёте как α × R
+    }
+
+    // Коэффициент динамичности: Kд = 1 + √(1 + 2H/δст)
+    // Используем ТОЛЬКО прогиб балки, без пружины
+    if (yStaticAtImpact > 0) {
+      const H = input.impactHeight;
+      Kd = 1 + Math.sqrt(1 + (2 * H) / yStaticAtImpact);
+
+      // Динамическое напряжение: σд = Kд × σст
+      if (sigmaMax !== undefined) {
+        sigmaDynamic = Kd * sigmaMax;
+      }
+
+      // Динамический прогиб: yд = Kд × δст
+      yDynamic = Kd * yStaticAtImpact;
+    }
+  }
+
   return {
     reactions,
     Q,
@@ -84,9 +306,30 @@ export function solveBeam(input: BeamInput): BeamResult {
     Mmax,
     Qmax,
     events,
+    sectionType,
+    sectionMode,
+    bendingAxis,
     diameter,
+    selectedProfile,
     I: I_final,
     W,
+    Wreq,
+    sigmaMax,
+    rectWidth,
+    rectHeight,
+    tubeOuterWidth,
+    tubeOuterHeight,
+    tubeThickness,
+    squareSide,
+    // Ударное нагружение
+    loadMode,
+    impactHeight: input.impactHeight,
+    yStaticAtImpact,
+    Kd,
+    sigmaDynamic,
+    yDynamic,
+    springStiffness: input.springStiffness,
+    springDeflection,
   };
 }
 
