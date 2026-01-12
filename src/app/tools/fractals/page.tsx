@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 // DEBUG: установить в true чтобы HP шейдер показывал фиолетовый цвет (тест что он работает)
-const DEBUG_HP_PURPLE = true;
+const DEBUG_HP_PURPLE = false;
 
 // Типы фракталов
 type FractalType = "mandelbrot" | "julia" | "burning-ship" | "tricorn";
@@ -78,9 +78,17 @@ const presets: Preset[] = [
   { name: "Tricorn", type: "tricorn", centerX: -0.3, centerY: 0, zoom: 1 },
 ];
 
-// Вершинный шейдер
+// Вершинный шейдер (WebGL1)
 const vertexShaderSource = `
   attribute vec2 a_position;
+  void main() {
+    gl_Position = vec4(a_position, 0.0, 1.0);
+  }
+`;
+
+// Вершинный шейдер (WebGL2)
+const vertexShaderSourceWebGL2 = `#version 300 es
+  in vec2 a_position;
   void main() {
     gl_Position = vec4(a_position, 0.0, 1.0);
   }
@@ -191,8 +199,8 @@ const fragmentShaderSource = `
   }
 `;
 
-// High Precision шейдер с Double-Double арифметикой
-const fragmentShaderSourceHP = `
+// High Precision шейдер с Double-Double арифметикой (WebGL1 - Veltkamp-Dekker)
+const fragmentShaderSourceHP_WebGL1 = `
   precision highp float;
 
   uniform vec2 u_resolution;
@@ -206,7 +214,7 @@ const fragmentShaderSourceHP = `
   uniform vec2 u_juliaCLo;
   uniform int u_colorScheme;
 
-  // ============ Double-Double Arithmetic ============
+  // ============ Double-Double Arithmetic (Veltkamp-Dekker) ============
   // Число представляется как vec2(hi, lo) где value ≈ hi + lo
 
   vec2 twoSum(float a, float b) {
@@ -258,7 +266,74 @@ const fragmentShaderSourceHP = `
     vec2 p = twoProd(a.x, b);
     float e = a.y * b + p.y;
     return quickTwoSum(p.x, e);
+  }`;
+
+// High Precision шейдер с Double-Double арифметикой (WebGL2 - использует fma())
+const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
+  precision highp float;
+
+  uniform vec2 u_resolution;
+  uniform vec2 u_centerHi;
+  uniform vec2 u_centerLo;
+  uniform vec2 u_scaleHi;
+  uniform vec2 u_scaleLo;
+  uniform int u_maxIter;
+  uniform int u_fractalType;
+  uniform vec2 u_juliaCHi;
+  uniform vec2 u_juliaCLo;
+  uniform int u_colorScheme;
+
+  out vec4 fragColor;
+
+  // ============ Double-Double Arithmetic (с fma для точности) ============
+  // Число представляется как vec2(hi, lo) где value ≈ hi + lo
+
+  vec2 twoSum(float a, float b) {
+    float s = a + b;
+    float bb = s - a;
+    float err = (a - (s - bb)) + (b - bb);
+    return vec2(s, err);
   }
+
+  vec2 quickTwoSum(float a, float b) {
+    float s = a + b;
+    float err = b - (s - a);
+    return vec2(s, err);
+  }
+
+  vec2 dd_add(vec2 a, vec2 b) {
+    vec2 s = twoSum(a.x, b.x);
+    float e = a.y + b.y + s.y;
+    return quickTwoSum(s.x, e);
+  }
+
+  vec2 dd_sub(vec2 a, vec2 b) {
+    return dd_add(a, vec2(-b.x, -b.y));
+  }
+
+  // twoProd с использованием fma() - более надёжно на GPU с FMA
+  vec2 twoProd(float a, float b) {
+    float p = a * b;
+    float err = fma(a, b, -p);  // fma(a,b,c) = a*b+c с одним округлением
+    return vec2(p, err);
+  }
+
+  vec2 dd_mul(vec2 a, vec2 b) {
+    vec2 p = twoProd(a.x, b.x);
+    float e = fma(a.x, b.y, fma(a.y, b.x, fma(a.y, b.y, p.y)));
+    vec2 s = twoSum(p.x, e);
+    return vec2(s.x, s.y);
+  }
+
+  // DD * float
+  vec2 dd_mul_f(vec2 a, float b) {
+    vec2 p = twoProd(a.x, b);
+    float e = fma(a.y, b, p.y);
+    return quickTwoSum(p.x, e);
+  }`;
+
+// Общая логика main() для HP шейдера (WebGL1 версия)
+const fragmentShaderSourceHP_main_WebGL1 = `
 
   vec3 palette(float t, int scheme) {
     if (scheme == 0) {
@@ -381,10 +456,142 @@ const fragmentShaderSourceHP = `
   }
 `;
 
+// Общая логика main() для HP шейдера (WebGL2 версия - использует fragColor вместо gl_FragColor)
+const fragmentShaderSourceHP_main_WebGL2 = `
+
+  vec3 palette(float t, int scheme) {
+    if (scheme == 0) {
+      return vec3(
+        9.0 * (1.0 - t) * t * t * t,
+        15.0 * (1.0 - t) * (1.0 - t) * t * t,
+        8.5 * (1.0 - t) * (1.0 - t) * (1.0 - t) * t + 0.2 * t
+      );
+    } else if (scheme == 1) {
+      return vec3(
+        min(1.0, t * 2.0),
+        max(0.0, min(1.0, (t - 0.3) * 2.5)),
+        max(0.0, min(1.0, (t - 0.6) * 3.0))
+      );
+    } else if (scheme == 2) {
+      return vec3(t * t * 0.3, 0.2 + t * 0.6, 0.5 + t * 0.5);
+    } else if (scheme == 3) {
+      return vec3(
+        sin(t * 6.28318 + 0.0) * 0.5 + 0.5,
+        sin(t * 6.28318 + 2.094) * 0.5 + 0.5,
+        sin(t * 6.28318 + 4.188) * 0.5 + 0.5
+      );
+    } else if (scheme == 4) {
+      return vec3(
+        sin(t * 10.0) * 0.5 + 0.5,
+        sin(t * 10.0 + 2.0) * 0.5 + 0.5,
+        sin(t * 10.0 + 4.0) * 0.5 + 0.5
+      );
+    } else {
+      float h = mod(t * 5.0, 1.0);
+      vec3 c = vec3(h * 6.0);
+      c = abs(mod(c - vec3(3.0, 2.0, 4.0), 6.0) - 3.0) - 1.0;
+      c = clamp(c, 0.0, 1.0);
+      return mix(vec3(1.0), c, 1.0);
+    }
+  }
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    float aspect = u_resolution.x / u_resolution.y;
+
+    // Смещение в DD
+    float offsetX = (uv.x - 0.5) * aspect;
+    float offsetY = (uv.y - 0.5);
+
+    // scale как DD
+    vec2 scaleDD = vec2(u_scaleHi.x, u_scaleLo.x);
+
+    // c.x = centerX + offsetX * scale (в DD)
+    vec2 cxDD = dd_add(vec2(u_centerHi.x, u_centerLo.x), dd_mul_f(scaleDD, offsetX));
+    // c.y = centerY + offsetY * scale (в DD)
+    vec2 cyDD = dd_add(vec2(u_centerHi.y, u_centerLo.y), dd_mul_f(scaleDD, offsetY));
+
+    vec2 zxDD, zyDD;
+    vec2 jcxDD = vec2(u_juliaCHi.x, u_juliaCLo.x);
+    vec2 jcyDD = vec2(u_juliaCHi.y, u_juliaCLo.y);
+
+    if (u_fractalType == 1) {
+      // Julia: z = c, c = juliaC
+      zxDD = cxDD;
+      zyDD = cyDD;
+      cxDD = jcxDD;
+      cyDD = jcyDD;
+    } else {
+      zxDD = vec2(0.0, 0.0);
+      zyDD = vec2(0.0, 0.0);
+    }
+
+    float iter = 0.0;
+    float maxIter = float(u_maxIter);
+
+    for (int i = 0; i < 2000; i++) {
+      if (i >= u_maxIter) break;
+
+      // x² и y² в DD
+      vec2 x2 = dd_mul(zxDD, zxDD);
+      vec2 y2 = dd_mul(zyDD, zyDD);
+
+      // |z|² > 4 ?
+      float magSq = x2.x + y2.x;
+      if (magSq > 4.0) break;
+
+      vec2 newZxDD, newZyDD;
+
+      if (u_fractalType == 2) {
+        // Burning Ship: z = (|Re|, |Im|)² + c
+        vec2 absZxDD = zxDD.x < 0.0 ? vec2(-zxDD.x, -zxDD.y) : zxDD;
+        vec2 absZyDD = zyDD.x < 0.0 ? vec2(-zyDD.x, -zyDD.y) : zyDD;
+        newZxDD = dd_add(dd_sub(x2, y2), cxDD);
+        newZyDD = dd_add(dd_mul_f(dd_mul(absZxDD, absZyDD), 2.0), cyDD);
+      } else if (u_fractalType == 3) {
+        // Tricorn: z = conj(z)² + c
+        newZxDD = dd_add(dd_sub(x2, y2), cxDD);
+        newZyDD = dd_add(dd_mul_f(dd_mul(zxDD, zyDD), -2.0), cyDD);
+      } else {
+        // Mandelbrot / Julia: z = z² + c
+        newZxDD = dd_add(dd_sub(x2, y2), cxDD);
+        newZyDD = dd_add(dd_mul_f(dd_mul(zxDD, zyDD), 2.0), cyDD);
+      }
+
+      zxDD = newZxDD;
+      zyDD = newZyDD;
+      iter += 1.0;
+    }
+
+    if (iter >= maxIter) {
+      fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+      // Smooth coloring
+      float zx = zxDD.x;
+      float zy = zyDD.x;
+      float log_zn = log(zx * zx + zy * zy) / 2.0;
+      float nu = log(log_zn / log(2.0)) / log(2.0);
+      iter = iter + 1.0 - nu;
+      float t = iter / maxIter;
+      vec3 color = palette(t, u_colorScheme);
+      fragColor = vec4(color, 1.0);
+    }
+    // DEBUG_MARKER: для теста что HP шейдер включается
+  }
+`;
+
+// Собираем полные HP шейдеры
+const fragmentShaderSourceHP_WebGL1_full = fragmentShaderSourceHP_WebGL1 + fragmentShaderSourceHP_main_WebGL1;
+const fragmentShaderSourceHP_WebGL2_full = fragmentShaderSourceHP_WebGL2_prefix + fragmentShaderSourceHP_main_WebGL2;
+
 // Версия HP шейдера для тестирования (фиолетовый экран)
-const fragmentShaderSourceHP_DEBUG = fragmentShaderSourceHP.replace(
+const fragmentShaderSourceHP_WebGL1_DEBUG = fragmentShaderSourceHP_WebGL1_full.replace(
   '// DEBUG_MARKER: для теста что HP шейдер включается',
   'gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); // PURPLE TEST'
+);
+const fragmentShaderSourceHP_WebGL2_DEBUG = fragmentShaderSourceHP_WebGL2_full.replace(
+  '// DEBUG_MARKER: для теста что HP шейдер включается',
+  'fragColor = vec4(1.0, 0.0, 1.0, 1.0); // PURPLE TEST'
 );
 
 // Упаковка double в (hi, lo) для передачи в шейдер
@@ -485,10 +692,26 @@ export default function FractalsPage() {
     const program = linkProgram(vertexShader, fragmentShader, "standard");
     programRef.current = program;
 
-    // Компиляция High Precision шейдера
-    const vertexShaderHP = compileShader(gl.VERTEX_SHADER, vertexShaderSource, "vertexHP");
-    const hpSource = DEBUG_HP_PURPLE ? fragmentShaderSourceHP_DEBUG : fragmentShaderSourceHP;
-    const fragmentShaderHP = compileShader(gl.FRAGMENT_SHADER, hpSource, "fragmentHP");
+    // Компиляция High Precision шейдера (разный для WebGL1 и WebGL2)
+    let hpVertexSource: string;
+    let hpFragmentSource: string;
+
+    if (webgl2) {
+      hpVertexSource = vertexShaderSourceWebGL2;
+      hpFragmentSource = DEBUG_HP_PURPLE
+        ? fragmentShaderSourceHP_WebGL2_DEBUG
+        : fragmentShaderSourceHP_WebGL2_full;
+      console.log('Using WebGL2 HP shader with fma() for precise twoProd');
+    } else {
+      hpVertexSource = vertexShaderSource;
+      hpFragmentSource = DEBUG_HP_PURPLE
+        ? fragmentShaderSourceHP_WebGL1_DEBUG
+        : fragmentShaderSourceHP_WebGL1_full;
+      console.log('Using WebGL1 HP shader with Veltkamp-Dekker splitting');
+    }
+
+    const vertexShaderHP = compileShader(gl.VERTEX_SHADER, hpVertexSource, "vertexHP");
+    const fragmentShaderHP = compileShader(gl.FRAGMENT_SHADER, hpFragmentSource, "fragmentHP");
     const programHP = linkProgram(vertexShaderHP, fragmentShaderHP, "highPrecision");
     programHPRef.current = programHP;
     if (DEBUG_HP_PURPLE) {
@@ -561,6 +784,15 @@ export default function FractalsPage() {
       const [scaleHi, scaleLo] = packDD(scale);
       const [juliaCXHi, juliaCXLo] = packDD(juliaC.x);
       const [juliaCYHi, juliaCYLo] = packDD(juliaC.y);
+
+      // Диагностика: логируем DD-значения при глубоком зуме
+      if (zoom > 1000) {
+        console.log('HP mode diagnostics at zoom', zoom.toExponential(2), ':');
+        console.log('  scale:', scale.toExponential(6), '-> hi:', scaleHi, 'lo:', scaleLo);
+        console.log('  centerX:', center.x, '-> hi:', centerXHi, 'lo:', centerXLo);
+        console.log('  centerY:', center.y, '-> hi:', centerYHi, 'lo:', centerYLo);
+        console.log('  reconstructed centerX:', centerXHi + centerXLo, 'error:', Math.abs(center.x - (centerXHi + centerXLo)));
+      }
 
       gl.uniform2f(gl.getUniformLocation(program, "u_centerHi"), centerXHi, centerYHi);
       gl.uniform2f(gl.getUniformLocation(program, "u_centerLo"), centerXLo, centerYLo);
