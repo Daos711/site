@@ -326,11 +326,30 @@ export default function NBodyPage() {
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
+    const w = rect.width;
+    const h = rect.height;
 
-    // Учитываем смещение камеры (центр масс в центре экрана)
+    // Позиция клика относительно центра экрана
+    const sx = clickX - w / 2;
+    const sy = clickY - h / 2;
+
+    const totalMass = bodies.reduce((sum, b) => sum + b.mass, 0);
     const com = getCenterOfMass(bodies);
-    const x = clickX - rect.width / 2 + com.x;
-    const y = clickY - rect.height / 2 + com.y;
+    const m = addMass;
+
+    // Вычисляем позицию так, чтобы ПОСЛЕ смещения центра масс
+    // тело оказалось именно там, где кликнули
+    let x, y;
+    if (totalMass === 0) {
+      // Первое тело — просто в центре
+      x = 0;
+      y = 0;
+    } else {
+      // Решаем уравнение: x - new_com.x = sx
+      // где new_com.x = (com.x * totalMass + x * m) / (totalMass + m)
+      x = com.x + sx * (totalMass + m) / totalMass;
+      y = com.y + sy * (totalMass + m) / totalMass;
+    }
 
     const newBody: Body = {
       x,
