@@ -20,12 +20,12 @@ export function ReactionArrow({ x, baseY, value, name, subscript, valueText, lab
     // Стрелка ВВЕРХ: начинается ОТ верхней плоскости балки, уходит вверх
     startY = baseY; // начало на поверхности балки
     endY = baseY - arrowLen; // конец выше (наконечник вверху)
-    textY = endY - 10;
+    textY = endY - 10 - labelYOffset;
   } else {
     // Стрелка ВНИЗ: приходит сверху, наконечник касается верхней плоскости
     startY = baseY - arrowLen; // начало выше
     endY = baseY - markerOffset; // конец у поверхности, острие касается baseY
-    textY = startY - 5;
+    textY = startY - 5 - labelYOffset;
   }
 
   const textX = x + (labelSide === "left" ? -10 : 10) + labelXOffset;

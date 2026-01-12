@@ -1,5 +1,18 @@
 // Типы нагрузок и балок
 
+import type { ProfileData, ProfileType, BendingAxis } from './gost-profiles';
+
+/** Тип поперечного сечения */
+export type SectionType = 'round' | 'rectangle' | 'rectangular-tube' | 'square' | ProfileType;
+
+/** Режим работы с сечением */
+export type SectionMode = 'select' | 'given';  // подбор или заданное
+
+/** Режим нагружения */
+export type LoadMode = 'static' | 'impact';  // статическое или ударное (динамическое)
+
+export type { BendingAxis };
+
 export type BeamType =
   | "simply-supported"           // Двухопорная (опоры на концах)
   | "simply-supported-overhang-left"   // Двухопорная с консолью слева
@@ -41,7 +54,28 @@ export interface BeamInput {
   loads: Load[];
   E?: number;             // модуль упругости, Па (для прогибов)
   I?: number;             // момент инерции, м^4 (для прогибов) — если задан вручную
-  sigma?: number;         // допускаемое напряжение, Па (для подбора диаметра)
+  sigma?: number;         // допускаемое напряжение, Па (для подбора сечения)
+  sectionType?: SectionType;  // тип сечения (круглое, двутавр, швеллер, прямоугольник и т.д.)
+  sectionMode?: SectionMode;  // режим: 'select' (подбор) или 'given' (заданное)
+  bendingAxis?: BendingAxis;  // ось изгиба для профилей ('x' или 'y')
+  // Для заданного профиля ГОСТ
+  profileNumber?: string;     // номер профиля (например, "20", "18а")
+  // Параметры для круглого сечения (round)
+  diameter?: number;      // диаметр d, м (для заданного сечения)
+  // Параметры для прямоугольного сечения (rectangle)
+  rectWidth?: number;     // ширина b, м
+  rectHeight?: number;    // высота h, м
+  // Параметры для прямоугольной трубы (rectangular-tube)
+  tubeOuterWidth?: number;   // внешняя ширина B, м
+  tubeOuterHeight?: number;  // внешняя высота H, м
+  tubeThickness?: number;    // толщина стенки t, м
+  // Параметры для квадратного сечения (square)
+  squareSide?: number;    // сторона a, м
+  // Параметры ударного нагружения
+  loadMode?: LoadMode;         // режим: 'static' или 'impact'
+  impactHeight?: number;       // высота падения груза H, м
+  impactForceIndex?: number;   // индекс силы, к которой применяется удар (в массиве loads)
+  springStiffness?: number;    // коэффициент податливости пружины α, см/кН (если опора на пружине)
 }
 
 export interface Reactions {
@@ -65,10 +99,34 @@ export interface BeamResult {
   Mmax: { value: number; x: number };
   Qmax: { value: number; x: number };
   events: number[];  // точки разрыва/перегиба
-  // Подбор сечения (если задано sigma)
-  diameter?: number;  // подобранный диаметр, м
-  I?: number;         // момент инерции, м^4
-  W?: number;         // момент сопротивления, м^3
+  // Сечение
+  sectionType?: SectionType;      // тип сечения
+  sectionMode?: SectionMode;      // режим: подбор или заданное
+  bendingAxis?: BendingAxis;      // ось изгиба
+  diameter?: number;              // диаметр для круглого, м
+  selectedProfile?: ProfileData;  // профиль из ГОСТ (для двутавра/швеллера)
+  I?: number;                     // момент инерции, м^4
+  W?: number;                     // момент сопротивления, м^3
+  Wreq?: number;                  // требуемый момент сопротивления, см³ (для режима подбора)
+  sigmaMax?: number;              // максимальное напряжение, МПа (для режима заданного сечения)
+  // Для прямоугольного сечения
+  rectWidth?: number;             // ширина b, м
+  rectHeight?: number;            // высота h, м
+  // Для трубы
+  tubeOuterWidth?: number;
+  tubeOuterHeight?: number;
+  tubeThickness?: number;
+  // Для квадрата
+  squareSide?: number;
+  // Ударное нагружение
+  loadMode?: LoadMode;          // режим нагружения
+  impactHeight?: number;        // высота падения H, м
+  yStaticAtImpact?: number;     // статический прогиб в точке удара, м
+  Kd?: number;                  // коэффициент динамичности
+  sigmaDynamic?: number;        // динамическое напряжение, МПа
+  yDynamic?: number;            // динамический прогиб, м
+  springStiffness?: number;     // податливость пружины α, см/кН
+  springDeflection?: number;    // осадка пружины, м
 }
 
 export interface DiagramData {
