@@ -36,18 +36,10 @@ export function computeReferenceOrbit(
     zx.push(zxD.toNumber());
     zy.push(zyD.toNumber());
 
-    // |z|² > 4 (или большее значение для стабильности)
+    // z = z² + c в высокой точности
+    // НЕ выходим при escape - считаем ВСЕ итерации для стабильной длины орбиты
     const zx2 = zxD.mul(zxD);
     const zy2 = zyD.mul(zyD);
-    const magSq = zx2.plus(zy2);
-
-    if (magSq.gt(1e10)) {  // Большой bailout для perturbation стабильности
-      escaped = true;
-      escapeIter = i;
-      break;
-    }
-
-    // z = z² + c в высокой точности
     const zxy = zxD.mul(zyD);
     const newZx = zx2.minus(zy2).plus(cx);
     const newZy = zxy.mul(2).plus(cy);
@@ -56,7 +48,8 @@ export function computeReferenceOrbit(
     zyD = newZy;
   }
 
-  return { zx, zy, escaped, escapeIter };
+  // Орбита ВСЕГДА имеет длину maxIter
+  return { zx, zy, escaped: false, escapeIter: maxIter };
 }
 
 /**
