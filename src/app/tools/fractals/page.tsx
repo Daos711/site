@@ -377,11 +377,25 @@ const fragmentShaderSourceHP = `
   }
 `;
 
-// Хелпер: упаковка double в (hi, lo)
+// Хелпер: упаковка double в (hi, lo) с максимальной точностью
+// Используем Veltkamp-Dekker splitting
 function packDD(x: number): { hi: number; lo: number } {
-  const hi = Math.fround(x);
-  const lo = Math.fround(x - hi);
-  return { hi, lo };
+  if (x === 0) return { hi: 0, lo: 0 };
+
+  // Для float32 используем 2^12 + 1 = 4097 как splitting constant
+  // Но на JS стороне работаем с float64, так что используем 2^27 + 1 для лучшего разбиения
+  const SPLIT = 134217729; // 2^27 + 1
+
+  const t = SPLIT * x;
+  const hi = t - (t - x);
+  const lo = x - hi;
+
+  // Конвертируем hi в float32 для передачи в шейдер
+  const hiF = Math.fround(hi);
+  // lo получает всю оставшуюся точность
+  const loF = x - hiF;
+
+  return { hi: hiF, lo: loF };
 }
 
 export default function FractalsPage() {
@@ -429,34 +443,38 @@ export default function FractalsPage() {
     }
     glRef.current = gl;
 
+    // Хелпер для проверки компиляции шейдера
+    const compileShader = (type: number, source: string, name: string) => {
+      const shader = gl.createShader(type)!;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error(`Shader ${name} compile error:`, gl.getShaderInfoLog(shader));
+      }
+      return shader;
+    };
+
+    const linkProgram = (vs: WebGLShader, fs: WebGLShader, name: string) => {
+      const prog = gl.createProgram()!;
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.error(`Program ${name} link error:`, gl.getProgramInfoLog(prog));
+      }
+      return prog;
+    };
+
     // Компиляция обычного шейдера
-    const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
-    gl.shaderSource(vertexShader, vertexShaderSource);
-    gl.compileShader(vertexShader);
-
-    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
-    gl.shaderSource(fragmentShader, fragmentShaderSource);
-    gl.compileShader(fragmentShader);
-
-    const program = gl.createProgram()!;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
+    const vertexShader = compileShader(gl.VERTEX_SHADER, vertexShaderSource, "vertex");
+    const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSource, "fragment");
+    const program = linkProgram(vertexShader, fragmentShader, "standard");
     programRef.current = program;
 
     // Компиляция High Precision шейдера
-    const vertexShaderHP = gl.createShader(gl.VERTEX_SHADER)!;
-    gl.shaderSource(vertexShaderHP, vertexShaderSource);
-    gl.compileShader(vertexShaderHP);
-
-    const fragmentShaderHP = gl.createShader(gl.FRAGMENT_SHADER)!;
-    gl.shaderSource(fragmentShaderHP, fragmentShaderSourceHP);
-    gl.compileShader(fragmentShaderHP);
-
-    const programHP = gl.createProgram()!;
-    gl.attachShader(programHP, vertexShaderHP);
-    gl.attachShader(programHP, fragmentShaderHP);
-    gl.linkProgram(programHP);
+    const vertexShaderHP = compileShader(gl.VERTEX_SHADER, vertexShaderSource, "vertexHP");
+    const fragmentShaderHP = compileShader(gl.FRAGMENT_SHADER, fragmentShaderSourceHP, "fragmentHP");
+    const programHP = linkProgram(vertexShaderHP, fragmentShaderHP, "highPrecision");
     programHPRef.current = programHP;
 
     // Вершины (полноэкранный квад)
