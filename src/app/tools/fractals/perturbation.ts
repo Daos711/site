@@ -1,4 +1,4 @@
-import Decimal from 'decimal.js';
+import Decimal from 'decimal.js/decimal.mjs';
 
 // Настройка точности - 100 значащих цифр
 Decimal.set({ precision: 100 });
