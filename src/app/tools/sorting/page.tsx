@@ -308,7 +308,14 @@ function playSound(frequency: number, duration: number = 50) {
 
 export default function SortingPage() {
   const [arraySize, setArraySize] = useState(30);
-  const [array, setArray] = useState<number[]>(() => generateRandomArray(30));
+  const [array, setArray] = useState<number[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  // Генерируем массив только на клиенте чтобы избежать hydration mismatch
+  useEffect(() => {
+    setArray(generateRandomArray(30));
+    setIsClient(true);
+  }, []);
   const [comparing, setComparing] = useState<number[]>([]);
   const [swapping, setSwapping] = useState<number[]>([]);
   const [sorted, setSorted] = useState<number[]>([]);
@@ -452,7 +459,7 @@ export default function SortingPage() {
   };
 
   // Максимальное значение для масштабирования
-  const maxValue = Math.max(...array);
+  const maxValue = array.length > 0 ? Math.max(...array) : 100;
 
   // Текущий алгоритм
   const currentAlgorithm = algorithms.find(a => a.id === algorithm)!;
@@ -479,7 +486,9 @@ export default function SortingPage() {
             className="flex items-end justify-center gap-[1px] p-4 h-80"
             style={{ background: "#0f172a" }}
           >
-            {array.map((value, index) => {
+            {!isClient ? (
+              <div className="text-muted text-sm">Загрузка...</div>
+            ) : array.map((value, index) => {
               const height = (value / maxValue) * 100;
               let bgColor = "bg-cyan-500";
 
