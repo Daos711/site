@@ -107,12 +107,13 @@ export function FieldTile({
 
       {/* ═══════════════════════════════════════════════════════════════
           RightRail — атрибуты (баффы: 💧 смазка, 🛡️½ защита)
-          Защита ½ НЕ показывается на иммунных модулях (filter, inhibitor)
+          Защита ½ НЕ показывается только на Ингибиторе (он сам источник)
+          Фильтр получает защиту — показываем метку
           ═══════════════════════════════════════════════════════════════ */}
-      {(isLubricated || (isProtected && type !== 'filter' && type !== 'inhibitor')) && (
+      {(isLubricated || (isProtected && type !== 'inhibitor')) && (
         <div className="right-rail">
           {isLubricated && <div className="attribute-item lubed">💧</div>}
-          {isProtected && type !== 'filter' && type !== 'inhibitor' && (
+          {isProtected && type !== 'inhibitor' && (
             <div className="attribute-item protected">
               {/* Щит с ½ — защита Ингибитора (только для НЕ иммунных) */}
               <svg viewBox="0 0 14 14" width="14" height="14" fill="none">

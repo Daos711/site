@@ -103,6 +103,7 @@ interface GameOverModalProps {
   gold: number;
   nickname: string;
   onNicknameChange: (value: string) => void;
+  onSubmitResult: () => Promise<{ success: boolean; error?: string }>; // Возвращает статус
   onRestart: () => void;
   onMainMenu: () => void;
   onShowLeaderboard: () => void;
@@ -113,10 +114,12 @@ interface GameOverModalProps {
   deck: string[];
 }
 
-function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onRestart, onMainMenu, onShowLeaderboard, isAuthenticated, onSignIn, gameMode, deck }: GameOverModalProps) {
+function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNicknameChange, onSubmitResult, onRestart, onMainMenu, onShowLeaderboard, isAuthenticated, onSignIn, gameMode, deck }: GameOverModalProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [localNickname, setLocalNickname] = useState(nickname);
   const [nicknameSaved, setNicknameSaved] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Форматирование времени MM:SS
   const formatTime = (seconds: number) => {
@@ -129,6 +132,8 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
   useEffect(() => {
     if (isOpen) {
       setLocalNickname(nickname);
+      setSubmitStatus('idle'); // Сбрасываем статус отправки
+      setSubmitError('');
     }
   }, [isOpen, nickname]);
 
@@ -142,12 +147,28 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
     }
   }, [isOpen]);
 
-  // Сохранение никнейма
+  // Сохранение никнейма (без отправки результата)
   const saveNickname = () => {
     if (localNickname.trim() && localNickname.trim() !== nickname) {
       onNicknameChange(localNickname.trim());
       setNicknameSaved(true);
       setTimeout(() => setNicknameSaved(false), 2000);
+    }
+  };
+
+  // Кнопка OK - сохраняем ник и отправляем результат
+  const handleOkClick = async () => {
+    if (submitStatus === 'loading' || submitStatus === 'success') return;
+    saveNickname();
+    setSubmitStatus('loading');
+    setSubmitError('');
+
+    const result = await onSubmitResult();
+    if (result.success) {
+      setSubmitStatus('success');
+    } else {
+      setSubmitStatus('error');
+      setSubmitError(result.error || 'Ошибка отправки');
     }
   };
 
@@ -331,29 +352,37 @@ function GameOverModal({ isOpen, wave, time, kills, leaks, gold, nickname, onNic
                 }}
               />
               <button
-                onClick={saveNickname}
-                disabled={!localNickname.trim() || localNickname.trim() === nickname}
+                onClick={handleOkClick}
+                disabled={!localNickname.trim() || submitStatus === 'loading' || submitStatus === 'success'}
                 style={{
                   padding: '10px 16px',
-                  background: localNickname.trim() && localNickname.trim() !== nickname
-                    ? '#22C55E'
-                    : '#2A3441',
+                  background: submitStatus === 'success'
+                    ? '#1E40AF' // Синий - успех
+                    : submitStatus === 'error'
+                    ? '#DC2626' // Красный - ошибка
+                    : submitStatus === 'loading'
+                    ? '#6B7280' // Серый - загрузка
+                    : localNickname.trim() ? '#22C55E' : '#2A3441',
                   border: 'none',
                   borderRadius: '8px',
-                  color: localNickname.trim() && localNickname.trim() !== nickname
-                    ? '#FFFFFF'
-                    : '#7A8A99',
+                  color: submitStatus !== 'idle' || localNickname.trim() ? '#FFFFFF' : '#7A8A99',
                   fontSize: '13px',
                   fontWeight: 600,
-                  cursor: localNickname.trim() && localNickname.trim() !== nickname
-                    ? 'pointer'
-                    : 'default',
+                  cursor: submitStatus === 'loading' || submitStatus === 'success' || !localNickname.trim() ? 'default' : 'pointer',
                   transition: 'all 0.2s ease',
+                  minWidth: '100px',
                 }}
               >
-                OK
+                {submitStatus === 'success' ? '✓ Сохранено' :
+                 submitStatus === 'loading' ? '...' :
+                 submitStatus === 'error' ? '✕ Ошибка' : 'OK'}
               </button>
             </div>
+            {submitError && (
+              <p style={{ fontSize: '12px', color: '#F87171', marginTop: '8px', textAlign: 'center' }}>
+                {submitError}
+              </p>
+            )}
           </div>
         ) : (
           <div style={{
@@ -793,6 +822,7 @@ export default function TribologyLabPage() {
   const [deathEffects, setDeathEffects] = useState<DeathEffect[]>([]);
   const lastUpdateRef = useRef(0);
   const gameLoopRef = useRef<number>(0);
+  const gameOverRef = useRef(false);  // Для немедленной остановки game loop
   const waveEndingRef = useRef(false); // Флаг чтобы endWave вызывался только раз
   const spawnedIdsRef = useRef<Set<string>>(new Set()); // Отслеживание заспавненных врагов
 
@@ -805,7 +835,7 @@ export default function TribologyLabPage() {
   const pauseStartRef = useRef(0);     // Timestamp начала текущей паузы
   const [gameStarted, setGameStarted] = useState(false);  // Игра началась (после первого старта)
   const [nextWaveCountdown, setNextWaveCountdown] = useState(0);  // Обратный отсчёт до след. волны
-  const labStandId = useRef(Math.floor(Math.random() * 900) + 100);  // Лаб-стенд №XXX
+  // labStandId вычисляется ниже из gameSeed для совпадения с MainMenu
 
   // DEV-панель для тестирования
   const [devMode, setDevMode] = useState(false);
@@ -830,6 +860,15 @@ export default function TribologyLabPage() {
   const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
   const pendingResultSubmittedRef = useRef(false);
 
+  // Данные текущей игры для отправки в лидерборд (отправляется когда пользователь подтвердит ник)
+  const currentGameResultRef = useRef<{
+    deck: string[];
+    wave: number;
+    kills: number;
+    timeMs: number;
+    submitted: boolean;
+  } | null>(null);
+
   // Авторизация (из общего контекста)
   const { user: authUser, loading: authLoading, playerId, signIn, signOut: handleSignOut } = useAuth();
 
@@ -840,6 +879,8 @@ export default function TribologyLabPage() {
   const [gameMode, setGameMode] = useState<GameMode>('daily');
   const [menuDeck, setMenuDeck] = useState<ModuleType[] | null>(null);
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(false);
+  // Номер стенда из seed (как в MainMenu)
+  const labStandId = (gameSeed % 999) + 1;
 
   // Загружаем флаг туториала из localStorage
   useEffect(() => {
@@ -859,7 +900,16 @@ export default function TribologyLabPage() {
     if (authUser && !authLoading && playerId) {
       const pending = getPendingResult();
       if (pending) {
-        const nick = getPlayerNickname();
+        // Используем сохранённый никнейм или имя из Google как fallback
+        let nick = getPlayerNickname();
+        if (!nick && authUser.name) {
+          nick = authUser.name;
+          setPlayerNickname(nick); // Сохраняем для будущего
+        }
+        if (!nick && authUser.email) {
+          nick = authUser.email.split('@')[0]; // Имя из email
+          setPlayerNickname(nick);
+        }
         if (nick) {
           pendingResultSubmittedRef.current = true;
           (async () => {
@@ -936,6 +986,7 @@ export default function TribologyLabPage() {
     // Сбрасываем статистику для Game Over
     setTotalKills(0);
     setTotalGoldEarned(0);
+    gameOverRef.current = false;  // Разрешаем запуск game loop
     setShowGameOver(false);
     setGameOverTime(0);
     gameStartTimeRef.current = 0;
@@ -1025,8 +1076,55 @@ export default function TribologyLabPage() {
     setScreen('menu');
   }, []);
 
+  // Отправка результата текущей игры в лидерборд
+  const submitCurrentGameResult = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    const result = currentGameResultRef.current;
+    if (!result) {
+      return { success: false, error: 'Нет данных для отправки' };
+    }
+    if (result.submitted) {
+      return { success: true }; // Уже отправлено ранее
+    }
+
+    const nick = getPlayerNickname();
+    if (!authUser) {
+      return { success: false, error: 'Войдите в аккаунт для сохранения' };
+    }
+    if (!nick) {
+      return { success: false, error: 'Введите никнейм' };
+    }
+    if (!playerId) {
+      return { success: false, error: 'Ошибка авторизации' };
+    }
+
+    // Помечаем как отправленный сразу, чтобы избежать дублей
+    result.submitted = true;
+
+    try {
+      await getOrCreateProfile(playerId, nick);
+      await submitRun(
+        playerId,
+        gameMode,
+        result.deck,
+        result.wave,
+        result.kills,
+        0,
+        result.timeMs
+      );
+      return { success: true };
+    } catch (err) {
+      console.error('Ошибка отправки результата:', err);
+      // Сбрасываем флаг, чтобы можно было попробовать снова
+      result.submitted = false;
+      return { success: false, error: 'Сетевая ошибка' };
+    }
+  }, [authUser, playerId, gameMode]);
+
   // Game Over: Повторить испытание
   const handleGameOverRestart = useCallback(() => {
+    // Отправляем результат перед сбросом
+    submitCurrentGameResult();
+    gameOverRef.current = false;  // Разрешаем запуск game loop
     setShowGameOver(false);
     setIsPaused(false);
     // Полный сброс состояния игры
@@ -1058,10 +1156,13 @@ export default function TribologyLabPage() {
     // Сразу запускаем игру — показываем оверлей "ВОЛНА 1"
     setGameStarted(true);
     setGamePhase('intro_wave');
-  }, [testDeck, menuDeck]);
+  }, [testDeck, menuDeck, submitCurrentGameResult]);
 
   // Game Over: В меню
   const handleGameOverMainMenu = useCallback(() => {
+    // Отправляем результат перед выходом
+    submitCurrentGameResult();
+    gameOverRef.current = false;  // Разрешаем запуск game loop
     setShowGameOver(false);
     setIsPaused(false);
     // Полный сброс состояния
@@ -1086,7 +1187,7 @@ export default function TribologyLabPage() {
     gameStartTimeRef.current = 0;
     // Возврат в меню
     setScreen('menu');
-  }, []);
+  }, [submitCurrentGameResult]);
 
   // Роли модулей для селектора
   const MODULE_ROLES = {
@@ -1273,11 +1374,11 @@ export default function TribologyLabPage() {
     spawnQueueRef.current = spawnQueue;
   }, [spawnQueue]);
 
-  // Обработчик клавиши D для Dev-панели и ESC для паузы
+  // Обработчик клавиши D для Dev-панели (только dev) и ESC для паузы
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // D — dev-панель
-      if (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В') {
+      // D — dev-панель (только в development)
+      if (process.env.NODE_ENV === 'development' && (e.key === 'd' || e.key === 'D' || e.key === 'в' || e.key === 'В')) {
         // Не активируем если фокус в input
         if (document.activeElement?.tagName === 'INPUT') return;
         setDevMode(prev => !prev);
@@ -1319,41 +1420,34 @@ export default function TribologyLabPage() {
   // Game Over: когда lives достигает 0
   useEffect(() => {
     if (lives <= 0 && gameStarted && !showGameOver) {
-      // Вычисляем итоговое время игры
+      // Вычисляем итоговое время игры (вычитаем время на паузе)
+      let totalPauseMs = pauseTimeRef.current;
+      // Если сейчас на паузе — добавляем текущую паузу
+      if (pauseStartRef.current > 0) {
+        totalPauseMs += performance.now() - pauseStartRef.current;
+      }
       const finalTime = gameStartTimeRef.current > 0
-        ? Math.floor((Date.now() - gameStartTimeRef.current) / 1000)
+        ? Math.floor((Date.now() - gameStartTimeRef.current - totalPauseMs) / 1000)
         : 0;
       const finalTimeMs = finalTime * 1000;
       setGameOverTime(finalTime);
       // ПОЛНОСТЬЮ останавливаем игру
+      gameOverRef.current = true;  // Немедленно останавливает game loop
       setGamePhase('defeat');  // Останавливает game loop
       setIsPaused(true);
       setShowGameOver(true);
 
-      // Отправляем результат в лидерборд (только если авторизован и есть никнейм)
+      // Сохраняем данные результата (отправка будет когда пользователь подтвердит ник)
       const currentDeck = testDeck || menuDeck || FALLBACK_SHOP;
-      const nick = getPlayerNickname();
-
-      if (authUser && nick && playerId) {
-        (async () => {
-          try {
-            await getOrCreateProfile(playerId, nick);
-            await submitRun(
-              playerId,
-              gameMode,
-              currentDeck,
-              wave,
-              totalKills,
-              0,
-              finalTimeMs
-            );
-          } catch (err) {
-            console.error('Ошибка отправки результата:', err);
-          }
-        })();
-      }
+      currentGameResultRef.current = {
+        deck: currentDeck,
+        wave,
+        kills: totalKills,
+        timeMs: finalTimeMs,
+        submitted: false,
+      };
     }
-  }, [lives, gameStarted, showGameOver, testDeck, menuDeck, playerId, gameMode, wave, totalKills, authUser]);
+  }, [lives, gameStarted, showGameOver, testDeck, menuDeck, wave, totalKills]);
 
   // DEV: Спавн врага вне волны
   const devSpawnEnemy = useCallback((type: EnemyType, count: number = 1) => {
@@ -1403,6 +1497,11 @@ export default function TribologyLabPage() {
     if (gamePhase !== 'wave') return;
 
     const gameLoop = (timestamp: number) => {
+      // Если игра окончена — полностью останавливаем (не запрашиваем следующий кадр)
+      if (gameOverRef.current) {
+        return;
+      }
+
       // Если на паузе — запоминаем начало паузы и ждём
       if (isPaused) {
         if (pauseStartRef.current === 0) {
@@ -1419,7 +1518,9 @@ export default function TribologyLabPage() {
         pauseStartRef.current = 0;  // Сбрасываем
       }
 
-      const deltaTime = (timestamp - lastUpdateRef.current) * gameSpeed;
+      // Ограничиваем РЕАЛЬНОЕ время между кадрами (защита от переключения вкладок)
+      const realDelta = Math.min(timestamp - lastUpdateRef.current, 100); // макс 100ms реального времени
+      const deltaTime = realDelta * gameSpeed;
       lastUpdateRef.current = timestamp;
       const elapsedSinceStart = ((timestamp - waveStartTime) - pauseTimeRef.current) * gameSpeed;
 
@@ -1499,12 +1600,14 @@ export default function TribologyLabPage() {
                   };
                 }
 
-                // Если враг ДО барьера — ОТКАТЫВАЕМ и держим
+                // Если враг ДО барьера — держим на месте
                 if (isBeforeBarrier) {
-                  // Минимальный откат — враг стоит на месте без вибрации
+                  // Откат пропорционален deltaTime чтобы не зависеть от FPS
+                  // 0.06/сек > скорости любого врага (пыль ~0.037/сек)
+                  const rollback = 0.06 * deltaTime / 1000;
                   return {
                     ...enemy,
-                    progress: Math.max(0, enemy.progress - 0.0005),
+                    progress: Math.max(0, enemy.progress - rollback),
                   };
                 }
               }
@@ -1723,7 +1826,6 @@ export default function TribologyLabPage() {
 
   // Начало перетаскивания из магазина
   const handleShopDragStart = (e: React.MouseEvent | React.TouchEvent, index: number) => {
-    // Блокировка на паузе
     if (isPaused) return;
 
     const moduleType = shop[index];
@@ -1746,7 +1848,6 @@ export default function TribologyLabPage() {
 
   // Начало перетаскивания с поля
   const handleFieldDragStart = (e: React.MouseEvent | React.TouchEvent, module: Module) => {
-    // Блокировка на паузе
     if (isPaused) return;
 
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -1768,6 +1869,9 @@ export default function TribologyLabPage() {
     if (!dragState) return;
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
+      if ('touches' in e) {
+        e.preventDefault();
+      }
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       setDragState(prev => prev ? { ...prev, currentX: clientX, currentY: clientY } : null);
@@ -1787,7 +1891,6 @@ export default function TribologyLabPage() {
           const config = MODULES[dragState.moduleType];
 
           if (!existingModule) {
-            // Пустая ячейка — размещаем новый модуль
             if (gold >= config.basePrice) {
               const newModule: Module = {
                 id: `${dragState.moduleType}-${Date.now()}`,
@@ -1802,11 +1905,9 @@ export default function TribologyLabPage() {
             }
           } else if (
             existingModule.type === dragState.moduleType &&
-            existingModule.level === 1 &&  // Из магазина идёт уровень 1, мёрж только с уровнем 1!
+            existingModule.level === 1 &&
             gold >= config.basePrice
           ) {
-            // Такой же тип на поле — мерж из магазина!
-            // Анимация слияния
             setMergingCell({ x: targetCell.x, y: targetCell.y });
             setTimeout(() => setMergingCell(null), 400);
 
@@ -1816,17 +1917,14 @@ export default function TribologyLabPage() {
             setGold(prev => prev - config.basePrice);
           }
         } else if (dragState.type === 'field' && dragState.moduleId) {
-          // ХАРДКОР: модули с поля НЕЛЬЗЯ перемещать, только merge!
           const draggedModule = modules.find(m => m.id === dragState.moduleId);
           if (draggedModule && existingModule) {
-            // Merge: только на такой же модуль того же уровня
             if (
               existingModule.id !== dragState.moduleId &&
               existingModule.type === draggedModule.type &&
               existingModule.level === draggedModule.level &&
               existingModule.level < 5
             ) {
-              // Анимация слияния
               setMergingCell({ x: targetCell.x, y: targetCell.y });
               setTimeout(() => setMergingCell(null), 400);
 
@@ -1835,9 +1933,7 @@ export default function TribologyLabPage() {
                 .map(m => m.id === existingModule.id ? { ...m, level: m.level + 1 } : m)
               );
             }
-            // Иначе (другой тип/уровень) — модуль просто вернётся на место
           }
-          // Если !existingModule (пустая ячейка) — модуль вернётся на место
         }
       }
 
@@ -1846,7 +1942,7 @@ export default function TribologyLabPage() {
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleEnd);
 
     return () => {
@@ -1978,10 +2074,12 @@ export default function TribologyLabPage() {
   // screen === 'game' — основной игровой интерфейс
   return (
     <div
-      className="flex flex-col items-center gap-3 py-4"
+      className="flex flex-col items-center gap-2 sm:gap-3 py-2 sm:py-4"
       style={{
         position: 'relative',
         minHeight: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}
     >
       {/* SVG фон — приглушённая гексагональная сетка (ПОД всем контентом) */}
@@ -2126,16 +2224,16 @@ export default function TribologyLabPage() {
       </div>
 
       {/* Заголовок с кнопкой выхода */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={handleOpenExitModal}
-          className="flex items-center gap-1.5 rounded transition-all"
+          className="flex items-center gap-1 sm:gap-1.5 rounded transition-all"
           style={{
-            padding: '3px 8px',
+            padding: '2px 6px',
             background: 'linear-gradient(145deg, #1a1f26 0%, #161b22 100%)',
             border: '1px solid #30363d',
             color: '#9CA3AF',
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 500,
           }}
           onMouseEnter={(e) => {
@@ -2153,13 +2251,13 @@ export default function TribologyLabPage() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
-          <span>Выйти</span>
+          <span className="hidden sm:inline">Выйти</span>
         </button>
-        <h1 className="text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
+        <h1 className="text-xl sm:text-3xl font-bold text-amber-400">⚙️ Трибо-Лаб</h1>
       </div>
 
       {/* Статус-бар */}
-      <div className="flex items-center gap-6 text-xl mb-2">
+      <div className="flex items-center gap-3 sm:gap-6 text-base sm:text-xl mb-1 sm:mb-2">
         <div className="flex items-center gap-2">
           <span className="text-gray-400">Волна:</span>
           <span className="font-bold text-white">{wave}</span>
@@ -2294,9 +2392,9 @@ export default function TribologyLabPage() {
       </div>
 
       {/* DEBUG: Панель отладки */}
-      <div className="flex items-center gap-3 text-sm mb-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
+      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm mb-1 sm:mb-2 bg-gray-800/50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg">
         <span className="text-gray-400">⚡ Скорость игры:</span>
-        {[1, 3, 5, 10].map(speed => (
+        {[1, 5, 10, 15].map(speed => (
           <button
             key={speed}
             onClick={() => setGameSpeed(speed)}
@@ -2305,8 +2403,8 @@ export default function TribologyLabPage() {
             {speed}x
           </button>
         ))}
-        {/* Кнопки волн скрыты по умолчанию, видны только в devMode */}
-        {devMode && (
+        {/* Кнопки волн скрыты по умолчанию, видны только в devMode (только dev) */}
+        {process.env.NODE_ENV === 'development' && devMode && (
           <>
             <span className="text-gray-500 mx-2">|</span>
             <span className="text-gray-400">Волна:</span>
@@ -3638,8 +3736,8 @@ export default function TribologyLabPage() {
                   return dx <= 1 && dy <= 1 && !(dx === 0 && dy === 0);
                 })();
 
-                // DEV: Подсветка для выбранного модуля
-                const isDevTarget = devMode && selectedDevModule && !module;
+                // DEV: Подсветка для выбранного модуля (только dev)
+                const isDevTarget = process.env.NODE_ENV === 'development' && devMode && selectedDevModule && !module;
 
                 return (
                   <div
@@ -3658,7 +3756,7 @@ export default function TribologyLabPage() {
                       boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.9), inset 0 -1px 0 rgba(255,255,255,0.02)',
                     }}
                     onClick={() => {
-                      if (devMode && selectedDevModule) {
+                      if (process.env.NODE_ENV === 'development' && devMode && selectedDevModule) {
                         devPlaceModule(x, y);
                       }
                     }}
@@ -3666,6 +3764,7 @@ export default function TribologyLabPage() {
                     {module && !isDraggingThis && (
                       <div
                         className={`absolute inset-0 cursor-grab active:cursor-grabbing ${isMerging ? 'animate-merge' : ''}`}
+                        style={{ touchAction: 'none' }}
                         onMouseDown={(e) => handleFieldDragStart(e, module)}
                         onTouchStart={(e) => handleFieldDragStart(e, module)}
                       >
@@ -3698,7 +3797,28 @@ export default function TribologyLabPage() {
         >
           {attackEffects.map(effect => {
             const progress = effect.progress;
-            const midX = (effect.fromX + effect.toX) / 2;
+
+            // Находим врага по targetId и берём его ТЕКУЩУЮ позицию
+            // Это фиксит рассинхрон анимации на высоких скоростях
+            let toX: number;
+            let toY: number;
+            if (effect.targetId) {
+              const targetEnemy = enemies.find(e => e.id === effect.targetId);
+              if (targetEnemy) {
+                const targetConfig = ENEMIES[targetEnemy.type];
+                const currentPos = getPositionOnPath(enemyPath, targetEnemy.progress, targetConfig.oscillation);
+                toX = currentPos.x;
+                toY = currentPos.y;
+              } else {
+                toX = effect.toX;
+                toY = effect.toY;
+              }
+            } else {
+              toX = effect.toX;
+              toY = effect.toY;
+            }
+
+            const midX = (effect.fromX + toX) / 2;
 
             // МАГНИТ — силовые линии (дуги)
             if (effect.moduleType === 'magnet') {
@@ -3706,7 +3826,7 @@ export default function TribologyLabPage() {
                 <g key={effect.id} opacity={1 - progress * 0.7}>
                   {/* Главная дуга */}
                   <path
-                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY - 30} ${effect.toX} ${effect.toY}`}
+                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY - 30} ${toX} ${toY}`}
                     fill="none"
                     stroke="#6B4CD6"
                     strokeWidth={2}
@@ -3714,7 +3834,7 @@ export default function TribologyLabPage() {
                   />
                   {/* Вторая дуга (снизу) */}
                   <path
-                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY + 25} ${effect.toX} ${effect.toY}`}
+                    d={`M ${effect.fromX} ${effect.fromY} Q ${midX} ${effect.fromY + 25} ${toX} ${toY}`}
                     fill="none"
                     stroke="#6B4CD6"
                     strokeWidth={1.5}
@@ -3722,15 +3842,15 @@ export default function TribologyLabPage() {
                     opacity={0.5}
                   />
                   {/* Точка на цели */}
-                  <circle cx={effect.toX} cy={effect.toY} r={5} fill="#6B4CD6" opacity={0.6} />
+                  <circle cx={toX} cy={toY} r={5} fill="#6B4CD6" opacity={0.6} />
                 </g>
               );
             }
 
             // ОХЛАДИТЕЛЬ — холодный снаряд
             if (effect.moduleType === 'cooler') {
-              const x = effect.fromX + (effect.toX - effect.fromX) * progress;
-              const y = effect.fromY + (effect.toY - effect.fromY) * progress;
+              const x = effect.fromX + (toX - effect.fromX) * progress;
+              const y = effect.fromY + (toY - effect.fromY) * progress;
               return (
                 <g key={effect.id}>
                   {/* Ледяной след */}
@@ -3775,8 +3895,8 @@ export default function TribologyLabPage() {
                     <g opacity={1 - (progress - 0.2) * 1.2}>
                       {/* Внешнее кольцо */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={5 + (progress - 0.2) * 40}
                         fill="none"
                         stroke="#C09A1E"
@@ -3784,8 +3904,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Внутреннее кольцо */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={3 + (progress - 0.2) * 25}
                         fill="none"
                         stroke="#C09A1E"
@@ -3794,8 +3914,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Микросетка (фильтрация) */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={12}
                         fill="none"
                         stroke="#C09A1E"
@@ -3809,8 +3929,8 @@ export default function TribologyLabPage() {
                         return (
                           <circle
                             key={i}
-                            cx={effect.toX + Math.cos(angle * Math.PI / 180) * Math.max(0, dist)}
-                            cy={effect.toY + Math.sin(angle * Math.PI / 180) * Math.max(0, dist)}
+                            cx={toX + Math.cos(angle * Math.PI / 180) * Math.max(0, dist)}
+                            cy={toY + Math.sin(angle * Math.PI / 180) * Math.max(0, dist)}
                             r={2}
                             fill="#8B7355"
                             opacity={Math.max(0, 1 - (progress - 0.2) * 1.2)}
@@ -3831,8 +3951,8 @@ export default function TribologyLabPage() {
                   {progress < 0.5 && (
                     <g>
                       <ellipse
-                        cx={effect.fromX + (effect.toX - effect.fromX) * progress * 2}
-                        cy={effect.fromY + (effect.toY - effect.fromY) * progress * 2}
+                        cx={effect.fromX + (toX - effect.fromX) * progress * 2}
+                        cy={effect.fromY + (toY - effect.fromY) * progress * 2}
                         rx={4}
                         ry={6}
                         fill="#8845C7"
@@ -3840,8 +3960,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Блик */}
                       <ellipse
-                        cx={effect.fromX + (effect.toX - effect.fromX) * progress * 2 - 1}
-                        cy={effect.fromY + (effect.toY - effect.fromY) * progress * 2 - 2}
+                        cx={effect.fromX + (toX - effect.fromX) * progress * 2 - 1}
+                        cy={effect.fromY + (toY - effect.fromY) * progress * 2 - 2}
                         rx={1.5}
                         ry={2}
                         fill="#FFFFFF"
@@ -3855,24 +3975,24 @@ export default function TribologyLabPage() {
                     <g opacity={Math.max(0, 1 - (progress - 0.4) * 1.5)}>
                       {/* Масляное пятно */}
                       <ellipse
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         rx={8 + (progress - 0.4) * 35}
                         ry={5 + (progress - 0.4) * 18}
                         fill="rgba(136, 69, 199, 0.35)"
                       />
                       {/* Глянцевый блик */}
                       <ellipse
-                        cx={effect.toX - 5}
-                        cy={effect.toY - 3}
+                        cx={toX - 5}
+                        cy={toY - 3}
                         rx={4 + (progress - 0.4) * 12}
                         ry={2 + (progress - 0.4) * 6}
                         fill="rgba(255, 255, 255, 0.3)"
                       />
                       {/* Контур пятна */}
                       <ellipse
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         rx={8 + (progress - 0.4) * 35}
                         ry={5 + (progress - 0.4) * 18}
                         fill="none"
@@ -3918,16 +4038,16 @@ export default function TribologyLabPage() {
                     <g opacity={Math.max(0, 1 - (progress - 0.2) * 1.1)}>
                       {/* Концентрические кольца ОТ ВРАГА */}
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={10 + (progress - 0.2) * 60}
                         fill="none"
                         stroke="#24A899"
                         strokeWidth={2}
                       />
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={5 + (progress - 0.2) * 40}
                         fill="none"
                         stroke="#24A899"
@@ -3935,8 +4055,8 @@ export default function TribologyLabPage() {
                         opacity={0.7}
                       />
                       <circle
-                        cx={effect.toX}
-                        cy={effect.toY}
+                        cx={toX}
+                        cy={toY}
                         r={3 + (progress - 0.2) * 20}
                         fill="none"
                         stroke="#24A899"
@@ -3951,8 +4071,8 @@ export default function TribologyLabPage() {
                         return (
                           <circle
                             key={i}
-                            cx={effect.toX + Math.cos(angle * Math.PI / 180) * dist}
-                            cy={effect.toY + Math.sin(angle * Math.PI / 180) * dist}
+                            cx={toX + Math.cos(angle * Math.PI / 180) * dist}
+                            cy={toY + Math.sin(angle * Math.PI / 180) * dist}
                             r={size * Math.max(0, 1 - (progress - 0.2))}
                             fill="#24A899"
                             opacity={0.6 * Math.max(0, 1 - (progress - 0.2))}
@@ -3973,8 +4093,8 @@ export default function TribologyLabPage() {
                   <line
                     x1={effect.fromX}
                     y1={effect.fromY}
-                    x2={effect.toX}
-                    y2={effect.toY}
+                    x2={toX}
+                    y2={toY}
                     stroke="#FF6666"
                     strokeWidth={5}
                     opacity={0.3}
@@ -3983,14 +4103,14 @@ export default function TribologyLabPage() {
                   <line
                     x1={effect.fromX}
                     y1={effect.fromY}
-                    x2={effect.toX}
-                    y2={effect.toY}
+                    x2={toX}
+                    y2={toY}
                     stroke="#BF3636"
                     strokeWidth={2}
                   />
                   {/* Точка фокуса (на цели) */}
-                  <circle cx={effect.toX} cy={effect.toY} r={8} fill="#FF4444" opacity={0.5} />
-                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#FFFFFF" opacity={0.8} />
+                  <circle cx={toX} cy={toY} r={8} fill="#FF4444" opacity={0.5} />
+                  <circle cx={toX} cy={toY} r={4} fill="#FFFFFF" opacity={0.8} />
                 </g>
               );
             }
@@ -4024,8 +4144,8 @@ export default function TribologyLabPage() {
 
             // ДЕЭМУЛЬГАТОР — конусная струя осушения
             if (effect.moduleType === 'demulsifier') {
-              const dx = effect.toX - effect.fromX;
-              const dy = effect.toY - effect.fromY;
+              const dx = toX - effect.fromX;
+              const dy = toY - effect.fromY;
               const dist = Math.sqrt(dx * dx + dy * dy);
               const angle = Math.atan2(dy, dx) * 180 / Math.PI;
 
@@ -4052,19 +4172,7 @@ export default function TribologyLabPage() {
             // АНАЛИЗАТОР — упрощённая анимация "пинг + метка" (2 фазы)
             if (effect.moduleType === 'analyzer') {
               const pingDuration = 0.14; // Фаза 1: быстрый пинг
-
-              // Получаем ТЕКУЩУЮ позицию врага по targetId (прицел следует за ним)
-              let targetX = effect.toX;
-              let targetY = effect.toY;
-              if (effect.targetId) {
-                const targetEnemy = enemies.find(e => e.id === effect.targetId);
-                if (targetEnemy) {
-                  const targetConfig = ENEMIES[targetEnemy.type];
-                  const livePos = getPositionOnPath(enemyPath, targetEnemy.progress, targetConfig.oscillation);
-                  targetX = livePos.x;
-                  targetY = livePos.y;
-                }
-              }
+              // Используем общие toX/toY (уже отслеживают врага)
 
               return (
                 <g key={effect.id}>
@@ -4074,8 +4182,8 @@ export default function TribologyLabPage() {
                       <line
                         x1={effect.fromX}
                         y1={effect.fromY}
-                        x2={targetX}
-                        y2={targetY}
+                        x2={toX}
+                        y2={toY}
                         stroke="#e0e8f0"
                         strokeWidth={2}
                         opacity={0.8 * (1 - progress / pingDuration)}
@@ -4083,8 +4191,8 @@ export default function TribologyLabPage() {
                       />
                       {/* Вспышка на враге */}
                       <circle
-                        cx={targetX}
-                        cy={targetY}
+                        cx={toX}
+                        cy={toY}
                         r={2 + (progress / pingDuration) * 3}
                         fill="#e0e8f0"
                         opacity={0.9 * (1 - progress / pingDuration)}
@@ -4095,7 +4203,7 @@ export default function TribologyLabPage() {
                   {/* Фаза 2: Прицел (метка) — слегка "дышит" */}
                   {progress >= pingDuration && (
                     <g
-                      transform={`translate(${Math.round(targetX)}, ${Math.round(targetY)})`}
+                      transform={`translate(${Math.round(toX)}, ${Math.round(toY)})`}
                       opacity={0.75 + Math.sin(progress * 10) * 0.1}
                     >
                       {/* Круг прицела */}
@@ -4115,8 +4223,8 @@ export default function TribologyLabPage() {
 
             // ЦЕНТРИФУГА — ударный импульс
             if (effect.moduleType === 'centrifuge') {
-              const dx = effect.toX - effect.fromX;
-              const dy = effect.toY - effect.fromY;
+              const dx = toX - effect.fromX;
+              const dy = toY - effect.fromY;
               const pushAngle = Math.atan2(dy, dx) + Math.PI; // назад от модуля
               const enemyRadius = 15;
 
@@ -4124,8 +4232,8 @@ export default function TribologyLabPage() {
                 <g key={effect.id}>
                   {/* Ударное кольцо расширяется */}
                   <circle
-                    cx={effect.toX}
-                    cy={effect.toY}
+                    cx={toX}
+                    cy={toY}
                     r={enemyRadius * 1.1 + progress * enemyRadius * 0.6}
                     fill="none"
                     stroke="#FF9F43"
@@ -4140,10 +4248,10 @@ export default function TribologyLabPage() {
                     return (
                       <line
                         key={i}
-                        x1={effect.toX + Math.cos(lineAngle) * dist}
-                        y1={effect.toY + Math.sin(lineAngle) * dist}
-                        x2={effect.toX + Math.cos(lineAngle) * (dist + len)}
-                        y2={effect.toY + Math.sin(lineAngle) * (dist + len)}
+                        x1={toX + Math.cos(lineAngle) * dist}
+                        y1={toY + Math.sin(lineAngle) * dist}
+                        x2={toX + Math.cos(lineAngle) * (dist + len)}
+                        y2={toY + Math.sin(lineAngle) * (dist + len)}
                         stroke="#FF9F43"
                         strokeWidth={2.5}
                         strokeLinecap="round"
@@ -4161,8 +4269,8 @@ export default function TribologyLabPage() {
                     return (
                       <circle
                         key={n}
-                        cx={effect.toX + Math.cos(a) * r}
-                        cy={effect.toY + Math.sin(a) * r}
+                        cx={toX + Math.cos(a) * r}
+                        cy={toY + Math.sin(a) * r}
                         r={1.5 + (n % 2) * 0.5}
                         fill="#FF9F43"
                         opacity={0.5 - progress * 0.45}
@@ -4195,7 +4303,7 @@ export default function TribologyLabPage() {
                 <g key={effect.id} opacity={1 - progress * 0.6}>
                   {/* Свечение */}
                   <path
-                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 5)}
+                    d={generateLightning(effect.fromX, effect.fromY, toX, toY, 5)}
                     fill="none"
                     stroke="#fde047"
                     strokeWidth={6}
@@ -4204,7 +4312,7 @@ export default function TribologyLabPage() {
                   />
                   {/* Основная молния */}
                   <path
-                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 6)}
+                    d={generateLightning(effect.fromX, effect.fromY, toX, toY, 6)}
                     fill="none"
                     stroke="#fde047"
                     strokeWidth={3}
@@ -4212,15 +4320,15 @@ export default function TribologyLabPage() {
                   />
                   {/* Ядро молнии */}
                   <path
-                    d={generateLightning(effect.fromX, effect.fromY, effect.toX, effect.toY, 4)}
+                    d={generateLightning(effect.fromX, effect.fromY, toX, toY, 4)}
                     fill="none"
                     stroke="#ffffff"
                     strokeWidth={1.5}
                     opacity={0.8}
                   />
                   {/* Искра на цели */}
-                  <circle cx={effect.toX} cy={effect.toY} r={8 - progress * 5} fill="#fde047" opacity={0.7} />
-                  <circle cx={effect.toX} cy={effect.toY} r={4} fill="#ffffff" opacity={0.9 - progress * 0.5} />
+                  <circle cx={toX} cy={toY} r={8 - progress * 5} fill="#fde047" opacity={0.7} />
+                  <circle cx={toX} cy={toY} r={4} fill="#ffffff" opacity={0.9 - progress * 0.5} />
                 </g>
               );
             }
@@ -4562,7 +4670,7 @@ export default function TribologyLabPage() {
           <WaveOverlay
             wave={wave}
             mode={gameMode}
-            labStandId={labStandId.current}
+            labStandId={labStandId}
             onComplete={startWaveActual}
             gridX={gridStartX}
             gridY={gridStartY}
@@ -4598,7 +4706,6 @@ export default function TribologyLabPage() {
       {/* Подсказка */}
       <p className="text-gray-500 text-sm text-center max-w-lg mt-2">
         Перетащи модуль из магазина на поле. Два одинаковых модуля одного уровня можно объединить.
-        <span className="text-gray-600 ml-2">(D — dev-панель)</span>
       </p>
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -4756,7 +4863,7 @@ export default function TribologyLabPage() {
             <div className="flex items-center justify-between">
               <span className="text-gray-400 text-sm">Скорость игры: {gameSpeed}x</span>
               <div className="flex gap-1">
-                {[1, 2, 5, 10].map(speed => (
+                {[1, 5, 10, 15].map(speed => (
                   <button
                     key={speed}
                     onClick={() => setGameSpeed(speed)}
@@ -4907,6 +5014,7 @@ export default function TribologyLabPage() {
           setPlayerNicknameState(value);
           setPlayerNickname(value);
         }}
+        onSubmitResult={submitCurrentGameResult}
         onRestart={handleGameOverRestart}
         onMainMenu={handleGameOverMainMenu}
         onShowLeaderboard={() => setShowLeaderboard(true)}

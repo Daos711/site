@@ -179,10 +179,10 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     synergies: [],
     notes: [
       'AOE радиус: 60 px (L1) → 96 px (L5)',
-      'Откат: 8% (L1) → 16% (L5)',
+      'Откат: 6% (L1) → 10% (L5)',
       'Элитные: 50% эффективности',
       'Боссы: 20% эффективности',
-      'Кулдаун между откатами: 1.5 сек',
+      'Иммунитет к откату: 2.5 сек',
     ],
   },
   barrier: {
@@ -250,13 +250,14 @@ export const HANDBOOK_MODULES: Record<ModuleType, HandbookModuleData> = {
     name: 'Ультразвук',
     role: 'DPS',
     attackType: 'aoe',
-    description: 'Урон по площади. +20% по пыльным врагам.',
+    description: 'Урон по площади. +20% по пыльным. Бонус урона от скопления врагов.',
     keyEffect: null,
     synergies: [],
     notes: [
       'Радиус поражения: 120 px (L1) → 192 px (L5)',
       '+20% урона по пыльным',
       'Урон падает с расстоянием (мин. 50%)',
+      '+15% урона за каждого врага в зоне (макс. +75%)',
     ],
   },
   demulsifier: {

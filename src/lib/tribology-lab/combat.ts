@@ -630,8 +630,8 @@ export function calculateDamage(
 
   // Ультразвук: бонус от количества врагов
   if (module.type === 'ultrasonic' && enemiesInAoe > 1) {
-    // +10% за каждого врага сверх первого, максимум +50%
-    const aoeBonus = Math.min((enemiesInAoe - 1) * 0.1, 0.5);
+    // +15% за каждого врага сверх первого, максимум +75%
+    const aoeBonus = Math.min((enemiesInAoe - 1) * 0.15, 0.75);
     damage *= (1 + aoeBonus);
   }
 
@@ -841,11 +841,15 @@ export function processModuleAttack(
     const scaledDuration = getEffectDuration(baseDuration, module.level);
     const barrierId = `barrier-${module.id}-${currentTime}`;
 
+    // pathProgress = максимальный прогресс среди врагов перед барьером (ближайший к барьеру)
+    const barrierPathProgress = Math.max(...enemiesReadyForBarrier.map(e => e.progress));
+
     const newBarrier: ActiveBarrier = {
       id: barrierId,
       moduleId: module.id,
       x: barrierPos.x,
       y: barrierPos.y,
+      pathProgress: barrierPathProgress,
       duration: scaledDuration,
       maxDuration: scaledDuration,
       createdAt: currentTime,
@@ -980,10 +984,10 @@ export function processModuleAttack(
             const isBoss = target.type.startsWith('boss_');
             const isElite = ['abrasive', 'metal', 'corrosion'].includes(target.type);
 
-            // Базовый откат 8%, +2% за уровень (L1=8%, L2=10%, L3=12%, L4=14%, L5=16%)
-            const baseStrength = config.effectStrength || 8;
-            const scaledStrength = getEffectStrength(baseStrength, module.level);
-            let pushAmount = scaledStrength / 100; // В десятичную дробь
+            // Базовый откат 6%, +1% за уровень (L1=6%, L2=7%, L3=8%, L4=9%, L5=10%)
+            const baseStrength = config.effectStrength || 6;
+            const pushPercent = baseStrength + (module.level - 1); // +1% за уровень
+            let pushAmount = pushPercent / 100;
 
             // Модификаторы для сильных врагов
             if (isElite) pushAmount *= 0.5;  // 50% эффективности
@@ -995,7 +999,7 @@ export function processModuleAttack(
                 ...updatedEnemies[index].effects,
                 // pushback: strength в процентах * 1000 для точности
                 { type: 'pushback' as EffectType, duration: 400, strength: pushAmount * 1000 },
-                { type: 'antiPush' as EffectType, duration: 1500, strength: 0 } // 1.5 сек кулдаун (было 2.5)
+                { type: 'antiPush' as EffectType, duration: 2500, strength: 0 } // 2.5 сек кулдаун
               ]
             };
           }

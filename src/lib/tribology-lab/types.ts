@@ -35,6 +35,7 @@ export interface ActiveBarrier {
   moduleId: string;
   x: number;           // позиция по X на КАНАЛЕ (не модуля!)
   y: number;           // позиция по Y на КАНАЛЕ (не модуля!)
+  pathProgress: number; // позиция на пути (0-1) для блокировки врагов
   duration: number;    // оставшаяся длительность
   maxDuration: number; // изначальная длительность
   createdAt: number;   // timestamp создания
@@ -263,7 +264,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     id: 'ultrasonic',
     name: 'Ультразвук',
     icon: '📡',
-    basePrice: 100,
+    basePrice: 80,
     baseDamage: 10,
     range: 200,       // большой радиус для AOE
     attackSpeed: 0.4,
@@ -272,7 +273,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     attackType: 'aoe',
     aoeRadius: 120,   // базовый радиус AOE (было 80 → теперь 120 → 138 → 159 → 183 → 210px)
     tagBonuses: { dusty: 1.2 },  // +20% по пыльным
-    // Особенность: урон растёт от количества врагов (+10% за каждого, макс +50%)
+    // Особенность: урон растёт от количества врагов (+15% за каждого, макс +75%)
   },
   laser: {
     id: 'laser',
@@ -347,7 +348,7 @@ export const MODULES: Record<ModuleType, ModuleConfig> = {
     description: 'Откатывает врагов в радиусе 60px',
     attackType: 'aoe',
     aoeRadius: 60,     // радиус AOE отката
-    effectStrength: 8, // Базовый откат 8%, масштабируется с уровнем
+    effectStrength: 6, // Базовый откат 6%, +1% за уровень (L5=10%)
   },
   electrostatic: {
     id: 'electrostatic',

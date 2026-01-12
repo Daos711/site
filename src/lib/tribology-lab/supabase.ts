@@ -323,9 +323,13 @@ export async function getDailyLeaderboard(date?: string, limit = 100): Promise<L
   const cached = getCached<LeaderboardEntry[]>(cacheKey);
   if (cached) return cached;
 
-  // Загружаем достаточно записей для Daily
+  // Получаем ожидаемый набор дня и его ключ
+  const expectedDeck = generateDailyDeckFromDate(targetDate);
+  const expectedDeckKey = generateDeckKey(expectedDeck);
+
+  // Загружаем только записи с правильным набором дня
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
+    `${SUPABASE_URL}/rest/v1/tribolab_runs?mode=eq.daily&daily_date=eq.${targetDate}&deck_key=eq.${encodeURIComponent(expectedDeckKey)}&balance_version=eq.${BALANCE_VERSION}&select=*&order=wave_reached.desc,kills.desc,run_time_ms.asc&limit=1000`,
     { headers: SUPABASE_HEADERS }
   );
 
@@ -417,6 +421,17 @@ function seededRandom(seed: number): () => number {
   };
 }
 
+// Fisher-Yates shuffle - детерминированное перемешивание
+// В отличие от .sort(() => random() - 0.5), работает одинаково во всех браузерах
+function shuffleArray<T>(array: T[], random: () => number): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 // Генерация набора по правилам: 2 DPS + 1 Control + 2 Support
 // Алгоритм ДОЛЖЕН совпадать с MainMenu для консистентности!
 function generateDailyDeckFromDate(dateStr: string): string[] {
@@ -426,9 +441,9 @@ function generateDailyDeckFromDate(dateStr: string): string[] {
 
   const random = seededRandom(seed);
 
-  const shuffledDps = [...MODULE_ROLES.dps].sort(() => random() - 0.5);
-  const shuffledControl = [...MODULE_ROLES.control].sort(() => random() - 0.5);
-  const shuffledSupport = [...MODULE_ROLES.support].sort(() => random() - 0.5);
+  const shuffledDps = shuffleArray([...MODULE_ROLES.dps], random);
+  const shuffledControl = shuffleArray([...MODULE_ROLES.control], random);
+  const shuffledSupport = shuffleArray([...MODULE_ROLES.support], random);
 
   return [
     shuffledDps[0],      // DPS 1
