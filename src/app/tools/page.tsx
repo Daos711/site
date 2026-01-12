@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route } from "lucide-react";
+import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route, Sparkles } from "lucide-react";
 
 const tools = [
   // === Готовые ===
@@ -77,6 +77,14 @@ const tools = [
     description: "A*, Dijkstra, BFS, DFS — алгоритмы поиска пути на сетке с препятствиями.",
     icon: Route,
     href: "/tools/pathfinding",
+    status: "prototype" as const,
+  },
+  {
+    id: "nbody",
+    title: "N тел",
+    description: "Гравитационная симуляция: орбиты, двойные звёзды, хаос.",
+    icon: Sparkles,
+    href: "/tools/nbody",
     status: "prototype" as const,
   },
 ];
