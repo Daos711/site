@@ -199,8 +199,8 @@ const fragmentShaderSource = `
       float log_zn = log(max(magSq, 1.0)) / 2.0;
       float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
       float smoothIter = iter + 1.0 - nu;
-      // Стабильная цветовая шкала: t = smoothIter / maxIter
-      float t = clamp(smoothIter / maxIter, 0.0, 1.0);
+      // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
+      float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
@@ -505,8 +505,8 @@ const fragmentShaderSourceHP_main_WebGL1 = `
       float log_zn = log(max(magSq, 1.0)) / 2.0;
       float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
       float smoothIter = iter + 1.0 - nu;
-      // Стабильная цветовая шкала: t = smoothIter / maxIter
-      float t = clamp(smoothIter / maxIter, 0.0, 1.0);
+      // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
+      float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
@@ -664,8 +664,8 @@ const fragmentShaderSourceHP_main_WebGL2 = `
       float log_zn = log(max(magSq, 1.0)) / 2.0;
       float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
       float smoothIter = iter + 1.0 - nu;
-      // Стабильная цветовая шкала: t = smoothIter / maxIter
-      float t = clamp(smoothIter / maxIter, 0.0, 1.0);
+      // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
+      float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
       vec3 color = palette(t, u_colorScheme);
       fragColor = vec4(color, 1.0);
     }
@@ -889,12 +889,12 @@ void main() {
     float magSq = fullX * fullX + fullY * fullY;
 
     // Safety clamps для log
-    float log_zn = log(max(magSq, 1.0)) / 2.0;
+    float log_zn = log(max(magSq, 4.0)) / 2.0;
     float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
     float smoothIter = iter + 1.0 - nu;
 
-    // Стабильная цветовая шкала: t = smoothIter / maxIter
-    float t = clamp(smoothIter / maxIter, 0.0, 1.0);
+    // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
+    float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
 
     vec3 color = palette(t, u_colorScheme);
     fragColor = vec4(color, 1.0);
@@ -948,6 +948,9 @@ export default function FractalsPage() {
 
   // Лимит зума зависит от режима точности
   const maxZoom = precisionMode === "ultra" ? 1e100 : (precisionMode === "high" ? 1e14 : 1e7);
+
+  // ФИКСИРОВАННАЯ длина орбиты для Ultra режима - НЕ зависит от zoom!
+  const FIXED_ORBIT_LENGTH = 2000;
 
   // Инициализация WebGL
   useEffect(() => {
@@ -1131,7 +1134,8 @@ export default function FractalsPage() {
     console.log('Computing reference orbit for center:', centerXStr, centerYStr);
     const startTime = performance.now();
 
-    const orbit = computeReferenceOrbit(centerXStr, centerYStr, Math.min(4000, effectiveIterations));
+    // ФИКСИРОВАННАЯ длина орбиты - НЕ зависит от zoom/effectiveIterations!
+    const orbit = computeReferenceOrbit(centerXStr, centerYStr, FIXED_ORBIT_LENGTH);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     uploadReferenceOrbit(orbit);
 
@@ -1139,7 +1143,9 @@ export default function FractalsPage() {
 
     const elapsed = performance.now() - startTime;
     console.log(`Reference orbit computed in ${elapsed.toFixed(0)}ms, escaped: ${orbit.escaped} at iter ${orbit.escapeIter}`);
-  }, [precisionMode, center.x, center.y, fractalType, effectiveIterations, uploadReferenceOrbit]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [precisionMode, center.x, center.y, fractalType, uploadReferenceOrbit]);
+  // БЕЗ effectiveIterations! Орбита фиксированной длины
 
   // Рендеринг
   const render = useCallback(() => {

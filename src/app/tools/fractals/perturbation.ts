@@ -28,28 +28,38 @@ export function computeReferenceOrbit(
   let zxD = new Decimal(0);
   let zyD = new Decimal(0);
 
-  let escaped = false;
   let escapeIter = maxIter;
 
   for (let i = 0; i < maxIter; i++) {
-    // Сохраняем текущее z как float для GPU
-    zx.push(zxD.toNumber());
-    zy.push(zyD.toNumber());
+    const zxNum = zxD.toNumber();
+    const zyNum = zyD.toNumber();
+
+    // Проверка на Infinity/NaN ПЕРЕД добавлением
+    if (!isFinite(zxNum) || !isFinite(zyNum)) {
+      escapeIter = i;
+      break;
+    }
+
+    zx.push(zxNum);
+    zy.push(zyNum);
 
     // z = z² + c в высокой точности
-    // НЕ выходим при escape - считаем ВСЕ итерации для стабильной длины орбиты
     const zx2 = zxD.mul(zxD);
     const zy2 = zyD.mul(zyD);
-    const zxy = zxD.mul(zyD);
-    const newZx = zx2.minus(zy2).plus(cx);
-    const newZy = zxy.mul(2).plus(cy);
+    const magSq = zx2.plus(zy2);
 
-    zxD = newZx;
-    zyD = newZy;
+    // Выходим если убежало (bailout = 1e6 для безопасности)
+    if (magSq.gt(1e6)) {
+      escapeIter = i + 1;
+      break;
+    }
+
+    const zxy = zxD.mul(zyD);
+    zxD = zx2.minus(zy2).plus(cx);
+    zyD = zxy.mul(2).plus(cy);
   }
 
-  // Орбита ВСЕГДА имеет длину maxIter
-  return { zx, zy, escaped: false, escapeIter: maxIter };
+  return { zx, zy, escaped: escapeIter < maxIter, escapeIter };
 }
 
 /**
