@@ -199,7 +199,7 @@ const fragmentShaderSource = `
   }
 `;
 
-// High Precision шейдер с Double-Double арифметикой (WebGL1 - Veltkamp-Dekker)
+// High Precision шейдер с Double-Double арифметикой (WebGL1 - Veltkamp-Dekker, без fma)
 const fragmentShaderSourceHP_WebGL1 = `
   precision highp float;
 
@@ -242,7 +242,7 @@ const fragmentShaderSourceHP_WebGL1 = `
 
   const float SPLIT = 4097.0; // 2^12 + 1
 
-  // twoProd - используем массив чтобы предотвратить FMA оптимизацию
+  // twoProd Veltkamp-Dekker (WebGL1 не имеет fma)
   vec2 twoProd(float a, float b) {
     float t[2];
     float p = a * b;
@@ -263,8 +263,7 @@ const fragmentShaderSourceHP_WebGL1 = `
   vec2 dd_mul(vec2 a, vec2 b) {
     vec2 p = twoProd(a.x, b.x);
     float e = a.x * b.y + a.y * b.x + a.y * b.y + p.y;
-    vec2 s = twoSum(p.x, e);
-    return vec2(s.x, s.y);
+    return quickTwoSum(p.x, e);
   }
 
   // DD * float
@@ -319,35 +318,25 @@ const fragmentShaderSourceHP_WebGL2_prefix = `#version 300 es
 
   const float SPLIT = 4097.0; // 2^12 + 1
 
-  // twoProd - используем массив чтобы предотвратить FMA оптимизацию
+  // twoProd с использованием fma() - правильный способ на GPU с FMA
+  // fma(a, b, c) = a*b + c с одним округлением в конце
   vec2 twoProd(float a, float b) {
-    float t[2];
     float p = a * b;
-    t[0] = a * SPLIT;
-    float a1 = t[0];
-    t[1] = a1 - a;
-    float a_hi = a1 - t[1];
-    float a_lo = a - a_hi;
-    t[0] = b * SPLIT;
-    float b1 = t[0];
-    t[1] = b1 - b;
-    float b_hi = b1 - t[1];
-    float b_lo = b - b_hi;
-    float err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo;
+    float err = fma(a, b, -p);  // Вычисляет a*b - p точно!
     return vec2(p, err);
   }
 
   vec2 dd_mul(vec2 a, vec2 b) {
     vec2 p = twoProd(a.x, b.x);
-    float e = a.x * b.y + a.y * b.x + a.y * b.y + p.y;
-    vec2 s = twoSum(p.x, e);
-    return vec2(s.x, s.y);
+    // e = a.x*b.y + a.y*b.x + a.y*b.y + p.y - используем fma для точности
+    float e = fma(a.x, b.y, fma(a.y, b.x, fma(a.y, b.y, p.y)));
+    return quickTwoSum(p.x, e);
   }
 
   // DD * float
   vec2 dd_mul_f(vec2 a, float b) {
     vec2 p = twoProd(a.x, b);
-    float e = a.y * b + p.y;
+    float e = fma(a.y, b, p.y);
     return quickTwoSum(p.x, e);
   }`;
 
@@ -392,8 +381,20 @@ const fragmentShaderSourceHP_main_WebGL1 = `
 
   void main() {
     // DEBUG: фиолетовая полоса слева для проверки что HP шейдер работает
-    if (gl_FragCoord.x < 10.0) {
+    if (gl_FragCoord.x < 5.0) {
       gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+      return;
+    }
+
+    // DEBUG: тест DD арифметики - красная полоса если twoProd не работает
+    vec2 testProd = twoProd(1.0 + 1.0e-7, 1.0 + 1.0e-7);
+    // Если fma работает, testProd.y ≈ 2e-14, а не 0
+    if (gl_FragCoord.x >= 5.0 && gl_FragCoord.x < 10.0) {
+      if (abs(testProd.y) < 1.0e-20) {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // КРАСНЫЙ = DD сломан!
+      } else {
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // ЗЕЛЁНЫЙ = DD работает!
+      }
       return;
     }
 
@@ -536,8 +537,20 @@ const fragmentShaderSourceHP_main_WebGL2 = `
 
   void main() {
     // DEBUG: фиолетовая полоса слева для проверки что HP шейдер работает
-    if (gl_FragCoord.x < 10.0) {
+    if (gl_FragCoord.x < 5.0) {
       fragColor = vec4(1.0, 0.0, 1.0, 1.0);
+      return;
+    }
+
+    // DEBUG: тест DD арифметики - красная полоса если twoProd не работает
+    vec2 testProd = twoProd(1.0 + 1.0e-7, 1.0 + 1.0e-7);
+    // Если fma работает, testProd.y ≈ 2e-14, а не 0
+    if (gl_FragCoord.x >= 5.0 && gl_FragCoord.x < 10.0) {
+      if (abs(testProd.y) < 1.0e-20) {
+        fragColor = vec4(1.0, 0.0, 0.0, 1.0); // КРАСНЫЙ = DD сломан!
+      } else {
+        fragColor = vec4(0.0, 1.0, 0.0, 1.0); // ЗЕЛЁНЫЙ = DD работает!
+      }
       return;
     }
 
