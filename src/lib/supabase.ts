@@ -128,3 +128,71 @@ export async function getScores(limit = 50): Promise<ScoreEntry[]> {
 
   return res.json();
 }
+
+// ==================== SCORES 2048 ====================
+
+export interface Score2048Entry {
+  id: string;
+  player_id: string;
+  name: string;
+  score: number;
+  max_tile: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export async function getScores2048(limit = 50): Promise<Score2048Entry[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_2048?select=*&order=score.desc&limit=${limit}`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch 2048 scores:", res.statusText);
+    return [];
+  }
+
+  return res.json();
+}
+
+export async function saveScore2048(
+  playerId: string,
+  name: string,
+  score: number,
+  maxTile: number
+): Promise<boolean> {
+  const { data: session } = await supabase.auth.getSession();
+  if (!session.session) {
+    console.error("Not authenticated");
+    return false;
+  }
+
+  // Upsert — обновить если рекорд выше
+  const { error } = await supabase
+    .from('scores_2048')
+    .upsert(
+      {
+        player_id: playerId,
+        name,
+        score,
+        max_tile: maxTile,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: 'player_id',
+      }
+    )
+    .select();
+
+  if (error) {
+    console.error("Failed to save 2048 score:", error);
+    return false;
+  }
+
+  return true;
+}

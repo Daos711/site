@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { RotateCcw, Trophy } from "lucide-react";
+import { RotateCcw, Trophy, LogIn, Medal, User } from "lucide-react";
+import {
+  AuthUser,
+  onAuthStateChange,
+  signInWithGoogle,
+  getScores2048,
+  saveScore2048,
+  Score2048Entry,
+} from "@/lib/supabase";
 
 const GRID_SIZE = 4;
 
@@ -216,6 +224,12 @@ export default function Game2048Page() {
   const [won, setWon] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
+  // Auth & Leaderboard
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [leaderboard, setLeaderboard] = useState<Score2048Entry[]>([]);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [scoreSaved, setScoreSaved] = useState(false);
+
   // Инициализация
   useEffect(() => {
     const saved = localStorage.getItem("2048-best");
@@ -227,6 +241,41 @@ export default function Game2048Page() {
     setGrid(newGrid);
     setIsClient(true);
   }, []);
+
+  // Auth state
+  useEffect(() => {
+    return onAuthStateChange(setUser);
+  }, []);
+
+  // Fetch leaderboard
+  useEffect(() => {
+    getScores2048(10).then(setLeaderboard);
+  }, []);
+
+  // Get max tile
+  const getMaxTile = useCallback((g: (Tile | null)[][]) => {
+    let max = 0;
+    for (const row of g) {
+      for (const tile of row) {
+        if (tile && tile.value > max) max = tile.value;
+      }
+    }
+    return max;
+  }, []);
+
+  // Save score when game over and user is logged in
+  useEffect(() => {
+    if (gameOver && user && !scoreSaved && score > 0) {
+      const maxTile = getMaxTile(grid);
+      saveScore2048(user.id, user.name || "Игрок", score, maxTile).then((success) => {
+        if (success) {
+          setScoreSaved(true);
+          // Refresh leaderboard
+          getScores2048(10).then(setLeaderboard);
+        }
+      });
+    }
+  }, [gameOver, user, scoreSaved, score, grid, getMaxTile]);
 
   // Сохранение лучшего счёта
   useEffect(() => {
@@ -315,6 +364,7 @@ export default function Game2048Page() {
     setScore(0);
     setGameOver(false);
     setWon(false);
+    setScoreSaved(false);
   };
 
   return (
@@ -394,9 +444,24 @@ export default function Game2048Page() {
 
         {/* Game Over */}
         {gameOver && (
-          <div className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center">
+          <div className="absolute inset-0 bg-black/80 rounded-2xl flex flex-col items-center justify-center p-4">
             <div className="text-3xl font-bold text-white mb-2">Игра окончена!</div>
             <div className="text-muted mb-4">Счёт: {score}</div>
+
+            {!user && (
+              <button
+                onClick={() => signInWithGoogle()}
+                className="mb-3 px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all flex items-center gap-2"
+              >
+                <LogIn size={18} />
+                Войти чтобы сохранить результат
+              </button>
+            )}
+
+            {user && scoreSaved && (
+              <div className="mb-3 text-green-400 text-sm">Результат сохранён!</div>
+            )}
+
             <button
               onClick={handleNewGame}
               className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 transition-all"
@@ -432,6 +497,59 @@ export default function Game2048Page() {
       {/* Инструкция */}
       <div className="mt-4 text-center text-xs text-muted">
         Используй стрелки или свайпы для перемещения плиток
+      </div>
+
+      {/* Leaderboard toggle */}
+      <div className="mt-6">
+        <button
+          onClick={() => setShowLeaderboard(!showLeaderboard)}
+          className="w-full px-4 py-3 rounded-xl bg-card border border-border hover:bg-card-hover transition-all flex items-center justify-center gap-2"
+        >
+          <Medal size={18} />
+          {showLeaderboard ? "Скрыть таблицу лидеров" : "Таблица лидеров"}
+        </button>
+
+        {showLeaderboard && (
+          <div className="mt-4 bg-card border border-border rounded-xl overflow-hidden">
+            <div className="p-3 border-b border-border bg-card-hover">
+              <div className="text-sm font-medium">Топ-10 игроков</div>
+            </div>
+            {leaderboard.length === 0 ? (
+              <div className="p-4 text-center text-muted text-sm">
+                Пока нет результатов
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {leaderboard.map((entry, idx) => (
+                  <div
+                    key={entry.id}
+                    className={`flex items-center gap-3 p-3 ${
+                      user?.id === entry.player_id ? "bg-orange-500/10" : ""
+                    }`}
+                  >
+                    <div className={`w-6 text-center font-bold ${
+                      idx === 0 ? "text-yellow-500" :
+                      idx === 1 ? "text-slate-400" :
+                      idx === 2 ? "text-amber-600" : "text-muted"
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <User size={14} className="text-muted" />
+                        <span className="truncate">{entry.name}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-accent">{entry.score.toLocaleString()}</div>
+                      <div className="text-xs text-muted">макс: {entry.max_tile}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* CSS анимации */}
