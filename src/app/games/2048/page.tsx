@@ -703,7 +703,7 @@ export default function Game2048Page() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <Trophy className={`w-5 h-5 ${gridSize === 3 ? "text-purple-400" : "text-yellow-400"}`} />
-            Таблица лидеров {gridSize === 3 ? "(3×3)" : "(4×4)"}
+            Таблица лидеров
           </h2>
           <button
             onClick={fetchAllLeaderboards}
