@@ -199,8 +199,8 @@ const fragmentShaderSource = `
       float log_zn = log(max(magSq, 1.0)) / 2.0;
       float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
       float smoothIter = iter + 1.0 - nu;
-      // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
-      float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
+      // Плавная цветовая шкала
+      float t = smoothIter / maxIter;
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
@@ -505,8 +505,8 @@ const fragmentShaderSourceHP_main_WebGL1 = `
       float log_zn = log(max(magSq, 1.0)) / 2.0;
       float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
       float smoothIter = iter + 1.0 - nu;
-      // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
-      float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
+      // Плавная цветовая шкала
+      float t = smoothIter / maxIter;
       vec3 color = palette(t, u_colorScheme);
       gl_FragColor = vec4(color, 1.0);
     }
@@ -664,8 +664,8 @@ const fragmentShaderSourceHP_main_WebGL2 = `
       float log_zn = log(max(magSq, 1.0)) / 2.0;
       float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
       float smoothIter = iter + 1.0 - nu;
-      // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
-      float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
+      // Плавная цветовая шкала
+      float t = smoothIter / maxIter;
       vec3 color = palette(t, u_colorScheme);
       fragColor = vec4(color, 1.0);
     }
@@ -893,8 +893,8 @@ void main() {
     float nu = log(max(log_zn / log(2.0), 1.0)) / log(2.0);
     float smoothIter = iter + 1.0 - nu;
 
-    // ФИКСИРОВАННАЯ шкала - НЕ зависит от maxIter!
-    float t = fract(smoothIter / 100.0);  // Цикл каждые 100 итераций
+    // Плавная цветовая шкала
+    float t = smoothIter / maxIter;
 
     vec3 color = palette(t, u_colorScheme);
     fragColor = vec4(color, 1.0);
