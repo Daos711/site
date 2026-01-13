@@ -33,6 +33,22 @@ export const projects: Project[] = [
     status: "prototype",
     href: "/games/ball-merge",
   },
+  {
+    id: "sokoban",
+    title: "Сокобан",
+    description: "Классическая головоломка. 155 уровней Microban.",
+    tags: ["игра", "TypeScript", "React", "web", "головоломка"],
+    status: "prototype",
+    href: "/games/sokoban",
+  },
+  {
+    id: "2048",
+    title: "2048",
+    description: "Соединяй числа и собери 2048. Классическая игра-головоломка.",
+    tags: ["игра", "TypeScript", "React", "web", "головоломка"],
+    status: "prototype",
+    href: "/games/2048",
+  },
 
   // === Инструменты ===
   {
@@ -104,6 +120,30 @@ export const projects: Project[] = [
     tags: ["инструмент", "математика", "клеточные автоматы", "визуализация"],
     status: "prototype",
     href: "/tools/game-of-life",
+  },
+  {
+    id: "nbody",
+    title: "N-Body",
+    description: "Симуляция гравитационного взаимодействия N тел.",
+    tags: ["инструмент", "физика", "симуляция", "визуализация"],
+    status: "prototype",
+    href: "/tools/nbody",
+  },
+  {
+    id: "pathfinding",
+    title: "Поиск пути",
+    description: "Визуализация алгоритмов поиска пути: A*, Dijkstra, BFS.",
+    tags: ["инструмент", "алгоритмы", "визуализация"],
+    status: "prototype",
+    href: "/tools/pathfinding",
+  },
+  {
+    id: "sorting",
+    title: "Сортировки",
+    description: "Визуализация алгоритмов сортировки в реальном времени.",
+    tags: ["инструмент", "алгоритмы", "визуализация"],
+    status: "prototype",
+    href: "/tools/sorting",
   },
 ];
 

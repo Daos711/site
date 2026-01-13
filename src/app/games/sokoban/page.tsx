@@ -9,6 +9,8 @@ import {
   submitSokobanScore,
   getSokobanPlayerName,
   setSokobanPlayerName,
+  getSokobanProgress,
+  saveSokobanProgress,
   SokobanScoreEntry,
 } from "@/lib/supabase";
 import { LEVELS, LEVELS_VERSION } from "./levels";
@@ -111,7 +113,7 @@ export default function SokobanPage() {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [showLevelsList, setShowLevelsList] = useState(false);
 
-  // Загрузка прогресса (с проверкой версии уровней)
+  // Загрузка прогресса (с проверкой версии уровней) - сначала из localStorage
   useEffect(() => {
     const savedVersion = localStorage.getItem("sokoban-version");
 
@@ -129,6 +131,61 @@ export default function SokobanPage() {
     if (savedUnlocked) setUnlockedLevels(parseInt(savedUnlocked));
     if (savedBest) setBestScores(JSON.parse(savedBest));
   }, []);
+
+  // Синхронизация прогресса с облаком (для авторизованных)
+  useEffect(() => {
+    if (!authUser || !playerId) return;
+
+    const syncProgress = async () => {
+      const cloudProgress = await getSokobanProgress(playerId);
+
+      if (cloudProgress) {
+        // Мержим локальный и облачный прогресс (берём лучшее)
+        const localUnlocked = parseInt(localStorage.getItem("sokoban-unlocked") || "1");
+        const localBestRaw = localStorage.getItem("sokoban-best");
+        const localBest: Record<number, { moves: number; pushes: number }> = localBestRaw ? JSON.parse(localBestRaw) : {};
+
+        const mergedUnlocked = Math.max(localUnlocked, cloudProgress.unlocked_levels);
+        const mergedBest: Record<number, { moves: number; pushes: number }> = { ...cloudProgress.best_scores };
+
+        // Для каждого уровня берём лучший результат
+        for (const levelStr of Object.keys(localBest)) {
+          const level = parseInt(levelStr);
+          const localResult = localBest[level];
+          const cloudResult = mergedBest[level];
+
+          if (!cloudResult || localResult.moves < cloudResult.moves ||
+              (localResult.moves === cloudResult.moves && localResult.pushes < cloudResult.pushes)) {
+            mergedBest[level] = localResult;
+          }
+        }
+
+        setUnlockedLevels(mergedUnlocked);
+        setBestScores(mergedBest);
+
+        // Сохраняем обратно в localStorage и облако
+        localStorage.setItem("sokoban-unlocked", mergedUnlocked.toString());
+        localStorage.setItem("sokoban-best", JSON.stringify(mergedBest));
+
+        // Если есть изменения — сохраняем в облако
+        if (mergedUnlocked > cloudProgress.unlocked_levels ||
+            Object.keys(mergedBest).length > Object.keys(cloudProgress.best_scores).length) {
+          saveSokobanProgress(playerId, mergedUnlocked, mergedBest);
+        }
+      } else {
+        // Нет облачного прогресса — загружаем локальный в облако
+        const localUnlocked = parseInt(localStorage.getItem("sokoban-unlocked") || "1");
+        const localBestRaw = localStorage.getItem("sokoban-best");
+        const localBest = localBestRaw ? JSON.parse(localBestRaw) : {};
+
+        if (localUnlocked > 1 || Object.keys(localBest).length > 0) {
+          saveSokobanProgress(playerId, localUnlocked, localBest);
+        }
+      }
+    };
+
+    syncProgress();
+  }, [authUser, playerId]);
 
   // Загрузка имени игрока
   useEffect(() => {
@@ -296,10 +353,16 @@ export default function SokobanPage() {
     if (isWin(newGrid)) {
       setWon(true);
 
-      // Сохраняем лучший результат локально
+      // Сохраняем лучший результат
       const currentBest = bestScores[currentLevel];
-      if (!currentBest || newState.moves < currentBest.moves) {
-        const newBest = { ...bestScores, [currentLevel]: { moves: newState.moves, pushes: newState.pushes } };
+      const isBetterResult = !currentBest || newState.moves < currentBest.moves ||
+        (newState.moves === currentBest.moves && newState.pushes < currentBest.pushes);
+
+      let newBest = bestScores;
+      let newUnlocked = unlockedLevels;
+
+      if (isBetterResult) {
+        newBest = { ...bestScores, [currentLevel]: { moves: newState.moves, pushes: newState.pushes } };
         setBestScores(newBest);
         localStorage.setItem("sokoban-best", JSON.stringify(newBest));
       }
@@ -310,12 +373,17 @@ export default function SokobanPage() {
 
       // Разблокируем следующий уровень
       if (currentLevel + 1 < LEVELS.length && currentLevel + 1 >= unlockedLevels) {
-        const newUnlocked = currentLevel + 2;
+        newUnlocked = currentLevel + 2;
         setUnlockedLevels(newUnlocked);
         localStorage.setItem("sokoban-unlocked", newUnlocked.toString());
       }
+
+      // Сохраняем прогресс в облако для авторизованных
+      if (authUser && playerId && (isBetterResult || newUnlocked > unlockedLevels)) {
+        saveSokobanProgress(playerId, newUnlocked, isBetterResult ? newBest : bestScores);
+      }
     }
-  }, [gameState, won, currentLevel, bestScores, unlockedLevels]);
+  }, [gameState, won, currentLevel, bestScores, unlockedLevels, authUser, playerId]);
 
   // Клавиатура
   useEffect(() => {
