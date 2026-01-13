@@ -29,11 +29,12 @@ interface GameState {
 
 // Проверенные уровни Sokoban - гарантированно решаемы
 // Формат: # стена, @ игрок, + игрок на цели, $ ящик, * ящик на цели, . цель, пробел - пол
-const LEVELS: { name: string; data: string; par: number }[] = [
+// norma - целевое количество ходов (хороший результат)
+const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 1 - простейший (1 ящик, прямая линия)
   {
     name: "Старт",
-    par: 3,
+    norma: 3,
     data: `
 #####
 #   #
@@ -45,7 +46,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 2 - поворот
   {
     name: "Поворот",
-    par: 6,
+    norma: 6,
     data: `
 ######
 #    #
@@ -58,7 +59,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 3 - два ящика
   {
     name: "Пара",
-    par: 10,
+    norma: 10,
     data: `
 #######
 #     #
@@ -71,7 +72,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 4 - угол
   {
     name: "Угол",
-    par: 12,
+    norma: 12,
     data: `
 #####
 #.  ##
@@ -84,7 +85,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 5 - коридор (Microban #9)
   {
     name: "Коридор",
-    par: 13,
+    norma: 13,
     data: `
 #####
 #.  ##
@@ -95,10 +96,10 @@ const LEVELS: { name: string; data: string; par: number }[] = [
    ###
 `
   },
-  // Уровень 6 - три ящика (Microban #17)
+  // Уровень 6 - три ящика (Microban #17, оптимум 25 ходов)
   {
     name: "Тройка",
-    par: 17,
+    norma: 25,
     data: `
 #####
 # @ #
@@ -112,7 +113,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 7 - Classic 1
   {
     name: "Классика",
-    par: 22,
+    norma: 22,
     data: `
   #####
 ###   #
@@ -126,7 +127,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 8 - Microban #21
   {
     name: "Квартет",
-    par: 25,
+    norma: 25,
     data: `
 ####
 #  ####
@@ -139,7 +140,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 9 - L-образный (Microban #12)
   {
     name: "Уголок",
-    par: 30,
+    norma: 30,
     data: `
 #####
 #   ##
@@ -154,7 +155,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 10 - Microban #13
   {
     name: "Башня",
-    par: 35,
+    norma: 35,
     data: `
 ####
 #. ##
@@ -167,10 +168,10 @@ const LEVELS: { name: string; data: string; par: number }[] = [
  ####
 `
   },
-  // Уровень 11 - Original Sokoban #1
+  // Уровень 11 - Original Sokoban #1 (97 толчков, ~260-300 ходов оптимум)
   {
     name: "Оригинал",
-    par: 97,
+    norma: 300,
     data: `
     #####
     #   #
@@ -188,7 +189,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 12 - Microban #16
   {
     name: "Хранилище",
-    par: 40,
+    norma: 40,
     data: `
  ####
  #  ####
@@ -203,7 +204,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 13 - Microban #18
   {
     name: "Колодец",
-    par: 45,
+    norma: 45,
     data: `
 #######
 #     #
@@ -219,7 +220,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 14 - Microban #20
   {
     name: "Туннель",
-    par: 50,
+    norma: 50,
     data: `
 #######
 #     ###
@@ -234,7 +235,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
   // Уровень 15 - Microban #25
   {
     name: "Финал",
-    par: 60,
+    norma: 60,
     data: `
  ####
  #  ###
@@ -248,7 +249,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
 ];
 
 // Версия набора уровней - при изменении уровней увеличить, чтобы сбросить прогресс
-const LEVELS_VERSION = 4;
+const LEVELS_VERSION = 5;
 
 function parseLevel(levelData: string): { grid: CellType[][]; playerPos: Position } {
   const lines = levelData.trim().split("\n");
@@ -633,7 +634,7 @@ export default function SokobanPage() {
   if (!gameState) return null;
 
   const { grid, moves, pushes } = gameState;
-  const levelPar = LEVELS[currentLevel].par;
+  const levelNorma = LEVELS[currentLevel].norma;
   const currentBest = bestScores[currentLevel];
 
   // Рассчёт размера ячейки
@@ -688,8 +689,8 @@ export default function SokobanPage() {
           <div className="text-xl font-bold text-purple-400">{pushes}</div>
         </div>
         <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-xs text-muted uppercase">Пар</div>
-          <div className="text-xl font-bold text-amber-400">{levelPar}</div>
+          <div className="text-xs text-muted uppercase">Норма</div>
+          <div className="text-xl font-bold text-amber-400">{levelNorma}</div>
         </div>
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Лучший</div>
@@ -786,10 +787,10 @@ export default function SokobanPage() {
               <div className="text-5xl mb-3">🎉</div>
               <div className="text-2xl font-bold text-amber-400 mb-2">Уровень пройден!</div>
               <div className="text-gray-300 mb-1">
-                {moves <= levelPar ? (
-                  <span className="text-green-400">Отлично! Уложился в пар ({moves}/{levelPar})</span>
+                {moves <= levelNorma ? (
+                  <span className="text-green-400">Отлично! Уложился в норму ({moves}/{levelNorma})</span>
                 ) : (
-                  <span>Ходов: {moves} (пар: {levelPar})</span>
+                  <span>Ходов: {moves} (норма: {levelNorma})</span>
                 )}
               </div>
               <div className="text-sm text-gray-400 mb-4">
@@ -899,7 +900,7 @@ export default function SokobanPage() {
           {LEVELS.map((level, index) => {
             const isUnlocked = index < unlockedLevels;
             const best = bestScores[index];
-            const isPar = best && best.moves <= level.par;
+            const isPar = best && best.moves <= level.norma;
 
             return (
               <button
