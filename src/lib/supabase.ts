@@ -585,3 +585,118 @@ export function setSokobanPlayerName(name: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem("sokobanPlayerName", name);
 }
+
+// ==================== SOKOBAN PROGRESS (облачное сохранение) ====================
+
+export interface SokobanProgress {
+  id: string;
+  player_id: string;
+  unlocked_levels: number;
+  best_scores: Record<number, { moves: number; pushes: number }>;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Получить прогресс игрока
+export async function getSokobanProgress(playerId: string): Promise<SokobanProgress | null> {
+  const encodedPlayerId = encodeURIComponent(playerId);
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/sokoban_progress?player_id=eq.${encodedPlayerId}&select=*`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch sokoban progress:", res.statusText);
+    return null;
+  }
+
+  const data = await res.json();
+  return data.length > 0 ? data[0] : null;
+}
+
+// Сохранить или обновить прогресс игрока
+export async function saveSokobanProgress(
+  playerId: string,
+  unlockedLevels: number,
+  bestScores: Record<number, { moves: number; pushes: number }>
+): Promise<boolean> {
+  const encodedPlayerId = encodeURIComponent(playerId);
+
+  // Проверяем существующий прогресс
+  const existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/sokoban_progress?player_id=eq.${encodedPlayerId}&select=id`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!existingRes.ok) {
+    console.error("Failed to check existing progress:", existingRes.statusText);
+    return false;
+  }
+
+  const existing = await existingRes.json();
+
+  if (existing.length > 0) {
+    // Обновляем существующий
+    const updateRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/sokoban_progress?id=eq.${existing[0].id}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          unlocked_levels: unlockedLevels,
+          best_scores: bestScores,
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
+
+    if (!updateRes.ok) {
+      console.error("Failed to update progress:", updateRes.statusText);
+      return false;
+    }
+    return true;
+  } else {
+    // Создаём новый
+    const insertRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/sokoban_progress`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          player_id: playerId,
+          unlocked_levels: unlockedLevels,
+          best_scores: bestScores,
+        }),
+      }
+    );
+
+    if (!insertRes.ok) {
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert progress:", insertRes.status, insertRes.statusText, errorBody);
+      return false;
+    }
+    return true;
+  }
+}
