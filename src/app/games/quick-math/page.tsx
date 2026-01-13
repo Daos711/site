@@ -765,10 +765,13 @@ export default function QuickMathPage() {
             )}
           </div>
 
-          {/* Подсказка о других уровнях */}
-          <div className="text-sm text-muted">
-            Попробуй другой уровень сложности!
-          </div>
+          {/* Кнопка выбора другого уровня */}
+          <button
+            onClick={() => setGameState("idle")}
+            className="w-full py-3 rounded-xl bg-stone-700 hover:bg-stone-600 font-bold transition-all"
+          >
+            Выбрать другой уровень
+          </button>
         </div>
       )}
     </div>
