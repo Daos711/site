@@ -412,7 +412,6 @@ export default function SokobanPage() {
   if (!gameState) return null;
 
   const { grid, moves, pushes } = gameState;
-  const levelNorma = LEVELS[currentLevel].norma;
   const currentBest = bestScores[currentLevel];
 
   // Рассчёт размера ячейки
@@ -463,7 +462,7 @@ export default function SokobanPage() {
       </div>
 
       {/* Статистика */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Ходы</div>
           <div className="text-xl font-bold text-blue-400">{moves}</div>
@@ -471,10 +470,6 @@ export default function SokobanPage() {
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Толчки</div>
           <div className="text-xl font-bold text-purple-400">{pushes}</div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-xs text-muted uppercase">Норма</div>
-          <div className="text-xl font-bold text-amber-400">{levelNorma}</div>
         </div>
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Лучший</div>
@@ -570,15 +565,8 @@ export default function SokobanPage() {
             <div className="text-center">
               <div className="text-5xl mb-3">🎉</div>
               <div className="text-2xl font-bold text-amber-400 mb-2">Уровень пройден!</div>
-              <div className="text-gray-300 mb-1">
-                {moves <= levelNorma ? (
-                  <span className="text-green-400">Отлично! Уложился в норму ({moves}/{levelNorma})</span>
-                ) : (
-                  <span>Ходов: {moves} (норма: {levelNorma})</span>
-                )}
-              </div>
-              <div className="text-sm text-gray-400 mb-4">
-                Толчков: {pushes}
+              <div className="text-gray-300 mb-4">
+                Ходов: {moves} · Толчков: {pushes}
               </div>
             </div>
 
@@ -677,9 +665,6 @@ export default function SokobanPage() {
       {/* Прогресс */}
       {(() => {
         const completedCount = Object.keys(bestScores).length;
-        const underNormaCount = Object.entries(bestScores).filter(
-          ([idx, score]) => score.moves <= LEVELS[parseInt(idx)]?.norma
-        ).length;
         const progressPercent = Math.round((completedCount / LEVELS.length) * 100);
 
         return (
@@ -695,7 +680,7 @@ export default function SokobanPage() {
             {/* Прогресс-бар */}
             <div className="h-2 bg-gray-700 rounded-full overflow-hidden mb-3">
               <div
-                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -704,8 +689,8 @@ export default function SokobanPage() {
             <div className="flex gap-4 text-sm">
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-green-400" />
-                <span className="text-muted">В норму:</span>
-                <span className="text-green-400 font-bold">{underNormaCount}</span>
+                <span className="text-muted">Пройдено:</span>
+                <span className="text-green-400 font-bold">{completedCount}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-muted">Доступно:</span>
@@ -819,7 +804,7 @@ export default function SokobanPage() {
                 {LEVELS.map((level, index) => {
                   const isUnlocked = index < unlockedLevels;
                   const best = bestScores[index];
-                  const isUnderNorma = best && best.moves <= level.norma;
+                  const isPassed = !!best;
                   const isCurrent = currentLevel === index;
 
                   return (
@@ -839,7 +824,7 @@ export default function SokobanPage() {
                           ? "bg-gray-800 hover:bg-gray-700 cursor-pointer"
                           : "bg-gray-800/30 cursor-not-allowed opacity-40"
                         }
-                        ${isUnderNorma ? "bg-green-900/50" : ""}
+                        ${isPassed ? "bg-green-900/50" : ""}
                       `}
                       title={isUnlocked ? level.name : "Заблокирован"}
                     >
@@ -847,7 +832,7 @@ export default function SokobanPage() {
                         {index + 1}
                       </span>
                       {best && (
-                        <span className={`text-xs ${isUnderNorma ? "text-green-400" : "text-gray-500"}`}>
+                        <span className="text-xs text-green-400">
                           {best.moves}
                         </span>
                       )}

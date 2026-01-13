@@ -5,14 +5,12 @@
 export interface Level {
   name: string;
   data: string;
-  norma: number;
 }
 
 export const LEVELS: Level[] = [
   // Microban #1
   {
     name: "Microban 1",
-    norma: 45,
     data: `
 ####
 # .#
@@ -26,7 +24,6 @@ export const LEVELS: Level[] = [
   // Microban #2
   {
     name: "Microban 2",
-    norma: 55,
     data: `
 ######
 #    #
@@ -40,7 +37,6 @@ export const LEVELS: Level[] = [
   // Microban #3
   {
     name: "Microban 3",
-    norma: 65,
     data: `
   ####
 ###  ####
@@ -53,7 +49,6 @@ export const LEVELS: Level[] = [
   // Microban #4
   {
     name: "Microban 4",
-    norma: 45,
     data: `
 ########
 #      #
@@ -66,7 +61,6 @@ export const LEVELS: Level[] = [
   // Microban #5
   {
     name: "Microban 5",
-    norma: 60,
     data: `
  #######
  #     #
@@ -80,7 +74,6 @@ export const LEVELS: Level[] = [
   // Microban #6
   {
     name: "Microban 6",
-    norma: 100,
     data: `
 ###### #####
 #    ###   #
@@ -93,7 +86,6 @@ export const LEVELS: Level[] = [
   // Microban #7
   {
     name: "Microban 7",
-    norma: 80,
     data: `
 #######
 #     #
@@ -108,7 +100,6 @@ export const LEVELS: Level[] = [
   // Microban #8
   {
     name: "Microban 8",
-    norma: 100,
     data: `
   ######
   # ..@#
@@ -127,7 +118,6 @@ export const LEVELS: Level[] = [
   // Microban #9
   {
     name: "Microban 9",
-    norma: 50,
     data: `
 #####
 #.  ##
@@ -141,7 +131,6 @@ export const LEVELS: Level[] = [
   // Microban #10
   {
     name: "Microban 10",
-    norma: 70,
     data: `
       #####
       #.  #
@@ -156,7 +145,6 @@ export const LEVELS: Level[] = [
   // Microban #11
   {
     name: "Microban 11",
-    norma: 55,
     data: `
   ######
   #    #
@@ -171,7 +159,6 @@ export const LEVELS: Level[] = [
   // Microban #12
   {
     name: "Microban 12",
-    norma: 60,
     data: `
 #####
 #   ##
@@ -186,7 +173,6 @@ export const LEVELS: Level[] = [
   // Microban #13
   {
     name: "Microban 13",
-    norma: 50,
     data: `
 ####
 #. ##
@@ -202,7 +188,6 @@ export const LEVELS: Level[] = [
   // Microban #14
   {
     name: "Microban 14",
-    norma: 30,
     data: `
 #######
 #     #
@@ -215,7 +200,6 @@ export const LEVELS: Level[] = [
   // Microban #15
   {
     name: "Microban 15",
-    norma: 45,
     data: `
      ###
 ######@##
@@ -229,7 +213,6 @@ export const LEVELS: Level[] = [
   // Microban #16
   {
     name: "Microban 16",
-    norma: 55,
     data: `
  ####
  #  ####
@@ -244,7 +227,6 @@ export const LEVELS: Level[] = [
   // Microban #17
   {
     name: "Microban 17",
-    norma: 35,
     data: `
 #####
 # @ #
@@ -258,7 +240,6 @@ export const LEVELS: Level[] = [
   // Microban #18
   {
     name: "Microban 18",
-    norma: 45,
     data: `
 #######
 #     #
@@ -274,7 +255,6 @@ export const LEVELS: Level[] = [
   // Microban #19
   {
     name: "Microban 19",
-    norma: 35,
     data: `
 ########
 #   .. #
@@ -289,7 +269,6 @@ export const LEVELS: Level[] = [
   // Microban #20
   {
     name: "Microban 20",
-    norma: 45,
     data: `
 #######
 #     ###
@@ -304,7 +283,6 @@ export const LEVELS: Level[] = [
   // Microban #21
   {
     name: "Microban 21",
-    norma: 30,
     data: `
 ####
 #  ####
@@ -317,7 +295,6 @@ export const LEVELS: Level[] = [
   // Microban #22
   {
     name: "Microban 22",
-    norma: 50,
     data: `
 #####
 #   ###
@@ -333,7 +310,6 @@ export const LEVELS: Level[] = [
   // Microban #23
   {
     name: "Microban 23",
-    norma: 25,
     data: `
 #######
 #  *  #
@@ -347,7 +323,6 @@ export const LEVELS: Level[] = [
   // Microban #24
   {
     name: "Microban 24",
-    norma: 35,
     data: `
 # #####
   #   #
@@ -361,7 +336,6 @@ export const LEVELS: Level[] = [
   // Microban #25
   {
     name: "Microban 25",
-    norma: 45,
     data: `
  ####
  #  ###
@@ -375,7 +349,6 @@ export const LEVELS: Level[] = [
   // Microban #26
   {
     name: "Microban 26",
-    norma: 40,
     data: `
  #####
  # @ #
@@ -390,7 +363,6 @@ export const LEVELS: Level[] = [
   // Microban #27
   {
     name: "Microban 27",
-    norma: 40,
     data: `
 ######
 #   .#
@@ -404,7 +376,6 @@ export const LEVELS: Level[] = [
   // Microban #28
   {
     name: "Microban 28",
-    norma: 30,
     data: `
 #####
 #   #
@@ -418,7 +389,6 @@ export const LEVELS: Level[] = [
   // Microban #29
   {
     name: "Microban 29",
-    norma: 70,
     data: `
      #####
      #   ##
@@ -434,7 +404,6 @@ export const LEVELS: Level[] = [
   // Microban #30
   {
     name: "Microban 30",
-    norma: 35,
     data: `
 ####
 #  ###
@@ -448,7 +417,6 @@ export const LEVELS: Level[] = [
   // Microban #31
   {
     name: "Microban 31",
-    norma: 45,
     data: `
   ####
  ##  #
@@ -462,7 +430,6 @@ export const LEVELS: Level[] = [
   // Microban #32
   {
     name: "Microban 32",
-    norma: 35,
     data: `
  ####
 ##  ###
@@ -476,7 +443,6 @@ export const LEVELS: Level[] = [
   // Microban #33
   {
     name: "Microban 33",
-    norma: 40,
     data: `
 #######
 #. #  #
@@ -490,7 +456,6 @@ export const LEVELS: Level[] = [
   // Microban #34
   {
     name: "Microban 34",
-    norma: 45,
     data: `
   ####
 ###  ####
@@ -503,7 +468,6 @@ export const LEVELS: Level[] = [
   // Microban #35
   {
     name: "Microban 35",
-    norma: 55,
     data: `
   ####
  ##  #
@@ -520,7 +484,6 @@ export const LEVELS: Level[] = [
   // Microban #36
   {
     name: "Microban 36",
-    norma: 50,
     data: `
 ####
 #  ############
@@ -532,7 +495,6 @@ export const LEVELS: Level[] = [
   // Microban #37
   {
     name: "Microban 37",
-    norma: 55,
     data: `
       ###
 ##### #.#
@@ -547,7 +509,6 @@ export const LEVELS: Level[] = [
   // Microban #38
   {
     name: "Microban 38",
-    norma: 60,
     data: `
 ##########
 #        #
@@ -561,7 +522,6 @@ export const LEVELS: Level[] = [
   // Microban #39
   {
     name: "Microban 39",
-    norma: 65,
     data: `
 #####
 #   ####
@@ -577,7 +537,6 @@ export const LEVELS: Level[] = [
   // Microban #40
   {
     name: "Microban 40",
-    norma: 25,
     data: `
  #####
  #   #
@@ -590,7 +549,6 @@ export const LEVELS: Level[] = [
   // Microban #41
   {
     name: "Microban 41",
-    norma: 40,
     data: `
 #######
 #     #
@@ -603,7 +561,6 @@ export const LEVELS: Level[] = [
   // Microban #42
   {
     name: "Microban 42",
-    norma: 30,
     data: `
    ####
    #  #
@@ -618,7 +575,6 @@ export const LEVELS: Level[] = [
   // Microban #43
   {
     name: "Microban 43",
-    norma: 45,
     data: `
      ####
      # @#
@@ -634,7 +590,6 @@ export const LEVELS: Level[] = [
   // Microban #44 - "Duh!"
   {
     name: "Duh!",
-    norma: 5,
     data: `
 #####
 #@$.#
@@ -644,7 +599,6 @@ export const LEVELS: Level[] = [
   // Microban #45
   {
     name: "Microban 45",
-    norma: 40,
     data: `
 ######
 #... #
@@ -658,7 +612,6 @@ export const LEVELS: Level[] = [
   // Microban #46
   {
     name: "Microban 46",
-    norma: 45,
     data: `
  ######
 ##    #
@@ -673,7 +626,6 @@ export const LEVELS: Level[] = [
   // Microban #47
   {
     name: "Microban 47",
-    norma: 55,
     data: `
   #######
 ###     #
@@ -687,7 +639,6 @@ export const LEVELS: Level[] = [
   // Microban #48
   {
     name: "Microban 48",
-    norma: 50,
     data: `
 ######
 #  @ #
@@ -702,7 +653,6 @@ export const LEVELS: Level[] = [
   // Microban #49
   {
     name: "Microban 49",
-    norma: 55,
     data: `
 ######
 # @  #
@@ -719,7 +669,6 @@ export const LEVELS: Level[] = [
   // Microban #50
   {
     name: "Microban 50",
-    norma: 50,
     data: `
   ####
 ###  #####
@@ -733,7 +682,6 @@ export const LEVELS: Level[] = [
   // Microban #51
   {
     name: "Microban 51",
-    norma: 40,
     data: `
 ####
 #  ###
@@ -747,7 +695,6 @@ export const LEVELS: Level[] = [
   // Microban #52
   {
     name: "Microban 52",
-    norma: 35,
     data: `
   ####
 ### @#
@@ -762,7 +709,6 @@ export const LEVELS: Level[] = [
   // Microban #53
   {
     name: "Microban 53",
-    norma: 50,
     data: `
  #####
 ##. .##
@@ -776,7 +722,6 @@ export const LEVELS: Level[] = [
   // Microban #54
   {
     name: "Microban 54",
-    norma: 70,
     data: `
       ######
       #    #
@@ -791,7 +736,6 @@ export const LEVELS: Level[] = [
   // Microban #55
   {
     name: "Microban 55",
-    norma: 60,
     data: `
 ########
 # @ #  #
@@ -806,7 +750,6 @@ export const LEVELS: Level[] = [
   // Microban #56
   {
     name: "Microban 56",
-    norma: 30,
     data: `
 #####
 #   ###
@@ -819,7 +762,6 @@ export const LEVELS: Level[] = [
   // Microban #57
   {
     name: "Microban 57",
-    norma: 40,
     data: `
   ####
   #  #
@@ -835,7 +777,6 @@ export const LEVELS: Level[] = [
   // Microban #58
   {
     name: "Microban 58",
-    norma: 40,
     data: `
 ####
 #  ####
@@ -849,7 +790,6 @@ export const LEVELS: Level[] = [
   // Microban #59
   {
     name: "Microban 59",
-    norma: 90,
     data: `
 ############
 #          #
@@ -865,7 +805,6 @@ export const LEVELS: Level[] = [
   // Microban #60
   {
     name: "Microban 60",
-    norma: 80,
     data: `
  #########
  #       #
@@ -882,7 +821,6 @@ export const LEVELS: Level[] = [
   // Microban #61
   {
     name: "Microban 61",
-    norma: 75,
     data: `
 ########
 #      #
@@ -899,7 +837,6 @@ export const LEVELS: Level[] = [
   // Microban #62
   {
     name: "Microban 62",
-    norma: 65,
     data: `
    ##########
 ####    ##  #
@@ -912,7 +849,6 @@ export const LEVELS: Level[] = [
   // Microban #63
   {
     name: "Microban 63",
-    norma: 55,
     data: `
 #####   ####
 #   ##### .#
@@ -925,7 +861,6 @@ export const LEVELS: Level[] = [
   // Microban #64
   {
     name: "Microban 64",
-    norma: 60,
     data: `
  ######
 ##    #
@@ -941,7 +876,6 @@ export const LEVELS: Level[] = [
   // Microban #65
   {
     name: "Microban 65",
-    norma: 65,
     data: `
   ######
   #    #
@@ -957,7 +891,6 @@ export const LEVELS: Level[] = [
   // Microban #66
   {
     name: "Microban 66",
-    norma: 80,
     data: `
    ###
    #@#
@@ -978,7 +911,6 @@ export const LEVELS: Level[] = [
   // Microban #67
   {
     name: "Microban 67",
-    norma: 50,
     data: `
 #####
 #   ##
@@ -993,7 +925,6 @@ export const LEVELS: Level[] = [
   // Microban #68
   {
     name: "Microban 68",
-    norma: 45,
     data: `
  ####
  #  ######
@@ -1007,7 +938,6 @@ export const LEVELS: Level[] = [
   // Microban #69
   {
     name: "Microban 69",
-    norma: 70,
     data: `
 ####  ####
 #  ####  #
@@ -1022,7 +952,6 @@ export const LEVELS: Level[] = [
   // Microban #70
   {
     name: "Microban 70",
-    norma: 65,
     data: `
 #####
 # @ ####
@@ -1039,7 +968,6 @@ export const LEVELS: Level[] = [
   // Microban #71
   {
     name: "Microban 71",
-    norma: 80,
     data: `
 ###########
 #     #   ###
@@ -1055,7 +983,6 @@ export const LEVELS: Level[] = [
   // Microban #72
   {
     name: "Microban 72",
-    norma: 70,
     data: `
   ####
  ##  #####
@@ -1073,7 +1000,6 @@ export const LEVELS: Level[] = [
   // Microban #73
   {
     name: "Microban 73",
-    norma: 60,
     data: `
 ####
 #  #####
@@ -1090,7 +1016,6 @@ export const LEVELS: Level[] = [
   // Microban #74
   {
     name: "Microban 74",
-    norma: 65,
     data: `
  ####
  #  #######
@@ -1105,7 +1030,6 @@ export const LEVELS: Level[] = [
   // Microban #75
   {
     name: "Microban 75",
-    norma: 55,
     data: `
  #######
 ## ....##
@@ -1119,7 +1043,6 @@ export const LEVELS: Level[] = [
   // Microban #76
   {
     name: "Microban 76",
-    norma: 70,
     data: `
  #####
 ##   #
@@ -1137,7 +1060,6 @@ export const LEVELS: Level[] = [
   // Microban #77
   {
     name: "Microban 77",
-    norma: 60,
     data: `
 ##########
 # @ .... #
@@ -1151,7 +1073,6 @@ export const LEVELS: Level[] = [
   // Microban #78
   {
     name: "Microban 78",
-    norma: 70,
     data: `
  #######
 ##     ##
@@ -1166,7 +1087,6 @@ export const LEVELS: Level[] = [
   // Microban #79
   {
     name: "Microban 79",
-    norma: 50,
     data: `
  #########
  #    #  #
@@ -1179,7 +1099,6 @@ export const LEVELS: Level[] = [
   // Microban #80
   {
     name: "Microban 80",
-    norma: 75,
     data: `
 ####
 #  #######
@@ -1197,7 +1116,6 @@ export const LEVELS: Level[] = [
   // Microban #81
   {
     name: "Microban 81",
-    norma: 35,
     data: `
  #####
  #   #
@@ -1213,7 +1131,6 @@ export const LEVELS: Level[] = [
   // Microban #82
   {
     name: "Microban 82",
-    norma: 50,
     data: `
 #####
 #   ###
@@ -1228,7 +1145,6 @@ export const LEVELS: Level[] = [
   // Microban #83
   {
     name: "Microban 83",
-    norma: 55,
     data: `
 ######
 #    ##
@@ -1245,7 +1161,6 @@ export const LEVELS: Level[] = [
   // Microban #84
   {
     name: "Microban 84",
-    norma: 75,
     data: `
 ########
 #  ... #
@@ -1262,7 +1177,6 @@ export const LEVELS: Level[] = [
   // Microban #85
   {
     name: "Microban 85",
-    norma: 70,
     data: `
        ####
  #######  #
@@ -1280,7 +1194,6 @@ export const LEVELS: Level[] = [
   // Microban #86
   {
     name: "Microban 86",
-    norma: 55,
     data: `
     ####
   ###  ##
@@ -1295,7 +1208,6 @@ export const LEVELS: Level[] = [
   // Microban #87
   {
     name: "Microban 87",
-    norma: 60,
     data: `
      ####
 ######  #
@@ -1312,7 +1224,6 @@ export const LEVELS: Level[] = [
   // Microban #88
   {
     name: "Microban 88",
-    norma: 80,
     data: `
      ####
  # ###  #
@@ -1331,7 +1242,6 @@ export const LEVELS: Level[] = [
   // Microban #89
   {
     name: "Microban 89",
-    norma: 65,
     data: `
 ##########
 #   ##   #
@@ -1347,7 +1257,6 @@ export const LEVELS: Level[] = [
   // Microban #90
   {
     name: "Microban 90",
-    norma: 50,
     data: `
  ########
  #  @   #
@@ -1361,7 +1270,6 @@ export const LEVELS: Level[] = [
   // Microban #91
   {
     name: "Microban 91",
-    norma: 45,
     data: `
 ###########
 #    .##  #
@@ -1373,7 +1281,6 @@ export const LEVELS: Level[] = [
   // Microban #92
   {
     name: "Microban 92",
-    norma: 85,
     data: `
   ####
   #  #    #####
@@ -1390,7 +1297,6 @@ export const LEVELS: Level[] = [
   // Microban #93
   {
     name: "Microban 93",
-    norma: 90,
     data: `
  #########
 ##   #   ##
@@ -1408,7 +1314,6 @@ export const LEVELS: Level[] = [
   // Microban #94
   {
     name: "Microban 94",
-    norma: 55,
     data: `
 #########
 # @ #   #
@@ -1423,7 +1328,6 @@ export const LEVELS: Level[] = [
   // Microban #95
   {
     name: "Microban 95",
-    norma: 70,
     data: `
 ########
 #@     #
@@ -1438,7 +1342,6 @@ export const LEVELS: Level[] = [
   // Microban #96
   {
     name: "Microban 96",
-    norma: 65,
     data: `
   ######
   #    #
@@ -1456,7 +1359,6 @@ export const LEVELS: Level[] = [
   // Microban #97
   {
     name: "Microban 97",
-    norma: 70,
     data: `
    ####
    #  ########
@@ -1473,7 +1375,6 @@ export const LEVELS: Level[] = [
   // Microban #98
   {
     name: "Microban 98",
-    norma: 90,
     data: `
 #####
 #   ## ####
@@ -1490,7 +1391,6 @@ export const LEVELS: Level[] = [
   // Microban #99
   {
     name: "Microban 99",
-    norma: 100,
     data: `
                #####
                #   #
@@ -1507,7 +1407,6 @@ export const LEVELS: Level[] = [
   // Microban #100
   {
     name: "Microban 100",
-    norma: 55,
     data: `
 #######
 # @#  #
@@ -1522,7 +1421,6 @@ export const LEVELS: Level[] = [
   // Microban #101
   {
     name: "Lockdown",
-    norma: 100,
     data: `
   #####
   #   #
@@ -1542,7 +1440,6 @@ export const LEVELS: Level[] = [
   // Microban #102
   {
     name: "Microban 102",
-    norma: 60,
     data: `
 ###########
 #....#    #
@@ -1557,7 +1454,6 @@ export const LEVELS: Level[] = [
   // Microban #103
   {
     name: "Microban 103",
-    norma: 50,
     data: `
   #####
   # . ##
@@ -1572,7 +1468,6 @@ export const LEVELS: Level[] = [
   // Microban #104
   {
     name: "Microban 104",
-    norma: 55,
     data: `
     #####
 #####   #
@@ -1588,7 +1483,6 @@ export const LEVELS: Level[] = [
   // Microban #105
   {
     name: "Microban 105",
-    norma: 80,
     data: `
  #### ####
 ##  ###  ##
@@ -1606,7 +1500,6 @@ export const LEVELS: Level[] = [
   // Microban #106
   {
     name: "Microban 106",
-    norma: 70,
     data: `
  ########
  #      #
@@ -1622,7 +1515,6 @@ export const LEVELS: Level[] = [
   // Microban #107
   {
     name: "Microban 107",
-    norma: 60,
     data: `
 ########
 #      #
@@ -1637,7 +1529,6 @@ export const LEVELS: Level[] = [
   // Microban #108
   {
     name: "Microban 108",
-    norma: 75,
     data: `
 ####     #####
 #  ###   #   ##
@@ -1652,7 +1543,6 @@ export const LEVELS: Level[] = [
   // Microban #109
   {
     name: "Microban 109",
-    norma: 85,
     data: `
   #######
 # #     #
@@ -1672,7 +1562,6 @@ export const LEVELS: Level[] = [
   // Microban #110
   {
     name: "Microban 110",
-    norma: 50,
     data: `
   ####
 ###  #
@@ -1690,7 +1579,6 @@ export const LEVELS: Level[] = [
   // Microban #111
   {
     name: "Microban 111",
-    norma: 75,
     data: `
 ######
 #    ####
@@ -1709,7 +1597,6 @@ export const LEVELS: Level[] = [
   // Microban #112
   {
     name: "Microban 112",
-    norma: 85,
     data: `
  #####
 ##   ####
@@ -1729,7 +1616,6 @@ export const LEVELS: Level[] = [
   // Microban #113
   {
     name: "Microban 113",
-    norma: 80,
     data: `
    #####
   ##   #
@@ -1749,7 +1635,6 @@ export const LEVELS: Level[] = [
   // Microban #114
   {
     name: "Microban 114",
-    norma: 65,
     data: `
 ######
 #    ###
@@ -1765,7 +1650,6 @@ export const LEVELS: Level[] = [
   // Microban #115
   {
     name: "Microban 115",
-    norma: 70,
     data: `
     #####
 #####   ####
@@ -1780,7 +1664,6 @@ export const LEVELS: Level[] = [
   // Microban #116
   {
     name: "Microban 116",
-    norma: 55,
     data: `
      #####
    ###   #
@@ -1794,7 +1677,6 @@ export const LEVELS: Level[] = [
   // Microban #117
   {
     name: "Microban 117",
-    norma: 80,
     data: `
  #### ####
  #  ###  ##
@@ -1811,7 +1693,6 @@ export const LEVELS: Level[] = [
   // Microban #118
   {
     name: "Microban 118",
-    norma: 60,
     data: `
  #####
 ##   ##
@@ -1828,7 +1709,6 @@ export const LEVELS: Level[] = [
   // Microban #119
   {
     name: "Microban 119",
-    norma: 55,
     data: `
   ######
   #    ##
@@ -1845,7 +1725,6 @@ export const LEVELS: Level[] = [
   // Microban #120
   {
     name: "Microban 120",
-    norma: 70,
     data: `
       ####
 #######  #
@@ -1863,7 +1742,6 @@ export const LEVELS: Level[] = [
   // Microban #121
   {
     name: "Microban 121",
-    norma: 75,
     data: `
  ######
  # .  #
@@ -1881,7 +1759,6 @@ export const LEVELS: Level[] = [
   // Microban #122
   {
     name: "Microban 122",
-    norma: 80,
     data: `
 #####
 #   ###
@@ -1900,7 +1777,6 @@ export const LEVELS: Level[] = [
   // Microban #123
   {
     name: "Microban 123",
-    norma: 85,
     data: `
 ########
 #      #
@@ -1918,7 +1794,6 @@ export const LEVELS: Level[] = [
   // Microban #124
   {
     name: "Microban 124",
-    norma: 90,
     data: `
 ##############
 #      #     #
@@ -1934,7 +1809,6 @@ export const LEVELS: Level[] = [
   // Microban #125
   {
     name: "Microban 125",
-    norma: 75,
     data: `
       #####
       #   ##
@@ -1949,7 +1823,6 @@ export const LEVELS: Level[] = [
   // Microban #126
   {
     name: "Microban 126",
-    norma: 70,
     data: `
  ###########
 ##.......  #
@@ -1963,7 +1836,6 @@ export const LEVELS: Level[] = [
   // Microban #127
   {
     name: "Microban 127",
-    norma: 60,
     data: `
 ## ####
 ####  ####
@@ -1979,7 +1851,6 @@ export const LEVELS: Level[] = [
   // Microban #128
   {
     name: "Microban 128",
-    norma: 70,
     data: `
   #########
 ###   #   #
@@ -1994,7 +1865,6 @@ export const LEVELS: Level[] = [
   // Microban #129
   {
     name: "Microban 129",
-    norma: 70,
     data: `
   #########
 ### @ #   #
@@ -2009,7 +1879,6 @@ export const LEVELS: Level[] = [
   // Microban #130
   {
     name: "Microban 130",
-    norma: 65,
     data: `
 #####  #####
 #   ####.. #
@@ -2023,7 +1892,6 @@ export const LEVELS: Level[] = [
   // Microban #131
   {
     name: "Microban 131",
-    norma: 50,
     data: `
 #####
 #   #
@@ -2041,7 +1909,6 @@ export const LEVELS: Level[] = [
   // Microban #132
   {
     name: "Microban 132",
-    norma: 60,
     data: `
 ####
 # @###
@@ -2056,7 +1923,6 @@ export const LEVELS: Level[] = [
   // Microban #133
   {
     name: "Microban 133",
-    norma: 55,
     data: `
  #######
  #  . .###
@@ -2071,7 +1937,6 @@ export const LEVELS: Level[] = [
   // Microban #134
   {
     name: "Microban 134",
-    norma: 70,
     data: `
         ####
 #########  #
@@ -2088,7 +1953,6 @@ export const LEVELS: Level[] = [
   // Microban #135
   {
     name: "Microban 135",
-    norma: 60,
     data: `
 #######
 #     #####
@@ -2102,7 +1966,6 @@ export const LEVELS: Level[] = [
   // Microban #136
   {
     name: "Microban 136",
-    norma: 55,
     data: `
  #######
  #     #
@@ -2117,7 +1980,6 @@ export const LEVELS: Level[] = [
   // Microban #137
   {
     name: "Microban 137",
-    norma: 75,
     data: `
        ####
       ##  ###
@@ -2134,7 +1996,6 @@ export const LEVELS: Level[] = [
   // Microban #138
   {
     name: "Microban 138",
-    norma: 80,
     data: `
   ####
 ###  #
@@ -2152,7 +2013,6 @@ export const LEVELS: Level[] = [
   // Microban #139
   {
     name: "Microban 139",
-    norma: 100,
     data: `
  ####
 ##  ####
@@ -2171,7 +2031,6 @@ export const LEVELS: Level[] = [
   // Microban #140
   {
     name: "Microban 140",
-    norma: 65,
     data: `
 ######## #####
 #  #   ###   #
@@ -2187,7 +2046,6 @@ export const LEVELS: Level[] = [
   // Microban #141
   {
     name: "Microban 141",
-    norma: 60,
     data: `
   ########
   #  # . #
@@ -2203,7 +2061,6 @@ export const LEVELS: Level[] = [
   // Microban #142
   {
     name: "Microban 142",
-    norma: 35,
     data: `
   ####
 ###  #
@@ -2219,7 +2076,6 @@ export const LEVELS: Level[] = [
   // Microban #143
   {
     name: "Microban 143",
-    norma: 90,
     data: `
 ####
 #  ####
@@ -2241,7 +2097,6 @@ export const LEVELS: Level[] = [
   // Microban #144
   {
     name: "Microban 144",
-    norma: 100,
     data: `
    ####
  ###  #####
@@ -2260,7 +2115,6 @@ export const LEVELS: Level[] = [
   // Microban #145
   {
     name: "Microban 145",
-    norma: 85,
     data: `
    #####
    # @ #
@@ -2278,7 +2132,6 @@ export const LEVELS: Level[] = [
   // Microban #146
   {
     name: "Microban 146",
-    norma: 80,
     data: `
  #######
 ##  .  ##
@@ -2294,7 +2147,6 @@ export const LEVELS: Level[] = [
   // Microban #147
   {
     name: "Microban 147",
-    norma: 70,
     data: `
        #####
 ########   #
@@ -2311,7 +2163,6 @@ export const LEVELS: Level[] = [
   // Microban #148
   {
     name: "Microban 148",
-    norma: 65,
     data: `
 ###########
 #  .  #   #
@@ -2325,7 +2176,6 @@ export const LEVELS: Level[] = [
   // Microban #149
   {
     name: "Microban 149",
-    norma: 60,
     data: `
  ####
 ##  ###
@@ -2344,7 +2194,6 @@ export const LEVELS: Level[] = [
   // Microban #150
   {
     name: "Microban 150",
-    norma: 80,
     data: `
      ####
  #####  #
@@ -2359,7 +2208,6 @@ export const LEVELS: Level[] = [
   // Microban #151
   {
     name: "Microban 151",
-    norma: 65,
     data: `
    ####
    #  #
@@ -2376,7 +2224,6 @@ export const LEVELS: Level[] = [
   // Microban #152
   {
     name: "Microban 152",
-    norma: 95,
     data: `
 ###### ####
 #     #    #
@@ -2392,7 +2239,6 @@ export const LEVELS: Level[] = [
   // Microban #153
   {
     name: "Microban 153",
-    norma: 110,
     data: `
 #############
 #.# @#  #   #
@@ -2409,7 +2255,6 @@ export const LEVELS: Level[] = [
   // Microban #154 - Long Way Home
   {
     name: "Long Way Home",
-    norma: 500,
     data: `
  ############################
  #                          #
@@ -2433,7 +2278,6 @@ export const LEVELS: Level[] = [
   // Microban #155 - The Dungeon
   {
     name: "The Dungeon",
-    norma: 500,
     data: `
     ######               ####
 #####*#  #################  ##
