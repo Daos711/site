@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Grid3X3, Circle, Cog, Grid2X2, Box, Hash } from "lucide-react";
+import { Grid3X3, Circle, Cog, Grid2X2, Box } from "lucide-react";
 
 const games = [
   {
@@ -41,14 +41,6 @@ const games = [
     description: "Классическая головоломка. 155 уровней Microban.",
     href: "/games/sokoban",
     icon: Box,
-    status: "prototype" as const,
-  },
-  {
-    id: "sudoku",
-    title: "Судоку",
-    description: "Классическая головоломка с числами. 3 уровня сложности.",
-    href: "/games/sudoku",
-    icon: Hash,
     status: "prototype" as const,
   },
 ];
