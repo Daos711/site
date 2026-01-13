@@ -326,7 +326,7 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
 ];
 
 // Версия набора уровней - при изменении уровней увеличить, чтобы сбросить прогресс
-const LEVELS_VERSION = 7;
+const LEVELS_VERSION = 8;
 
 function parseLevel(levelData: string): { grid: CellType[][]; playerPos: Position } {
   const lines = levelData.trim().split("\n");
