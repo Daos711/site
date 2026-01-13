@@ -2150,12 +2150,12 @@ function buildTheta0Derivation(
 
     // Функция для форматирования: -num/denom (инвертируем знак num)
     // Если num >= 0, результат отрицательный: пишем -num/denom
-    // Если num < 0, результат положительный: пишем |num|/denom (без знака +)
+    // Если num < 0, результат положительный: пишем +|num|/denom
     const formatNegatedFraction = (num: number, denom: string): string => {
       if (num >= 0) {
         return `- \\frac{${formatNumber(num)}}{${denom}}`;
       } else {
-        return `\\frac{${formatNumber(Math.abs(num))}}{${denom}}`;
+        return `+ \\frac{${formatNumber(Math.abs(num))}}{${denom}}`;
       }
     };
 
