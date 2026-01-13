@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Grid3X3, Circle, Cog, Grid2X2 } from "lucide-react";
+import { Grid3X3, Circle, Cog, Grid2X2, Box } from "lucide-react";
 
 const games = [
   {
@@ -33,6 +33,14 @@ const games = [
     description: "Классическая головоломка. Соединяй плитки, собери 2048!",
     href: "/games/2048",
     icon: Grid2X2,
+    status: "prototype" as const,
+  },
+  {
+    id: "sokoban",
+    title: "Сокобан",
+    description: "Толкай ящики на цели. 10 уровней от простого к сложному.",
+    href: "/games/sokoban",
+    icon: Box,
     status: "prototype" as const,
   },
 ];
