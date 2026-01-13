@@ -2209,7 +2209,7 @@ function buildTheta0Derivation(
     // Вычисляем θ₀ как в solver.ts: θ₀ = -deltaSum / (deltaX · EI)
     const computedTheta0 = -deltaSum / EI / deltaX;
     const deltaSumFormatted = formatNumber(deltaSum);
-    const absDeltaSum = Math.abs(deltaSum);
+    const negatedDeltaSum = -deltaSum;
 
     html += `
   <p><strong>Вычитаем (1) из (2):</strong></p>
@@ -2220,7 +2220,7 @@ function buildTheta0Derivation(
     \\[\\theta_0 \\cdot ${formatNumber(deltaX)} + \\frac{${deltaSumFormatted}}{EI} = 0\\]
   </div>
   <div class="formula">
-    \\[\\theta_0 = -\\frac{${deltaSumFormatted}}{${formatNumber(deltaX)} \\cdot EI} = \\frac{${formatNumber(absDeltaSum)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${deltaSumFormatted}}{${formatNumber(deltaX)} \\cdot EI} = \\frac{${formatNumber(negatedDeltaSum)}}{${formatNumber(deltaX)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>
   <div class="formula">
     \\[\\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад}\\]
@@ -2320,10 +2320,9 @@ function buildTheta0Derivation(
   // Вычисляем θ₀ из формулы: θ₀ = -sumTerms / (xB · EI)
   const computedTheta0 = -sumTerms / (xB * EI);
 
-  // Формируем вывод формулы: всегда показываем -sumTerms/(xB·EI)
-  // Если sumTerms отрицательный, получается -(-X) = X
+  // Формируем вывод формулы
   const sumTermsFormatted = formatNumber(sumTerms);
-  const absResult = Math.abs(sumTerms);
+  const negatedSumTerms = -sumTerms;
 
   html += `
   <div class="formula${thetaMultiline ? " formula-multiline" : ""}">
@@ -2335,7 +2334,7 @@ function buildTheta0Derivation(
   </ul>
   <p>Сумма: \\(${sumTermsFormatted}\\) Н·м³</p>
   <div class="formula">
-    \\[\\theta_0 = -\\frac{${sumTermsFormatted}}{${formatNumber(xB)} \\cdot EI} = \\frac{${formatNumber(absResult)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${sumTermsFormatted}}{${formatNumber(xB)} \\cdot EI} = \\frac{${formatNumber(negatedSumTerms)}}{${formatNumber(xB)} \\cdot ${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
@@ -2499,11 +2498,11 @@ function buildCantileverRightDerivation(
   // Вычисляем θ₀ из формулы: θ₀ = -sumTheta / EI
   const computedTheta0 = -sumTheta / EI;
   const sumThetaFormatted = formatNumber(sumTheta);
-  const absThetaResult = Math.abs(sumTheta);
+  const negatedSumTheta = -sumTheta;
 
   html += `
   <div class="formula">
-    \\[\\theta_0 = -\\frac{${sumThetaFormatted}}{EI} = \\frac{${formatNumber(absThetaResult)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
+    \\[\\theta_0 = -\\frac{${sumThetaFormatted}}{EI} = \\frac{${formatNumber(negatedSumTheta)}}{${formatNumber(EI, 0)}} = ${formatNumber(computedTheta0, 5)} \\text{ рад}\\]
   </div>`;
 
   html += `
