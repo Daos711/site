@@ -14,6 +14,31 @@ interface Problem {
 }
 
 type GameState = "idle" | "playing" | "finished";
+type Difficulty = "easy" | "medium" | "hard";
+
+const DIFFICULTY_CONFIG = {
+  easy: {
+    label: "Лёгкий",
+    color: "text-green-400",
+    bgColor: "bg-green-600",
+    hoverColor: "hover:bg-green-500",
+    seedOffset: 0,
+  },
+  medium: {
+    label: "Средний",
+    color: "text-amber-400",
+    bgColor: "bg-amber-600",
+    hoverColor: "hover:bg-amber-500",
+    seedOffset: 1000000,
+  },
+  hard: {
+    label: "Сложный",
+    color: "text-red-400",
+    bgColor: "bg-red-600",
+    hoverColor: "hover:bg-red-500",
+    seedOffset: 2000000,
+  },
+};
 
 // PRNG на основе seed
 function seededRandom(seed: number): () => number {
@@ -61,9 +86,9 @@ function generateWrongAnswers(correct: number, random: () => number): number[] {
   return Array.from(wrong);
 }
 
-// Генерация примеров на основе seed
-function generateProblems(seed: number): Problem[] {
-  const random = seededRandom(seed);
+// Генерация примеров на основе seed и сложности
+function generateProblems(seed: number, difficulty: Difficulty): Problem[] {
+  const random = seededRandom(seed + DIFFICULTY_CONFIG[difficulty].seedOffset);
   const problems: Problem[] = [];
 
   for (let i = 0; i < 20; i++) {
@@ -71,24 +96,63 @@ function generateProblems(seed: number): Problem[] {
 
     let a: number, b: number, operation: "+" | "-" | "×", correctAnswer: number;
 
-    if (type === 0) {
-      // Умножение до 10×10
-      a = Math.floor(random() * 9) + 2; // 2-10
-      b = Math.floor(random() * 9) + 2; // 2-10
-      operation = "×";
-      correctAnswer = a * b;
-    } else if (type === 1) {
-      // Сложение до 100
-      a = Math.floor(random() * 50) + 10; // 10-59
-      b = Math.floor(random() * 40) + 5;  // 5-44
-      operation = "+";
-      correctAnswer = a + b;
+    if (difficulty === "easy") {
+      // Лёгкий: умножение до 10×10, простое сложение/вычитание
+      if (type === 0) {
+        a = Math.floor(random() * 9) + 2; // 2-10
+        b = Math.floor(random() * 9) + 2; // 2-10
+        operation = "×";
+        correctAnswer = a * b;
+      } else if (type === 1) {
+        a = Math.floor(random() * 50) + 10; // 10-59
+        b = Math.floor(random() * 40) + 5;  // 5-44
+        operation = "+";
+        correctAnswer = a + b;
+      } else {
+        a = Math.floor(random() * 50) + 30; // 30-79
+        b = Math.floor(random() * 25) + 5;  // 5-29
+        operation = "-";
+        correctAnswer = a - b;
+      }
+    } else if (difficulty === "medium") {
+      // Средний: умножение до 12×12, двузначные числа до 99
+      if (type === 0) {
+        a = Math.floor(random() * 11) + 2; // 2-12
+        b = Math.floor(random() * 11) + 2; // 2-12
+        operation = "×";
+        correctAnswer = a * b;
+      } else if (type === 1) {
+        a = Math.floor(random() * 60) + 20; // 20-79
+        b = Math.floor(random() * 50) + 20; // 20-69
+        operation = "+";
+        correctAnswer = a + b;
+      } else {
+        a = Math.floor(random() * 40) + 50; // 50-89
+        b = Math.floor(random() * 35) + 15; // 15-49
+        operation = "-";
+        correctAnswer = a - b;
+      }
     } else {
-      // Вычитание (результат положительный)
-      a = Math.floor(random() * 50) + 30; // 30-79
-      b = Math.floor(random() * 25) + 5;  // 5-29
-      operation = "-";
-      correctAnswer = a - b;
+      // Сложный: умножение двузначных, трёхзначное сложение/вычитание
+      if (type === 0) {
+        // Умножение: одно двузначное × однозначное (11-19 × 2-9)
+        a = Math.floor(random() * 9) + 11; // 11-19
+        b = Math.floor(random() * 8) + 2;  // 2-9
+        operation = "×";
+        correctAnswer = a * b;
+      } else if (type === 1) {
+        // Сложение трёхзначных
+        a = Math.floor(random() * 150) + 100; // 100-249
+        b = Math.floor(random() * 150) + 50;  // 50-199
+        operation = "+";
+        correctAnswer = a + b;
+      } else {
+        // Вычитание трёхзначных
+        a = Math.floor(random() * 200) + 200; // 200-399
+        b = Math.floor(random() * 150) + 50;  // 50-199
+        operation = "-";
+        correctAnswer = a - b;
+      }
     }
 
     const wrongAnswers = generateWrongAnswers(correctAnswer, random);
@@ -114,6 +178,7 @@ function formatTime(ms: number): string {
 
 export default function QuickMathPage() {
   const [gameState, setGameState] = useState<GameState>("idle");
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [problems, setProblems] = useState<Problem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState(0);
@@ -121,17 +186,26 @@ export default function QuickMathPage() {
   const [penalty, setPenalty] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
-  const [bestTime, setBestTime] = useState<number | null>(null);
+  const [bestTimes, setBestTimes] = useState<Record<Difficulty, number | null>>({
+    easy: null,
+    medium: null,
+    hard: null,
+  });
 
   const dailySeed = getDailySeed();
   const dateString = `${Math.floor(dailySeed / 10000)}.${String(Math.floor((dailySeed % 10000) / 100)).padStart(2, '0')}.${String(dailySeed % 100).padStart(2, '0')}`;
+  const config = DIFFICULTY_CONFIG[difficulty];
 
-  // Загрузка лучшего результата
+  // Загрузка лучших результатов для всех уровней
   useEffect(() => {
-    const saved = localStorage.getItem(`quickmath-best-${dailySeed}`);
-    if (saved) {
-      setBestTime(parseFloat(saved));
-    }
+    const times: Record<Difficulty, number | null> = { easy: null, medium: null, hard: null };
+    (["easy", "medium", "hard"] as Difficulty[]).forEach((d) => {
+      const saved = localStorage.getItem(`quickmath-best-${d}-${dailySeed}`);
+      if (saved) {
+        times[d] = parseFloat(saved);
+      }
+    });
+    setBestTimes(times);
   }, [dailySeed]);
 
   // Таймер
@@ -165,7 +239,7 @@ export default function QuickMathPage() {
   }, [gameState, currentIndex, problems]);
 
   const startGame = useCallback(() => {
-    const newProblems = generateProblems(dailySeed);
+    const newProblems = generateProblems(dailySeed, difficulty);
     setProblems(newProblems);
     setCurrentIndex(0);
     setStartTime(Date.now());
@@ -174,7 +248,7 @@ export default function QuickMathPage() {
     setCorrectCount(0);
     setFeedback(null);
     setGameState("playing");
-  }, [dailySeed]);
+  }, [dailySeed, difficulty]);
 
   const handleAnswer = useCallback((optionIndex: number) => {
     if (gameState !== "playing" || feedback) return;
@@ -202,15 +276,16 @@ export default function QuickMathPage() {
 
         // Сохраняем лучший результат
         const totalTime = finalTime;
-        if (!bestTime || totalTime < bestTime) {
-          setBestTime(totalTime);
-          localStorage.setItem(`quickmath-best-${dailySeed}`, totalTime.toString());
+        const currentBest = bestTimes[difficulty];
+        if (!currentBest || totalTime < currentBest) {
+          setBestTimes(prev => ({ ...prev, [difficulty]: totalTime }));
+          localStorage.setItem(`quickmath-best-${difficulty}-${dailySeed}`, totalTime.toString());
         }
       } else {
         setCurrentIndex(i => i + 1);
       }
     }, 300);
-  }, [gameState, feedback, problems, currentIndex, startTime, penalty, bestTime, dailySeed]);
+  }, [gameState, feedback, problems, currentIndex, startTime, penalty, bestTimes, difficulty, dailySeed]);
 
   const totalTime = elapsedTime + penalty;
 
@@ -231,40 +306,104 @@ export default function QuickMathPage() {
         <div className="bg-card border border-border rounded-xl p-6 text-center">
           <div className="text-6xl mb-4">🧮</div>
           <h2 className="text-2xl font-bold mb-2">Quick Math</h2>
-          <p className="text-muted mb-6">
+          <p className="text-muted mb-4">
             20 примеров на скорость.<br />
             Все игроки решают одинаковые примеры!
           </p>
 
-          <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-            <div className="bg-stone-800 rounded-lg p-3">
-              <div className="text-amber-400 font-bold">Умножение</div>
-              <div className="text-muted">до 10×10</div>
-            </div>
-            <div className="bg-stone-800 rounded-lg p-3">
-              <div className="text-blue-400 font-bold">Сложение</div>
-              <div className="text-muted">до 100</div>
-            </div>
-            <div className="bg-stone-800 rounded-lg p-3">
-              <div className="text-purple-400 font-bold">Вычитание</div>
-              <div className="text-muted">результат &gt; 0</div>
-            </div>
-            <div className="bg-stone-800 rounded-lg p-3">
-              <div className="text-red-400 font-bold">Штраф</div>
-              <div className="text-muted">+2 сек за ошибку</div>
-            </div>
+          {/* Выбор сложности */}
+          <div className="flex gap-2 mb-6">
+            {(["easy", "medium", "hard"] as Difficulty[]).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDifficulty(d)}
+                className={`
+                  flex-1 py-3 rounded-lg font-bold transition-all
+                  ${difficulty === d
+                    ? `${DIFFICULTY_CONFIG[d].bgColor} text-white`
+                    : "bg-stone-800 hover:bg-stone-700"
+                  }
+                `}
+              >
+                <div className={difficulty === d ? "text-white" : DIFFICULTY_CONFIG[d].color}>
+                  {DIFFICULTY_CONFIG[d].label}
+                </div>
+                {bestTimes[d] && (
+                  <div className="text-xs opacity-75 mt-1">
+                    🏆 {formatTime(bestTimes[d]!)}с
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
 
-          {bestTime && (
-            <div className="mb-4 text-sm">
-              <span className="text-muted">Твой лучший сегодня: </span>
-              <span className="text-green-400 font-bold">{formatTime(bestTime)} сек</span>
-            </div>
-          )}
+          {/* Описание сложности */}
+          <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
+            {difficulty === "easy" && (
+              <>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-amber-400 font-bold">Умножение</div>
+                  <div className="text-muted">до 10×10</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-blue-400 font-bold">Сложение</div>
+                  <div className="text-muted">до 100</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-purple-400 font-bold">Вычитание</div>
+                  <div className="text-muted">простое</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-red-400 font-bold">Штраф</div>
+                  <div className="text-muted">+2 сек</div>
+                </div>
+              </>
+            )}
+            {difficulty === "medium" && (
+              <>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-amber-400 font-bold">Умножение</div>
+                  <div className="text-muted">до 12×12</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-blue-400 font-bold">Сложение</div>
+                  <div className="text-muted">до 150</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-purple-400 font-bold">Вычитание</div>
+                  <div className="text-muted">двузначные</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-red-400 font-bold">Штраф</div>
+                  <div className="text-muted">+2 сек</div>
+                </div>
+              </>
+            )}
+            {difficulty === "hard" && (
+              <>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-amber-400 font-bold">Умножение</div>
+                  <div className="text-muted">11-19 × 2-9</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-blue-400 font-bold">Сложение</div>
+                  <div className="text-muted">трёхзначные</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-purple-400 font-bold">Вычитание</div>
+                  <div className="text-muted">трёхзначные</div>
+                </div>
+                <div className="bg-stone-800 rounded-lg p-3">
+                  <div className="text-red-400 font-bold">Штраф</div>
+                  <div className="text-muted">+2 сек</div>
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             onClick={startGame}
-            className="w-full py-4 rounded-xl bg-amber-600 hover:bg-amber-500 font-bold text-lg flex items-center justify-center gap-2 transition-all"
+            className={`w-full py-4 rounded-xl ${config.bgColor} ${config.hoverColor} font-bold text-lg flex items-center justify-center gap-2 transition-all`}
           >
             <Play size={24} />
             Начать
@@ -343,7 +482,10 @@ export default function QuickMathPage() {
       {gameState === "finished" && (
         <div className="bg-card border border-border rounded-xl p-6 text-center">
           <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-6">Раунд завершён!</h2>
+          <h2 className={`text-2xl font-bold ${config.color} mb-2`}>Раунд завершён!</h2>
+          <div className="text-sm text-muted mb-6">
+            Уровень: <span className={`font-bold ${config.color}`}>{config.label}</span>
+          </div>
 
           {/* Статистика */}
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -357,19 +499,19 @@ export default function QuickMathPage() {
             </div>
             <div className="bg-stone-800 rounded-lg p-3">
               <div className="text-xs text-muted uppercase">Итого</div>
-              <div className="text-xl font-bold text-amber-400">{formatTime(totalTime)}</div>
+              <div className={`text-xl font-bold ${config.color}`}>{formatTime(totalTime)}</div>
             </div>
           </div>
 
           <div className="mb-6">
             <span className="text-muted">Правильно: </span>
-            <span className={`font-bold ${correctCount === 20 ? "text-green-400" : "text-amber-400"}`}>
+            <span className={`font-bold ${correctCount === 20 ? "text-green-400" : config.color}`}>
               {correctCount}/20
             </span>
             {correctCount === 20 && <span className="ml-2">🏆</span>}
           </div>
 
-          {bestTime && totalTime <= bestTime && (
+          {bestTimes[difficulty] && totalTime <= bestTimes[difficulty]! && (
             <div className="mb-6 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
               <span className="text-green-400 font-bold">Новый рекорд дня!</span>
             </div>
@@ -378,8 +520,8 @@ export default function QuickMathPage() {
           {/* Лидерборд (заглушка) */}
           <div className="mb-6">
             <div className="flex items-center justify-center gap-2 mb-3">
-              <Trophy className="text-amber-400" size={20} />
-              <span className="font-bold">Рейтинг дня</span>
+              <Trophy className={config.color} size={20} />
+              <span className="font-bold">Рейтинг дня ({config.label})</span>
             </div>
             <div className="bg-stone-800 rounded-lg p-4 text-sm text-muted">
               Лидерборд будет добавлен позже
@@ -388,7 +530,7 @@ export default function QuickMathPage() {
 
           <button
             onClick={startGame}
-            className="w-full py-4 rounded-xl bg-amber-600 hover:bg-amber-500 font-bold text-lg flex items-center justify-center gap-2 transition-all"
+            className={`w-full py-4 rounded-xl ${config.bgColor} ${config.hoverColor} font-bold text-lg flex items-center justify-center gap-2 transition-all`}
           >
             <RefreshCw size={20} />
             Играть снова
