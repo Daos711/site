@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { RotateCcw, Undo2, ChevronLeft, ChevronRight, Trophy, Lock, User, RefreshCw } from "lucide-react";
+import { RotateCcw, Undo2, ChevronLeft, ChevronRight, Trophy, User, RefreshCw, Check, List } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import {
   getSokobanScores,
@@ -11,6 +11,7 @@ import {
   setSokobanPlayerName,
   SokobanScoreEntry,
 } from "@/lib/supabase";
+import { LEVELS, LEVELS_VERSION } from "./levels";
 
 // Типы клеток
 type CellType = "floor" | "wall" | "goal" | "player" | "player_on_goal" | "box" | "box_on_goal";
@@ -26,307 +27,6 @@ interface GameState {
   moves: number;
   pushes: number;
 }
-
-// ОФИЦИАЛЬНЫЕ УРОВНИ MICROBAN (David W. Skinner, 2000)
-// Источник: https://github.com/OMerkel/Sokoban/blob/master/3rdParty/Levels/Microban.txt
-// Формат: # стена, @ игрок, + игрок на цели, $ ящик, * ящик на цели, . цель, пробел - пол
-const LEVELS: { name: string; data: string; norma: number }[] = [
-  // Microban #1
-  {
-    name: "Microban 1",
-    norma: 45,
-    data: `
-####
-# .#
-#  ###
-#*@  #
-#  $ #
-#  ###
-####
-`
-  },
-  // Microban #2
-  {
-    name: "Microban 2",
-    norma: 55,
-    data: `
-######
-#    #
-# #@ #
-# $* #
-# .* #
-#    #
-######
-`
-  },
-  // Microban #3
-  {
-    name: "Microban 3",
-    norma: 65,
-    data: `
-  ####
-###  ####
-#     $ #
-# #  #$ #
-# . .#@ #
-#########
-`
-  },
-  // Microban #4
-  {
-    name: "Microban 4",
-    norma: 45,
-    data: `
-########
-#      #
-# .**$@#
-#      #
-#####  #
-    ####
-`
-  },
-  // Microban #5
-  {
-    name: "Microban 5",
-    norma: 60,
-    data: `
- #######
- #     #
- # .$. #
-## $@$ #
-#  .$. #
-#      #
-########
-`
-  },
-  // Microban #6
-  {
-    name: "Microban 6",
-    norma: 100,
-    data: `
-###### #####
-#    ###   #
-# $$     #@#
-# $ #...   #
-#   ########
-#####
-`
-  },
-  // Microban #7
-  {
-    name: "Microban 7",
-    norma: 80,
-    data: `
-#######
-#     #
-# .$. #
-# $.$ #
-# .$. #
-# $.$ #
-#  @  #
-#######
-`
-  },
-  // Microban #8
-  {
-    name: "Microban 8",
-    norma: 100,
-    data: `
-  ######
-  # ..@#
-  # $$ #
-  ## ###
-   # #
-   # #
-#### #
-#    ##
-# #   #
-#   # #
-###   #
-  #####
-`
-  },
-  // Microban #9
-  {
-    name: "Microban 9",
-    norma: 50,
-    data: `
-#####
-#.  ##
-#@$$ #
-##   #
- ##  #
-  ##.#
-   ###
-`
-  },
-  // Microban #10
-  {
-    name: "Microban 10",
-    norma: 70,
-    data: `
-      #####
-      #.  #
-      #.# #
-#######.# #
-# @ $ $ $ #
-# # # # ###
-#       #
-#########
-`
-  },
-  // Microban #11
-  {
-    name: "Microban 11",
-    norma: 55,
-    data: `
-  ######
-  #    #
-  # ##@##
-### # $ #
-# ..# $ #
-#       #
-#  ######
-####
-`
-  },
-  // Microban #12
-  {
-    name: "Microban 12",
-    norma: 60,
-    data: `
-#####
-#   ##
-# $  #
-## $ ####
- ###@.  #
-  #  .# #
-  #     #
-  #######
-`
-  },
-  // Microban #13
-  {
-    name: "Microban 13",
-    norma: 50,
-    data: `
-####
-#. ##
-#.@ #
-#. $#
-##$ ###
- # $  #
- #    #
- #  ###
- ####
-`
-  },
-  // Microban #14
-  {
-    name: "Microban 14",
-    norma: 30,
-    data: `
-#######
-#     #
-# # # #
-#. $*@#
-#   ###
-#####
-`
-  },
-  // Microban #15
-  {
-    name: "Microban 15",
-    norma: 45,
-    data: `
-     ###
-######@##
-#    .* #
-#   #   #
-#####$# #
-    #   #
-    #####
-`
-  },
-  // Microban #16
-  {
-    name: "Microban 16",
-    norma: 55,
-    data: `
- ####
- #  ####
- #     ##
-## ##   #
-#. .# @$##
-#   # $$ #
-#  .#    #
-##########
-`
-  },
-  // Microban #17
-  {
-    name: "Microban 17",
-    norma: 35,
-    data: `
-#####
-# @ #
-#...#
-#$$$##
-#    #
-#    #
-######
-`
-  },
-  // Microban #18
-  {
-    name: "Microban 18",
-    norma: 45,
-    data: `
-#######
-#     #
-#. .  #
-# ## ##
-#  $ #
-###$ #
-  #@ #
-  #  #
-  ####
-`
-  },
-  // Microban #19
-  {
-    name: "Microban 19",
-    norma: 35,
-    data: `
-########
-#   .. #
-#  @$$ #
-##### ##
-   #  #
-   #  #
-   #  #
-   ####
-`
-  },
-  // Microban #20
-  {
-    name: "Microban 20",
-    norma: 45,
-    data: `
-#######
-#     ###
-#  @$$..#
-#### ## #
-  #     #
-  #  ####
-  #  #
-  ####
-`
-  },
-];
-
-// Версия набора уровней - при изменении уровней увеличить, чтобы сбросить прогресс
-const LEVELS_VERSION = 8;
 
 function parseLevel(levelData: string): { grid: CellType[][]; playerPos: Position } {
   const lines = levelData.trim().split("\n");
@@ -409,6 +109,7 @@ export default function SokobanPage() {
   const [pendingScore, setPendingScore] = useState<{ moves: number; pushes: number } | null>(null);
   const [scoreSubmitting, setScoreSubmitting] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [showLevelsList, setShowLevelsList] = useState(false);
 
   // Загрузка прогресса (с проверкой версии уровней)
   useEffect(() => {
@@ -741,10 +442,16 @@ export default function SokobanPage() {
           <ChevronLeft size={24} />
         </button>
 
-        <div className="text-center">
+        <button
+          onClick={() => setShowLevelsList(true)}
+          className="text-center hover:bg-white/5 px-4 py-1 rounded-lg transition-all"
+        >
           <div className="text-xs text-muted uppercase tracking-wide">Уровень {currentLevel + 1}/{LEVELS.length}</div>
-          <div className="font-bold text-amber-400">{LEVELS[currentLevel].name}</div>
-        </div>
+          <div className="font-bold text-amber-400 flex items-center justify-center gap-1">
+            {LEVELS[currentLevel].name}
+            <List size={14} className="text-muted" />
+          </div>
+        </button>
 
         <button
           onClick={handleNextLevel}
@@ -967,50 +674,47 @@ export default function SokobanPage() {
         Стрелки или свайпы для движения · R — рестарт · Ctrl+Z — отмена
       </div>
 
-      {/* Список уровней */}
-      <div className="mt-6">
-        <h2 className="flex items-center gap-2 text-lg font-bold mb-3">
-          <Trophy className="w-5 h-5 text-amber-400" />
-          Уровни
-        </h2>
-        <div className="grid grid-cols-5 gap-2">
-          {LEVELS.map((level, index) => {
-            const isUnlocked = index < unlockedLevels;
-            const best = bestScores[index];
-            const isUnderNorma = best && best.moves <= level.norma;
+      {/* Прогресс */}
+      {(() => {
+        const completedCount = Object.keys(bestScores).length;
+        const underNormaCount = Object.entries(bestScores).filter(
+          ([idx, score]) => score.moves <= LEVELS[parseInt(idx)]?.norma
+        ).length;
+        const progressPercent = Math.round((completedCount / LEVELS.length) * 100);
 
-            return (
-              <button
-                key={index}
-                onClick={() => selectLevel(index)}
-                disabled={!isUnlocked}
-                className={`
-                  relative aspect-square rounded-lg flex flex-col items-center justify-center transition-all
-                  ${currentLevel === index ? "ring-2 ring-amber-400" : ""}
-                  ${isUnlocked
-                    ? "bg-card border border-border hover:bg-white/10"
-                    : "bg-gray-800/50 cursor-not-allowed"
-                  }
-                  ${isUnderNorma ? "bg-green-900/30 border-green-700" : ""}
-                `}
-              >
-                {isUnlocked ? (
-                  <>
-                    <span className="text-lg font-bold">{index + 1}</span>
-                    {best && (
-                      <span className={`text-xs ${isUnderNorma ? "text-green-400" : "text-gray-400"}`}>
-                        {best.moves}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <Lock size={16} className="text-gray-600" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+        return (
+          <div className="mt-6 bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="flex items-center gap-2 text-sm font-bold">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                Прогресс
+              </h2>
+              <span className="text-sm text-muted">{completedCount} / {LEVELS.length}</span>
+            </div>
+
+            {/* Прогресс-бар */}
+            <div className="h-2 bg-gray-700 rounded-full overflow-hidden mb-3">
+              <div
+                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
+            {/* Статистика */}
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-green-400" />
+                <span className="text-muted">В норму:</span>
+                <span className="text-green-400 font-bold">{underNormaCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted">Доступно:</span>
+                <span className="text-amber-400 font-bold">{unlockedLevels}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Лидерборд текущего уровня */}
       <div className="mt-6">
@@ -1089,6 +793,72 @@ export default function SokobanPage() {
           </table>
         </div>
       </div>
+
+      {/* Модальное окно списка уровней */}
+      {showLevelsList && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center animate-fade-in p-4"
+          onClick={() => setShowLevelsList(false)}
+        >
+          <div
+            className="bg-gray-900 rounded-2xl max-w-md w-full max-h-[80vh] border border-gray-700 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Выбор уровня</h2>
+              <button
+                onClick={() => setShowLevelsList(false)}
+                className="text-gray-400 hover:text-white transition-colors text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[60vh] p-2">
+              <div className="grid grid-cols-5 gap-2">
+                {LEVELS.map((level, index) => {
+                  const isUnlocked = index < unlockedLevels;
+                  const best = bestScores[index];
+                  const isUnderNorma = best && best.moves <= level.norma;
+                  const isCurrent = currentLevel === index;
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        if (isUnlocked) {
+                          selectLevel(index);
+                          setShowLevelsList(false);
+                        }
+                      }}
+                      disabled={!isUnlocked}
+                      className={`
+                        relative aspect-square rounded-lg flex flex-col items-center justify-center transition-all text-sm
+                        ${isCurrent ? "ring-2 ring-amber-400" : ""}
+                        ${isUnlocked
+                          ? "bg-gray-800 hover:bg-gray-700 cursor-pointer"
+                          : "bg-gray-800/30 cursor-not-allowed opacity-40"
+                        }
+                        ${isUnderNorma ? "bg-green-900/50" : ""}
+                      `}
+                      title={isUnlocked ? level.name : "Заблокирован"}
+                    >
+                      <span className={`font-bold ${isCurrent ? "text-amber-400" : ""}`}>
+                        {index + 1}
+                      </span>
+                      {best && (
+                        <span className={`text-xs ${isUnderNorma ? "text-green-400" : "text-gray-500"}`}>
+                          {best.moves}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         @keyframes fade-in {
