@@ -421,3 +421,167 @@ export function clearPending2048Result(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(PENDING_2048_KEY);
 }
+
+// ==================== SCORES SOKOBAN ====================
+
+export interface SokobanScoreEntry {
+  id: string;
+  player_id: string;
+  name: string;
+  level: number;
+  moves: number;
+  pushes: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Получить лидерборд для конкретного уровня
+export async function getSokobanScores(level: number, limit = 10): Promise<SokobanScoreEntry[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_sokoban?level=eq.${level}&select=*&order=moves.asc,pushes.asc&limit=${limit}`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch sokoban scores:", res.statusText);
+    return [];
+  }
+
+  return res.json();
+}
+
+// Получить лучший результат игрока на уровне
+export async function getPlayerSokobanScore(playerId: string, level: number): Promise<SokobanScoreEntry | null> {
+  const encodedPlayerId = encodeURIComponent(playerId);
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_sokoban?player_id=eq.${encodedPlayerId}&level=eq.${level}&select=*`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch player sokoban score:", res.statusText);
+    return null;
+  }
+
+  const data = await res.json();
+  return data.length > 0 ? data[0] : null;
+}
+
+// Сохранить или обновить результат игрока на уровне
+export async function submitSokobanScore(
+  playerId: string,
+  name: string,
+  level: number,
+  moves: number,
+  pushes: number
+): Promise<{ success: boolean; isNewRecord: boolean }> {
+  const encodedPlayerId = encodeURIComponent(playerId);
+
+  // Проверяем существующий результат
+  const existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_sokoban?player_id=eq.${encodedPlayerId}&level=eq.${level}&select=id,moves,pushes`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!existingRes.ok) {
+    console.error("Failed to check existing sokoban score:", existingRes.statusText);
+    return { success: false, isNewRecord: false };
+  }
+
+  const existing = await existingRes.json();
+
+  if (existing.length > 0) {
+    // Обновляем только если результат лучше (меньше ходов, или при равных ходах меньше толчков)
+    const currentMoves = existing[0].moves;
+    const currentPushes = existing[0].pushes;
+    const isBetter = moves < currentMoves || (moves === currentMoves && pushes < currentPushes);
+
+    if (isBetter) {
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/scores_sokoban?id=eq.${existing[0].id}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            name,
+            moves,
+            pushes,
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!updateRes.ok) {
+        console.error("Failed to update sokoban score:", updateRes.statusText);
+        return { success: false, isNewRecord: false };
+      }
+
+      return { success: true, isNewRecord: true };
+    } else {
+      return { success: true, isNewRecord: false };
+    }
+  } else {
+    // Новая запись
+    const insertRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/scores_sokoban`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          player_id: playerId,
+          name,
+          level,
+          moves,
+          pushes,
+        }),
+      }
+    );
+
+    if (!insertRes.ok) {
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert sokoban score:", insertRes.status, insertRes.statusText, errorBody);
+      return { success: false, isNewRecord: false };
+    }
+
+    return { success: true, isNewRecord: true };
+  }
+}
+
+// Имя игрока для Sokoban
+export function getSokobanPlayerName(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem("sokobanPlayerName") || "";
+}
+
+export function setSokobanPlayerName(name: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem("sokobanPlayerName", name);
+}

@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { RotateCcw, Undo2, ChevronLeft, ChevronRight, Trophy, Lock } from "lucide-react";
+import { RotateCcw, Undo2, ChevronLeft, ChevronRight, Trophy, Lock, User, RefreshCw } from "lucide-react";
+import {
+  getSokobanScores,
+  submitSokobanScore,
+  getSokobanPlayerName,
+  setSokobanPlayerName,
+  SokobanScoreEntry,
+  getAnonymousPlayerId,
+} from "@/lib/supabase";
 
 // Типы клеток
 type CellType = "floor" | "wall" | "goal" | "player" | "player_on_goal" | "box" | "box_on_goal";
@@ -240,7 +248,7 @@ const LEVELS: { name: string; data: string; par: number }[] = [
 ];
 
 // Версия набора уровней - при изменении уровней увеличить, чтобы сбросить прогресс
-const LEVELS_VERSION = 3;
+const LEVELS_VERSION = 4;
 
 function parseLevel(levelData: string): { grid: CellType[][]; playerPos: Position } {
   const lines = levelData.trim().split("\n");
@@ -313,6 +321,14 @@ export default function SokobanPage() {
   const [bestScores, setBestScores] = useState<Record<number, { moves: number; pushes: number }>>({});
   const gameAreaRef = useRef<HTMLDivElement>(null);
 
+  // Лидерборд
+  const [leaderboard, setLeaderboard] = useState<SokobanScoreEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [playerName, setPlayerName] = useState("");
+  const [playerId, setPlayerId] = useState("");
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [pendingScore, setPendingScore] = useState<{ moves: number; pushes: number } | null>(null);
+
   // Загрузка прогресса (с проверкой версии уровней)
   useEffect(() => {
     const savedVersion = localStorage.getItem("sokoban-version");
@@ -331,6 +347,50 @@ export default function SokobanPage() {
     if (savedUnlocked) setUnlockedLevels(parseInt(savedUnlocked));
     if (savedBest) setBestScores(JSON.parse(savedBest));
   }, []);
+
+  // Загрузка данных игрока
+  useEffect(() => {
+    setPlayerName(getSokobanPlayerName());
+    setPlayerId(getAnonymousPlayerId());
+  }, []);
+
+  // Загрузка лидерборда при смене уровня
+  const fetchLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    try {
+      const scores = await getSokobanScores(currentLevel, 10);
+      setLeaderboard(scores);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, [currentLevel]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
+
+  // Отправка результата
+  const handleSubmitScore = async (name: string) => {
+    if (!pendingScore || !name.trim()) return;
+
+    const trimmedName = name.trim();
+    setSokobanPlayerName(trimmedName);
+    setPlayerName(trimmedName);
+
+    await submitSokobanScore(
+      playerId,
+      trimmedName,
+      currentLevel,
+      pendingScore.moves,
+      pendingScore.pushes
+    );
+
+    setShowNameInput(false);
+    setPendingScore(null);
+    fetchLeaderboard();
+  };
 
   // Инициализация уровня
   const initLevel = useCallback((levelIndex: number) => {
@@ -414,12 +474,22 @@ export default function SokobanPage() {
     if (isWin(newGrid)) {
       setWon(true);
 
-      // Сохраняем лучший результат
+      // Сохраняем лучший результат локально
       const currentBest = bestScores[currentLevel];
       if (!currentBest || newState.moves < currentBest.moves) {
         const newBest = { ...bestScores, [currentLevel]: { moves: newState.moves, pushes: newState.pushes } };
         setBestScores(newBest);
         localStorage.setItem("sokoban-best", JSON.stringify(newBest));
+      }
+
+      // Показываем форму для ввода имени или сразу отправляем результат
+      setPendingScore({ moves: newState.moves, pushes: newState.pushes });
+      if (!playerName) {
+        setShowNameInput(true);
+      } else {
+        // Автоматически отправляем результат если имя уже есть
+        submitSokobanScore(playerId, playerName, currentLevel, newState.moves, newState.pushes)
+          .then(() => fetchLeaderboard());
       }
 
       // Разблокируем следующий уровень
@@ -429,7 +499,7 @@ export default function SokobanPage() {
         localStorage.setItem("sokoban-unlocked", newUnlocked.toString());
       }
     }
-  }, [gameState, won, currentLevel, bestScores, unlockedLevels]);
+  }, [gameState, won, currentLevel, bestScores, unlockedLevels, playerName, playerId, fetchLeaderboard]);
 
   // Клавиатура
   useEffect(() => {
@@ -671,16 +741,47 @@ export default function SokobanPage() {
 
         {/* Победа */}
         {won && (
-          <div className="absolute inset-0 z-20 bg-black/80 rounded-xl flex flex-col items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 z-20 bg-black/80 rounded-xl flex flex-col items-center justify-center animate-fade-in p-4">
             <div className="text-4xl mb-2">🎉</div>
             <div className="text-2xl font-bold text-amber-400 mb-2">Уровень пройден!</div>
-            <div className="text-gray-300 mb-4">
+            <div className="text-gray-300 mb-2">
               {moves <= levelPar ? (
                 <span className="text-green-400">Отлично! Уложился в пар ({moves}/{levelPar})</span>
               ) : (
                 <span>Ходов: {moves} (пар: {levelPar})</span>
               )}
             </div>
+            <div className="text-sm text-gray-400 mb-4">
+              Толчков: {pushes}
+            </div>
+
+            {/* Форма ввода имени */}
+            {showNameInput && (
+              <div className="mb-4 w-full max-w-xs">
+                <input
+                  type="text"
+                  placeholder="Ваше имя"
+                  className="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  defaultValue={playerName}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSubmitScore((e.target as HTMLInputElement).value);
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={(e) => {
+                    const input = (e.target as HTMLButtonElement).previousElementSibling as HTMLInputElement;
+                    handleSubmitScore(input.value);
+                  }}
+                  className="w-full mt-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 font-medium transition-all"
+                >
+                  Сохранить результат
+                </button>
+              </div>
+            )}
+
             <div className="flex gap-2">
               <button
                 onClick={() => initLevel(currentLevel)}
@@ -748,6 +849,84 @@ export default function SokobanPage() {
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Лидерборд текущего уровня */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="flex items-center gap-2 text-lg font-bold">
+            <Trophy className="w-5 h-5 text-blue-400" />
+            Лидеры уровня {currentLevel + 1}
+          </h2>
+          <button
+            onClick={fetchLeaderboard}
+            disabled={leaderboardLoading}
+            className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Обновить"
+          >
+            <RefreshCw className={`w-4 h-4 ${leaderboardLoading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+
+        <div className="bg-gray-800/50 border border-gray-700 rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="w-10 text-center p-2 text-gray-400 font-medium">#</th>
+                <th className="text-left p-2 text-gray-400 font-medium">Игрок</th>
+                <th className="text-center p-2 text-gray-400 font-medium">Ходы</th>
+                <th className="text-center p-2 text-gray-400 font-medium">Толчки</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboardLoading ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-400">
+                    Загрузка...
+                  </td>
+                </tr>
+              ) : leaderboard.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-400">
+                    Пока нет результатов. Будьте первым!
+                  </td>
+                </tr>
+              ) : (
+                leaderboard.map((entry, index) => {
+                  const position = index + 1;
+                  const isCurrentPlayer = playerId === entry.player_id;
+                  return (
+                    <tr
+                      key={entry.id}
+                      className={`border-b last:border-0 border-gray-700/50 hover:bg-gray-700/30 ${
+                        isCurrentPlayer ? "bg-blue-500/10" : ""
+                      }`}
+                    >
+                      <td className="w-10 text-center p-2 text-base">
+                        {position === 1 && "🥇"}
+                        {position === 2 && "🥈"}
+                        {position === 3 && "🥉"}
+                        {position > 3 && <span className="text-gray-500">{position}</span>}
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="text-white truncate">{entry.name}</span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-center font-bold text-blue-400">
+                        {entry.moves}
+                      </td>
+                      <td className="p-2 text-center font-bold text-purple-400">
+                        {entry.pushes}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
