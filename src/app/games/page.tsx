@@ -38,7 +38,7 @@ const games = [
   {
     id: "sokoban",
     title: "Сокобан",
-    description: "Толкай ящики на цели. 10 уровней от простого к сложному.",
+    description: "Классическая головоломка. 155 уровней Microban.",
     href: "/games/sokoban",
     icon: Box,
     status: "prototype" as const,
