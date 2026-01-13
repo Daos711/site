@@ -43,10 +43,10 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
 #####
 `
   },
-  // Уровень 2 - поворот
+  // Уровень 2 - поворот (минимум 8 ходов)
   {
     name: "Поворот",
-    norma: 6,
+    norma: 8,
     data: `
 ######
 #    #
@@ -249,7 +249,7 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
 ];
 
 // Версия набора уровней - при изменении уровней увеличить, чтобы сбросить прогресс
-const LEVELS_VERSION = 5;
+const LEVELS_VERSION = 6;
 
 function parseLevel(levelData: string): { grid: CellType[][]; playerPos: Position } {
   const lines = levelData.trim().split("\n");
