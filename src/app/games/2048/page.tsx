@@ -272,7 +272,16 @@ export default function Game2048Page() {
     setIsClient(true);
 
     fetchAllLeaderboards();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Обновляем лучший результат при входе пользователя
+  useEffect(() => {
+    if (playerId) {
+      fetchAllLeaderboards();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerId]);
 
   // Проверка и отправка pending result после OAuth
   useEffect(() => {
@@ -318,6 +327,28 @@ export default function Game2048Page() {
       ]);
       setLeaderboard(scores4x4);
       setLeaderboard3x3(scores3x3);
+
+      // Для авторизованных: обновляем лучший результат из базы
+      if (playerId) {
+        const myScore4x4 = scores4x4.find(s => s.player_id === playerId);
+        const myScore3x3 = scores3x3.find(s => s.player_id === playerId);
+
+        if (myScore4x4) {
+          const localBest = parseInt(localStorage.getItem("2048-best") || "0");
+          if (myScore4x4.score > localBest) {
+            setBestScore(myScore4x4.score);
+            localStorage.setItem("2048-best", myScore4x4.score.toString());
+          }
+        }
+
+        if (myScore3x3) {
+          const localBest3x3 = parseInt(localStorage.getItem("2048-best-3x3") || "0");
+          if (myScore3x3.score > localBest3x3) {
+            setBestScore3x3(myScore3x3.score);
+            localStorage.setItem("2048-best-3x3", myScore3x3.score.toString());
+          }
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch leaderboard:", error);
     } finally {
