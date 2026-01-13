@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Play, Trophy, Clock, Target, RefreshCw } from "lucide-react";
+import { Play, Trophy, Clock, Target, RefreshCw, User, Check } from "lucide-react";
+import { useAuth } from "@/components/AuthProvider";
+import {
+  getQuickMathScores,
+  submitQuickMathScore,
+  getQuickMathPlayerName,
+  setQuickMathPlayerName,
+  QuickMathScoreEntry,
+} from "@/lib/supabase";
 
 // Типы
 interface Problem {
@@ -177,6 +185,8 @@ function formatTime(ms: number): string {
 }
 
 export default function QuickMathPage() {
+  const { user, playerId } = useAuth();
+
   const [gameState, setGameState] = useState<GameState>("idle");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -192,9 +202,22 @@ export default function QuickMathPage() {
     hard: null,
   });
 
+  // Лидерборд
+  const [leaderboard, setLeaderboard] = useState<QuickMathScoreEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [playerName, setPlayerNameState] = useState("");
+  const [pendingScore, setPendingScore] = useState<number | null>(null);
+  const [scoreSubmitting, setScoreSubmitting] = useState(false);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+
   const dailySeed = getDailySeed();
   const dateString = `${Math.floor(dailySeed / 10000)}.${String(Math.floor((dailySeed % 10000) / 100)).padStart(2, '0')}.${String(dailySeed % 100).padStart(2, '0')}`;
   const config = DIFFICULTY_CONFIG[difficulty];
+
+  // Загрузка имени игрока
+  useEffect(() => {
+    setPlayerNameState(getQuickMathPlayerName());
+  }, []);
 
   // Загрузка лучших результатов для всех уровней
   useEffect(() => {
@@ -207,6 +230,19 @@ export default function QuickMathPage() {
     });
     setBestTimes(times);
   }, [dailySeed]);
+
+  // Загрузка лидерборда
+  const fetchLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    const scores = await getQuickMathScores(difficulty, dailySeed, 10);
+    setLeaderboard(scores);
+    setLeaderboardLoading(false);
+  }, [difficulty, dailySeed]);
+
+  // Загружаем лидерборд при смене сложности или при загрузке страницы
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   // Таймер
   useEffect(() => {
@@ -281,13 +317,45 @@ export default function QuickMathPage() {
           setBestTimes(prev => ({ ...prev, [difficulty]: totalTime }));
           localStorage.setItem(`quickmath-best-${difficulty}-${dailySeed}`, totalTime.toString());
         }
+
+        // Сохраняем pending score для отправки в лидерборд
+        setPendingScore(totalTime);
+        setScoreSubmitted(false);
+
+        // Обновляем лидерборд
+        fetchLeaderboard();
       } else {
         setCurrentIndex(i => i + 1);
       }
     }, 300);
-  }, [gameState, feedback, problems, currentIndex, startTime, penalty, bestTimes, difficulty, dailySeed]);
+  }, [gameState, feedback, problems, currentIndex, startTime, penalty, bestTimes, difficulty, dailySeed, fetchLeaderboard]);
 
   const totalTime = elapsedTime + penalty;
+
+  // Отправка результата
+  const handleSubmitScore = async () => {
+    if (!playerName.trim() || !playerId || pendingScore === null) return;
+
+    setScoreSubmitting(true);
+    setQuickMathPlayerName(playerName.trim());
+
+    const result = await submitQuickMathScore(
+      playerId,
+      playerName.trim(),
+      difficulty,
+      dailySeed,
+      pendingScore
+    );
+
+    setScoreSubmitting(false);
+    if (result.success) {
+      setScoreSubmitted(true);
+      fetchLeaderboard();
+    }
+  };
+
+  // Проверяем, есть ли игрок уже в лидерборде
+  const playerInLeaderboard = playerId ? leaderboard.some(e => e.player_id === playerId) : false;
 
   return (
     <div className="max-w-lg mx-auto">
@@ -517,15 +585,87 @@ export default function QuickMathPage() {
             </div>
           )}
 
-          {/* Лидерборд (заглушка) */}
+          {/* Форма отправки результата */}
+          {pendingScore !== null && !scoreSubmitted && !playerInLeaderboard && (
+            <div className="mb-6 p-4 bg-stone-800 rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <User size={18} className="text-muted" />
+                <span className="text-sm font-bold">Добавить в рейтинг</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={playerName}
+                  onChange={(e) => setPlayerNameState(e.target.value)}
+                  placeholder="Твоё имя"
+                  maxLength={20}
+                  className="flex-1 px-3 py-2 bg-stone-700 border border-stone-600 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && playerName.trim()) {
+                      handleSubmitScore();
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleSubmitScore}
+                  disabled={!playerName.trim() || scoreSubmitting}
+                  className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+                    playerName.trim() && !scoreSubmitting
+                      ? `${config.bgColor} ${config.hoverColor}`
+                      : "bg-stone-600 text-stone-400 cursor-not-allowed"
+                  }`}
+                >
+                  {scoreSubmitting ? "..." : "OK"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {scoreSubmitted && (
+            <div className="mb-6 p-3 bg-green-500/20 border border-green-500/50 rounded-lg flex items-center justify-center gap-2">
+              <Check size={18} className="text-green-400" />
+              <span className="text-green-400 font-bold">Результат сохранён!</span>
+            </div>
+          )}
+
+          {/* Лидерборд */}
           <div className="mb-6">
             <div className="flex items-center justify-center gap-2 mb-3">
               <Trophy className={config.color} size={20} />
               <span className="font-bold">Рейтинг дня ({config.label})</span>
             </div>
-            <div className="bg-stone-800 rounded-lg p-4 text-sm text-muted">
-              Лидерборд будет добавлен позже
-            </div>
+            {leaderboardLoading ? (
+              <div className="bg-stone-800 rounded-lg p-4 text-sm text-muted text-center">
+                Загрузка...
+              </div>
+            ) : leaderboard.length === 0 ? (
+              <div className="bg-stone-800 rounded-lg p-4 text-sm text-muted text-center">
+                Пока никого нет. Будь первым!
+              </div>
+            ) : (
+              <div className="bg-stone-800 rounded-lg overflow-hidden">
+                {leaderboard.map((entry, index) => (
+                  <div
+                    key={entry.id}
+                    className={`flex items-center px-3 py-2 text-sm ${
+                      index > 0 ? "border-t border-stone-700" : ""
+                    } ${entry.player_id === playerId ? "bg-amber-500/10" : ""}`}
+                  >
+                    <span className={`w-6 font-bold ${
+                      index === 0 ? "text-amber-400" :
+                      index === 1 ? "text-stone-300" :
+                      index === 2 ? "text-amber-700" : "text-muted"
+                    }`}>
+                      {index + 1}
+                    </span>
+                    <span className="flex-1 truncate">{entry.name}</span>
+                    <span className={`font-mono font-bold ${config.color}`}>
+                      {formatTime(entry.time_ms)}с
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button

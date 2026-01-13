@@ -700,3 +700,144 @@ export async function saveSokobanProgress(
     return true;
   }
 }
+
+// ==================== SCORES QUICK MATH ====================
+
+export interface QuickMathScoreEntry {
+  id: string;
+  player_id: string;
+  name: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  date_seed: number;
+  time_ms: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Получить лидерборд для уровня сложности и дня
+export async function getQuickMathScores(
+  difficulty: 'easy' | 'medium' | 'hard',
+  dateSeed: number,
+  limit = 10
+): Promise<QuickMathScoreEntry[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_quickmath?difficulty=eq.${difficulty}&date_seed=eq.${dateSeed}&select=*&order=time_ms.asc&limit=${limit}`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!res.ok) {
+    console.error("Failed to fetch quickmath scores:", res.statusText);
+    return [];
+  }
+
+  return res.json();
+}
+
+// Сохранить или обновить результат игрока
+export async function submitQuickMathScore(
+  playerId: string,
+  name: string,
+  difficulty: 'easy' | 'medium' | 'hard',
+  dateSeed: number,
+  timeMs: number
+): Promise<{ success: boolean; isNewRecord: boolean }> {
+  const encodedPlayerId = encodeURIComponent(playerId);
+
+  // Проверяем существующий результат для этого игрока, сложности и дня
+  const existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/scores_quickmath?player_id=eq.${encodedPlayerId}&difficulty=eq.${difficulty}&date_seed=eq.${dateSeed}&select=id,time_ms`,
+    {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      cache: 'no-store',
+    }
+  );
+
+  if (!existingRes.ok) {
+    console.error("Failed to check existing quickmath score:", existingRes.statusText);
+    return { success: false, isNewRecord: false };
+  }
+
+  const existing = await existingRes.json();
+
+  if (existing.length > 0) {
+    // Обновляем только если результат лучше (меньше времени)
+    const currentTime = existing[0].time_ms;
+    if (timeMs < currentTime) {
+      const updateRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/scores_quickmath?id=eq.${existing[0].id}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            name,
+            time_ms: timeMs,
+            updated_at: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!updateRes.ok) {
+        console.error("Failed to update quickmath score:", updateRes.statusText);
+        return { success: false, isNewRecord: false };
+      }
+
+      return { success: true, isNewRecord: true };
+    } else {
+      return { success: true, isNewRecord: false };
+    }
+  } else {
+    // Новая запись
+    const insertRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/scores_quickmath`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({
+          player_id: playerId,
+          name,
+          difficulty,
+          date_seed: dateSeed,
+          time_ms: timeMs,
+        }),
+      }
+    );
+
+    if (!insertRes.ok) {
+      const errorBody = await insertRes.text();
+      console.error("Failed to insert quickmath score:", insertRes.status, insertRes.statusText, errorBody);
+      return { success: false, isNewRecord: false };
+    }
+
+    return { success: true, isNewRecord: true };
+  }
+}
+
+// Имя игрока для Quick Math
+export function getQuickMathPlayerName(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem("quickmathPlayerName") || "";
+}
+
+export function setQuickMathPlayerName(name: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem("quickmathPlayerName", name);
+}
