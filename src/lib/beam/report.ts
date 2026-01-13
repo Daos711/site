@@ -2338,7 +2338,7 @@ function buildTheta0Derivation(
   </div>
   <p><strong>Итог:</strong></p>
   <div class="formula">
-    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад} = ${formatNumber(computedTheta0 * 180 / Math.PI, 1)}°}\\]
+    \\[\\boxed{y_0 = 0, \\quad \\theta_0 = ${formatNumber(computedTheta0 * 1000, 2)} \\cdot 10^{-3} \\text{ рад}${Math.abs(computedTheta0 * 180 / Math.PI) >= 0.05 ? ` = ${formatNumber(computedTheta0 * 180 / Math.PI, 1)}°` : ""}}\\]
   </div>`;
 
   return html;
