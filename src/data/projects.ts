@@ -49,6 +49,14 @@ export const projects: Project[] = [
     status: "prototype",
     href: "/games/2048",
   },
+  {
+    id: "sudoku",
+    title: "Судоку",
+    description: "Классическая головоломка с числами. 3 уровня сложности.",
+    tags: ["игра", "TypeScript", "React", "web", "головоломка"],
+    status: "prototype",
+    href: "/games/sudoku",
+  },
 
   // === Инструменты ===
   {
