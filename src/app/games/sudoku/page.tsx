@@ -364,9 +364,9 @@ export default function SudokuPage() {
       </div>
 
       {/* Игровое поле */}
-      <div className="bg-stone-800 rounded-xl p-2 shadow-2xl mb-4">
+      <div className="bg-stone-800 rounded-xl p-3 shadow-2xl mb-4">
         <div
-          className="grid gap-0"
+          className="grid gap-0 border-2 border-stone-500 rounded overflow-hidden"
           style={{
             gridTemplateColumns: "repeat(9, 1fr)",
           }}
@@ -377,6 +377,10 @@ export default function SudokuPage() {
               const related = isRelated(rowIndex, colIndex);
               const sameValue = isSameValue(rowIndex, colIndex);
 
+              // Толстые границы между блоками 3x3
+              const borderRight = colIndex % 3 === 2 && colIndex < 8 ? "border-r-2 border-r-stone-500" : colIndex < 8 ? "border-r border-r-stone-700" : "";
+              const borderBottom = rowIndex % 3 === 2 && rowIndex < 8 ? "border-b-2 border-b-stone-500" : rowIndex < 8 ? "border-b border-b-stone-700" : "";
+
               return (
                 <button
                   key={`${rowIndex}-${colIndex}`}
@@ -384,8 +388,8 @@ export default function SudokuPage() {
                   className={`
                     aspect-square flex items-center justify-center text-lg font-bold
                     transition-all duration-100
-                    ${colIndex % 3 === 2 && colIndex < 8 ? "border-r-2 border-r-stone-600" : "border-r border-r-stone-700"}
-                    ${rowIndex % 3 === 2 && rowIndex < 8 ? "border-b-2 border-b-stone-600" : "border-b border-b-stone-700"}
+                    ${borderRight}
+                    ${borderBottom}
                     ${isSelected ? "bg-blue-600" : sameValue ? "bg-blue-900/50" : related ? "bg-stone-700/50" : "bg-stone-800"}
                     ${cell.isError ? "text-red-400" : cell.isFixed ? "text-gray-300" : "text-blue-400"}
                     hover:bg-stone-700
