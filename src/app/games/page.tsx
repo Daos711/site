@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Grid3X3, Circle, Cog, Grid2X2, Box } from "lucide-react";
+import { Grid3X3, Circle, Cog, Grid2X2, Box, Calculator } from "lucide-react";
 
 const games = [
   {
@@ -38,9 +38,17 @@ const games = [
   {
     id: "sokoban",
     title: "Сокобан",
-    description: "Толкай ящики на цели. 10 уровней от простого к сложному.",
+    description: "Классическая головоломка. 155 уровней Microban.",
     href: "/games/sokoban",
     icon: Box,
+    status: "prototype" as const,
+  },
+  {
+    id: "quick-math",
+    title: "Quick Math",
+    description: "Математический тренажёр. 20 примеров на скорость!",
+    href: "/games/quick-math",
+    icon: Calculator,
     status: "prototype" as const,
   },
 ];

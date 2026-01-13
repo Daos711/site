@@ -49,6 +49,14 @@ export const projects: Project[] = [
     status: "prototype",
     href: "/games/2048",
   },
+  {
+    id: "quick-math",
+    title: "Quick Math",
+    description: "Математический тренажёр. 20 примеров на скорость!",
+    tags: ["игра", "TypeScript", "React", "web", "тренажёр"],
+    status: "prototype",
+    href: "/games/quick-math",
+  },
 
   // === Инструменты ===
   {

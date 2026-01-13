@@ -15,7 +15,7 @@ export const getPlayerId = _getPlayerId;
 export type { AuthUser } from '@/lib/supabase';
 
 // Текущая версия баланса (инкремент при каждом патче)
-export const BALANCE_VERSION = 2;
+export const BALANCE_VERSION = 3;
 
 // ==================== КЭШИРОВАНИЕ ====================
 
