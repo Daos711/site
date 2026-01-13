@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { Play, Trophy, Clock, Target, RefreshCw, User, Check } from "lucide-react";
+import { Play, Trophy, Clock, Target, User, Check, Lock } from "lucide-react";
+// RefreshCw removed - no replay allowed
 import { useAuth } from "@/components/AuthProvider";
+import { signInWithGoogle } from "@/lib/supabase";
 import {
   getQuickMathScores,
   submitQuickMathScore,
@@ -210,6 +212,13 @@ export default function QuickMathPage() {
   const [scoreSubmitting, setScoreSubmitting] = useState(false);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
+  // Отслеживаем сыгранные уровни сложности за день
+  const [playedToday, setPlayedToday] = useState<Record<Difficulty, boolean>>({
+    easy: false,
+    medium: false,
+    hard: false,
+  });
+
   const dailySeed = getDailySeed();
   const dateString = `${Math.floor(dailySeed / 10000)}.${String(Math.floor((dailySeed % 10000) / 100)).padStart(2, '0')}.${String(dailySeed % 100).padStart(2, '0')}`;
   const config = DIFFICULTY_CONFIG[difficulty];
@@ -219,16 +228,23 @@ export default function QuickMathPage() {
     setPlayerNameState(getQuickMathPlayerName());
   }, []);
 
-  // Загрузка лучших результатов для всех уровней
+  // Загрузка лучших результатов и статуса сыгранных уровней
   useEffect(() => {
     const times: Record<Difficulty, number | null> = { easy: null, medium: null, hard: null };
+    const played: Record<Difficulty, boolean> = { easy: false, medium: false, hard: false };
+
     (["easy", "medium", "hard"] as Difficulty[]).forEach((d) => {
       const saved = localStorage.getItem(`quickmath-best-${d}-${dailySeed}`);
       if (saved) {
         times[d] = parseFloat(saved);
       }
+      // Проверяем, сыграл ли игрок этот уровень сегодня
+      const playedKey = localStorage.getItem(`quickmath-played-${d}-${dailySeed}`);
+      played[d] = playedKey === "true";
     });
+
     setBestTimes(times);
+    setPlayedToday(played);
   }, [dailySeed]);
 
   // Загрузка лидерборда
@@ -262,17 +278,15 @@ export default function QuickMathPage() {
         const index = parseInt(e.key) - 1;
         handleAnswer(index);
       }
-      if (gameState === "idle" && e.key === "Enter") {
-        startGame();
-      }
-      if (gameState === "finished" && e.key === "Enter") {
+      // Запускаем только если уровень ещё не сыгран
+      if (gameState === "idle" && e.key === "Enter" && !playedToday[difficulty]) {
         startGame();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [gameState, currentIndex, problems]);
+  }, [gameState, currentIndex, problems, playedToday, difficulty]);
 
   const startGame = useCallback(() => {
     const newProblems = generateProblems(dailySeed, difficulty);
@@ -321,6 +335,10 @@ export default function QuickMathPage() {
         // Сохраняем pending score для отправки в лидерборд
         setPendingScore(totalTime);
         setScoreSubmitted(false);
+
+        // Отмечаем уровень как сыгранный
+        localStorage.setItem(`quickmath-played-${difficulty}-${dailySeed}`, "true");
+        setPlayedToday(prev => ({ ...prev, [difficulty]: true }));
 
         // Обновляем лидерборд
         fetchLeaderboard();
@@ -396,11 +414,15 @@ export default function QuickMathPage() {
                 <div className={difficulty === d ? "text-white" : DIFFICULTY_CONFIG[d].color}>
                   {DIFFICULTY_CONFIG[d].label}
                 </div>
-                {bestTimes[d] && (
+                {playedToday[d] ? (
+                  <div className="text-xs opacity-75 mt-1 flex items-center justify-center gap-1">
+                    <Check size={12} /> {formatTime(bestTimes[d]!)}с
+                  </div>
+                ) : bestTimes[d] ? (
                   <div className="text-xs opacity-75 mt-1">
                     🏆 {formatTime(bestTimes[d]!)}с
                   </div>
-                )}
+                ) : null}
               </button>
             ))}
           </div>
@@ -469,17 +491,74 @@ export default function QuickMathPage() {
             )}
           </div>
 
-          <button
-            onClick={startGame}
-            className={`w-full py-4 rounded-xl ${config.bgColor} ${config.hoverColor} font-bold text-lg flex items-center justify-center gap-2 transition-all`}
-          >
-            <Play size={24} />
-            Начать
-          </button>
+          {playedToday[difficulty] ? (
+            <>
+              <div className="p-4 bg-stone-800 rounded-xl mb-4">
+                <div className="flex items-center justify-center gap-2 text-muted mb-2">
+                  <Lock size={18} />
+                  <span className="font-bold">Уровень сыгран</span>
+                </div>
+                <p className="text-sm text-muted">
+                  Ты уже прошёл этот уровень сегодня.<br />
+                  Попробуй другой уровень или приходи завтра!
+                </p>
+              </div>
 
-          <div className="mt-4 text-xs text-muted">
-            Enter или клик для старта · Клавиши 1-4 для ответа
-          </div>
+              {/* Показываем лидерборд на стартовом экране */}
+              <div className="mb-4">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Trophy className={config.color} size={20} />
+                  <span className="font-bold">Рейтинг дня ({config.label})</span>
+                </div>
+                {leaderboardLoading ? (
+                  <div className="bg-stone-800 rounded-lg p-4 text-sm text-muted text-center">
+                    Загрузка...
+                  </div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="bg-stone-800 rounded-lg p-4 text-sm text-muted text-center">
+                    Пока никого нет
+                  </div>
+                ) : (
+                  <div className="bg-stone-800 rounded-lg overflow-hidden">
+                    {leaderboard.slice(0, 5).map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        className={`flex items-center px-3 py-2 text-sm ${
+                          index > 0 ? "border-t border-stone-700" : ""
+                        } ${entry.player_id === playerId ? "bg-amber-500/10" : ""}`}
+                      >
+                        <span className={`w-6 font-bold ${
+                          index === 0 ? "text-amber-400" :
+                          index === 1 ? "text-stone-300" :
+                          index === 2 ? "text-amber-700" : "text-muted"
+                        }`}>
+                          {index + 1}
+                        </span>
+                        <span className="flex-1 truncate">{entry.name}</span>
+                        <span className={`font-mono font-bold ${config.color}`}>
+                          {formatTime(entry.time_ms)}с
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={startGame}
+                className={`w-full py-4 rounded-xl ${config.bgColor} ${config.hoverColor} font-bold text-lg flex items-center justify-center gap-2 transition-all`}
+              >
+                <Play size={24} />
+                Начать
+              </button>
+
+              <div className="mt-4 text-xs text-muted">
+                Enter или клик для старта · Клавиши 1-4 для ответа
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -592,32 +671,50 @@ export default function QuickMathPage() {
                 <User size={18} className="text-muted" />
                 <span className="text-sm font-bold">Добавить в рейтинг</span>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerNameState(e.target.value)}
-                  placeholder="Твоё имя"
-                  maxLength={20}
-                  className="flex-1 px-3 py-2 bg-stone-700 border border-stone-600 rounded-lg text-sm focus:outline-none focus:border-amber-500"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && playerName.trim()) {
-                      handleSubmitScore();
-                    }
-                  }}
-                />
+
+              {!user ? (
+                // Требуем авторизацию
                 <button
-                  onClick={handleSubmitScore}
-                  disabled={!playerName.trim() || scoreSubmitting}
-                  className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
-                    playerName.trim() && !scoreSubmitting
-                      ? `${config.bgColor} ${config.hoverColor}`
-                      : "bg-stone-600 text-stone-400 cursor-not-allowed"
-                  }`}
+                  onClick={() => signInWithGoogle()}
+                  className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 font-bold text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  {scoreSubmitting ? "..." : "OK"}
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  Войти через Google
                 </button>
-              </div>
+              ) : (
+                // Форма ввода имени
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={playerName}
+                    onChange={(e) => setPlayerNameState(e.target.value)}
+                    placeholder="Твоё имя"
+                    maxLength={20}
+                    className="flex-1 px-3 py-2 bg-stone-700 border border-stone-600 rounded-lg text-sm focus:outline-none focus:border-amber-500"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && playerName.trim()) {
+                        handleSubmitScore();
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleSubmitScore}
+                    disabled={!playerName.trim() || scoreSubmitting}
+                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+                      playerName.trim() && !scoreSubmitting
+                        ? `${config.bgColor} ${config.hoverColor}`
+                        : "bg-stone-600 text-stone-400 cursor-not-allowed"
+                    }`}
+                  >
+                    {scoreSubmitting ? "..." : "OK"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -668,16 +765,9 @@ export default function QuickMathPage() {
             )}
           </div>
 
-          <button
-            onClick={startGame}
-            className={`w-full py-4 rounded-xl ${config.bgColor} ${config.hoverColor} font-bold text-lg flex items-center justify-center gap-2 transition-all`}
-          >
-            <RefreshCw size={20} />
-            Играть снова
-          </button>
-
-          <div className="mt-4 text-xs text-muted">
-            Enter для нового раунда
+          {/* Подсказка о других уровнях */}
+          <div className="text-sm text-muted">
+            Попробуй другой уровень сложности!
           </div>
         </div>
       )}
