@@ -29,12 +29,10 @@ interface GameState {
 
 // Проверенные уровни Sokoban - гарантированно решаемы
 // Формат: # стена, @ игрок, + игрок на цели, $ ящик, * ящик на цели, . цель, пробел - пол
-// norma - целевое количество ходов (хороший результат)
-const LEVELS: { name: string; data: string; norma: number }[] = [
+const LEVELS: { name: string; data: string }[] = [
   // Уровень 1 - простейший (1 ящик, прямая линия)
   {
     name: "Старт",
-    norma: 3,
     data: `
 #####
 #   #
@@ -46,7 +44,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 2 - поворот (минимум 8 ходов)
   {
     name: "Поворот",
-    norma: 8,
     data: `
 ######
 #    #
@@ -59,7 +56,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 3 - два ящика
   {
     name: "Пара",
-    norma: 10,
     data: `
 #######
 #     #
@@ -72,7 +68,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 4 - угол
   {
     name: "Угол",
-    norma: 12,
     data: `
 #####
 #.  ##
@@ -85,7 +80,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 5 - коридор (Microban #9)
   {
     name: "Коридор",
-    norma: 13,
     data: `
 #####
 #.  ##
@@ -99,7 +93,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 6 - три ящика (Microban #17, оптимум 25 ходов)
   {
     name: "Тройка",
-    norma: 25,
     data: `
 #####
 # @ #
@@ -113,7 +106,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 7 - Classic 1
   {
     name: "Классика",
-    norma: 22,
     data: `
   #####
 ###   #
@@ -127,7 +119,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 8 - Microban #21
   {
     name: "Квартет",
-    norma: 25,
     data: `
 ####
 #  ####
@@ -140,7 +131,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 9 - L-образный (Microban #12)
   {
     name: "Уголок",
-    norma: 30,
     data: `
 #####
 #   ##
@@ -155,7 +145,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 10 - Microban #13
   {
     name: "Башня",
-    norma: 35,
     data: `
 ####
 #. ##
@@ -171,7 +160,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 11 - Original Sokoban #1 (97 толчков, ~260-300 ходов оптимум)
   {
     name: "Оригинал",
-    norma: 300,
     data: `
     #####
     #   #
@@ -189,7 +177,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 12 - Microban #16
   {
     name: "Хранилище",
-    norma: 40,
     data: `
  ####
  #  ####
@@ -204,7 +191,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 13 - Microban #18
   {
     name: "Колодец",
-    norma: 45,
     data: `
 #######
 #     #
@@ -220,7 +206,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 14 - Microban #20
   {
     name: "Туннель",
-    norma: 50,
     data: `
 #######
 #     ###
@@ -235,7 +220,6 @@ const LEVELS: { name: string; data: string; norma: number }[] = [
   // Уровень 15 - Microban #25
   {
     name: "Финал",
-    norma: 60,
     data: `
  ####
  #  ###
@@ -634,7 +618,6 @@ export default function SokobanPage() {
   if (!gameState) return null;
 
   const { grid, moves, pushes } = gameState;
-  const levelNorma = LEVELS[currentLevel].norma;
   const currentBest = bestScores[currentLevel];
 
   // Рассчёт размера ячейки
@@ -679,7 +662,7 @@ export default function SokobanPage() {
       </div>
 
       {/* Статистика */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Ходы</div>
           <div className="text-xl font-bold text-blue-400">{moves}</div>
@@ -687,10 +670,6 @@ export default function SokobanPage() {
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Толчки</div>
           <div className="text-xl font-bold text-purple-400">{pushes}</div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-xs text-muted uppercase">Норма</div>
-          <div className="text-xl font-bold text-amber-400">{levelNorma}</div>
         </div>
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-xs text-muted uppercase">Лучший</div>
@@ -787,11 +766,7 @@ export default function SokobanPage() {
               <div className="text-5xl mb-3">🎉</div>
               <div className="text-2xl font-bold text-amber-400 mb-2">Уровень пройден!</div>
               <div className="text-gray-300 mb-1">
-                {moves <= levelNorma ? (
-                  <span className="text-green-400">Отлично! Уложился в норму ({moves}/{levelNorma})</span>
-                ) : (
-                  <span>Ходов: {moves} (норма: {levelNorma})</span>
-                )}
+                Ходов: <span className="text-blue-400 font-bold">{moves}</span>
               </div>
               <div className="text-sm text-gray-400 mb-4">
                 Толчков: {pushes}
@@ -897,10 +872,10 @@ export default function SokobanPage() {
           Уровни
         </h2>
         <div className="grid grid-cols-5 gap-2">
-          {LEVELS.map((level, index) => {
+          {LEVELS.map((_, index) => {
             const isUnlocked = index < unlockedLevels;
             const best = bestScores[index];
-            const isPar = best && best.moves <= level.norma;
+            const isPassed = !!best; // Уровень пройден если есть лучший результат
 
             return (
               <button
@@ -914,14 +889,14 @@ export default function SokobanPage() {
                     ? "bg-card border border-border hover:bg-white/10"
                     : "bg-gray-800/50 cursor-not-allowed"
                   }
-                  ${isPar ? "bg-green-900/30 border-green-700" : ""}
+                  ${isPassed ? "bg-green-900/30 border-green-700" : ""}
                 `}
               >
                 {isUnlocked ? (
                   <>
                     <span className="text-lg font-bold">{index + 1}</span>
                     {best && (
-                      <span className={`text-xs ${isPar ? "text-green-400" : "text-gray-400"}`}>
+                      <span className="text-xs text-green-400">
                         {best.moves}
                       </span>
                     )}
