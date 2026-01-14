@@ -1347,20 +1347,32 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 
   if (sectionType === 'round') {
     // Круглое сечение
+    const d = result.diameter! * 1000; // мм
+    const d_mm = formatNumber(d, 1);
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
-    const d_mm = formatNumber(result.diameter! * 1000, 2);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    // Промежуточные вычисления
+    const d3 = Math.pow(d, 3);
+    const d4 = Math.pow(d, 4);
+    const I_mm4 = Math.PI * d4 / 64;
+    const W_mm3 = Math.PI * d3 / 32;
 
     if (sectionMode === 'given') {
       html += `
   <h3>Круглое сплошное сечение</h3>
-  <p>Диаметр: \\(d = ${d_mm}\\) мм</p>
-  <p>Геометрические характеристики:</p>
+  <p>Заданный диаметр: \\(d = ${d_mm}\\) мм</p>
+
+  <h4>Момент инерции</h4>
+  <p>Момент инерции круглого сечения относительно центральной оси:</p>
   <div class="formula">
-    \\[W = \\frac{\\pi d^3}{32} = \\frac{\\pi \\cdot ${d_mm}^3}{32} = ${W_cm3} \\text{ см}^3\\]
+    \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = \\frac{3.1416 \\cdot ${formatNumber(d4, 0)}}{64} = ${formatNumber(I_mm4, 2)} \\text{ мм}^4 = \\boxed{${I_cm4} \\text{ см}^4}\\]
   </div>
+
+  <h4>Момент сопротивления</h4>
+  <p>Момент сопротивления (расстояние до крайнего волокна \\(y_{\\max} = d/2\\)):</p>
   <div class="formula">
-    \\[I = \\frac{\\pi d^4}{64} = \\frac{\\pi \\cdot ${d_mm}^4}{64} = ${I_cm4} \\text{ см}^4\\]
+    \\[W = \\frac{I}{y_{\\max}} = \\frac{\\pi d^3}{32} = \\frac{\\pi \\cdot ${d_mm}^3}{32} = \\frac{3.1416 \\cdot ${formatNumber(d3, 0)}}{32} = ${formatNumber(W_mm3, 2)} \\text{ мм}^3 = \\boxed{${W_cm3} \\text{ см}^3}\\]
   </div>`;
     } else {
       html += `
@@ -1376,20 +1388,32 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 
   } else if (sectionType === 'square' && result.squareSide) {
     // Квадратное сечение
-    const a_mm = formatNumber(result.squareSide * 1000, 2);
+    const a = result.squareSide * 1000; // мм
+    const a_mm = formatNumber(a, 1);
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    // Промежуточные вычисления
+    const a3 = Math.pow(a, 3);
+    const a4 = Math.pow(a, 4);
+    const I_mm4 = a4 / 12;
+    const W_mm3 = a3 / 6;
 
     if (sectionMode === 'given') {
       html += `
   <h3>Квадратное сечение</h3>
-  <p>Сторона: \\(a = ${a_mm}\\) мм</p>
-  <p>Геометрические характеристики:</p>
+  <p>Заданная сторона: \\(a = ${a_mm}\\) мм</p>
+
+  <h4>Момент инерции</h4>
+  <p>Момент инерции квадратного сечения относительно центральной оси:</p>
   <div class="formula">
-    \\[W = \\frac{a^3}{6} = \\frac{${a_mm}^3}{6} = ${W_cm3} \\text{ см}^3\\]
+    \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = \\frac{${formatNumber(a4, 0)}}{12} = ${formatNumber(I_mm4, 2)} \\text{ мм}^4 = \\boxed{${I_cm4} \\text{ см}^4}\\]
   </div>
+
+  <h4>Момент сопротивления</h4>
+  <p>Момент сопротивления (расстояние до крайнего волокна \\(y_{\\max} = a/2\\)):</p>
   <div class="formula">
-    \\[I = \\frac{a^4}{12} = \\frac{${a_mm}^4}{12} = ${I_cm4} \\text{ см}^4\\]
+    \\[W = \\frac{I}{y_{\\max}} = \\frac{a^3}{6} = \\frac{${a_mm}^3}{6} = \\frac{${formatNumber(a3, 0)}}{6} = ${formatNumber(W_mm3, 2)} \\text{ мм}^3 = \\boxed{${W_cm3} \\text{ см}^3}\\]
   </div>`;
     } else {
       html += `
@@ -1405,21 +1429,38 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 
   } else if (sectionType === 'rectangle' && result.rectWidth && result.rectHeight) {
     // Прямоугольное сечение
-    const b_mm = formatNumber(result.rectWidth * 1000, 2);
-    const h_mm = formatNumber(result.rectHeight * 1000, 2);
+    const b = result.rectWidth * 1000; // мм
+    const h = result.rectHeight * 1000; // мм
+    const b_mm = formatNumber(b, 1);
+    const h_mm = formatNumber(h, 1);
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    // Промежуточные вычисления
+    const h2 = h * h;
+    const h3 = h * h * h;
+    const I_mm4 = b * h3 / 12;
+    const W_mm3 = b * h2 / 6;
 
     if (sectionMode === 'given') {
       html += `
   <h3>Прямоугольное сечение</h3>
-  <p>Размеры: \\(b = ${b_mm}\\) мм, \\(h = ${h_mm}\\) мм</p>
-  <p>Геометрические характеристики:</p>
+  <p>Заданные размеры:</p>
+  <ul>
+    <li>Ширина: \\(b = ${b_mm}\\) мм</li>
+    <li>Высота: \\(h = ${h_mm}\\) мм</li>
+  </ul>
+
+  <h4>Момент инерции</h4>
+  <p>Момент инерции прямоугольного сечения относительно центральной оси:</p>
   <div class="formula">
-    \\[W = \\frac{b \\cdot h^2}{6} = \\frac{${b_mm} \\cdot ${h_mm}^2}{6} = ${W_cm3} \\text{ см}^3\\]
+    \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = \\frac{${b_mm} \\cdot ${formatNumber(h3, 0)}}{12} = \\frac{${formatNumber(b * h3, 0)}}{12} = ${formatNumber(I_mm4, 2)} \\text{ мм}^4 = \\boxed{${I_cm4} \\text{ см}^4}\\]
   </div>
+
+  <h4>Момент сопротивления</h4>
+  <p>Момент сопротивления (расстояние до крайнего волокна \\(y_{\\max} = h/2\\)):</p>
   <div class="formula">
-    \\[I = \\frac{b \\cdot h^3}{12} = \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = ${I_cm4} \\text{ см}^4\\]
+    \\[W = \\frac{I}{y_{\\max}} = \\frac{b \\cdot h^2}{6} = \\frac{${b_mm} \\cdot ${h_mm}^2}{6} = \\frac{${b_mm} \\cdot ${formatNumber(h2, 0)}}{6} = \\frac{${formatNumber(b * h2, 0)}}{6} = ${formatNumber(W_mm3, 2)} \\text{ мм}^3 = \\boxed{${W_cm3} \\text{ см}^3}\\]
   </div>`;
     } else {
       html += `
@@ -1439,22 +1480,50 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 
   } else if (sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness) {
     // Прямоугольная труба
-    const B_mm = formatNumber(result.tubeOuterWidth * 1000, 2);
-    const H_mm = formatNumber(result.tubeOuterHeight * 1000, 2);
-    const t_mm = formatNumber(result.tubeThickness * 1000, 1);
+    const B = result.tubeOuterWidth * 1000; // мм
+    const H = result.tubeOuterHeight * 1000; // мм
+    const t = result.tubeThickness * 1000; // мм
+    const B_mm = formatNumber(B, 1);
+    const H_mm = formatNumber(H, 1);
+    const t_mm = formatNumber(t, 1);
+    const b_mm = formatNumber(B - 2*t, 1); // внутренняя ширина
+    const h_mm = formatNumber(H - 2*t, 1); // внутренняя высота
     const W_cm3 = formatNumber(result.W! * 1e6, 4);
     const I_cm4 = formatNumber(result.I! * 1e8, 4);
+
+    // Промежуточные вычисления для I
+    const H3 = Math.pow(H, 3);
+    const h3 = Math.pow(H - 2*t, 3);
+    const I_outer_mm4 = B * H3 / 12;
+    const I_inner_mm4 = (B - 2*t) * h3 / 12;
 
     if (sectionMode === 'given') {
       html += `
   <h3>Прямоугольная труба</h3>
-  <p>Размеры: \\(B = ${B_mm}\\) мм, \\(H = ${H_mm}\\) мм, \\(t = ${t_mm}\\) мм</p>
-  <p>Геометрические характеристики:</p>
+  <p>Заданные размеры:</p>
+  <ul>
+    <li>Наружная ширина: \\(B = ${B_mm}\\) мм</li>
+    <li>Наружная высота: \\(H = ${H_mm}\\) мм</li>
+    <li>Толщина стенки: \\(t = ${t_mm}\\) мм</li>
+  </ul>
+  <p>Внутренние размеры: \\(b = B - 2t = ${B_mm} - 2 \\cdot ${t_mm} = ${b_mm}\\) мм, \\(h = H - 2t = ${H_mm} - 2 \\cdot ${t_mm} = ${h_mm}\\) мм</p>
+
+  <h4>Момент инерции</h4>
+  <p>Момент инерции полого прямоугольного сечения:</p>
   <div class="formula">
-    \\[I = \\frac{B \\cdot H^3 - (B-2t)(H-2t)^3}{12} = ${I_cm4} \\text{ см}^4\\]
+    \\[I = I_{\\text{внеш}} - I_{\\text{внутр}} = \\frac{B \\cdot H^3}{12} - \\frac{b \\cdot h^3}{12}\\]
   </div>
   <div class="formula">
-    \\[W = \\frac{2I}{H} = ${W_cm3} \\text{ см}^3\\]
+    \\[I = \\frac{${B_mm} \\cdot ${H_mm}^3}{12} - \\frac{${b_mm} \\cdot ${h_mm}^3}{12} = \\frac{${formatNumber(B * H3, 0)}}{12} - \\frac{${formatNumber((B-2*t) * h3, 0)}}{12}\\]
+  </div>
+  <div class="formula">
+    \\[I = ${formatNumber(I_outer_mm4, 2)} - ${formatNumber(I_inner_mm4, 2)} = ${formatNumber(I_outer_mm4 - I_inner_mm4, 2)} \\text{ мм}^4 = \\boxed{${I_cm4} \\text{ см}^4}\\]
+  </div>
+
+  <h4>Момент сопротивления</h4>
+  <p>Момент сопротивления (расстояние до крайнего волокна \\(y_{\\max} = H/2\\)):</p>
+  <div class="formula">
+    \\[W = \\frac{I}{y_{\\max}} = \\frac{2I}{H} = \\frac{2 \\cdot ${formatNumber(I_outer_mm4 - I_inner_mm4, 2)}}{${H_mm}} = ${formatNumber((I_outer_mm4 - I_inner_mm4) * 2 / H, 2)} \\text{ мм}^3 = \\boxed{${W_cm3} \\text{ см}^3}\\]
   </div>`;
     } else {
       html += `
