@@ -1136,6 +1136,12 @@ export default function BallMergePage() {
                   <RotateCcw className="w-5 h-5" />
                   Играть снова
                 </button>
+                <button
+                  onClick={changeMode}
+                  className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-lg font-medium transition-colors"
+                >
+                  Сменить режим
+                </button>
               </div>
             )}
           </div>
