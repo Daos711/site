@@ -583,6 +583,9 @@ function buildReportHTML(data: ReportData): string {
   const hasDiagrams = diagrams?.Q || diagrams?.M || diagrams?.y;
   const hasCrossSection = !!(
     (result.diameter && result.W && result.I) || // круглое сечение
+    (result.squareSide && result.W && result.I) || // квадратное сечение
+    (result.rectWidth && result.rectHeight && result.W && result.I) || // прямоугольное сечение
+    (result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness && result.W && result.I) || // прямоугольная труба
     (result.selectedProfile && result.I) // профиль из ГОСТ (двутавр/швеллер)
   );
   const hasDeflection = !!y;
@@ -797,6 +800,12 @@ function buildProblemStatement(input: BeamInput, result: BeamResult, hasDeflecti
       // Режим "Заданное сечение" - определяем напряжения
       if (sectionType === 'round') {
         tasks.push("Определить максимальные напряжения для заданного круглого сечения");
+      } else if (sectionType === 'square') {
+        tasks.push("Определить максимальные напряжения для заданного квадратного сечения");
+      } else if (sectionType === 'rectangle') {
+        tasks.push("Определить максимальные напряжения для заданного прямоугольного сечения");
+      } else if (sectionType === 'rectangular-tube') {
+        tasks.push("Определить максимальные напряжения для заданной прямоугольной трубы");
       } else if (sectionType === 'i-beam') {
         tasks.push("Определить максимальные напряжения для заданного двутавра");
       } else if (sectionType === 'channel-u' || sectionType === 'channel-p') {
@@ -808,6 +817,12 @@ function buildProblemStatement(input: BeamInput, result: BeamResult, hasDeflecti
       // Режим "Подбор сечения"
       if (sectionType === 'round') {
         tasks.push("Подобрать диаметр круглого сечения из условия прочности");
+      } else if (sectionType === 'square') {
+        tasks.push("Подобрать сторону квадратного сечения из условия прочности");
+      } else if (sectionType === 'rectangle') {
+        tasks.push("Подобрать размеры прямоугольного сечения из условия прочности");
+      } else if (sectionType === 'rectangular-tube') {
+        tasks.push("Подобрать размеры прямоугольной трубы из условия прочности");
       } else if (sectionType === 'i-beam') {
         tasks.push("Подобрать номер стального двутавра из условия прочности");
       } else if (sectionType === 'channel-u' || sectionType === 'channel-p') {
