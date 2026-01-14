@@ -196,6 +196,7 @@ export default function QuickMathPage() {
   const [startTime, setStartTime] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [penalty, setPenalty] = useState(0);
+  const [errorCount, setErrorCount] = useState(0); // Счётчик ошибок для прогрессивного штрафа
   const [correctCount, setCorrectCount] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [bestTimes, setBestTimes] = useState<Record<Difficulty, number | null>>({
@@ -295,6 +296,7 @@ export default function QuickMathPage() {
     setStartTime(Date.now());
     setElapsedTime(0);
     setPenalty(0);
+    setErrorCount(0);
     setCorrectCount(0);
     setFeedback(null);
     setGameState("playing");
@@ -311,7 +313,10 @@ export default function QuickMathPage() {
       setCorrectCount(c => c + 1);
       setFeedback("correct");
     } else {
-      setPenalty(p => p + 2000); // +2 секунды
+      // Прогрессивный штраф: 2с за 1-ю ошибку, 3с за 2-ю, 4с за 3-ю и т.д.
+      const currentPenalty = (errorCount + 2) * 1000; // 2000, 3000, 4000...
+      setPenalty(p => p + currentPenalty);
+      setErrorCount(e => e + 1);
       setFeedback("wrong");
     }
 
@@ -346,7 +351,7 @@ export default function QuickMathPage() {
         setCurrentIndex(i => i + 1);
       }
     }, 300);
-  }, [gameState, feedback, problems, currentIndex, startTime, penalty, bestTimes, difficulty, dailySeed, fetchLeaderboard]);
+  }, [gameState, feedback, problems, currentIndex, startTime, penalty, errorCount, bestTimes, difficulty, dailySeed, fetchLeaderboard]);
 
   const totalTime = elapsedTime + penalty;
 
