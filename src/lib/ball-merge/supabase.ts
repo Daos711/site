@@ -1,3 +1,5 @@
+import type { GameMode } from './types';
+
 // Supabase конфигурация для Ball Merge (из общих env)
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -7,14 +9,15 @@ export interface BallMergeScore {
   player_id: string;
   name: string;
   score: number;
+  mode: GameMode;
   created_at: string;
   updated_at?: string;
 }
 
-// Получить таблицу лидеров (только лучший результат для каждого игрока)
-export async function getBallMergeScores(limit = 50): Promise<BallMergeScore[]> {
+// Получить таблицу лидеров (только лучший результат для каждого игрока, по режиму)
+export async function getBallMergeScores(mode: GameMode = 'normal', limit = 50): Promise<BallMergeScore[]> {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/ball_merge_scores?select=*&order=score.desc`,
+    `${SUPABASE_URL}/rest/v1/ball_merge_scores?select=*&mode=eq.${mode}&order=score.desc`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
@@ -45,15 +48,16 @@ export async function getBallMergeScores(limit = 50): Promise<BallMergeScore[]> 
     .slice(0, limit);
 }
 
-// Сохранить или обновить результат игрока
+// Сохранить или обновить результат игрока (отдельно для каждого режима)
 export async function submitBallMergeScore(
   playerId: string,
   name: string,
-  score: number
+  score: number,
+  mode: GameMode = 'normal'
 ): Promise<{ success: boolean; isNewRecord: boolean }> {
-  // Сначала проверяем, есть ли уже запись для этого игрока
+  // Сначала проверяем, есть ли уже запись для этого игрока в этом режиме
   const existingRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/ball_merge_scores?player_id=eq.${playerId}&select=id,score`,
+    `${SUPABASE_URL}/rest/v1/ball_merge_scores?player_id=eq.${playerId}&mode=eq.${mode}&select=id,score`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
@@ -70,7 +74,7 @@ export async function submitBallMergeScore(
   const existing = await existingRes.json();
 
   if (existing.length > 0) {
-    // Игрок уже есть - обновляем только если новый результат лучше
+    // Игрок уже есть в этом режиме - обновляем только если новый результат лучше
     const currentBest = existing[0].score;
     if (score > currentBest) {
       const updateRes = await fetch(
@@ -102,7 +106,7 @@ export async function submitBallMergeScore(
       return { success: true, isNewRecord: false };
     }
   } else {
-    // Новый игрок - создаём запись
+    // Новый игрок в этом режиме - создаём запись
     const insertRes = await fetch(
       `${SUPABASE_URL}/rest/v1/ball_merge_scores`,
       {
@@ -117,6 +121,7 @@ export async function submitBallMergeScore(
           player_id: playerId,
           name,
           score,
+          mode,
         }),
       }
     );
@@ -159,17 +164,19 @@ export function setPlayerName(name: string): void {
 export interface PendingBallMergeResult {
   score: number;
   name: string;
+  mode: GameMode;
   timestamp: number; // для проверки актуальности
 }
 
 const PENDING_RESULT_KEY = 'ballmerge_pending_result';
 const PENDING_RESULT_MAX_AGE = 5 * 60 * 1000; // 5 минут
 
-export function savePendingResult(score: number, name: string): void {
+export function savePendingResult(score: number, name: string, mode: GameMode = 'normal'): void {
   if (typeof window === 'undefined') return;
   const data: PendingBallMergeResult = {
     score,
     name,
+    mode,
     timestamp: Date.now(),
   };
   localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(data));
