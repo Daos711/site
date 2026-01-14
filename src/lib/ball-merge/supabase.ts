@@ -16,7 +16,8 @@ export interface BallMergeScore {
 
 // Получить таблицу лидеров (только лучший результат для каждого игрока, по режиму)
 export async function getBallMergeScores(mode: GameMode = 'normal', limit = 50): Promise<BallMergeScore[]> {
-  const res = await fetch(
+  // Пробуем сначала с фильтром по режиму
+  let res = await fetch(
     `${SUPABASE_URL}/rest/v1/ball_merge_scores?select=*&mode=eq.${mode}&order=score.desc`,
     {
       headers: {
@@ -26,6 +27,19 @@ export async function getBallMergeScores(mode: GameMode = 'normal', limit = 50):
     }
   );
 
+  // Если колонка mode не существует - запрос без фильтра (обратная совместимость)
+  if (!res.ok) {
+    res = await fetch(
+      `${SUPABASE_URL}/rest/v1/ball_merge_scores?select=*&order=score.desc`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
+  }
+
   if (!res.ok) {
     console.error("Failed to fetch ball merge scores:", res.statusText);
     return [];
@@ -33,9 +47,12 @@ export async function getBallMergeScores(mode: GameMode = 'normal', limit = 50):
 
   const allScores: BallMergeScore[] = await res.json();
 
+  // Фильтруем по режиму на клиенте (если колонка mode существует)
+  const filteredScores = allScores.filter(s => !s.mode || s.mode === mode);
+
   // Оставляем только лучший результат для каждого имени
   const bestByName = new Map<string, BallMergeScore>();
-  for (const score of allScores) {
+  for (const score of filteredScores) {
     const existing = bestByName.get(score.name);
     if (!existing || score.score > existing.score) {
       bestByName.set(score.name, score);
@@ -55,9 +72,9 @@ export async function submitBallMergeScore(
   score: number,
   mode: GameMode = 'normal'
 ): Promise<{ success: boolean; isNewRecord: boolean }> {
-  // Сначала проверяем, есть ли уже запись для этого игрока в этом режиме
-  const existingRes = await fetch(
-    `${SUPABASE_URL}/rest/v1/ball_merge_scores?player_id=eq.${playerId}&mode=eq.${mode}&select=id,score`,
+  // Проверяем, есть ли колонка mode (пробуем запрос с фильтром)
+  let existingRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/ball_merge_scores?player_id=eq.${playerId}&mode=eq.${mode}&select=id,score,mode`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
@@ -65,6 +82,21 @@ export async function submitBallMergeScore(
       },
     }
   );
+
+  let hasModeColumn = existingRes.ok;
+
+  // Если колонка mode не существует - запрос без фильтра по mode
+  if (!existingRes.ok) {
+    existingRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/ball_merge_scores?player_id=eq.${playerId}&select=id,score`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
+  }
 
   if (!existingRes.ok) {
     console.error("Failed to check existing score:", existingRes.statusText);
@@ -74,7 +106,7 @@ export async function submitBallMergeScore(
   const existing = await existingRes.json();
 
   if (existing.length > 0) {
-    // Игрок уже есть в этом режиме - обновляем только если новый результат лучше
+    // Игрок уже есть - обновляем только если новый результат лучше
     const currentBest = existing[0].score;
     if (score > currentBest) {
       const updateRes = await fetch(
@@ -106,7 +138,16 @@ export async function submitBallMergeScore(
       return { success: true, isNewRecord: false };
     }
   } else {
-    // Новый игрок в этом режиме - создаём запись
+    // Новый игрок - создаём запись (с mode только если колонка существует)
+    const insertData: Record<string, unknown> = {
+      player_id: playerId,
+      name,
+      score,
+    };
+    if (hasModeColumn) {
+      insertData.mode = mode;
+    }
+
     const insertRes = await fetch(
       `${SUPABASE_URL}/rest/v1/ball_merge_scores`,
       {
@@ -117,12 +158,7 @@ export async function submitBallMergeScore(
           "Content-Type": "application/json",
           Prefer: "return=minimal",
         },
-        body: JSON.stringify({
-          player_id: playerId,
-          name,
-          score,
-          mode,
-        }),
+        body: JSON.stringify(insertData),
       }
     );
 
