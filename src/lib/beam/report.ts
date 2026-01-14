@@ -1332,9 +1332,10 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   <h2>${sectionNum}. Подбор сечения</h2>
   <p>По условию прочности при допускаемом напряжении \\([\\sigma] = ${sigma_MPa}\\) МПа:</p>
   <div class="formula">
-    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(MmaxNm)}}{${sigma_MPa} \\cdot 10^6} \\cdot 10^6 = ${Wreq_str} \\text{ см}^3\\]
+    \\[W \\geq \\frac{|M|_{\\max}}{[\\sigma]} = \\frac{${formatNumber(MmaxNm)} \\text{ Н}\\!\\cdot\\!\\text{м}}{${sigma_MPa} \\text{ МПа}} = ${Wreq_str} \\text{ см}^3\\]
   </div>
-  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м \\(= ${formatNumber(MmaxNm)}\\) Н·м, \\([\\sigma] = ${sigma_MPa}\\) МПа.</p>`;
+  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м = ${formatNumber(MmaxNm)} Н·м.</p>
+  <p><small><em>Примечание: при \\(M\\) в Н·м и \\([\\sigma]\\) в МПа результат получается в см³.</em></small></p>`;
   }
 
   if (sectionType === 'round') {
@@ -1640,10 +1641,11 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
 
     html += `
   <h4>Максимальное напряжение</h4>
-  <p>Максимальное нормальное напряжение в опасном сечении (при \\(|M|_{\\max} = ${M_kNm}\\) кН·м = ${M_Nm} Н·м):</p>
+  <p>Максимальное нормальное напряжение в опасном сечении:</p>
   <div class="formula">
-    \\[\\sigma_{\\max} = \\frac{|M|_{\\max}}{W} = \\frac{${M_Nm}}{${W_cm3} \\cdot 10^{-6}} \\cdot 10^{-6} = \\frac{${M_Nm}}{${W_cm3}} \\cdot 10^{-3} = \\boxed{${sigmaMax_MPa} \\text{ МПа}}\\]
-  </div>`;
+    \\[\\sigma_{\\max} = \\frac{|M|_{\\max}}{W} = \\frac{${M_Nm} \\text{ Н}\\!\\cdot\\!\\text{м}}{${W_cm3} \\text{ см}^3} = \\boxed{${sigmaMax_MPa} \\text{ МПа}}\\]
+  </div>
+  <p><small><em>Примечание: при \\(M\\) в Н·м и \\(W\\) в см³ результат получается в МПа (1 Н·м/см³ = 1 МПа).</em></small></p>`;
   }
 
   return html;
@@ -1685,7 +1687,7 @@ function buildStressDiagramSection(
   </div>
   <p>Максимальные напряжения на крайних волокнах (\\(y = \\pm y_{\\max} = \\pm ${formatNumber(y_max_mm, 1)}\\) мм, где \\(y_{\\max} = I_${axis}/W_${axis}\\)):</p>
   <div class="formula">
-    \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_${axis}} = \\frac{${formatNumber(MmaxKNm)} \\cdot 10^6}{${formatNumber(W_val)} \\cdot 10^3} = ${sigmaMaxStr} \\text{ МПа}\\]
+    \\[\\sigma_{\\max} = \\frac{M_{\\max}}{W_${axis}} = \\frac{${formatNumber(MmaxKNm * 1000)} \\text{ Н}\\!\\cdot\\!\\text{м}}{${formatNumber(W_val)} \\text{ см}^3} = ${sigmaMaxStr} \\text{ МПа}\\]
   </div>
 
   <div class="stress-diagram" style="display: flex; justify-content: center; margin: 20px 0;">
