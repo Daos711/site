@@ -3131,60 +3131,86 @@ function buildImpactLoadingSection(
   </div>
   ${RB < 0 || RA < 0 ? `<p><em>Знак минус означает, что реакция направлена противоположно ожидаемому (отрыв).</em></p>` : ""}`;
 
-    // ===== НОВЫЙ РАЗДЕЛ: Учёт податливости пружины при ударе =====
-    // Находим позиции опор
+    // ===== РАЗДЕЛ: Учёт податливости пружины при ударе =====
+    // Универсальная формула для всех типов балок
     const supports = input.supports.filter(s => s.type === 'pin' || s.type === 'roller');
     if (supports.length >= 2) {
-      const xA = Math.min(...supports.map(s => s.x)); // Опора A (ближняя к началу)
-      const xB = Math.max(...supports.map(s => s.x)); // Опора B (дальняя)
-      const spanLength = xB - xA; // Расстояние между опорами
+      const xA = Math.min(...supports.map(s => s.x)); // Опора A (левая)
+      const xB = Math.max(...supports.map(s => s.x)); // Опора B (правая)
+      const spanLength = xB - xA; // Пролёт между опорами
 
-      // Приведённый прогиб от податливости пружины в точке удара
-      // Δ_c^пр = Δ_A × (расстояние от груза до опоры B) / (расстояние между опорами)
-      let leverArm = 0;
       if (spanLength > 0) {
-        // Для консоли слева: груз на консоли, пружина в A
-        // Рычаг = (xB - impactX) / spanLength, но если груз левее A, то рычаг > 1
-        if (impactX <= xA) {
-          // Груз на левой консоли - используем полное расстояние от груза до B
-          leverArm = (xB - impactX) / spanLength;
-        } else if (impactX >= xB) {
-          // Груз на правой консоли
-          leverArm = (impactX - xA) / spanLength;
+        // Определяем, какая опора ближе к точке удара — туда ставим пружину
+        const distToA = Math.abs(impactX - xA);
+        const distToB = Math.abs(impactX - xB);
+        const springAtA = distToA <= distToB; // Пружина в ближайшей к удару опоре
+
+        // Универсальная формула приведённого прогиба (из подобия треугольников):
+        // При осадке опоры на Δ, точка удара смещается пропорционально расстоянию
+        // Для пружины в A: Δ_c^пр = Δ_A × |x_B - x_P| / |x_B - x_A|
+        // Для пружины в B: Δ_c^пр = Δ_B × |x_P - x_A| / |x_B - x_A|
+        let leverArm: number;
+        let springDelta: number;
+        let springSupport: string;
+        let numeratorExpr: string;
+
+        if (springAtA) {
+          // Пружина в опоре A
+          leverArm = Math.abs(xB - impactX) / spanLength;
+          springDelta = Math.abs(sA_st);
+          springSupport = "A";
+          numeratorExpr = `|x_B - x_P| = |${formatNumber(xB)} - ${formatNumber(impactX)}| = ${formatNumber(Math.abs(xB - impactX))}`;
         } else {
-          // Груз между опорами
-          leverArm = (xB - impactX) / spanLength;
+          // Пружина в опоре B
+          leverArm = Math.abs(impactX - xA) / spanLength;
+          springDelta = Math.abs(sB_st);
+          springSupport = "B";
+          numeratorExpr = `|x_P - x_A| = |${formatNumber(impactX)} - ${formatNumber(xA)}| = ${formatNumber(Math.abs(impactX - xA))}`;
         }
-      }
 
-      // Приведённый прогиб от пружины (используем статическую осадку пружины A)
-      const delta_spring_reduced = Math.abs(sA_st) * leverArm; // см
+        // Приведённый прогиб от пружины
+        const delta_spring_reduced = springDelta * leverArm; // см
 
-      // Суммарный прогиб с учётом пружины
-      const delta_total = yStaticAtImpact_cm + delta_spring_reduced; // см
+        // Суммарный прогиб с учётом пружины
+        const delta_total = yStaticAtImpact_cm + delta_spring_reduced; // см
 
-      // Коэффициент динамичности с учётом пружины
-      const delta_total_m = delta_total / 100; // см → м
-      const ratioUnderSqrt_spring = (2 * H_m) / delta_total_m;
-      const valueUnderSqrt_spring = 1 + ratioUnderSqrt_spring;
-      const sqrtValue_spring = Math.sqrt(valueUnderSqrt_spring);
-      const Kd_spring = 1 + sqrtValue_spring;
+        // Коэффициент динамичности с учётом пружины
+        const delta_total_m = delta_total / 100; // см → м
+        const ratioUnderSqrt_spring = (2 * H_m) / delta_total_m;
+        const valueUnderSqrt_spring = 1 + ratioUnderSqrt_spring;
+        const sqrtValue_spring = Math.sqrt(valueUnderSqrt_spring);
+        const Kd_spring = 1 + sqrtValue_spring;
 
-      // Динамическое напряжение с учётом пружины
-      const sigmaDynamic_spring = Kd_spring * sigmaMax;
+        // Динамическое напряжение с учётом пружины
+        const sigmaDynamic_spring = Kd_spring * sigmaMax;
 
-      // Снижение напряжений
-      const stressReduction = Kd / Kd_spring;
+        // Снижение напряжений
+        const stressReduction = Kd / Kd_spring;
 
-      subsectionSpring += 1;
-      html += `
+        // Определяем тип схемы для описания
+        let schemeDescription: string;
+        if (impactX < xA) {
+          schemeDescription = "консоль слева (груз на левой консоли)";
+        } else if (impactX > xB) {
+          schemeDescription = "консоль справа (груз на правой консоли)";
+        } else {
+          schemeDescription = "груз в пролёте между опорами";
+        }
+
+        subsectionSpring += 1;
+        html += `
   <h3>${sectionNum}.${subsectionSpring}. Учёт податливости пружины при ударе</h3>
-  <p>При замене жёсткой опоры A на пружину увеличивается общая податливость системы, что снижает динамические напряжения.</p>
+  <p>При замене жёсткой опоры на пружину увеличивается общая податливость системы, что снижает динамические напряжения.</p>
+  <p><em>Тип схемы: ${schemeDescription}. Пружина устанавливается в опоре ${springSupport} (ближайшей к точке удара).</em></p>
 
   <p><strong>Приведённый прогиб от податливости пружины:</strong></p>
-  <p>Для схемы с консолью и двумя опорами, если пружина установлена в опоре A:</p>
+  <p>Из подобия треугольников: при осадке опоры ${springSupport} на \\(s_{${springSupport}}\\), точка удара смещается на:</p>
   <div class="formula">
-    \\[\\Delta_c^{\\text{пр}} = s_{A,\\text{ст}} \\cdot \\frac{x_B - x_P}{x_B - x_A} = ${formatNumber(Math.abs(sA_st), 4)} \\cdot \\frac{${formatNumber(xB)} - ${formatNumber(impactX)}}{${formatNumber(xB)} - ${formatNumber(xA)}} = ${formatNumber(Math.abs(sA_st), 4)} \\cdot ${formatNumber(leverArm, 4)} = ${formatNumber(delta_spring_reduced, 4)} \\text{ см}\\]
+    \\[\\Delta_c^{\\text{пр}} = s_{${springSupport},\\text{ст}} \\cdot \\frac{${springAtA ? "|x_B - x_P|" : "|x_P - x_A|"}}{|x_B - x_A|}\\]
+  </div>
+  <p>где ${numeratorExpr}, \\(|x_B - x_A| = ${formatNumber(spanLength)}\\) м</p>
+  <div class="formula">
+    \\[\\Delta_c^{\\text{пр}} = ${formatNumber(springDelta, 4)} \\cdot \\frac{${formatNumber(Math.abs(springAtA ? xB - impactX : impactX - xA))}}{${formatNumber(spanLength)}} = ${formatNumber(springDelta, 4)} \\cdot ${formatNumber(leverArm, 4)} = ${formatNumber(delta_spring_reduced, 4)} \\text{ см}\\]
   </div>
 
   <p><strong>Суммарный прогиб с учётом пружины:</strong></p>
@@ -3204,7 +3230,7 @@ function buildImpactLoadingSection(
 
   <h3>${sectionNum}.${subsectionSpring + 1}. Сравнение: жёсткая опора vs пружина</h3>
   <table>
-    <tr><th>Параметр</th><th>Жёсткая опора</th><th>Пружина</th><th>Изменение</th></tr>
+    <tr><th>Параметр</th><th>Жёсткая опора</th><th>Пружина в ${springSupport}</th><th>Изменение</th></tr>
     <tr>
       <td>Прогиб для расчёта \\(K_д\\), см</td>
       <td>\\(${formatNumber(yStaticAtImpact_cm, 4)}\\)</td>
@@ -3224,10 +3250,11 @@ function buildImpactLoadingSection(
       <td>снижение на ${formatNumber(sigmaDynamic - sigmaDynamic_spring, 2)} МПа</td>
     </tr>
   </table>
-  <p><strong>Вывод:</strong> Замена жёсткой опоры A на пружину с податливостью \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН приводит к снижению динамических напряжений в <strong>${formatNumber(stressReduction, 2)} раз</strong> (с ${formatNumber(sigmaDynamic, 2)} МПа до ${formatNumber(sigmaDynamic_spring, 2)} МПа).</p>`;
+  <p><strong>Вывод:</strong> Замена жёсткой опоры ${springSupport} на пружину с податливостью \\(\\alpha = ${formatNumber(springStiffness)}\\) см/кН приводит к снижению динамических напряжений в <strong>${formatNumber(stressReduction, 2)} раз</strong> (с ${formatNumber(sigmaDynamic, 2)} МПа до ${formatNumber(sigmaDynamic_spring, 2)} МПа).</p>`;
 
-      // Увеличиваем счётчик подразделов на 1 (добавили раздел сравнения)
-      subsectionSpring += 1;
+        // Увеличиваем счётчик подразделов на 1 (добавили раздел сравнения)
+        subsectionSpring += 1;
+      }
     }
   }
 
