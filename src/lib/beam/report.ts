@@ -1318,17 +1318,9 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
   let html = '';
 
   if (sectionMode === 'given') {
-    // Режим "Заданное сечение" - вычисляем σmax
-    const sigmaMax_MPa = formatNumber(result.sigmaMax ?? 0, 2);
-    const W_cm3 = formatNumber((result.W ?? 0) * 1e6, 4);
-
+    // Режим "Заданное сечение" - сначала только заголовок, σmax будет после вычисления W
     html = `
-  <h2>${sectionNum}. Заданное сечение</h2>
-  <p>Для заданного сечения вычисляем максимальное нормальное напряжение:</p>
-  <div class="formula">
-    \\[\\sigma_{\\max} = \\frac{|M|_{\\max}}{W} = \\frac{${formatNumber(Math.abs(Mmax.value))} \\cdot 10^6}{${W_cm3} \\cdot 10^3} = ${sigmaMax_MPa} \\text{ МПа}\\]
-  </div>
-  <p>где \\(|M|_{\\max} = ${formatNumber(Math.abs(Mmax.value))}\\) кН·м, \\(W = ${W_cm3}\\) см³.</p>`;
+  <h2>${sectionNum}. Заданное сечение</h2>`;
 
   } else {
     // Режим "Подбор сечения"
@@ -1637,6 +1629,21 @@ function buildCrossSectionBlock(input: BeamInput, result: BeamResult, Mmax: { va
     html += `
   <p style="color: red;"><strong>Внимание:</strong> Требуемый момент сопротивления \\(W_{\\text{треб}} = ${Wreq_str}\\) см³
   превышает максимальное значение в сортаменте. Необходимо использовать составное сечение или сечение большего типоразмера.</p>`;
+  }
+
+  // Для режима "заданное сечение" добавляем вычисление σmax в конце (после того как W уже вычислен)
+  if (sectionMode === 'given' && result.W && result.sigmaMax !== undefined) {
+    const sigmaMax_MPa = formatNumber(result.sigmaMax, 2);
+    const W_cm3 = formatNumber(result.W * 1e6, 4);
+    const M_kNm = formatNumber(Math.abs(Mmax.value), 2);
+    const M_Nm = formatNumber(MmaxNm, 0);
+
+    html += `
+  <h4>Максимальное напряжение</h4>
+  <p>Максимальное нормальное напряжение в опасном сечении (при \\(|M|_{\\max} = ${M_kNm}\\) кН·м = ${M_Nm} Н·м):</p>
+  <div class="formula">
+    \\[\\sigma_{\\max} = \\frac{|M|_{\\max}}{W} = \\frac{${M_Nm}}{${W_cm3} \\cdot 10^{-6}} \\cdot 10^{-6} = \\frac{${M_Nm}}{${W_cm3}} \\cdot 10^{-3} = \\boxed{${sigmaMax_MPa} \\text{ МПа}}\\]
+  </div>`;
   }
 
   return html;
