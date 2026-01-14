@@ -261,6 +261,7 @@ export default function BallMergePage() {
   const [currentBallLevel, setCurrentBallLevel] = useState(() => Math.floor(Math.random() * MAX_SPAWN_LEVEL));
   const [nextBallLevel, setNextBallLevel] = useState(() => Math.floor(Math.random() * MAX_SPAWN_LEVEL));
   const [isGameOver, setIsGameOver] = useState(false);
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
   const [dropX, setDropX] = useState(GAME_WIDTH / 2);
 
   // Динамические размеры на основе режима
@@ -804,6 +805,18 @@ export default function BallMergePage() {
     setNextBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
   }, [isGameOver, currentBallLevel, nextBallLevel]);
 
+  // Задержка показа окна game over (чтобы случайно не нажать на кнопку)
+  useEffect(() => {
+    if (isGameOver) {
+      const timer = setTimeout(() => {
+        setShowGameOverModal(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowGameOverModal(false);
+    }
+  }, [isGameOver]);
+
   // Обновление позиции превью
   const updateDropPosition = useCallback((clientX: number) => {
     if (!canvasRef.current) return;
@@ -1055,7 +1068,7 @@ export default function BallMergePage() {
               </div>
             )}
 
-            {isGameOver && (
+            {showGameOverModal && (
               <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4 overflow-y-auto">
                 <h2 className="text-3xl font-bold text-red-400 mb-2">Игра окончена!</h2>
                 <p className="text-xl text-gray-300 mb-4">
