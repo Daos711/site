@@ -137,10 +137,10 @@ $$ LANGUAGE plpgsql;
 -- СОЗДАЁМ ТРИГГЕРЫ (удаляем старые если есть)
 -- =====================================================
 
--- Ball Merge
+-- Ball Merge (INSERT и UPDATE для обновления рекордов)
 DROP TRIGGER IF EXISTS trigger_notify_ball_merge ON ball_merge_scores;
 CREATE TRIGGER trigger_notify_ball_merge
-  AFTER INSERT ON ball_merge_scores
+  AFTER INSERT OR UPDATE ON ball_merge_scores
   FOR EACH ROW EXECUTE FUNCTION notify_ball_merge_score();
 
 -- 2048
