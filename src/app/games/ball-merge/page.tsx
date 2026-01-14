@@ -6,13 +6,11 @@ import Link from "next/link";
 import {
   BALL_LEVELS,
   GAME_WIDTH,
-  GAME_HEIGHT,
   WALL_THICKNESS,
   DROP_ZONE_HEIGHT,
   DANGER_TIME_MS,
   MAX_SPAWN_LEVEL,
   TOP_BUFFER,
-  CANVAS_HEIGHT,
   BALL_PHYSICS,
   DROP_COOLDOWN,
   MERGE_IMMUNITY_MS,
@@ -21,6 +19,10 @@ import {
   KICK_FORCE,
   MAX_KICK_SPEED,
   KICK_NEAR_THRESHOLD,
+  GAME_MODES,
+  getGameHeight,
+  getCanvasHeight,
+  type GameMode,
 } from "@/lib/ball-merge";
 import {
   getBallMergeScores,
@@ -47,9 +49,9 @@ type MatterBody = import("matter-js").Body & {
 };
 
 // Рисование 3D стеклянного стакана с реальной перспективой
-function drawGlassContainer(ctx: CanvasRenderingContext2D) {
+function drawGlassContainer(ctx: CanvasRenderingContext2D, canvasHeight: number) {
   const w = GAME_WIDTH;
-  const h = GAME_HEIGHT + TOP_BUFFER; // Полная высота с буфером
+  const h = canvasHeight; // Полная высота с буфером
   const t = WALL_THICKNESS;
   const depth = 40; // глубина 3D эффекта
   const perspectiveOffset = 15; // смещение для перспективы (дальняя грань меньше)
@@ -251,12 +253,19 @@ export default function BallMergePage() {
   const matterRef = useRef<typeof import("matter-js") | null>(null);
   const ballBodiesRef = useRef<Map<number, MatterBody>>(new Map());
 
+  // Режим игры: null = экран выбора, 'normal' | 'large' = игра
+  const [gameMode, setGameMode] = useState<GameMode | null>(null);
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [score, setScore] = useState(0);
   const [currentBallLevel, setCurrentBallLevel] = useState(() => Math.floor(Math.random() * MAX_SPAWN_LEVEL));
   const [nextBallLevel, setNextBallLevel] = useState(() => Math.floor(Math.random() * MAX_SPAWN_LEVEL));
   const [isGameOver, setIsGameOver] = useState(false);
   const [dropX, setDropX] = useState(GAME_WIDTH / 2);
+
+  // Динамические размеры на основе режима
+  const GAME_HEIGHT = gameMode ? getGameHeight(gameMode) : getGameHeight('normal');
+  const CANVAS_HEIGHT = gameMode ? getCanvasHeight(gameMode) : getCanvasHeight('normal');
 
   // Refs для использования в render loop
   const currentBallRef = useRef(currentBallLevel);
@@ -288,14 +297,33 @@ export default function BallMergePage() {
   const [pendingResultMessage, setPendingResultMessage] = useState<string | null>(null);
   const pendingResultSubmittedRef = useRef(false);
 
-  // Загрузка имени игрока и таблицы лидеров
+  // Загрузка таблицы лидеров
+  const fetchLeaderboard = useCallback(async (mode: GameMode = gameMode || 'normal') => {
+    setLeaderboardLoading(true);
+    try {
+      const scores = await getBallMergeScores(mode, 20);
+      setLeaderboard(scores);
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  }, [gameMode]);
+
+  // Загрузка имени игрока
   useEffect(() => {
     const savedName = getPlayerName();
     if (savedName) {
       setPlayerNameState(savedName);
     }
-    fetchLeaderboard();
   }, []);
+
+  // Загрузка таблицы лидеров при смене режима
+  useEffect(() => {
+    if (gameMode) {
+      fetchLeaderboard(gameMode);
+    }
+  }, [gameMode, fetchLeaderboard]);
 
   // Проверка и отправка pending result после OAuth (только один раз)
   useEffect(() => {
@@ -305,15 +333,19 @@ export default function BallMergePage() {
       // Проверяем что pending result валиден и содержит имя и score > 0
       if (pending && pending.name && pending.name.trim() && pending.score > 0) {
         pendingResultSubmittedRef.current = true;
+        const pendingMode = pending.mode || 'normal';
         (async () => {
           try {
-            const result = await submitBallMergeScore(playerId, pending.name.trim(), pending.score);
+            const result = await submitBallMergeScore(playerId, pending.name.trim(), pending.score, pendingMode);
             clearPendingResult();
             if (result.success) {
               setPendingResultMessage(result.isNewRecord
                 ? `Новый рекорд сохранён! ${pending.score} очков`
                 : `Результат сохранён! ${pending.score} очков`);
-              await fetchLeaderboard();
+              // Если режим совпадает с текущим - обновляем таблицу
+              if (gameMode === pendingMode) {
+                await fetchLeaderboard(pendingMode);
+              }
             } else {
               setPendingResultMessage('Ошибка сохранения результата');
             }
@@ -330,32 +362,20 @@ export default function BallMergePage() {
         clearPendingResult();
       }
     }
-  }, [authUser, playerId]);
-
-  const fetchLeaderboard = async () => {
-    setLeaderboardLoading(true);
-    try {
-      const scores = await getBallMergeScores(20);
-      setLeaderboard(scores);
-    } catch (error) {
-      console.error("Failed to fetch leaderboard:", error);
-    } finally {
-      setLeaderboardLoading(false);
-    }
-  };
+  }, [authUser, playerId, gameMode, fetchLeaderboard]);
 
   // Сохранение результата при game over (только для авторизованных)
   const handleSubmitScore = async () => {
-    if (!authUser || !playerName.trim() || score === 0 || scoreSubmitting || scoreSubmitted) return;
+    if (!authUser || !playerName.trim() || score === 0 || scoreSubmitting || scoreSubmitted || !gameMode) return;
 
     setScoreSubmitting(true);
     try {
-      const result = await submitBallMergeScore(playerId, playerName.trim(), score);
+      const result = await submitBallMergeScore(playerId, playerName.trim(), score, gameMode);
       if (result.success) {
         setScoreSubmitted(true);
         setIsNewRecord(result.isNewRecord);
         setPlayerName(playerName.trim());
-        await fetchLeaderboard();
+        await fetchLeaderboard(gameMode);
       }
     } catch (error) {
       console.error("Failed to submit score:", error);
@@ -364,9 +384,13 @@ export default function BallMergePage() {
     }
   };
 
-  // Инициализация Matter.js
+  // Инициализация Matter.js (только когда выбран режим)
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !gameMode) return;
+
+    // Локальные константы для текущего режима (захватываются замыканием)
+    const currentGameHeight = getGameHeight(gameMode);
+    const currentCanvasHeight = getCanvasHeight(gameMode);
 
     let isMounted = true;
     let animationId: number;
@@ -399,8 +423,8 @@ export default function BallMergePage() {
       };
 
       // Высота стен - вся видимая область + запас сверху
-      const totalWallHeight = CANVAS_HEIGHT + 400;  // Толще для надёжности
-      const wallCenterY = CANVAS_HEIGHT / 2 - 100;
+      const totalWallHeight = currentCanvasHeight + 400;  // Толще для надёжности
+      const wallCenterY = currentCanvasHeight / 2 - 100;
 
       const leftWall = Bodies.rectangle(
         WALL_THICKNESS / 2,
@@ -421,7 +445,7 @@ export default function BallMergePage() {
       // Пол - толстый для предотвращения туннелирования
       const floor = Bodies.rectangle(
         GAME_WIDTH / 2,
-        CANVAS_HEIGHT - WALL_THICKNESS / 2 + 20,  // Чуть ниже
+        currentCanvasHeight - WALL_THICKNESS / 2 + 20,  // Чуть ниже
         GAME_WIDTH + 100,
         WALL_THICKNESS * 3,    // Толще пол
         wallOptions
@@ -644,10 +668,10 @@ export default function BallMergePage() {
 
         // Фон - вся канвас область
         ctx.fillStyle = '#2d1b4e';
-        ctx.fillRect(0, 0, GAME_WIDTH, CANVAS_HEIGHT);
+        ctx.fillRect(0, 0, GAME_WIDTH, currentCanvasHeight);
 
         // 3D стеклянный стакан
-        drawGlassContainer(ctx);
+        drawGlassContainer(ctx, currentCanvasHeight);
 
         // Шарики
         const bodies = Composite.allBodies(engine.world);
@@ -679,7 +703,7 @@ export default function BallMergePage() {
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
             ctx.moveTo(dropXRef.current, previewY + previewBall.radius);
-            ctx.lineTo(dropXRef.current, CANVAS_HEIGHT);
+            ctx.lineTo(dropXRef.current, currentCanvasHeight);
             ctx.stroke();
             ctx.setLineDash([]);
           }
@@ -740,7 +764,7 @@ export default function BallMergePage() {
       ballBodiesRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Инициализация только один раз!
+  }, [gameMode]); // Перезапуск при смене режима
 
   // Бросок шарика с коротким cooldown
   const dropBall = useCallback((clientX: number) => {
@@ -838,7 +862,98 @@ export default function BallMergePage() {
     setIsNewRecord(false);
   }, []);
 
+  // Выбор другого режима
+  const changeMode = useCallback(() => {
+    // Очищаем состояние
+    const Matter = matterRef.current;
+    if (Matter && engineRef.current) {
+      Matter.Engine.clear(engineRef.current);
+    }
+    mergedPairsRef.current.clear();
+    ballBodiesRef.current.clear();
+    dangerTimersRef.current.clear();
+    lastDropTimeRef.current = 0;
+
+    setScore(0);
+    setCurrentBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+    setNextBallLevel(Math.floor(Math.random() * MAX_SPAWN_LEVEL));
+    setIsGameOver(false);
+    setDropX(GAME_WIDTH / 2);
+    setScoreSubmitted(false);
+    setIsNewRecord(false);
+    setIsLoaded(false);
+    setGameMode(null); // Возврат к экрану выбора
+  }, []);
+
   const nextBallData = BALL_LEVELS[nextBallLevel];
+
+  // Экран выбора режима
+  if (!gameMode) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center py-4">
+        {/* Шапка */}
+        <div className="w-full max-w-4xl mb-8 flex items-center justify-between px-4">
+          <Link
+            href="/games"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Назад</span>
+          </Link>
+          <h1 className="text-2xl font-bold">Шарики</h1>
+          <div className="w-16" />
+        </div>
+
+        <div className="text-center mb-8">
+          <h2 className="text-xl text-gray-300 mb-2">Выберите режим</h2>
+          <p className="text-sm text-gray-500">У каждого режима отдельный рейтинг</p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          {Object.values(GAME_MODES).map((mode) => (
+            <button
+              key={mode.id}
+              onClick={() => setGameMode(mode.id)}
+              className="group relative bg-gray-800 hover:bg-gray-700 border-2 border-gray-600 hover:border-purple-500 rounded-xl p-6 transition-all duration-200 min-w-[200px]"
+            >
+              <div className="flex flex-col items-center gap-3">
+                {/* Иконка стакана */}
+                <div
+                  className="bg-gradient-to-b from-purple-500/20 to-purple-900/40 rounded-lg border-2 border-purple-400/50 flex items-end justify-center"
+                  style={{
+                    width: 60,
+                    height: mode.id === 'large' ? 90 : 60,
+                  }}
+                >
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-red-400 to-red-600 mb-2" />
+                </div>
+                <div className="text-lg font-bold text-white">{mode.name}</div>
+                <div className="text-sm text-gray-400 text-center">{mode.description}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Превью прогрессии шаров */}
+        <div className="mt-12 flex flex-wrap justify-center gap-2 max-w-md">
+          {BALL_LEVELS.map((ball, i) => (
+            <div
+              key={i}
+              className="rounded-full"
+              title={ball.name}
+              style={{
+                width: Math.min(ball.radius * 0.25, 28),
+                height: Math.min(ball.radius * 0.25, 28),
+                background: `radial-gradient(circle at 30% 30%, ${ball.glowColor}, ${ball.color})`,
+                boxShadow: `0 2px 4px rgba(0,0,0,0.3)`,
+              }}
+            />
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-gray-500">Соединяй одинаковые шарики — они сливаются в больший!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center py-4">
@@ -851,7 +966,15 @@ export default function BallMergePage() {
           <ArrowLeft className="w-5 h-5" />
           <span>Назад</span>
         </Link>
-        <h1 className="text-2xl font-bold">Шарики</h1>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Шарики</h1>
+          <button
+            onClick={changeMode}
+            className="text-xs text-gray-500 hover:text-purple-400 transition-colors"
+          >
+            {GAME_MODES[gameMode].name} режим (сменить)
+          </button>
+        </div>
         <button
           onClick={restartGame}
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -977,10 +1100,10 @@ export default function BallMergePage() {
                     />
                     <button
                       onClick={() => {
-                        if (!playerName.trim()) return;
+                        if (!playerName.trim() || !gameMode) return;
                         // Сохраняем имя и результат перед OAuth редиректом
                         setPlayerName(playerName.trim());
-                        savePendingResult(score, playerName.trim());
+                        savePendingResult(score, playerName.trim(), gameMode);
                         signIn();
                       }}
                       disabled={!playerName.trim()}
@@ -1013,6 +1136,12 @@ export default function BallMergePage() {
                   <RotateCcw className="w-5 h-5" />
                   Играть снова
                 </button>
+                <button
+                  onClick={changeMode}
+                  className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-lg font-medium transition-colors"
+                >
+                  Сменить режим
+                </button>
               </div>
             )}
           </div>
@@ -1030,7 +1159,7 @@ export default function BallMergePage() {
                 Таблица лидеров
               </h2>
               <button
-                onClick={fetchLeaderboard}
+                onClick={() => fetchLeaderboard()}
                 disabled={leaderboardLoading}
                 className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
                 title="Обновить"
