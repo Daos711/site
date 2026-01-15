@@ -263,7 +263,7 @@ function QuestionAccordion({
       {/* Ответ */}
       {isExpanded && (
         <div className="px-4 pb-4 pl-10">
-          <div className="p-4 rounded-lg bg-background border border-border prose prose-sm dark:prose-invert max-w-none">
+          <div className="p-4 rounded-lg bg-background border border-border prose text-sm">
             <ReactMarkdown>{question.answer}</ReactMarkdown>
             {question.keywords && question.keywords.length > 0 && (
               <div className="flex flex-wrap gap-2">
