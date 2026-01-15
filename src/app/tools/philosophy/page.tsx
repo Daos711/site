@@ -24,7 +24,7 @@ export default function PhilosophyPage() {
           (q) =>
             q.question.toLowerCase().includes(query) ||
             q.answer.toLowerCase().includes(query) ||
-            q.keywords.some((k) => k.toLowerCase().includes(query))
+            (q.keywords?.some((k) => k.toLowerCase().includes(query)) ?? false)
         ),
       }))
       .filter((section) => section.questions.length > 0);
@@ -266,11 +266,13 @@ function QuestionAccordion({
             <p className="text-sm leading-relaxed mb-4">
               {highlightText(question.answer)}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {question.keywords.map((keyword) => (
-                <Badge key={keyword}>{keyword}</Badge>
-              ))}
-            </div>
+            {question.keywords && question.keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {question.keywords.map((keyword) => (
+                  <Badge key={keyword}>{keyword}</Badge>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
