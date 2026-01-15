@@ -1534,7 +1534,8 @@ export default function TribologyLabPage() {
       let updated = [...enemiesRef.current];
 
       // 1. Спавн нового врага (если есть место)
-      if (toSpawn && !updated.some(e => e.progress < 0.03)) {
+      // Порог 0.015 (1.5% пути) — враги не накладываются на спавне
+      if (toSpawn && !updated.some(e => e.progress < 0.015)) {
         spawnedIdsRef.current.add(toSpawn.id);
         const newEnemy = createEnemy(toSpawn.type as any, wave);
         updated.push(newEnemy);

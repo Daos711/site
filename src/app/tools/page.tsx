@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route, Sparkles } from "lucide-react";
+import { LineChart, Activity, Orbit, Snowflake, GitBranch, AudioWaveform, Grid3X3, BarChart3, Route, Sparkles, BookOpen } from "lucide-react";
 
 const tools = [
   // === Готовые ===
@@ -86,6 +86,14 @@ const tools = [
     icon: Sparkles,
     href: "/tools/nbody",
     status: "prototype" as const,
+  },
+  {
+    id: "philosophy",
+    title: "Философия науки",
+    description: "Ответы на вопросы по философии науки. 4 раздела, поиск по ключевым словам.",
+    icon: BookOpen,
+    href: "/tools/philosophy",
+    status: "ready" as const,
   },
 ];
 
