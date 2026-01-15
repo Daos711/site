@@ -8,19 +8,21 @@ import { Play, Pause, RotateCcw, Info } from "lucide-react";
 type WaveType = "square" | "sawtooth" | "triangle" | "pulse";
 
 // Коэффициенты Фурье для разных волн
+// n — количество ненулевых гармоник (кругов), а не максимальный номер
 function getFourierCoefficients(
   waveType: WaveType,
   n: number
 ): { amplitude: number; frequency: number }[] {
   const coefficients: { amplitude: number; frequency: number }[] = [];
 
-  for (let k = 1; k <= n; k++) {
+  let k = 1;
+  while (coefficients.length < n) {
     let amplitude = 0;
     let frequency = k;
 
     switch (waveType) {
       case "square":
-        // Квадратная волна: только нечётные гармоники
+        // Квадратная волна: только нечётные гармоники (1, 3, 5, ...)
         if (k % 2 === 1) {
           amplitude = 4 / (Math.PI * k);
           frequency = k;
@@ -34,7 +36,7 @@ function getFourierCoefficients(
         break;
 
       case "triangle":
-        // Треугольная: только нечётные
+        // Треугольная: только нечётные (1, 3, 5, ...)
         if (k % 2 === 1) {
           const sign = ((k - 1) / 2) % 2 === 0 ? 1 : -1;
           amplitude = (8 / (Math.PI * Math.PI)) * sign / (k * k);
@@ -52,6 +54,10 @@ function getFourierCoefficients(
     if (Math.abs(amplitude) > 0.0001) {
       coefficients.push({ amplitude, frequency });
     }
+
+    k++;
+    // Защита от бесконечного цикла
+    if (k > 1000) break;
   }
 
   return coefficients;
