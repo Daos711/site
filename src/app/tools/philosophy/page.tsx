@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown, ChevronRight, Search, BookOpen } from "lucide-react";
 import { Badge } from "@/components/Badge";
 import { getPhilosophySections, type PhilosophyQuestion } from "@/data/philosophy";
+import ReactMarkdown from "react-markdown";
 
 export default function PhilosophyPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -262,10 +263,8 @@ function QuestionAccordion({
       {/* Ответ */}
       {isExpanded && (
         <div className="px-4 pb-4 pl-10">
-          <div className="p-4 rounded-lg bg-background border border-border">
-            <p className="text-sm leading-relaxed mb-4">
-              {highlightText(question.answer)}
-            </p>
+          <div className="p-4 rounded-lg bg-background border border-border prose prose-sm dark:prose-invert max-w-none">
+            <ReactMarkdown>{question.answer}</ReactMarkdown>
             {question.keywords && question.keywords.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {question.keywords.map((keyword) => (
