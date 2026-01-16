@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { ChevronDown, ChevronRight, Search, BookOpen } from "lucide-react";
 import { Badge } from "@/components/Badge";
 import { getPhilosophySections, type PhilosophyQuestion } from "@/data/philosophy";
+import ReactMarkdown from "react-markdown";
 
 export default function PhilosophyPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,7 +25,7 @@ export default function PhilosophyPage() {
           (q) =>
             q.question.toLowerCase().includes(query) ||
             q.answer.toLowerCase().includes(query) ||
-            q.keywords.some((k) => k.toLowerCase().includes(query))
+            (q.keywords?.some((k) => k.toLowerCase().includes(query)) ?? false)
         ),
       }))
       .filter((section) => section.questions.length > 0);
@@ -262,15 +263,15 @@ function QuestionAccordion({
       {/* Ответ */}
       {isExpanded && (
         <div className="px-4 pb-4 pl-10">
-          <div className="p-4 rounded-lg bg-background border border-border">
-            <p className="text-sm leading-relaxed mb-4">
-              {highlightText(question.answer)}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {question.keywords.map((keyword) => (
-                <Badge key={keyword}>{keyword}</Badge>
-              ))}
-            </div>
+          <div className="p-4 rounded-lg bg-background border border-border prose text-sm">
+            <ReactMarkdown>{question.answer}</ReactMarkdown>
+            {question.keywords && question.keywords.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {question.keywords.map((keyword) => (
+                  <Badge key={keyword}>{keyword}</Badge>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

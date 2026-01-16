@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+/* Prose styles for markdown content */
+.prose p {
+  margin-bottom: 1em;
+}
+.prose strong {
+  font-weight: 700;
+  color: var(--foreground);
+}
+.prose ul, .prose ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+.prose li {
+  margin: 0.25em 0;
+}
+.prose li::marker {
+  color: var(--muted);
+}
+
 /* Шрифты для игры Цифры */
 @font-face {
   font-family: 'Open Sans';
