@@ -78,7 +78,7 @@ BEGIN
   PERFORM send_telegram_notification(
     '📦 <b>Sokoban</b>' || chr(10) ||
     'Игрок: ' || NEW.name || chr(10) ||
-    'Уровень: ' || NEW.level || chr(10) ||
+    'Уровень: ' || (NEW.level + 1) || chr(10) ||
     'Ходов: ' || NEW.moves || ', толчков: ' || NEW.pushes
   );
   RETURN NEW;
