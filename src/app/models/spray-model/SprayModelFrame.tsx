@@ -24,6 +24,8 @@ export function SprayModelFrame() {
           background: transparent !important;
           margin: 0 !important;
         }
+        /* hide the model's built-in title — page already has a PageHeader */
+        body h1 { display: none !important; }
       `;
       doc.head.appendChild(injected);
 
