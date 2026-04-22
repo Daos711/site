@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
+import { SprayModelFrame } from "./SprayModelFrame";
 
 export const metadata: Metadata = {
   title: "Модель факела распыла форсунки",
@@ -15,12 +16,8 @@ export default function SprayModelPage() {
         description="Гидравлика · факел и капли · сферизация · фильтр"
       />
 
-      <div className="relative left-1/2 -translate-x-1/2 w-[min(calc(100vw-2rem),1800px)] rounded-xl overflow-hidden border border-border bg-card">
-        <iframe
-          src="/models/spray-model.html"
-          title="Модель факела распыла форсунки"
-          className="w-full block h-[calc(100vh-180px)] min-h-[900px]"
-        />
+      <div className="relative left-1/2 -translate-x-1/2 w-[min(calc(100vw-2rem),1800px)]">
+        <SprayModelFrame />
       </div>
     </div>
   );
