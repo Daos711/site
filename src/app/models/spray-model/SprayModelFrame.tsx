@@ -66,7 +66,7 @@ export function SprayModelFrame() {
   return (
     <iframe
       ref={ref}
-      src="/models/spray-model.html"
+      src="/embeds/spray-model.html"
       title="Модель факела распыла форсунки"
       scrolling="no"
       className="w-full block border-0"
