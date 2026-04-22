@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Интерактивная модель факела распыла форсунки</title>
+<style>
+:root{
+  --bg:#08111f;
+  --bg2:#0b1628;
+  --card:#12213a;
+  --card2:#0f1b30;
+  --line:#244368;
+  --text:#eef4fb;
+  --muted:#9ab0c9;
+  --dim:#6f86a3;
+  --blue:#67a7ff;
+  --blue2:#3b82f6;
+  --gold:#ffd166;
+  --green:#2dd4bf;
+  --red:#ff6b6b;
+  --shadow:0 16px 40px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:radial-gradient(circle at top, #0f2444 0%, var(--bg) 40%, #060d18 100%);
+  color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+.wrap{max-width:1480px;margin:0 auto;padding:18px;overflow-x:hidden}
+.topbar{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}
+.title h1{margin:0 0 6px 0;font-size:30px;line-height:1.05;font-weight:800;letter-spacing:-.03em}
+.title p{margin:0;color:var(--muted);font-size:15px;max-width:980px;line-height:1.45}
+.mini-note{padding:12px 14px;border:1px solid var(--line);background:rgba(18,33,58,.75);border-radius:14px;box-shadow:var(--shadow);color:var(--muted);font-size:13px;line-height:1.5;max-width:440px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+.tab{background:rgba(10,20,35,.75);color:var(--muted);border:1px solid var(--line);border-radius:14px;padding:14px 12px;font-weight:700;font-size:15px;cursor:pointer;transition:.18s ease}
+.tab:hover{transform:translateY(-1px);border-color:#3568a1;color:#dbe7f7}
+.tab.on{background:linear-gradient(180deg,#2b67c7 0%, #2356b4 100%);border-color:#5aa2ff;color:white;box-shadow:0 12px 24px rgba(33,86,180,.28)}
+.tab small{display:block;font-weight:500;font-size:12px;opacity:.85;margin-top:3px}
+.panel{display:none}
+.panel.on{display:block}
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:minmax(320px, 420px) 1fr}
+.g-3{grid-template-columns:minmax(300px, 390px) 1fr}
+.g-half{grid-template-columns:1fr 1fr}
+@media (max-width:1400px){.g-2,.g-3{grid-template-columns:1fr}}
+@media (max-width:900px){.g-half{grid-template-columns:1fr}}
+.card{background:linear-gradient(180deg,rgba(18,33,58,.95),rgba(13,24,43,.96));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);overflow:hidden}
+.card.alt{background:linear-gradient(180deg,rgba(16,28,49,.95),rgba(10,18,33,.98))}
+.card.tight{padding:16px}
+.card h3{margin:0 0 14px 0;font-size:17px;line-height:1.2;letter-spacing:.01em}
+.card p{margin:0;color:var(--muted);line-height:1.55;font-size:14px}
+.card p + p{margin-top:10px}
+.section-label{display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
+.section-label .dot{width:9px;height:9px;border-radius:999px;background:var(--blue)}
+.section-label.gold .dot{background:var(--gold)}
+.section-label.green .dot{background:var(--green)}
+.section-label.red .dot{background:var(--red)}
+.controls{display:grid;gap:12px}
+.mode-row,.chip-row{display:flex;flex-wrap:wrap;gap:8px}
+.mode,.chip{border:1px solid var(--line);border-radius:999px;padding:10px 14px;background:rgba(7,15,27,.55);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;transition:.15s ease}
+.mode:hover,.chip:hover{border-color:#3a73b2;color:#dbe7f7}
+.mode.on,.chip.on{background:rgba(50,107,207,.18);border-color:#5ca1ff;color:#f4f9ff}
+.control{padding:12px 0;border-bottom:1px solid rgba(36,67,104,.55)}
+.control:last-child{border-bottom:none;padding-bottom:0}
+.control-header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:7px}
+.control-title{font-size:14px;font-weight:700;color:#dbe7f7}
+.control-help{font-size:12px;color:var(--dim);line-height:1.35;margin-top:3px}
+.value-badge{font-size:15px;font-weight:800;color:var(--blue);white-space:nowrap}
+.value-badge.gold{color:var(--gold)}
+.value-badge.green{color:var(--green)}
+.value-badge.red{color:var(--red)}
+input[type=range]{width:100%;appearance:none;height:8px;background:linear-gradient(90deg,#1a3153,#253f62);border-radius:999px;outline:none}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(180deg,#84bbff,#4e96ff);border:2px solid white;box-shadow:0 4px 14px rgba(78,150,255,.45);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;border:none;background:#67a7ff;cursor:pointer}
+select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0a1629;color:var(--text);font-size:15px;font-weight:700;outline:none}
+input[type=text]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0a1629;color:var(--text);font-size:15px;font-weight:700;outline:none}
+input[type=text]:focus,select:focus{border-color:#5aa2ff;box-shadow:0 0 0 3px rgba(90,162,255,.12)}
+.data-table{display:grid;gap:0;border:1px solid rgba(36,67,104,.45);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:1fr auto;gap:14px;padding:11px 14px;background:rgba(9,18,33,.2);border-bottom:1px solid rgba(36,67,104,.35)}
+.row:last-child{border-bottom:none}
+.row .k{color:var(--muted);font-size:14px;line-height:1.35}
+.row .v{color:#f3f7fc;font-size:15px;font-weight:800;text-align:right;white-space:nowrap}
+.row .v.gold{color:var(--gold)}
+.row .v.green{color:var(--green)}
+.row .v.red{color:var(--red)}
+.row .v.blue{color:var(--blue)}
+.small{font-size:13px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){.kpi-grid{grid-template-columns:1fr}}
+.kpi{padding:14px;border-radius:16px;border:1px solid rgba(36,67,104,.5);background:rgba(7,15,27,.45)}
+.kpi .name{color:var(--muted);font-size:13px;font-weight:700;margin-bottom:6px}
+.kpi .num{font-size:28px;font-weight:900;letter-spacing:-.03em}
+.kpi .sub{margin-top:4px;color:var(--dim);font-size:12px;line-height:1.35}
+.kpi.blue .num{color:var(--blue)}
+.kpi.gold .num{color:var(--gold)}
+.kpi.green .num{color:var(--green)}
+.kpi.red .num{color:var(--red)}
+.svg-wrap{padding:10px;border-radius:16px;background:rgba(5,12,22,.35);border:1px solid rgba(36,67,104,.35)}
+svg{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:10px;color:var(--muted);font-size:13px}
+.legend .item{display:flex;align-items:center;gap:8px}
+.legend .line{width:26px;height:0;border-top:3px solid var(--blue)}
+.legend .line.dashed{border-top-style:dashed;border-top-color:var(--gold)}
+.legend .box{width:18px;height:10px;border-radius:4px;background:rgba(103,167,255,.22);border:1px solid rgba(103,167,255,.55)}
+.callout{margin-top:12px;padding:14px 15px;border-radius:14px;border:1px solid rgba(36,67,104,.5);background:rgba(6,13,24,.4);font-size:14px;line-height:1.55;color:var(--muted)}
+.callout strong{color:#f5f9ff}
+.callout.ok{border-color:rgba(45,212,191,.45);background:rgba(9,38,36,.28)}
+.callout.warn{border-color:rgba(255,209,102,.35);background:rgba(42,31,8,.26)}
+.callout.bad{border-color:rgba(255,107,107,.38);background:rgba(43,16,18,.3)}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-weight:800;font-size:12px;background:rgba(6,13,24,.5);border:1px solid rgba(36,67,104,.5);color:var(--muted)}
+.badge.blue{color:var(--blue);border-color:rgba(103,167,255,.35);background:rgba(103,167,255,.08)}
+.badge.green{color:var(--green);border-color:rgba(45,212,191,.35);background:rgba(45,212,191,.08)}
+.badge.gold{color:var(--gold);border-color:rgba(255,209,102,.35);background:rgba(255,209,102,.08)}
+.badge.red{color:var(--red);border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
+.inline-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.foot{margin-top:18px;color:var(--dim);font-size:12px;line-height:1.55;text-align:center}
+.save-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:rgba(7,15,27,.6);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:.15s ease;margin:6px 4px 0 0}
+.save-btn:hover{border-color:#5aa2ff;color:#f4f9ff;background:rgba(30,60,110,.4)}
+.auto-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:12px;border:1px solid #2dd4bf;background:rgba(45,212,191,.1);color:#2dd4bf;font-size:14px;font-weight:800;cursor:pointer;transition:.18s ease;width:100%;justify-content:center;margin-top:10px}
+.auto-btn:hover{background:rgba(45,212,191,.2);border-color:#5de8d6}
+.note-list{display:grid;gap:10px;margin-top:12px}
+.note-list .li{padding:12px 14px;border-radius:14px;background:rgba(7,15,27,.42);border:1px solid rgba(36,67,104,.4);color:var(--muted);font-size:14px;line-height:1.5}
+.note-list .li strong{color:#f8fbff}
+hr.sep{border:none;border-top:1px solid rgba(36,67,104,.35);margin:14px 0}
+.flex-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dimmed{opacity:.55}
+@media (max-width:740px){
+  .wrap{padding:12px}
+  .title h1{font-size:24px}
+  .tabs{grid-template-columns:1fr 1fr}
+  .tab{font-size:14px;padding:12px}
+  .card{padding:14px}
+  .row{grid-template-columns:1fr;gap:5px}
+  .row .v{text-align:left}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="title">
+      <h1>Интерактивная модель факела распыла форсунки</h1>
+      <p>Гидравлика сопла → распыление → баллистика капель → сферизация факела → гравитационный фильтр. Все ключевые ползунки сразу перестраивают не только цифры, но и соответствующие схемы.</p>
+    </div>
+    <div class="mini-note">
+      <strong style="color:#f5f9ff">Константы модели:</strong><br>
+      ρ<sub>w</sub> = 998 кг/м³ · ρ<sub>a</sub> = 1.204 кг/м³ · μ<sub>a</sub> = 1.825×10⁻⁵ Па·с · μ<sub>w</sub> = 1.003×10⁻³ Па·с · σ = 72.8 мН/м · g = 9.81 м/с² · ρ<sub>s</sub> = 2650 кг/м³
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="showTab(0)">1. Гидравлика<small>H, d, Q, C<sub>d</sub></small></button>
+    <button class="tab" onclick="showTab(1)">2. Факел и капли<small>траектории и оболочка</small></button>
+    <button class="tab" onclick="showTab(2)">3. Сферизация<small>тип форсунки и головка</small></button>
+    <button class="tab" onclick="showTab(3)">4. Фильтр<small>гидр. нагрузка</small></button>
+  </div>
+
+  <section class="panel on" id="panel-0">
+    <div class="grid g-2">
+      <div class="grid">
+        <div class="card">
+          <div class="section-label"><span class="dot"></span>Что задаём</div>
+          <div class="mode-row">
+            <button class="mode on" data-mode="Hd" onclick="setMode('Hd')">H + d → Q</button>
+            <button class="mode" data-mode="Qd" onclick="setMode('Qd')">Q + d → H</button>
+            <button class="mode" data-mode="HQ" onclick="setMode('HQ')">H + Q → d</button>
+          </div>
+          <div class="controls" style="margin-top:10px">
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title" id="l1">Напор H</div>
+                  <div class="control-help" id="h1">Гидростатический напор на входе</div>
+                </div>
+                <div class="value-badge" id="v1">30 м</div>
+              </div>
+              <input id="s1" type="range" min="2" max="150" step="1" value="30" oninput="calcAll()">
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title" id="l2">Диаметр d</div>
+                  <div class="control-help" id="h2">Выходной диаметр отверстия сопла</div>
+                </div>
+                <div class="value-badge" id="v2">5.0 мм</div>
+              </div>
+              <input id="s2" type="range" min="0.5" max="30" step="0.5" value="5" oninput="calcAll()">
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Коэффициент расхода C<sub>d</sub></div>
+                  <div class="control-help">Потери в каналах, кромках и завихрителях</div>
+                </div>
+                <div class="value-badge gold" id="vCd">0.35</div>
+              </div>
+              <input id="sCd" type="range" min="0.10" max="0.90" step="0.01" value="0.35" oninput="calcAll()">
+            </div>
+          </div>
+        </div>
+
+        <div class="card alt tight">
+          <div class="section-label gold"><span class="dot"></span>Формулы блока 1</div>
+          <div class="note-list">
+            <div class="li"><strong>Площадь отверстия:</strong> A<sub>0</sub> = π d² / 4</div>
+            <div class="li"><strong>Перепад давления:</strong> Δp = ρ<sub>w</sub> g H</div>
+            <div class="li"><strong>Средняя скорость:</strong> u<sub>0</sub> = Q / A<sub>0</sub> = 4Q / (π d²)</div>
+            <div class="li"><strong>Коэффициент расхода:</strong> C<sub>d</sub> = Q / [A<sub>0</sub> √(2Δp / ρ<sub>w</sub>)]</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="section-label green"><span class="dot"></span>Результаты гидравлики</div>
+          <div class="kpi-grid" id="hyd-kpis"></div>
+          <hr class="sep">
+          <div class="data-table" id="hyd-table"></div>
+        </div>
+
+        <div class="card alt">
+          <div class="grid g-half">
+            <div>
+              <div class="section-label"><span class="dot"></span>Схема сопла</div>
+              <div class="svg-wrap" id="hyd-svg"></div>
+              <button class="save-btn" onclick="savePNG('hyd-svg')">⬇ Сохранить PNG</button>
+              <button class="save-btn" onclick="savePNG('hyd-svg',true)">⬇ Ч/Б для печати</button>
+            </div>
+            <div>
+              <div class="section-label gold"><span class="dot"></span>Как читать блок</div>
+              <p><strong style="color:#f5f9ff">Когда меняется d</strong>, на схеме видно изменение ширины выходного отверстия. <strong style="color:#f5f9ff">Когда меняется H</strong>, растёт перепад давления и скорость истечения.</p>
+              <p><strong style="color:#f5f9ff">Re</strong> и <strong style="color:#f5f9ff">We</strong> даны не ради украшения: они помогают понять, насколько струя склонна к интенсивному распаду на капли.</p>
+              <div class="inline-badges">
+                <span class="badge blue">u<sub>0</sub> — скорость истечения</span>
+                <span class="badge gold">Re — режим течения</span>
+                <span class="badge green">We — склонность к распаду</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-1">
+    <div class="grid g-3">
+      <div class="grid">
+        <div class="card">
+          <div class="section-label"><span class="dot"></span>Параметры распыла</div>
+          <div class="controls">
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Тип распределения W(n)</div>
+                  <div class="control-help">Это переход от гидравлики к геометрии факела</div>
+                </div>
+              </div>
+              <select id="sprayType1" oninput="syncSprayType('1'); calcAll()">
+                <option value="full">Одиночная полноконусная форсунка</option>
+                <option value="hollow">Одиночная форсунка с полым конусом</option>
+                <option value="dual">Две встречные полноконусные форсунки</option>
+                <option value="sphere">Многосопловая сферическая головка</option>
+                <option value="rotary">Сегнерово колесо</option>
+              </select>
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Полуугол факела α</div>
+                  <div class="control-help">Для сферической головки служит скорее как справочный параметр сравнения</div>
+                </div>
+                <div class="value-badge gold" id="vA">40°</div>
+              </div>
+              <input id="sA" type="range" min="5" max="85" step="1" value="40" oninput="calcAll()">
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Средний диаметр капель d<sub>32</sub></div>
+                  <div class="control-help">Здесь принято простое замыкание: d<sub>p</sub> = d<sub>32</sub></div>
+                </div>
+                <div class="value-badge" id="vD32">0.30 мм</div>
+              </div>
+              <input id="sD32" type="range" min="0.03" max="2.00" step="0.01" value="0.30" oninput="calcAll()">
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Испарение капель</div>
+                  <div class="control-help">Упрощённый закон d²: d²(t)=d²₀−Kₑt, без полного теплового баланса капли</div>
+                </div>
+                <div class="value-badge green" id="vEvap">выкл.</div>
+              </div>
+              <div class="chip-row">
+                <button class="chip" id="evapChip" onclick="toggleEvap(); calcAll()">учитывать испарение</button>
+              </div>
+            </div>
+            <div class="control" id="evapWrapT">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Температура воздуха T<sub>air</sub></div>
+                  <div class="control-help">Используется для давления насыщенного пара в d²-law</div>
+                </div>
+                <div class="value-badge gold" id="vTair">20 °C</div>
+              </div>
+              <input id="sTair" type="range" min="0" max="45" step="1" value="20" oninput="calcAll()">
+            </div>
+            <div class="control" id="evapWrapRH">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Относительная влажность RH</div>
+                  <div class="control-help">100% — испарение практически отключается; сухой воздух усиливает потерю диаметра</div>
+                </div>
+                <div class="value-badge" id="vRH">50 %</div>
+              </div>
+              <input id="sRH" type="range" min="5" max="100" step="1" value="50" oninput="calcAll()">
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Время визуализации t<sub>max</sub></div>
+                  <div class="control-help">Ограничивает длину траекторий на рисунке; 0 = авто (полный полёт)</div>
+                </div>
+                <div class="value-badge gold" id="vTmaxVis">авто</div>
+              </div>
+              <input id="sTmaxVis" type="range" min="0" max="6.0" step="0.1" value="0" oninput="calcAll()">
+            </div>
+            <div class="control" id="nhWrap1">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Число отверстий N<sub>h</sub></div>
+                  <div class="control-help">Используется для многосопловой головки</div>
+                </div>
+                <div class="value-badge green" id="vNh1">10 шт</div>
+              </div>
+              <input id="sNh1" type="range" min="4" max="36" step="1" value="10" oninput="syncNh('1'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap1a">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Число рукавов N<sub>r</sub></div>
+                  <div class="control-help">Одинаковые рукава: суммарный реактивный момент в модели растёт примерно пропорционально N<sub>r</sub></div>
+                </div>
+                <div class="value-badge green" id="vNr1">2 шт</div>
+              </div>
+              <input id="sNr1" type="range" min="1" max="8" step="1" value="2" oninput="syncRotor('1'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap1b">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Длина рукава R<sub>r</sub></div>
+                  <div class="control-help">Радиус от оси вращения до L-образного сопла</div>
+                </div>
+                <div class="value-badge" id="vRarm1">0.20 м</div>
+              </div>
+              <input id="sRarm1" type="range" min="0.05" max="0.80" step="0.01" value="0.20" oninput="syncRotor('1'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap1c">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Угол сопла β</div>
+                  <div class="control-help">0° — назад по касательной, 90° — радиально, без реактивного момента</div>
+                </div>
+                <div class="value-badge gold" id="vBeta1">35°</div>
+              </div>
+              <input id="sBeta1" type="range" min="0" max="85" step="1" value="35" oninput="syncRotor('1'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap1d">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Торможение ротора ζ</div>
+                  <div class="control-help">Сводное торможение подшипника и ротора; в расчёте не умножается на N<sub>r</sub></div>
+                </div>
+                <div class="value-badge red" id="vZeta1">0.40</div>
+              </div>
+              <input id="sZeta1" type="range" min="0.00" max="2.00" step="0.05" value="0.40" oninput="syncRotor('1'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap1e">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Многоярусность</div>
+                  <div class="control-help">N<sub>r</sub> считается числом рукавов на каждом ярусе; общий расход растёт как N<sub>r</sub>·N<sub>ярусов</sub></div>
+                </div>
+              </div>
+              <select id="sTierPreset1" onchange="syncTierPreset('1'); calcAll()">
+                <option value="one">1 ярус: 0°</option>
+                <option value="three">3 яруса: −40°, 0°, +40°</option>
+                <option value="five" selected>5 ярусов: −45°, −25°, 0°, +25°, +45°</option>
+                <option value="custom">свои углы θⱼ</option>
+              </select>
+            </div>
+            <div class="control" id="rotWrap1f">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Углы ярусов θ<sub>j</sub></div>
+                  <div class="control-help">Через запятую, градусы от горизонтали: отрицательные вниз, положительные вверх</div>
+                </div>
+                <div class="value-badge green" id="vTierAngles1">−45…+45°</div>
+              </div>
+              <input id="sTierAngles1" type="text" value="-45,-25,0,25,45" onchange="syncRotor('1'); calcAll()">
+            </div>
+          </div>
+        </div>
+
+        <div class="card alt">
+          <div class="section-label gold"><span class="dot"></span>Что считается в блоке 2</div>
+          <p><strong style="color:#f5f9ff">Два уровня модели:</strong> сначала аналитическое стоксовское приближение R* = u<sub>d</sub> τ<sub>p</sub>, затем траектории в воздухе с нелинейным сопротивлением капель и корреляцией Шиллера–Наумана.</p>
+          <p>Так на графике видно и идеализированную сферу из нулевого приближения, и реальную деформацию факела при падении капель.</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="section-label green"><span class="dot"></span>Численные результаты</div>
+          <div class="grid g-half">
+            <div>
+              <h3 style="margin-top:0">Аналитическое приближение Стокса</h3>
+              <div class="data-table" id="stokes-table"></div>
+            </div>
+            <div>
+              <h3 style="margin-top:0">Нелинейная баллистика капель</h3>
+              <div class="data-table" id="drag-table"></div>
+            </div>
+          </div>
+          <div id="spray-status" class="callout" style="margin-top:14px"></div>
+        </div>
+
+        <div class="card alt">
+          <div class="flex-between" style="margin-bottom:10px">
+            <div class="section-label"><span class="dot"></span>Схема траекторий и оболочки факела</div>
+            <div class="inline-badges" style="margin-top:0">
+              <span class="badge blue">сплошные линии — нелинейное гидр. сопротивление</span>
+              <span class="badge gold">штрих — R*</span>
+              <span class="badge green">заливка — 95% оболочка</span>
+            </div>
+          </div>
+          <div class="svg-wrap" id="spray-svg"></div>
+          <button class="save-btn" onclick="savePNG('spray-svg')">⬇ Сохранить PNG</button>
+          <button class="save-btn" onclick="savePNG('spray-svg',true)">⬇ Ч/Б для печати</button>
+          <div class="legend">
+            <div class="item"><span class="line"></span><span>траектории капель</span></div>
+            <div class="item"><span class="line dashed"></span><span>теоретическая окружность R*</span></div>
+            <div class="item"><span class="box"></span><span>оболочка по процентилям</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-2">
+    <div class="grid g-2">
+      <div class="grid">
+        <div class="card">
+          <div class="section-label"><span class="dot"></span>Подбор под целевой шар</div>
+          <div class="controls">
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Тип форсунки / головки</div>
+                  <div class="control-help">Этот выбор синхронизирован с блоком 2</div>
+                </div>
+              </div>
+              <select id="sprayType2" oninput="syncSprayType('2'); calcAll()">
+                <option value="full">Одиночная полноконусная форсунка</option>
+                <option value="hollow">Одиночная форсунка с полым конусом</option>
+                <option value="dual">Две встречные полноконусные форсунки</option>
+                <option value="sphere">Многосопловая сферическая головка</option>
+                <option value="rotary">Сегнерово колесо</option>
+              </select>
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Целевой диаметр облака D*</div>
+                  <div class="control-help">Для оценки по формуле R* = D*/2</div>
+                </div>
+                <div class="value-badge gold" id="vTargetD">5.0 м</div>
+              </div>
+              <input id="sTargetD" type="range" min="1.0" max="8.0" step="0.1" value="5.0" oninput="calcAll()">
+            </div>
+            <div class="control" id="nhWrap2">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Число отверстий N<sub>h</sub></div>
+                  <div class="control-help">Для многосопловой головки</div>
+                </div>
+                <div class="value-badge green" id="vNh2">10 шт</div>
+              </div>
+              <input id="sNh2" type="range" min="4" max="36" step="1" value="10" oninput="syncNh('2'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap2a">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Число рукавов N<sub>r</sub></div>
+                  <div class="control-help">Одинаковые рукава: суммарный реактивный момент в модели растёт примерно пропорционально N<sub>r</sub></div>
+                </div>
+                <div class="value-badge green" id="vNr2">2 шт</div>
+              </div>
+              <input id="sNr2" type="range" min="1" max="8" step="1" value="2" oninput="syncRotor('2'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap2b">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Длина рукава R<sub>r</sub></div>
+                  <div class="control-help">Радиус от оси вращения до L-образного сопла</div>
+                </div>
+                <div class="value-badge" id="vRarm2">0.20 м</div>
+              </div>
+              <input id="sRarm2" type="range" min="0.05" max="0.80" step="0.01" value="0.20" oninput="syncRotor('2'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap2c">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Угол сопла β</div>
+                  <div class="control-help">0° — назад по касательной, 90° — радиально, без реактивного момента</div>
+                </div>
+                <div class="value-badge gold" id="vBeta2">35°</div>
+              </div>
+              <input id="sBeta2" type="range" min="0" max="85" step="1" value="35" oninput="syncRotor('2'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap2d">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Торможение ротора ζ</div>
+                  <div class="control-help">Сводное торможение подшипника и ротора; в расчёте не умножается на N<sub>r</sub></div>
+                </div>
+                <div class="value-badge red" id="vZeta2">0.40</div>
+              </div>
+              <input id="sZeta2" type="range" min="0.00" max="2.00" step="0.05" value="0.40" oninput="syncRotor('2'); calcAll()">
+            </div>
+            <div class="control" id="rotWrap2e">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Многоярусность</div>
+                  <div class="control-help">N<sub>r</sub> считается числом рукавов на каждом ярусе; общий расход растёт как N<sub>r</sub>·N<sub>ярусов</sub></div>
+                </div>
+              </div>
+              <select id="sTierPreset2" onchange="syncTierPreset('2'); calcAll()">
+                <option value="one">1 ярус: 0°</option>
+                <option value="three">3 яруса: −40°, 0°, +40°</option>
+                <option value="five" selected>5 ярусов: −45°, −25°, 0°, +25°, +45°</option>
+                <option value="custom">свои углы θⱼ</option>
+              </select>
+            </div>
+            <div class="control" id="rotWrap2f">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Углы ярусов θ<sub>j</sub></div>
+                  <div class="control-help">Через запятую, градусы от горизонтали: отрицательные вниз, положительные вверх</div>
+                </div>
+                <div class="value-badge green" id="vTierAngles2">−45…+45°</div>
+              </div>
+              <input id="sTierAngles2" type="text" value="-45,-25,0,25,45" onchange="syncRotor('2'); calcAll()">
+            </div>
+          </div>
+          <button class="auto-btn" onclick="autoCalc()">⚡ Предварительный подбор по D*</button>
+          <div id="auto-result" class="callout" style="margin-top:10px;display:none"></div>
+        </div>
+
+        <div class="card alt">
+          <div class="section-label gold"><span class="dot"></span>Итог по сферизации</div>
+          <div class="data-table" id="sphere-table"></div>
+          <div id="sphere-status" class="callout" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="section-label green"><span class="dot"></span>Схема направлений и текущей формы</div>
+          <div class="svg-wrap" id="sphere-svg"></div>
+          <button class="save-btn" onclick="savePNG('sphere-svg')">⬇ Сохранить PNG</button>
+          <button class="save-btn" onclick="savePNG('sphere-svg',true)">⬇ Ч/Б для печати</button>
+        </div>
+        <div class="card alt">
+          <div class="section-label"><span class="dot"></span>Практические замечания</div>
+          <div class="note-list" id="sphere-notes"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-3">
+    <div class="grid g-3">
+      <div class="grid">
+        <div class="card">
+          <div class="section-label"><span class="dot"></span>Параметры отстойника</div>
+          <div class="controls">
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Расход Q</div>
+                  <div class="control-help">Производительность через отстойник</div>
+                </div>
+                <div class="value-badge" id="vfQ">0.80 м³/ч</div>
+              </div>
+              <input id="sfQ" type="range" min="0.05" max="2.00" step="0.01" value="0.80" oninput="calcAll()">
+            </div>
+            <div class="control">
+              <div class="control-header">
+                <div>
+                  <div class="control-title">Площадь зеркала A<sub>s</sub></div>
+                  <div class="control-help">Именно A<sub>s</sub> определяет q0 = Q / A<sub>s</sub></div>
+                </div>
+                <div class="value-badge green" id="vfAs">0.020 м²</div>
+              </div>
+              <input id="sfAs" type="range" min="0.005" max="0.500" step="0.001" value="0.020" oninput="calcAll()">
+            </div>
+          </div>
+        </div>
+
+        <div class="card alt">
+          <div class="section-label gold"><span class="dot"></span>Результаты</div>
+          <div class="data-table" id="filter-table"></div>
+          <div id="filter-status" class="callout" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="section-label green"><span class="dot"></span>Эффективность осаждения по классам крупности</div>
+          <div class="svg-wrap" id="filter-svg"></div>
+          <button class="save-btn" onclick="savePNG('filter-svg')">⬇ Сохранить PNG</button>
+          <button class="save-btn" onclick="savePNG('filter-svg',true)">⬇ Ч/Б для печати</button>
+        </div>
+        <div class="card alt">
+          <div class="section-label"><span class="dot"></span>Фракционный состав</div>
+          <div class="data-table" id="filter-frac-table"></div>
+          <div class="inline-badges">
+            <span class="badge blue">мелкие частицы зависят от q0 сильнее всего</span>
+            <span class="badge green">1000-2000 мкм в этом диапазоне почти всегда η_s≈100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">
+    Расчётная модель факела распыла форсунки и гравитационного фильтра
+  </div>
+</div>
+
+<script>
+const G = 9.81;
+const RW = 998;
+const RA = 1.204;
+const MA = 1.825e-5;
+const MW = 1.003e-3;
+const SIG = 0.0728;
+const RS = 2650;
+const DV = 2.5e-5;      // diffusion coefficient of water vapour in air, m2/s
+const RV = 461.5;       // gas constant of water vapour, J/(kg K)
+let mode = 'Hd';
+let HYD = null;
+let SPR = null;
+let EVAP = false;
+
+function $(id){ return document.getElementById(id); }
+function val(id){ return parseFloat($(id).value); }
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+function fmt(x,n=2){ return Number(x).toFixed(n); }
+function fmtSigned(x,n=0){ return (x>0?'+':'') + Number(x).toFixed(n); }
+function parseTierAngles(src='1'){
+  const rawEl = $('sTierAngles'+src) || $('sTierAngles1');
+  const raw = rawEl ? rawEl.value : '0';
+  let arr = raw.split(/[;,\s]+/).map(v=>parseFloat(String(v).replace(',','.'))).filter(v=>Number.isFinite(v));
+  if(!arr.length) arr = [0];
+  arr = arr.map(v=>clamp(v,-80,80));
+  arr.sort((a,b)=>a-b);
+  return arr;
+}
+function tierPresetAngles(v){
+  if(v==='one') return '0';
+  if(v==='three') return '-40,0,40';
+  if(v==='five') return '-45,-25,0,25,45';
+  return null;
+}
+function toggleEvap(){ EVAP = !EVAP; }
+function pSatWater(Tc){ return 610.94 * Math.exp(17.625*Tc/(Tc+243.04)); }
+function evapK(dp, vrel, Tair, RH){
+  const Tc = clamp(Tair, -5, 60);
+  const rh = clamp(RH,0,1);
+  const T = Tc + 273.15;
+  const rhoVs = pSatWater(Tc)/(RV*T);
+  const rhoVinf = rh*rhoVs;
+  const Re = RA*Math.max(0,vrel)*Math.max(dp,1e-9)/MA;
+  const Sc = MA/(RA*DV);
+  const Sh = Re>1e-12 ? 2 + 0.6*Math.sqrt(Re)*Math.pow(Sc,1/3) : 2;
+  return Math.max(0, 4*DV*Sh*(rhoVs-rhoVinf)/RW);
+}
+function row(label, value, unit='', cls=''){
+  return `<div class="row"><div class="k">${label}</div><div class="v ${cls}">${value}${unit ? ' ' + unit : ''}</div></div>`;
+}
+function linspace(a,b,n,endpoint=true){
+  if(n<=1) return [a];
+  const arr=[];
+  const div = endpoint ? (n-1) : n;
+  for(let i=0;i<n;i++) arr.push(a + (b-a)*(i/div));
+  return arr;
+}
+function quantile(arr,q){
+  if(!arr.length) return 0;
+  const a=[...arr].sort((x,y)=>x-y);
+  const pos=(a.length-1)*q;
+  const base=Math.floor(pos);
+  const rest=pos-base;
+  if(a[base+1]!==undefined) return a[base] + rest*(a[base+1]-a[base]);
+  return a[base];
+}
+function niceStep(range){
+  if(range<=0) return 0.1;
+  const raw=range/6;
+  const pow=Math.pow(10, Math.floor(Math.log10(raw)));
+  const d=raw/pow;
+  if(d<1.5) return 1*pow;
+  if(d<3) return 2*pow;
+  if(d<7) return 5*pow;
+  return 10*pow;
+}
+function dragCoeff(Re){
+  if(Re < 1e-9) return 0;
+  if(Re < 1000) return 24/Re * (1 + 0.15*Math.pow(Re,0.687));
+  return 0.44;
+}
+function showTab(n){
+  document.querySelectorAll('.panel').forEach((el,i)=>el.classList.toggle('on', i===n));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('on', i===n));
+}
+function syncNh(src){
+  const v = src==='1' ? $('sNh1').value : $('sNh2').value;
+  $('sNh1').value = v;
+  $('sNh2').value = v;
+}
+function syncRotor(src){
+  const bases = ['sNr','sRarm','sBeta','sZeta','sTierPreset','sTierAngles'];
+  for(const base of bases){
+    const v = src==='1' ? $(base+'1').value : $(base+'2').value;
+    $(base+'1').value = v;
+    $(base+'2').value = v;
+  }
+}
+function syncTierPreset(src){
+  const sel = $('sTierPreset'+src);
+  const preset = tierPresetAngles(sel.value);
+  if(preset !== null) $('sTierAngles'+src).value = preset;
+  syncRotor(src);
+}
+function syncSprayType(src){
+  const v = src==='1' ? $('sprayType1').value : $('sprayType2').value;
+  $('sprayType1').value = v;
+  $('sprayType2').value = v;
+}
+function setMode(m){
+  mode = m;
+  document.querySelectorAll('.mode').forEach(el=>el.classList.toggle('on', el.dataset.mode===m));
+  const cfg = {
+    Hd:[
+      ['Напор H','Гидростатический напор на входе','м',2,150,1,30],
+      ['Диаметр d','Выходной диаметр отверстия сопла','мм',0.5,30,0.5,5]
+    ],
+    Qd:[
+      ['Расход Q','Распылённый расход воды','л/ч',1,2000,1,600],
+      ['Диаметр d','Выходной диаметр отверстия сопла','мм',0.5,30,0.5,5]
+    ],
+    HQ:[
+      ['Напор H','Гидростатический напор на входе','м',2,150,1,30],
+      ['Расход Q','Распылённый расход воды','л/ч',1,2000,1,600]
+    ]
+  };
+  const c = cfg[m];
+  $('l1').textContent = c[0][0];
+  $('h1').textContent = c[0][1];
+  $('s1').min = c[0][3]; $('s1').max = c[0][4]; $('s1').step = c[0][5]; $('s1').value = c[0][6];
+  $('l2').textContent = c[1][0];
+  $('h2').textContent = c[1][1];
+  $('s2').min = c[1][3]; $('s2').max = c[1][4]; $('s2').step = c[1][5]; $('s2').value = c[1][6];
+  calcAll();
+}
+function updateDisplayValues(){
+  if(mode==='Hd'){
+    $('v1').textContent = `${fmt(val('s1'),0)} м`;
+    $('v2').textContent = `${fmt(val('s2'),1)} мм`;
+  } else if(mode==='Qd'){
+    $('v1').textContent = `${fmt(val('s1'),0)} л/ч`;
+    $('v2').textContent = `${fmt(val('s2'),1)} мм`;
+  } else {
+    $('v1').textContent = `${fmt(val('s1'),0)} м`;
+    $('v2').textContent = `${fmt(val('s2'),0)} л/ч`;
+  }
+  $('vCd').textContent = fmt(val('sCd'),2);
+  $('vA').textContent = `${fmt(val('sA'),0)}°`;
+  $('vD32').textContent = `${fmt(val('sD32'),2)} мм`;
+  $('vEvap').textContent = EVAP ? 'вкл.' : 'выкл.';
+  $('evapChip').classList.toggle('on', EVAP);
+  $('vTair').textContent = `${fmt(val('sTair'),0)} °C`;
+  $('vRH').textContent = `${fmt(val('sRH'),0)} %`;
+  const tmv = val('sTmaxVis');
+  $('vTmaxVis').textContent = tmv > 0 ? `${fmt(tmv,1)} с` : 'авто';
+  const ta1 = parseTierAngles('1');
+  const ta2 = parseTierAngles('2');
+  $('vTierAngles1').textContent = `${ta1.length} ярус(а): ${ta1.map(a=>fmtSigned(a,0)+'°').join(', ')}`;
+  $('vTierAngles2').textContent = `${ta2.length} ярус(а): ${ta2.map(a=>fmtSigned(a,0)+'°').join(', ')}`;
+  $('vNh1').textContent = `${fmt(val('sNh1'),0)} шт`;
+  $('vNh2').textContent = `${fmt(val('sNh2'),0)} шт`;
+  $('vNr1').textContent = `${fmt(val('sNr1'),0)} шт`;
+  $('vNr2').textContent = `${fmt(val('sNr2'),0)} шт`;
+  $('vRarm1').textContent = `${fmt(val('sRarm1'),2)} м`;
+  $('vRarm2').textContent = `${fmt(val('sRarm2'),2)} м`;
+  $('vBeta1').textContent = `${fmt(val('sBeta1'),0)}°`;
+  $('vBeta2').textContent = `${fmt(val('sBeta2'),0)}°`;
+  $('vZeta1').textContent = fmt(val('sZeta1'),2);
+  $('vZeta2').textContent = fmt(val('sZeta2'),2);
+  $('vTargetD').textContent = `${fmt(val('sTargetD'),1)} м`;
+  $('vfQ').textContent = `${fmt(val('sfQ'),2)} м³/ч`;
+  $('vfAs').textContent = `${fmt(val('sfAs'),3)} м²`;
+}
+function updateNhVisibility(){
+  const type = $('sprayType1').value;
+  const sphere = type === 'sphere';
+  const rotary = type === 'rotary';
+  $('nhWrap1').style.display = sphere ? '' : 'none';
+  $('nhWrap2').style.display = sphere ? '' : 'none';
+  ['rotWrap1a','rotWrap1b','rotWrap1c','rotWrap1d','rotWrap1e','rotWrap1f','rotWrap2a','rotWrap2b','rotWrap2c','rotWrap2d','rotWrap2e','rotWrap2f'].forEach(id=>{
+    $(id).style.display = rotary ? '' : 'none';
+  });
+  ['evapWrapT','evapWrapRH'].forEach(id=>$(id).style.display = EVAP ? '' : 'none');
+}
+function solveHyd(){
+  const Cd = val('sCd');
+  const x1 = val('s1');
+  const x2 = val('s2');
+  let H, d, Q, dp, u0, A0;
+  if(mode==='Hd'){
+    H = x1;
+    d = x2/1000;
+    A0 = Math.PI*d*d/4;
+    dp = RW*G*H;
+    Q = Cd*A0*Math.sqrt(2*dp/RW);
+    u0 = Q/A0;
+  } else if(mode==='Qd'){
+    Q = x1/3.6e6;
+    d = x2/1000;
+    A0 = Math.PI*d*d/4;
+    u0 = Q/A0;
+    dp = Math.pow(Q/(Cd*A0),2) * RW/2;
+    H = dp/(RW*G);
+  } else {
+    H = x1;
+    Q = x2/3.6e6;
+    dp = RW*G*H;
+    A0 = Q/(Cd*Math.sqrt(2*dp/RW));
+    d = Math.sqrt(4*A0/Math.PI);
+    u0 = Q/A0;
+  }
+  return {
+    H, d, dmm:d*1000, Q, Qlph:Q*3.6e6, dp, dpBar:dp/1e5, u0, A0, Cd,
+    Re: RW*u0*d/MW,
+    We: RW*u0*u0*d/SIG
+  };
+}
+function rotorParams(uRel, Q){
+  const Nr = Math.max(1, Math.round(val('sNr1')));       // arms per tier
+  const R = Math.max(0.01, val('sRarm1'));
+  const beta = val('sBeta1') * Math.PI / 180;
+  const zeta = Math.max(0, val('sZeta1'));
+  const tierAnglesDeg = parseTierAngles('1');
+  const cosB = Math.cos(beta);
+  const sinB = Math.sin(beta);
+
+  // Multi-tier Segner balance used in this HTML model.
+  // The hydraulic block is interpreted as one identical nozzle/arm.
+  // For equal q_j=q1 and R_j=R this is the report formula:
+  //   M_jet = sum_j N_j*rho*q_j*R_j*(k_tj*u_rel - omega*R_j),
+  //   M_fr  = B*omega,  B = zeta*rho*q1*R^2,
+  // hence
+  //   omega = (u_rel/R) * sum_j(N_j*k_tj) / (zeta + sum_j N_j),
+  //   k_tj = cos(beta)*cos(theta_j).
+  const tiers = tierAnglesDeg.map((deg, idx)=>{
+    const th = deg*Math.PI/180;
+    const kt = Math.max(0, cosB*Math.cos(th));
+    return {idx:idx+1, thetaDeg:deg, theta:th, kt};
+  });
+  const Ntotal = Nr*tiers.length;
+  const ktSum = tiers.reduce((a,t)=>a + Nr*t.kt, 0);
+  const omega = ktSum>1e-12 ? (uRel/R) * ktSum/(zeta + Ntotal) : 0;
+  const rpm = omega*60/(2*Math.PI);
+  const U = omega*R;
+
+  let sumAbs=0, maxAbs=0;
+  tiers.forEach(t=>{
+    const cth = Math.cos(t.theta), sth = Math.sin(t.theta);
+    const vTan = U - uRel*cosB*cth;
+    const vRad = uRel*sinB*cth;
+    const vZ = uRel*sth;
+    const vH = Math.hypot(vTan, vRad);
+    const uAbs = Math.max(0.05, Math.hypot(vH, vZ));
+    const elev = Math.atan2(vZ, Math.max(vH,1e-12));
+    Object.assign(t, {vTan, vRad, vZ, vH, uAbs, elev});
+    sumAbs += uAbs*Nr;
+    maxAbs = Math.max(maxAbs, uAbs);
+  });
+  const uAbsMean = sumAbs/Math.max(1,Ntotal);
+  const mid = tiers[Math.floor(tiers.length/2)] || tiers[0];
+  const delta = mid ? Math.atan2(mid.vTan, Math.max(Math.abs(mid.vRad),1e-12)) : 0;
+
+  const mdotArm = RW*Math.max(Q,0);
+  const mdotTotal = mdotArm*Ntotal;
+  const torque = Math.max(0, mdotArm*R*(uRel*ktSum - omega*R*Ntotal));
+  const qTotal = Math.max(Q,0)*Ntotal;
+  return {
+    Nr,R,beta,zeta,kt:ktSum/Math.max(1,Ntotal),kr:Math.max(0,sinB),omega,rpm,U,uRel,
+    uAbs:uAbsMean,uAbsMean,uAbsMax:maxAbs,delta,torque,mdotArm,mdotTotal,qTotal,turns:0,
+    tierAnglesDeg,tiers,tierCount:tiers.length,Ntotal,ktSum
+  };
+}
+function buildEmissions(type, alpha, Nh, rotor=null, tVis=1, baseUd=1){
+  const simple = arr => arr.map(theta => ({theta, ud:baseUd, tier:null}));
+  if(type==='full') return simple(linspace(-alpha, alpha, 19));
+  if(type==='hollow'){
+    const band = Math.max(2*Math.PI/180, alpha*0.14);
+    return simple([...linspace(-alpha, -Math.max(alpha-band, 0.5*Math.PI/180), 9), ...linspace(Math.max(alpha-band, 0.5*Math.PI/180), alpha, 9)]);
+  }
+  if(type==='dual'){
+    const up = linspace(-alpha, alpha, 15);
+    return simple(up.concat(up.map(t => Math.PI + t)));
+  }
+  if(type==='rotary'){
+    const r = rotor || rotorParams(baseUd,0);
+    const turns = Math.max(0, r.omega*tVis/(2*Math.PI));
+    const coverage = Math.min(2*Math.PI, 2*Math.PI*turns);
+    const perArm = coverage >= 2*Math.PI-1e-6 ? 8 : Math.max(3, Math.ceil(3 + 7*coverage/(2*Math.PI)));  // keep SVG responsive
+    const emissions=[];
+    const arms=Math.max(1,r.Nr||1);
+    for(const tier of r.tiers){
+      const vH = Math.max(tier.vH, 1e-12);
+      const vZ = tier.vZ;
+      for(let j=0;j<arms;j++){
+        const base = 2*Math.PI*j/arms + (r.delta||0);
+        if(coverage < 1e-5){
+          const xcomp = vH*Math.cos(base);
+          emissions.push({theta:Math.atan2(xcomp, vZ), ud:Math.hypot(xcomp, vZ), tier});
+        } else {
+          for(let k=0;k<perArm;k++){
+            const phi = base + coverage*(perArm===1?0:k/(perArm-1));
+            const xcomp = vH*Math.cos(phi);
+            emissions.push({theta:Math.atan2(xcomp, vZ), ud:Math.max(0.05, Math.hypot(xcomp, vZ)), tier});
+          }
+        }
+      }
+    }
+    return emissions;
+  }
+  const n = Math.max(4, Nh);
+  const dirs=[];
+  for(let i=0;i<n;i++) dirs.push(2*Math.PI*i/n);
+  return simple(dirs);
+}
+function buildDirections(type, alpha, Nh, rotor=null, tVis=1){
+  return buildEmissions(type, alpha, Nh, rotor, tVis, rotor ? rotor.uAbs : 1).map(e=>e.theta);
+}
+function buildDirections(type, alpha, Nh, rotor=null, tVis=1){
+  if(type==='full') return linspace(-alpha, alpha, 19);
+  if(type==='hollow'){
+    const band = Math.max(2*Math.PI/180, alpha*0.14);
+    return [...linspace(-alpha, -Math.max(alpha-band, 0.5*Math.PI/180), 9), ...linspace(Math.max(alpha-band, 0.5*Math.PI/180), alpha, 9)];
+  }
+  if(type==='dual'){
+    const up = linspace(-alpha, alpha, 15);
+    return up.concat(up.map(t => Math.PI + t));
+  }
+  if(type==='rotary'){
+    const r = rotor || {Nr:2, omega:0, delta:0};
+    const turns = Math.max(0, r.omega*tVis/(2*Math.PI));
+    const coverage = Math.min(2*Math.PI, 2*Math.PI*turns);
+    const perArm = coverage >= 2*Math.PI-1e-6 ? 36 : Math.max(3, Math.ceil(6 + 24*coverage/(2*Math.PI)));
+    const dirs=[];
+    for(let j=0;j<Math.max(1,r.Nr);j++){
+      const base = 2*Math.PI*j/Math.max(1,r.Nr) + (r.delta||0);
+      if(coverage < 1e-5){
+        dirs.push(base);
+      } else {
+        for(let k=0;k<perArm;k++) dirs.push(base + coverage*(perArm===1?0:k/(perArm-1)));
+      }
+    }
+    return dirs;
+  }
+  const n = Math.max(4, Nh);
+  const dirs=[];
+  for(let i=0;i<n;i++) dirs.push(2*Math.PI*i/n);
+  return dirs;
+}
+function accelDroplet(vx,vz,dp){
+  const vr = Math.hypot(vx,vz);
+  const Re = RA*vr*dp/MA;
+  const Cd = dragCoeff(Re);
+  const k = Cd>0 ? (3*RA*Cd)/(4*RW*dp) : 0;
+  return {
+    ax: -k*vr*vx,
+    az: -k*vr*vz - G*(1 - RA/RW),
+    Re, Cd
+  };
+}
+function integrateTrajectory(theta, ud, dp0, tau, evapCfg=null, tMaxOverride=0){
+  let x=0, z=0;
+  let vx=ud*Math.sin(theta), vz=ud*Math.cos(theta);
+  let t=0;
+  let dp = Math.max(dp0, 1e-7);
+  const dt = clamp(0.0018 + 0.008*dp0/0.002, 0.0018, 0.02);
+  const tMax = tMaxOverride > 0 ? tMaxOverride : clamp(0.75 + 4.8*tau, 0.8, 6.0);
+  const pts=[{x,z,t,d:dp}];
+  let maxRe = RA*Math.hypot(vx,vz)*dp/MA;
+  let kSum=0, kN=0;
+  while(t < tMax && dp > 1e-6){
+    const a1 = accelDroplet(vx,vz,dp);
+    const vxm = vx + 0.5*a1.ax*dt;
+    const vzm = vz + 0.5*a1.az*dt;
+    const a2 = accelDroplet(vxm,vzm,dp);
+    vx += a2.ax*dt;
+    vz += a2.az*dt;
+    x += vx*dt;
+    z += vz*dt;
+    t += dt;
+    maxRe = Math.max(maxRe, a2.Re);
+    if(evapCfg && evapCfg.on){
+      const K = evapK(dp, Math.hypot(vx,vz), evapCfg.Tair, evapCfg.RH);
+      dp = Math.sqrt(Math.max(1e-12, dp*dp - K*dt));
+      kSum += K; kN += 1;
+    }
+    pts.push({x,z,t,d:dp});
+  }
+  pts.maxRe = maxRe;
+  pts.tVis = tMax;
+  pts.dFinal = dp;
+  pts.dLoss = clamp((dp0-dp)/Math.max(dp0,1e-12), 0, 1);
+  pts.massLoss = clamp(1 - Math.pow(dp/Math.max(dp0,1e-12),3), 0, 1);
+  pts.kMean = kN ? kSum/kN : 0;
+  return pts;
+}
+function terminalSettlingDroplet(dp){
+  let w = Math.max(1e-4, G*(RW-RA)*dp*dp/(18*MA));
+  for(let i=0;i<28;i++){
+    const Re = RA*Math.abs(w)*dp/MA;
+    const Cd = dragCoeff(Re);
+    if(Cd===0) break;
+    const next = Math.sqrt((4*G*dp*(RW-RA))/(3*Cd*RA));
+    w = 0.55*w + 0.45*next;
+  }
+  return w;
+}
+function convexHull(points){
+  if(points.length<=2) return points;
+  const pts=[...points].sort((a,b)=>a.x===b.x ? a.z-b.z : a.x-b.x);
+  const cross=(o,a,b)=>(a.x-o.x)*(b.z-o.z)-(a.z-o.z)*(b.x-o.x);
+  const lower=[];
+  for(const p of pts){
+    while(lower.length>=2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper=[];
+  for(let i=pts.length-1;i>=0;i--){
+    const p=pts[i];
+    while(upper.length>=2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  upper.pop(); lower.pop();
+  return lower.concat(upper);
+}
+function solveSpray(hyd){
+  const type = $('sprayType1').value;
+  const alpha = val('sA') * Math.PI / 180;
+  const dp = val('sD32') / 1000;
+  const Nh = Math.round(val('sNh1'));
+  const tau = RW*dp*dp/(18*MA);
+  const rotor = rotorParams(hyd.u0, hyd.Q);
+  const ud = type==='rotary' ? rotor.uAbsMean : hyd.u0;
+  const wtSt = G*tau;
+  const Rstar = ud*tau;
+  const eg = G*Rstar/(ud*ud);
+  const uMin = Math.sqrt(10*G*Math.max(Rstar,1e-12));
+  const wtNL = terminalSettlingDroplet(dp);
+  const tEstimate = clamp(0.75 + 4.8*tau, 0.8, 6.0);
+  const emissions = buildEmissions(type, alpha, Nh, rotor, tEstimate, hyd.u0);
+  const evapCfg = {on:EVAP, Tair:val('sTair'), RH:val('sRH')/100};
+  const tMaxVis = val('sTmaxVis');
+  const traj = emissions.map(e => integrateTrajectory(e.theta, e.ud, dp, tau, evapCfg, tMaxVis));
+  const dirs = emissions.map(e=>e.theta);
+  const tVis = traj.length ? traj[0].tVis : tEstimate;
+  rotor.turns = rotor.omega*tVis/(2*Math.PI);
+  const allPts = traj.flat();
+  const absX = allPts.map(p=>Math.abs(p.x));
+  const zVals = allPts.map(p=>p.z);
+  const x95 = quantile(absX, 0.975);
+  const zLow = quantile(zVals, 0.025);
+  const zHigh = quantile(zVals, 0.975);
+  const inside = allPts.filter(p => Math.abs(p.x) <= x95 && p.z >= zLow && p.z <= zHigh);
+  const hull = convexHull(inside.map(p => ({x:p.x, z:p.z})));
+  const Lx = 2*x95;
+  const Ly = Lx;
+  const Lz = Math.max(0, zHigh-zLow);
+  const V = 4/3*Math.PI*(Lx/2)*(Ly/2)*(Lz/2);
+  const Deq = Math.pow(6*V/Math.PI, 1/3);
+  const denom = Math.max(Lx,Ly,Lz,1e-12);
+  const chi = Math.min(Lx,Ly,Lz) / denom;
+  const maxRe = traj.reduce((m,tr)=>Math.max(m,tr.maxRe||0),0);
+  const evap = {
+    on: EVAP,
+    Tair: evapCfg.Tair,
+    RH: evapCfg.RH,
+    dFinalMean: traj.reduce((a,tr)=>a+(tr.dFinal||dp),0)/Math.max(1,traj.length),
+    dLossMean: traj.reduce((a,tr)=>a+(tr.dLoss||0),0)/Math.max(1,traj.length),
+    massLossMean: traj.reduce((a,tr)=>a+(tr.massLoss||0),0)/Math.max(1,traj.length),
+    kMean: traj.reduce((a,tr)=>a+(tr.kMean||0),0)/Math.max(1,traj.length)
+  };
+  return {type,alpha,dp,Nh,ud,udRel:hyd.u0,tau,wtSt,wtNL,Rstar,eg,uMin,dirs,emissions,traj,hull,Lx,Ly,Lz,Deq,chi,tVis,maxRe,x95,zLow,zHigh,rotor,evap};
+}
+function settlingVelocityParticle(ds){
+  let ws = (RS-RW)*G*ds*ds/(18*MW);
+  const Re0 = RW*ws*ds/MW;
+  if(Re0 < 1) return ws;
+  let w = Math.max(ws, 1e-6);
+  for(let i=0;i<30;i++){
+    const Re = RW*Math.abs(w)*ds/MW;
+    const Cd = dragCoeff(Re);
+    const next = Math.sqrt((4*G*ds*(RS-RW))/(3*Cd*RW));
+    w = 0.55*w + 0.45*next;
+  }
+  return w;
+}
+function solveFilter(){
+  const Qh = val('sfQ');
+  const As = val('sfAs');
+  const Q = Qh/3600;
+  const SOR = Q/As;
+
+  // На динамической диаграмме оставлены только информативные классы.
+  // При текущем диапазоне ползунков q0 <= 111 мм/с, поэтому 1000 и 2000 мкм
+  // практически всегда имеют eta_s = 100% и превращаются в неинформативные столбцы.
+  const plotSizes = [50,100,200,500];
+  const allSizes = [50,100,200,500,1000,2000];
+
+  const calcPart = d => {
+    const ds = d*1e-6;
+    const ws = settlingVelocityParticle(ds);
+    return {d, ws:ws*1000, eta:Math.min(100, ws/SOR*100)};
+  };
+
+  const parts = plotSizes.map(calcPart);
+  const allParts = allSizes.map(calcPart);
+  const coarseParts = allParts.filter(p => p.d >= 1000);
+
+  let dCut = '> 2000 мкм';
+  for(const p of allParts){ if(p.eta >= 95){ dCut = `≈ ${p.d} мкм`; break; } }
+
+  return {Qh, As, SOR:SOR*1000, parts, allParts, coarseParts, As50:Q/0.0022, As100:Q/0.008, dCut};
+}
+function typeLabel(type){
+  return ({
+    full:'одиночная полноконусная форсунка',
+    hollow:'одиночная форсунка с полым конусом',
+    dual:'две встречные полноконусные форсунки',
+    sphere:'сферическая головка',
+    rotary:'сегнерово колесо'
+  })[type] || type;
+}
+function qualityText(chi, type, s=null){
+  if(type === 'full' || type === 'hollow'){
+    if(chi>=0.90) return ['warn','Пропорции оболочки в осевом сечении ≈ 1:1, но это сектор, а не полный шар'];
+    if(chi>=0.75) return ['warn','Оболочка умеренно симметрична, однако остаётся секторной'];
+    return ['bad','Секторная форма заметно вытянута'];
+  }
+  if(type === 'dual'){
+    if(chi>=0.90) return ['warn','В осевом сечении форма близка к шаровой, но изотропность ограничена двумя встречными конусами'];
+    if(chi>=0.75) return ['warn','Две встречные форсунки дают умеренное приближение к шару'];
+    return ['bad','Даже при двух встречных форсунках форма пока заметно вытянута'];
+  }
+  if(type === 'rotary'){
+    const turns = s && s.rotor ? s.rotor.turns : 0;
+    if(turns < 0.5) return ['bad','Ротор делает меньше половины оборота за время полёта: видны отдельные струи, а не непрерывная развёртка'];
+    if(turns < 2) return ['warn','Развёртка уже заметна, но для непрерывного облака желательно несколько оборотов за время полёта'];
+    if(chi>=0.85) return ['warn','В осевом сечении развёртка близка к круговой, но это временно усреднённое облако, а не мгновенно изотропная сферическая головка'];
+    return ['warn','Вращение улучшает покрытие направлений, но текущая оболочка ещё заметно не шаровая'];
+  }
+  if(chi>=0.90) return ['ok','Форма очень близка к сфере'];
+  if(chi>=0.75) return ['warn','Форма умеренно сферическая'];
+  return ['bad','Форма заметно вытянута'];
+}
+function sagText(eg){
+  if(eg<0.10) return ['ok','Провис мал'];
+  if(eg<0.30) return ['warn','Провис заметен'];
+  return ['bad','Провис сильный'];
+}
+function drawHydraulicSVG(h){
+  const W=620, Hs=300;
+  const w = clamp(h.dmm/30, 0.08, 1) * 74;
+  const inlet = 150;
+  const cx=W/2;
+  const exitY=210;
+  const qScale = clamp(h.Qlph/1200, 0.15, 1.2);
+  const arr = 42 + 20*qScale;
+  return `
+  <svg viewBox="0 0 ${W} ${Hs}">
+    <defs>
+      <linearGradient id="steel" x1="0" x2="1">
+        <stop offset="0%" stop-color="#5f7390"/>
+        <stop offset="100%" stop-color="#9db2cb"/>
+      </linearGradient>
+      <linearGradient id="water" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#8ec5ff" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.85"/>
+      </linearGradient>
+      <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#67a7ff"/></marker>
+    </defs>
+    <rect x="0" y="0" width="${W}" height="${Hs}" rx="18" fill="#0a1628"/>
+    <path d="M ${cx-120} 70 L ${cx+120} 70 L ${cx+70} ${exitY-20} L ${cx+w/2} ${exitY} L ${cx+w/2} 250 L ${cx-w/2} 250 L ${cx-w/2} ${exitY} L ${cx-70} ${exitY-20} Z" fill="url(#steel)" stroke="#d7e6f9" stroke-opacity="0.35" stroke-width="2"/>
+    <path d="M ${cx-78} 82 L ${cx+78} 82 L ${cx+36} 180 L ${cx+w/2-6} 202 L ${cx+w/2-6} 248 L ${cx-w/2+6} 248 L ${cx-w/2+6} 202 L ${cx-36} 180 Z" fill="url(#water)" opacity="0.88"/>
+    <line x1="${cx-150}" y1="42" x2="${cx+150}" y2="42" stroke="#244368" stroke-dasharray="7,8"/>
+    <text x="${cx}" y="28" text-anchor="middle" fill="#9ab0c9" font-size="13" font-weight="700">вход в форсунку</text>
+    <line x1="${cx-w/2}" y1="266" x2="${cx+w/2}" y2="266" stroke="#ffd166" stroke-width="2" marker-start="url(#arrowBlue)" marker-end="url(#arrowBlue)"/>
+    <text x="${cx}" y="286" text-anchor="middle" fill="#ffd166" font-size="14" font-weight="800">d = ${fmt(h.dmm,2)} мм</text>
+    <line x1="${cx-200}" y1="92" x2="${cx-200}" y2="170" stroke="#67a7ff" stroke-width="2" marker-end="url(#arrowBlue)"/>
+    <text x="${cx-210}" y="84" text-anchor="end" fill="#67a7ff" font-size="14" font-weight="700">H = ${fmt(h.H,2)} м</text>
+    <line x1="${cx+150}" y1="120" x2="${cx+150}" y2="${120+arr}" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arrowBlue)"/>
+    <line x1="${cx+190}" y1="120" x2="${cx+190}" y2="${120+arr*1.15}" stroke="#2dd4bf" stroke-width="3" marker-end="url(#arrowBlue)"/>
+    <text x="${cx+170}" y="108" text-anchor="middle" fill="#2dd4bf" font-size="14" font-weight="700">Q = ${fmt(h.Qlph,1)} л/ч</text>
+    <text x="22" y="28" fill="#eef4fb" font-size="16" font-weight="800">Сечение сопла</text>
+    <text x="22" y="52" fill="#9ab0c9" font-size="12">скорость на выходе u0 = ${fmt(h.u0,2)} м/с</text>
+    <text x="22" y="72" fill="#9ab0c9" font-size="12">перепад давления Δp = ${fmt(h.dpBar,2)} бар</text>
+  </svg>`;
+}
+function drawSpraySVG(s){
+  const W=860, Hs=580, mL=72, mR=24, mT=56, mB=46;
+  const xs = s.hull.length ? s.hull.map(p=>p.x) : [-(s.Lx/2), s.Lx/2];
+  const zs = s.hull.length ? s.hull.map(p=>p.z) : [s.zLow, s.zHigh];
+  let xMin = Math.min(...xs, -s.Lx/2, 0);
+  let xMax = Math.max(...xs, s.Lx/2, 0);
+  let zMin = Math.min(...zs, s.zLow, 0);
+  let zMax = Math.max(...zs, s.zHigh, 0);
+  let span = Math.max(xMax-xMin, zMax-zMin, 0.6);
+  const pad = 0.14*span;
+  xMin -= pad; xMax += pad; zMin -= pad; zMax += pad;
+  const sx = x => mL + (x - xMin) * (W-mL-mR) / (xMax-xMin || 1);
+  const sy = z => Hs - mB - (z - zMin) * (Hs-mT-mB) / (zMax-zMin || 1);
+  const x0 = sx(0), y0 = sy(0);
+  const xStep = niceStep(xMax-xMin);
+  const zStep = niceStep(zMax-zMin);
+  const showR = s.Rstar < 2.4*Math.max(s.Lx, s.Lz, 0.3);
+  const pointsPath = arr => arr.map((p,i)=>`${i===0?'M':'L'} ${sx(p.x).toFixed(2)} ${sy(p.z).toFixed(2)}`).join(' ');
+  let svg = `<svg viewBox="0 0 ${W} ${Hs}"><defs>
+    <linearGradient id="bggrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#0a1629"/><stop offset="100%" stop-color="#09121f"/></linearGradient>
+    <marker id="ax" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6f86a3"/></marker>
+  </defs><rect x="0" y="0" width="${W}" height="${Hs}" rx="18" fill="url(#bggrad)"/>`;
+  for(let x=Math.ceil(xMin/xStep)*xStep; x<=xMax+1e-9; x+=xStep){
+    const X=sx(x); svg += `<line x1="${X}" y1="${mT}" x2="${X}" y2="${Hs-mB}" stroke="#1d2b42" stroke-width="1"/>`;
+    svg += `<text x="${X}" y="${Hs-mB+20}" text-anchor="middle" fill="#7189a8" font-size="12">${fmt(x, xStep<1 ? 1 : 0)}</text>`;
+  }
+  for(let z=Math.ceil(zMin/zStep)*zStep; z<=zMax+1e-9; z+=zStep){
+    const Y=sy(z); svg += `<line x1="${mL}" y1="${Y}" x2="${W-mR}" y2="${Y}" stroke="#1d2b42" stroke-width="1"/>`;
+    svg += `<text x="${mL-10}" y="${Y+4}" text-anchor="end" fill="#7189a8" font-size="12">${fmt(z, zStep<1 ? 1 : 0)}</text>`;
+  }
+  svg += `<line x1="${mL}" y1="${y0}" x2="${W-mR}" y2="${y0}" stroke="#5b7393" stroke-width="1.3" marker-end="url(#ax)"/>`;
+  svg += `<line x1="${x0}" y1="${Hs-mB}" x2="${x0}" y2="${mT}" stroke="#5b7393" stroke-width="1.3" marker-end="url(#ax)"/>`;
+  svg += `<text x="${(mL + W - mR)/2}" y="${Hs-10}" text-anchor="middle" fill="#9ab0c9" font-size="13" font-weight="700">горизонтальная координата x, м</text>`;
+  svg += `<text x="18" y="${(mT + Hs - mB)/2}" transform="rotate(-90 18 ${(mT + Hs - mB)/2})" text-anchor="middle" fill="#9ab0c9" font-size="13" font-weight="700">вертикальная координата z, м</text>`;
+  if(s.hull.length>=3){
+    svg += `<path d="${pointsPath(s.hull)} Z" fill="rgba(45,212,191,0.16)" stroke="#2dd4bf" stroke-opacity="0.7" stroke-width="2"/>`;
+  }
+  s.traj.forEach((tr,idx)=>{
+    svg += `<path d="${pointsPath(tr)}" fill="none" stroke="#67a7ff" stroke-opacity="${(0.25+0.5*idx/(Math.max(s.traj.length-1,1))).toFixed(2)}" stroke-width="2"/>`;
+  });
+  if(showR){
+    const r = (W-mL-mR)/(xMax-xMin || 1) * s.Rstar;
+    const ry = (Hs-mT-mB)/(zMax-zMin || 1) * s.Rstar;
+    const rp = Math.min(r, ry);
+    svg += `<circle cx="${x0}" cy="${y0}" r="${rp}" fill="none" stroke="#ffd166" stroke-width="2" stroke-dasharray="9,8" opacity="0.8"/>`;
+    svg += `<text x="${x0 + rp + 10}" y="${y0 - 8}" fill="#ffd166" font-size="13" font-weight="800">R* = ${fmt(s.Rstar,2)} м</text>`;
+  } else {
+    svg += `<text x="${W-26}" y="26" text-anchor="end" fill="#ffd166" font-size="12" font-weight="800">R* = ${fmt(s.Rstar,2)} м вне текущего масштаба</text>`;
+  }
+  const a = s.alpha;
+  if(s.type==='full' || s.type==='hollow'){
+    svg += `<path d="M ${x0} ${y0} L ${sx(0.4*Math.sin(a))} ${sy(0.4*Math.cos(a))} L ${sx(-0.4*Math.sin(a))} ${sy(0.4*Math.cos(a))} Z" fill="rgba(255,209,102,0.12)" stroke="#ffd166" stroke-width="1.5"/>`;
+  }
+  if(s.type==='dual'){
+    svg += `<path d="M ${x0} ${y0} L ${sx(0.38*Math.sin(a))} ${sy(0.38*Math.cos(a))} L ${sx(-0.38*Math.sin(a))} ${sy(0.38*Math.cos(a))} Z" fill="rgba(255,209,102,0.10)" stroke="#ffd166" stroke-width="1.2"/>`;
+    svg += `<path d="M ${x0} ${y0} L ${sx(0.38*Math.sin(a))} ${sy(-0.38*Math.cos(a))} L ${sx(-0.38*Math.sin(a))} ${sy(-0.38*Math.cos(a))} Z" fill="rgba(255,209,102,0.10)" stroke="#ffd166" stroke-width="1.2"/>`;
+  }
+  if(s.type==='sphere'){
+    const rr=14; svg += `<circle cx="${x0}" cy="${y0}" r="${rr}" fill="#1d3353" stroke="#d6e3f5" stroke-opacity="0.45"/>`;
+    s.dirs.forEach(theta=>{
+      const x2=sx(0.2*Math.sin(theta)), y2=sy(0.2*Math.cos(theta));
+      svg += `<line x1="${x0}" y1="${y0}" x2="${x2}" y2="${y2}" stroke="#ffd166" stroke-width="1.5"/>`;
+    });
+  } else if(s.type==='rotary'){
+    const rr=22; svg += `<circle cx="${x0}" cy="${y0}" r="${rr}" fill="none" stroke="#ffd166" stroke-width="1.6" stroke-dasharray="5,5" opacity="0.85"/>`;
+    const arms=Math.max(1,s.rotor.Nr||2);
+    for(let j=0;j<arms;j++){
+      const th=2*Math.PI*j/arms;
+      svg += `<line x1="${x0}" y1="${y0}" x2="${x0+rr*Math.sin(th)}" y2="${y0-rr*Math.cos(th)}" stroke="#d6e3f5" stroke-opacity="0.55" stroke-width="2"/>`;
+    }
+    svg += `<text x="${x0}" y="${y0+40}" text-anchor="middle" fill="#ffd166" font-size="12" font-weight="800">ω ≈ ${fmt(s.rotor.rpm,0)} об/мин</text>`;
+  } else {
+    svg += `<rect x="${x0-8}" y="${y0-4}" width="16" height="20" rx="3" fill="#415a7b" stroke="#d6e3f5" stroke-opacity="0.35"/>`;
+  }
+  svg += `<text x="24" y="26" fill="#eef4fb" font-size="16" font-weight="800">Нелинейные траектории и 95%-ная оболочка</text>`;
+  svg += `<text x="24" y="48" fill="#9ab0c9" font-size="12">тип: ${typeLabel(s.type)} · d32 = ${fmt(s.dp*1000,2)} мм · u0 = ${fmt(s.ud,2)} м/с · время полёта ≈ ${fmt(s.tVis,2)} с</text>`;
+  svg += `</svg>`;
+  return svg;
+}
+function drawSphereSVG(hyd, s, targetD){
+  const W=760, Hs=440;
+  const targetR = targetD/2;
+  const scaleR = Math.max(targetR, s.Rstar, s.Deq/2, s.Lz/2, s.Lx/2, 0.5);
+  const pad=0.22*scaleR;
+  const ext=scaleR+pad;
+  const cx=W/2, cy=Hs/2;
+  const scale = Math.min(W,Hs)*0.42/ext;
+  const x = v => cx + v*scale;
+  const y = v => cy - v*scale;
+  let svg = `<svg viewBox="0 0 ${W} ${Hs}"><defs><marker id="arrowG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffd166"/></marker></defs><rect x="0" y="0" width="${W}" height="${Hs}" rx="18" fill="#0a1628"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${targetR*scale}" fill="none" stroke="#ffd166" stroke-width="2.3" stroke-dasharray="9,8" opacity="0.85"/>`;
+  svg += `<text x="${cx + targetR*scale + 10}" y="${cy - 10}" fill="#ffd166" font-size="13" font-weight="800">D* = ${fmt(targetD,1)} м</text>`;
+  const rx = (s.Lx/2)*scale;
+  const ry = (s.Lz/2)*scale;
+  svg += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="rgba(45,212,191,0.14)" stroke="#2dd4bf" stroke-width="2.2"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${s.Rstar*scale}" fill="none" stroke="#67a7ff" stroke-width="1.8" stroke-dasharray="6,6" opacity="0.7"/>`;
+  if(s.type==='sphere'){
+    svg += `<circle cx="${cx}" cy="${cy}" r="18" fill="#1c3353" stroke="#d6e3f5" stroke-opacity="0.45"/>`;
+    s.dirs.forEach(theta=>{
+      const xr=x(0.65*Math.sin(theta));
+      const yr=y(0.65*Math.cos(theta));
+      svg += `<line x1="${cx}" y1="${cy}" x2="${xr}" y2="${yr}" stroke="#ffd166" stroke-width="1.8" marker-end="url(#arrowG)"/>`;
+    });
+  } else if(s.type==='dual'){
+    const a=s.alpha;
+    svg += `<rect x="${cx-10}" y="${cy-10}" width="20" height="20" rx="4" fill="#435a7a"/>`;
+    const dirs=[...linspace(-a,a,7), ...linspace(Math.PI-a, Math.PI+a,7)];
+    dirs.forEach(theta=>{ svg += `<line x1="${cx}" y1="${cy}" x2="${x(0.72*Math.sin(theta))}" y2="${y(0.72*Math.cos(theta))}" stroke="#ffd166" stroke-width="1.7" marker-end="url(#arrowG)"/>`; });
+  } else if(s.type==='rotary'){
+    const rr=24;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="#ffd166" stroke-width="1.8" stroke-dasharray="6,5"/>`;
+    const arms=Math.max(1,s.rotor.Nr||2);
+    for(let j=0;j<arms;j++){
+      const th=2*Math.PI*j/arms;
+      svg += `<line x1="${cx}" y1="${cy}" x2="${cx+rr*Math.sin(th)}" y2="${cy-rr*Math.cos(th)}" stroke="#d6e3f5" stroke-opacity="0.6" stroke-width="2"/>`;
+    }
+    const dirs = s.dirs.filter((_,i)=>i%Math.max(1,Math.floor(s.dirs.length/18))===0).slice(0,18);
+    dirs.forEach(theta=>{ svg += `<line x1="${cx}" y1="${cy}" x2="${x(0.72*Math.sin(theta))}" y2="${y(0.72*Math.cos(theta))}" stroke="#ffd166" stroke-width="1.5" marker-end="url(#arrowG)" opacity="0.82"/>`; });
+    svg += `<text x="${cx}" y="${cy+45}" text-anchor="middle" fill="#ffd166" font-size="12" font-weight="800">≈${fmt(s.rotor.rpm,0)} об/мин</text>`;
+  } else {
+    const a=s.alpha;
+    svg += `<rect x="${cx-10}" y="${cy-10}" width="20" height="22" rx="4" fill="#435a7a"/>`;
+    const dirs = s.type==='hollow' ? [...linspace(-a,-Math.max(a*0.86,0.03),4),...linspace(Math.max(a*0.86,0.03),a,4)] : linspace(-a,a,9);
+    dirs.forEach(theta=>{ svg += `<line x1="${cx}" y1="${cy}" x2="${x(0.78*Math.sin(theta))}" y2="${y(0.78*Math.cos(theta))}" stroke="#ffd166" stroke-width="1.7" marker-end="url(#arrowG)"/>`; });
+  }
+  svg += `<line x1="${cx-160}" y1="${cy}" x2="${cx+160}" y2="${cy}" stroke="#274668" stroke-width="1"/>
+          <line x1="${cx}" y1="${cy-160}" x2="${cx}" y2="${cy+160}" stroke="#274668" stroke-width="1"/>`;
+  svg += `<text x="24" y="26" fill="#eef4fb" font-size="16" font-weight="800">Направления вылета и приближение к целевой сфере</text>`;
+  svg += `<text x="24" y="48" fill="#9ab0c9" font-size="12">золото — целевой шар D*; зелёная эллиптическая оболочка — текущая форма факела; синий штрих — аналитический R*</text>`;
+  return svg + `</svg>`;
+}
+function drawFilterSVG(f){
+  const W=760, Hs=420, mL=62, mR=18, mT=68, mB=58;
+  const plotW = W-mL-mR;
+  const plotH = Hs-mT-mB;
+  const barW = plotW/f.parts.length*0.58;
+  const gap = plotW/f.parts.length*0.42;
+  const x0 = mL;
+  const yBase = Hs-mB;
+  let svg = `<svg viewBox="0 0 ${W} ${Hs}"><rect x="0" y="0" width="${W}" height="${Hs}" rx="18" fill="#0a1628"/>`;
+  [0,25,50,75,100].forEach(p=>{
+    const y = yBase - plotH*p/100;
+    svg += `<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}" stroke="#1d2b42" stroke-width="1"/>`;
+    svg += `<text x="${mL-10}" y="${y+4}" text-anchor="end" fill="#7f93ad" font-size="12">${p}%</text>`;
+  });
+  svg += `<line x1="${mL}" y1="${yBase}" x2="${W-mR}" y2="${yBase}" stroke="#5b7393" stroke-width="1.4"/>`;
+  f.parts.forEach((p,i)=>{
+    const x = x0 + i*(barW+gap) + gap*0.5;
+    const h = plotH * p.eta / 100;
+    const fill = p.eta >= 95 ? '#2dd4bf' : (p.eta >= 50 ? '#ffd166' : '#ff6b6b');
+    svg += `<rect x="${x}" y="${yBase-h}" width="${barW}" height="${h}" rx="8" fill="${fill}" fill-opacity="0.85"/>`;
+    svg += `<text x="${x+barW/2}" y="${yBase-h-8}" text-anchor="middle" fill="${fill}" font-size="13" font-weight="800">${fmt(p.eta,0)}%</text>`;
+    svg += `<text x="${x+barW/2}" y="${yBase+20}" text-anchor="middle" fill="#c7d6e9" font-size="12" font-weight="700">${p.d} мкм</text>`;
+    svg += `<text x="${x+barW/2}" y="${yBase+38}" text-anchor="middle" fill="#7f93ad" font-size="11">ws = ${fmt(p.ws,1)} мм/с</text>`;
+  });
+  svg += `<text x="20" y="24" fill="#eef4fb" font-size="16" font-weight="800">Эффективность осаждения η_s(d_s)</text>`;
+  svg += `<text x="20" y="46" fill="#9ab0c9" font-size="12">Показаны классы 50-500 мкм · q0 = ${fmt(f.SOR,2)} мм/с · срез: ${f.dCut}</text>`;
+  return svg + `</svg>`;
+}
+function updateHyd(h){
+  $('hyd-kpis').innerHTML = `
+    <div class="kpi blue"><div class="name">Расход Q</div><div class="num">${fmt(h.Qlph,1)}</div><div class="sub">л/ч</div></div>
+    <div class="kpi gold"><div class="name">Скорость u<sub>0</sub></div><div class="num">${fmt(h.u0,2)}</div><div class="sub">м/с</div></div>
+    <div class="kpi green"><div class="name">Δp</div><div class="num">${fmt(h.dpBar,2)}</div><div class="sub">бар</div></div>
+    <div class="kpi red"><div class="name">Re</div><div class="num">${fmt(h.Re,0)}</div><div class="sub">безразмерно</div></div>`;
+  $('hyd-table').innerHTML = [
+    row('Напор H', fmt(h.H,2), 'м'),
+    row('Диаметр отверстия d', fmt(h.dmm,2), 'мм', 'blue'),
+    row('Площадь A<sub>0</sub>', fmt(h.A0*1e6,3), 'мм²'),
+    row('Коэффициент расхода C<sub>d</sub>', fmt(h.Cd,3), ''),
+    row('Число Вебера We', fmt(h.We,0), ''),
+    row('Признак интенсивного распада', h.We>12 ? 'выраженный' : 'умеренный', '', h.We>12 ? 'green' : 'gold')
+  ].join('');
+  $('hyd-svg').innerHTML = drawHydraulicSVG(h);
+}
+function updateSpray(h, s){
+  const qt = qualityText(s.chi, s.type, s);
+  const sg = sagText(s.eg);
+  $('stokes-table').innerHTML = [
+    row('Время релаксации τ<sub>p</sub>', fmt(s.tau,4), 'с'),
+    row('Стоксовская скорость оседания w<sub>t</sub>', fmt(s.wtSt*100,1), 'см/с'),
+    row('Радиус R* = u<sub>d</sub>τ<sub>p</sub>', fmt(s.Rstar,2), 'м', 'gold'),
+    row('Идеальный диаметр 2R*', fmt(2*s.Rstar,2), 'м', 'gold'),
+    row('Критерий ε<sub>g</sub> = gR*/u<sub>d</sub>²', fmt(s.eg,3), '', sg[0]==='ok'?'green':sg[0]==='warn'?'gold':'red')
+  ].join('');
+  const dragRows = [
+    row('Тип распыла', typeLabel(s.type), ''),
+    row('Скорость капли u<sub>d</sub>', fmt(s.ud,2), 'м/с', 'blue'),
+    row('Время полёта капли', fmt(s.tVis,2), 'с'),
+    row('Макс. Re капли', fmt(s.maxRe,0), ''),
+    row('Нелинейная терминальная скорость', fmt(s.wtNL,2), 'м/с'),
+    row('Lx × Lz', `${fmt(s.Lx,2)} × ${fmt(s.Lz,2)}`, 'м', 'blue'),
+    row('Эквивалентный диаметр D<sub>eq</sub>', fmt(s.Deq,2), 'м', 'gold'),
+    row('Сферичность χ', fmt(s.chi,3), '', qt[0]==='ok'?'green':qt[0]==='warn'?'gold':'red')
+  ];
+  if(s.evap && s.evap.on){
+    dragRows.splice(2,0,
+      row('Испарение', `d²-law, T=${fmt(s.evap.Tair,0)} °C, RH=${fmt(100*s.evap.RH,0)}%`, ''),
+      row('Средняя убыль диаметра', fmt(100*s.evap.dLossMean,2), '%', s.evap.dLossMean<0.03?'green':s.evap.dLossMean<0.10?'gold':'red'),
+      row('Средняя убыль массы', fmt(100*s.evap.massLossMean,2), '%'),
+      row('Средний K<sub>e</sub>', fmt(s.evap.kMean*1e6,4), 'мм²/с')
+    );
+  } else {
+    dragRows.splice(2,0,row('Испарение', 'выключено', ''));
+  }
+  if(s.type==='rotary'){
+    dragRows.splice(2,0,
+      row('Относительная скорость струи u<sub>rel</sub>', fmt(s.rotor.uRel,2), 'м/с'),
+      row('Ярусы θ<sub>j</sub>', s.rotor.tierAnglesDeg.map(a=>fmtSigned(a,0)+'°').join(', '), ''),
+      row('Общее число сопел', `${s.rotor.Nr} × ${s.rotor.tierCount} = ${s.rotor.Ntotal}`, 'шт'),
+      row('Баланс ротора', 'ΣN<sub>j</sub>k<sub>t,j</sub>, ζ не ∝ N<sub>j</sub>', ''),
+      row('Частота вращения', fmt(s.rotor.rpm,0), 'об/мин', 'green'),
+      row('Оборотов за время полёта', fmt(s.rotor.turns,2), '', s.rotor.turns>=2?'green':s.rotor.turns>=0.5?'gold':'red'),
+      row('Суммарный расход сопел', fmt(s.rotor.qTotal*3.6e6,0), 'л/ч'),
+      row('Оценка реактивного момента', fmt(s.rotor.torque,4), 'Н·м')
+    );
+  }
+  $('drag-table').innerHTML = dragRows.join('');
+  $('spray-status').className = `callout ${qt[0]==='ok' && sg[0]==='ok' ? 'ok' : (qt[0]==='bad' || sg[0]==='bad' ? 'bad' : 'warn')}`;
+  let tail;
+  if(s.type==='sphere') tail = 'Распределение направлений уже близко к изотропному, поэтому форма в первую очередь чувствительна к d<sub>32</sub> и скорости истечения.';
+  else if(s.type==='dual') tail = 'Две встречные форсунки заметно улучшают сферичность по сравнению с одиночным конусом.';
+  else if(s.type==='rotary') tail = 'Это не новое уравнение движения капли: меняются начальные условия по моменту вылета t<sub>0</sub>, а непрерывность облака определяется числом оборотов за время полёта. В балансе ротора реактивный момент растёт с числом рукавов, а ζ считается общим торможением ротора.';
+  else tail = 'Одиночная форсунка формирует лишь сектор, поэтому без смены типа распыла идеально сферическую форму получить трудно.';
+  const evapTail = (s.evap && s.evap.on) ? ` Испарение включено: средняя убыль диаметра ≈ ${fmt(100*s.evap.dLossMean,2)}% за расчётное время.` : '';
+  $('spray-status').innerHTML = `<strong>Вывод по текущему факелу.</strong> ${qt[1]}. ${sg[1]}. ${tail}${evapTail}`;
+  $('spray-svg').innerHTML = drawSpraySVG(s);
+}
+function updateSphere(h, s){
+  const targetD = val('sTargetD');
+  const Rtarget = targetD/2;
+  const dpReq = Math.sqrt(18*MA*Rtarget/(RW*Math.max(h.u0,1e-12))) * 1000;
+  const uMinTarget = Math.sqrt(10*G*Rtarget);
+  const Nh = Math.round(val('sNh1'));
+  const dh = Math.sqrt(4*h.Q/(Nh*Math.PI*h.Cd*Math.sqrt(2*h.dp/RW))) * 1000;
+  const dErr = (s.Deq-targetD)/targetD*100;
+  $('sphere-table').innerHTML = [
+    row('Текущий тип распыла', typeLabel(s.type), ''),
+    row('Целевой диаметр D*', fmt(targetD,1), 'м', 'gold'),
+    row('Текущий D<sub>eq</sub>', fmt(s.Deq,2), 'м', Math.abs(dErr)<10?'green':'gold'),
+    row('Отклонение D<sub>eq</sub> от цели', `${dErr>=0?'+':''}${fmt(dErr,1)}`, '%', Math.abs(dErr)<10?'green':'red'),
+    row('Сферичность χ', fmt(s.chi,3), '', (s.type==='sphere' && s.chi>0.9)?'green':s.chi>0.75?'gold':'red'),
+    row('Требуемый d<sub>p</sub> для D*', fmt(dpReq,3), 'мм', 'blue'),
+    row('Минимальная u<sub>d</sub> для ε<sub>g</sub><0.1', fmt(uMinTarget,2), 'м/с', h.u0>=uMinTarget?'green':'red'),
+    row('Текущая u<sub>0</sub>', fmt(h.u0,2), 'м/с', h.u0>=uMinTarget?'green':'red'),
+    row('Если перейти к сферической головке: d<sub>h</sub>', fmt(dh,2), 'мм', 'blue')
+  ].join('');
+  const typeGood = s.type==='sphere' ? 'ok' : (s.type==='dual' || s.type==='rotary' ? 'warn' : 'bad');
+  const speedGood = h.u0>=uMinTarget ? 'ok' : 'bad';
+  const shapeGood = s.chi>0.9 ? 'ok' : (s.chi>0.75 ? 'warn' : 'bad');
+  const finalClass = [typeGood,speedGood,shapeGood].includes('bad') ? 'bad' : ([typeGood,speedGood,shapeGood].includes('warn') ? 'warn' : 'ok');
+  $('sphere-status').className = `callout ${finalClass}`;
+  let head = `<strong>Насколько реально приблизиться к шару D* = ${fmt(targetD,1)} м.</strong> `;
+  if(s.type==='full' || s.type==='hollow') head += `С текущим типом распыла это ограничено секторной геометрией.`;
+  else if(s.type==='dual') head += `С двумя встречными форсунками задача уже выглядит реалистично, но изотропность ещё не идеальна.`;
+  else if(s.type==='rotary') head += `Вращающаяся форсунка даёт временную развёртку направлений; качество зависит от числа оборотов за время полёта капель.`;
+  else head += `Сферическая головка — самый прямой путь к близкой к изотропной форме.`;
+  head += h.u0>=uMinTarget ? ` Скорость истечения достаточна по критерию провиса.` : ` Скорость истечения пока мала: факел будет провисать вниз.`;
+  $('sphere-status').innerHTML = head;
+  $('sphere-svg').innerHTML = drawSphereSVG(h, s, targetD);
+  const notes=[];
+  if(s.type==='rotary') notes.push(`<div class="li"><strong>Сегнерово колесо:</strong> ротор делает примерно ${fmt(s.rotor.turns,2)} оборота за время полёта. В расчёте задано ${s.rotor.tierCount} ярус(а): ${s.rotor.tierAnglesDeg.map(a=>fmtSigned(a,0)+'°').join(', ')}. Это временное усреднение, а не мгновенно изотропная сферическая головка.</div>`);
+  else if(s.type!=='sphere') notes.push(`<div class="li"><strong>Главное ограничение:</strong> текущий тип распыла не покрывает направления, близкие ко всей сфере 4π. Для идеального шара лучше перейти к двум встречным форсункам или многосопловой сферической головке.</div>`);
+  else notes.push(`<div class="li"><strong>Изотропность направлений:</strong> при сферической головке основное внимание переходит с геометрии направлений на подбор d<sub>32</sub> и u<sub>0</sub>.</div>`);
+  if(h.u0 < uMinTarget) notes.push(`<div class="li"><strong>Скорость мала для цели D*:</strong> нужно увеличить напор H или уменьшить эффективный размер выходных отверстий, чтобы поднять u<sub>0</sub> выше ${fmt(uMinTarget,2)} м/с.</div>`);
+  else notes.push(`<div class="li"><strong>По скорости запас есть:</strong> текущая u0 = ${fmt(h.u0,2)} м/с не должна давать сильный провис для выбранного D*.</div>`);
+  const currentDp = val('sD32');
+  if(currentDp > dpReq*1.2) notes.push(`<div class="li"><strong>Капли слишком крупные для цели:</strong> чтобы приблизить облако к D* без лишнего провиса, стоит уменьшить d<sub>32</sub> примерно до ${fmt(dpReq,3)} мм.</div>`);
+  else if(currentDp < dpReq*0.8) notes.push(`<div class="li"><strong>Капли слишком мелкие для цели:</strong> по формуле R* = uτ они дают меньший характерный радиус; для текущего u<sub>0</sub> нужен d<sub>32</sub> около ${fmt(dpReq,3)} мм.</div>`);
+  else notes.push(`<div class="li"><strong>Размер капель близок к оценке:</strong> текущий d<sub>32</sub> уже находится рядом с расчётным диапазоном для выбранного D*.</div>`);
+  notes.push(`<div class="li"><strong>Диаметр микроотверстий при равномерном делении потока:</strong> для N<sub>h</sub> = ${Nh} получается d<sub>h</sub> ≈ ${fmt(dh,2)} мм.</div>`);
+  $('sphere-notes').innerHTML = notes.join('');
+}
+function updateFilter(f){
+  $('filter-table').innerHTML = [
+    row('Гидравлическая нагрузка q0', fmt(f.SOR,2), 'мм/с', 'gold'),
+    row('Площадь A<sub>s</sub> для среза 50 мкм', fmt(f.As50,3), 'м²', val('sfAs')>=f.As50?'green':'red'),
+    row('Площадь A<sub>s</sub> для среза 100 мкм', fmt(f.As100,3), 'м²', val('sfAs')>=f.As100?'green':'gold'),
+    row('Оценка полного отбора', f.dCut, ''),
+    row('Крупные фракции 1000-2000 мкм', 'не показаны на графике: η_s≈100% в рабочем диапазоне', ''),
+    row('Модель эффективности', 'η_s(d_s) = min(1, ws/q0)', '')
+  ].join('');
+  const eta50 = f.parts.find(p=>p.d===50).eta;
+  const eta100 = f.parts.find(p=>p.d===100).eta;
+  $('filter-status').className = `callout ${eta50>=90 ? 'ok' : (eta100>=90 ? 'warn' : 'bad')}`;
+  $('filter-status').innerHTML = eta50>=90
+    ? `<strong>Отстойник настроен жёстко:</strong> даже частицы 50 мкм отделяются с высокой эффективностью.`
+    : eta100>=90
+      ? `<strong>Отстойник работает как осветлитель грубой очистки:</strong> уверенно снимает ~100 мкм и крупнее, но 50 мкм ещё проходят.`
+      : `<strong>Текущая гидр. нагрузка слишком велика для тонкой очистки:</strong> эта схема в основном задерживает только средние и крупные частицы.`;
+  $('filter-svg').innerHTML = drawFilterSVG(f);
+  $('filter-frac-table').innerHTML = f.parts.map(p=>row(`${p.d} мкм`, `ws = ${fmt(p.ws,1)} мм/с → η_s = ${fmt(p.eta,0)}%`, '', p.eta>=95?'green':p.eta>=50?'gold':'red')).join('');
+}
+function calcAll(){
+  updateDisplayValues();
+  updateNhVisibility();
+  HYD = solveHyd();
+  updateHyd(HYD);
+  SPR = solveSpray(HYD);
+  updateSpray(HYD, SPR);
+  updateSphere(HYD, SPR);
+  updateFilter(solveFilter());
+}
+function savePNG(wrapperId, bw){
+  const wrap = $(wrapperId);
+  const svg = wrap.querySelector('svg');
+  if(!svg) return;
+  const clone = svg.cloneNode(true);
+  const vb = clone.getAttribute('viewBox');
+  const dims = vb ? vb.split(/\s+/) : [0,0,800,500];
+  const vbW = parseFloat(dims[2]);
+  const vbH = parseFloat(dims[3]);
+  clone.setAttribute('width', vbW);
+  clone.setAttribute('height', vbH);
+  clone.removeAttribute('style');
+  const w = vbW * 2.5;
+  const h = vbH * 2.5;
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  let svgStr = new XMLSerializer().serializeToString(clone);
+  if(bw){
+    svgStr = svgStr
+      .replace(/#67a7ff|#3b82f6|#60a5fa|#8ec5ff/gi, '#333333')
+      .replace(/#ffd166|#fbbf24/gi, '#666666')
+      .replace(/#2dd4bf|#34d399/gi, '#555555')
+      .replace(/#ff6b6b|#ef4444/gi, '#888888')
+      .replace(/#0a1628|#0b1628|#09121f|#0d1321/gi, '#ffffff')
+      .replace(/#1d2b42|#244368|#274668|#1f2937/gi, '#cccccc')
+      .replace(/#eef4fb|#f3f7fc|#d1d5db|#c7d6e9|#f5f9ff|#e5e7eb|#d6e3f5/gi, '#000000')
+      .replace(/#9ab0c9|#7f93ad|#7189a8|#6f86a3|#5b7393|#4b5563/gi, '#444444')
+      .replace(/rgba\(45,212,191,[^)]+\)/gi, 'rgba(80,80,80,0.2)')
+      .replace(/rgba\(103,167,255,[^)]+\)/gi, 'rgba(50,50,50,0.15)')
+      .replace(/rgba\(255,209,102,[^)]+\)/gi, 'rgba(100,100,100,0.15)')
+      .replace(/fill-opacity="0\.85"/gi, 'fill-opacity="0.6"');
+  }
+  const blob = new Blob([svgStr], {type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  img.onload = function(){
+    ctx.fillStyle = bw ? '#ffffff' : '#0a0e1a';
+    ctx.fillRect(0,0,w,h);
+    ctx.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = wrapperId + (bw ? '_bw' : '') + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
+}
+function autoCalc(){
+  const targetD = val('sTargetD');
+  const Rtarget = targetD / 2;
+  const Nh = Math.round(val('sNh1'));
+  const Cd = val('sCd');
+  const before = HYD || solveHyd();
+  const Qtarget = before.Q;          // сохраняем текущий расчётный расход как проектный
+
+  // Переключаемся в режим H + d -> Q, но сохраняем найденный ранее эквивалентный диаметр.
+  if(mode !== 'Hd') setMode('Hd');
+
+  const Hmin = parseFloat($('s1').min), Hmax = parseFloat($('s1').max);
+  const dMin = parseFloat($('s2').min), dMax = parseFloat($('s2').max);
+  const dpMin = parseFloat($('sD32').min), dpMax = parseFloat($('sD32').max);
+
+  // 1. Расчётная скорость по критерию малой гравитационной деформации.
+  const udDesign = Math.sqrt(10 * G * Rtarget) * 1.15; // 15% запас к εg < 0.1
+  const Hraw = udDesign * udDesign / (2 * G * Cd * Cd);
+  const Hset = clamp(Hraw, Hmin, Hmax);
+
+  // 2. Реальная скорость после возможного ограничения ползунком H.
+  const udSet = Cd * Math.sqrt(2 * G * Hset);
+
+  // 3. Размер капли под целевой R* уже пересчитываем по реально достижимой скорости.
+  const dpRaw = Math.sqrt(18 * MA * Rtarget / (RW * Math.max(udSet,1e-12))) * 1000;
+  const dpSet = clamp(dpRaw, dpMin, dpMax);
+
+  // 4. Диаметр выходного отверстия под сохранение текущего расхода Qtarget.
+  // В режиме H+d->Q средняя скорость на выходе равна udSet, поэтому Q=A0*udSet.
+  const dRaw = Math.sqrt(4 * Qtarget / (Math.PI * Math.max(udSet,1e-12))) * 1000;
+  const dSet = clamp(dRaw, dMin, dMax);
+
+  $('s1').value = Hset;
+  $('s2').value = dSet;
+  $('sD32').value = dpSet;
+
+  // 5. Проверка фактически выставленных значений.
+  const dpSet_m = dpSet / 1000;
+  const tauSet = RW * dpSet_m * dpSet_m / (18 * MA);
+  const RstarCheck = udSet * tauSet;
+  const egCheck = G * RstarCheck / (udSet * udSet);
+  const Qafter = (Math.PI * Math.pow(dSet/1000,2) / 4) * udSet;
+  const dpPressure = RW * G * Hset;
+  const dhHead = Math.sqrt(4 * Qtarget / (Nh * Math.PI * Cd * Math.sqrt(2 * dpPressure / RW))) * 1000;
+
+  const clipped = [];
+  if(Math.abs(Hset - Hraw) > 1e-9) clipped.push('напор H ограничен диапазоном ползунка');
+  if(Math.abs(dpSet - dpRaw) > 1e-9) clipped.push('d<sub>32</sub> ограничен диапазоном ползунка');
+  if(Math.abs(dSet - dRaw) > 1e-9) clipped.push('диаметр d ограничен диапазоном ползунка, поэтому расход сохранён не точно');
+
+  const el = $('auto-result');
+  el.style.display = 'block';
+  el.className = 'callout ' + (clipped.length ? 'warn' : 'ok');
+  el.innerHTML = `<strong>Предварительный подбор для D* = ${fmt(targetD,1)} м по формуле R* = u<sub>d</sub>τ<sub>p</sub>:</strong><br>` +
+    `• H = ${fmt(Hset,1)} м, Δp = ${fmt(dpPressure/1e5,2)} бар, u<sub>0</sub> = ${fmt(udSet,2)} м/с<br>` +
+    `• d<sub>32</sub> = ${fmt(dpSet,3)} мм; проверка: R* = ${fmt(RstarCheck,2)} м, 2R* = ${fmt(2*RstarCheck,2)} м<br>` +
+    `• d = ${fmt(dSet,2)} мм; расход до/после подбора: ${fmt(Qtarget*3.6e6,1)} / ${fmt(Qafter*3.6e6,1)} л/ч<br>` +
+    `• ε<sub>g</sub> = ${fmt(egCheck,3)}; D<sub>eq</sub> и χ уточняются ниже по нелинейной баллистике капель<br>` +
+    `• Для сферической головки: d<sub>h</sub> ≈ ${fmt(dhHead,2)} мм при N<sub>h</sub> = ${Nh}<br>` +
+    (clipped.length ? `<br><em>Предупреждение: ${clipped.join('; ')}. Это уже не точное попадание в целевой D*, а ближайшее значение в допустимом диапазоне интерфейса.</em>` :
+      `<br><em>Это первый шаг подбора. Нелинейное сопротивление обычно уменьшает фактический размер облака, поэтому итог проверяется на вкладке «Факел и капли».</em>`);
+
+  calcAll();
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  syncSprayType('1');
+  syncNh('1');
+  syncRotor('1');
+  calcAll();
+});
+</script>
+</body>
+</html>
