@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Grid3X3, Circle, Cog } from "lucide-react";
+import { Grid3X3, Circle, Cog, Grid2X2, Box, Calculator } from "lucide-react";
 
 const games = [
   {
@@ -25,6 +25,30 @@ const games = [
     description: "Tower Defense + Merge. Защити подшипник от частиц износа.",
     href: "/games/tribology-lab",
     icon: Cog,
+    status: "prototype" as const,
+  },
+  {
+    id: "2048",
+    title: "2048",
+    description: "Классическая головоломка. Соединяй плитки, собери 2048!",
+    href: "/games/2048",
+    icon: Grid2X2,
+    status: "prototype" as const,
+  },
+  {
+    id: "sokoban",
+    title: "Сокобан",
+    description: "Классическая головоломка. 155 уровней Microban.",
+    href: "/games/sokoban",
+    icon: Box,
+    status: "prototype" as const,
+  },
+  {
+    id: "quick-math",
+    title: "Quick Math",
+    description: "Математический тренажёр. 20 примеров на скорость!",
+    href: "/games/quick-math",
+    icon: Calculator,
     status: "prototype" as const,
   },
 ];

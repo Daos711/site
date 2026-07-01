@@ -26,9 +26,25 @@ export const COLORS = {
 
 // Форматирование числа без лишних нулей: 31.00 → "31", 31.50 → "31.5"
 // Умная точность: для малых значений (< 0.1) показываем больше знаков
+// Округление floating-point шума: 20.03 → 20, если близко к целому
 export function formatNum(val: number, decimals = 2): string {
   // Сначала проверяем на ноль (включая -0)
   if (Math.abs(val) < 1e-10) return "0";
+
+  // Округляем floating-point шум: если значение ОЧЕНЬ близко к "красивому" числу
+  // (целое, .5, .25), округляем к нему. Порог 0.2% — только явные ошибки типа 20.03
+  const snapThreshold = 0.002; // 0.2% допуск — только floating-point шум
+  const roundToNearest = (v: number, step: number): number => {
+    const rounded = Math.round(v / step) * step;
+    const relError = Math.abs(v - rounded) / Math.max(Math.abs(v), 1);
+    return relError < snapThreshold ? rounded : v;
+  };
+
+  // Пробуем округлить к целым, потом к 0.5, потом к 0.25
+  let snapped = roundToNearest(val, 1);
+  if (snapped === val) snapped = roundToNearest(val, 0.5);
+  if (snapped === val) snapped = roundToNearest(val, 0.25);
+  val = snapped;
 
   // Для малых значений увеличиваем точность
   const absVal = Math.abs(val);

@@ -62,14 +62,27 @@ function seededRandom(seed: number): () => number {
 }
 
 /**
+ * Fisher-Yates shuffle - детерминированное перемешивание
+ * В отличие от .sort(() => random() - 0.5), работает одинаково во всех браузерах
+ */
+function shuffleArray<T>(array: T[], random: () => number): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
  * Генерация колоды по правилам: 2 DPS + 1 Control + 2 Support = 5 модулей
  */
 function generateDeck(seed: number): ModuleType[] {
   const random = seededRandom(seed);
 
-  const shuffledDps = [...MODULE_ROLES.dps].sort(() => random() - 0.5);
-  const shuffledControl = [...MODULE_ROLES.control].sort(() => random() - 0.5);
-  const shuffledSupport = [...MODULE_ROLES.support].sort(() => random() - 0.5);
+  const shuffledDps = shuffleArray(MODULE_ROLES.dps, random);
+  const shuffledControl = shuffleArray(MODULE_ROLES.control, random);
+  const shuffledSupport = shuffleArray(MODULE_ROLES.support, random);
 
   return [
     shuffledDps[0],      // DPS 1
@@ -98,9 +111,14 @@ export function MainMenu({
   const [isLoaded, setIsLoaded] = useState(false);
   const [showHandbook, setShowHandbook] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [currentDateUTC, setCurrentDateUTC] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+  });
 
-  // Seed и дека зависят от режима
-  const seed = useMemo(() => generateSeed(mode), [mode]);
+  // Обновляем дату при смене дня (проверка каждую секунду в useEffect ниже)
+  // Seed и дека зависят от режима И текущей даты
+  const seed = useMemo(() => generateSeed(mode), [mode, currentDateUTC]);
   const deck = useMemo(() => generateDeck(seed), [seed]);
 
   // Номер "стенда" — просто seed mod 999 + 1
@@ -133,6 +151,7 @@ export function MainMenu({
   }, [mode, seed]);
 
   // Обновление таймера каждую секунду (только для daily)
+  // Также проверяем смену дня для обновления набора
   useEffect(() => {
     if (mode === 'daily') {
       // Немедленно установить начальное значение
@@ -141,6 +160,11 @@ export function MainMenu({
       // Обновлять каждую секунду
       const interval = setInterval(() => {
         setTimeRemaining(getTimeUntilNextDayUTC());
+
+        // Проверяем не сменился ли день (для обновления набора без рефреша)
+        const now = new Date();
+        const nowDateUTC = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+        setCurrentDateUTC(prev => prev !== nowDateUTC ? nowDateUTC : prev);
       }, 1000);
 
       return () => clearInterval(interval);

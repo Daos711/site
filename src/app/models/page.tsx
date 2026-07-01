@@ -1,8 +1,17 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { Cylinder, Droplets, Cog } from "lucide-react";
+import { Cylinder, Droplets, Cog, SprayCan } from "lucide-react";
 
 const models = [
+  {
+    id: "spray-model",
+    title: "Факел распыла форсунки",
+    description:
+      "Интерактивная модель: гидравлика, траектории капель, сферизация, фильтр.",
+    icon: SprayCan,
+    status: "ready" as const,
+    href: "/models/spray-model",
+  },
   {
     id: "reynolds",
     title: "Уравнение Рейнольдса",
@@ -42,6 +51,7 @@ export default function ModelsPage() {
             description={model.description}
             icon={model.icon}
             status={model.status}
+            href={model.href}
           />
         ))}
       </div>

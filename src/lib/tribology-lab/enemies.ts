@@ -507,12 +507,13 @@ export function updateEnemy(
   const pushbackEffect = updatedEffects.find(e => e.type === 'pushback');
   let pushbackDelta = 0;
   if (pushbackEffect && pushbackEffect.strength > 0) {
-    // strength хранит оставшийся откат * 1000 (например 40 = 0.04 = 4%)
+    // strength хранит оставшийся откат * 1000 (например 80 = 0.08 = 8%)
     // Вычисляем сколько откатить за этот кадр
-    const totalPush = pushbackEffect.strength / 1000;  // общий откат
+    const remainingPush = pushbackEffect.strength / 1000;  // оставшийся откат
     const initialDuration = 400;  // начальная длительность эффекта
-    const pushPerMs = totalPush / initialDuration;  // откат за мс
-    pushbackDelta = pushPerMs * deltaTime;
+    const pushPerMs = remainingPush / initialDuration;  // откат за мс
+    // Ограничиваем откат оставшимся количеством (фикс для низкого FPS + высокой скорости)
+    pushbackDelta = Math.min(pushPerMs * deltaTime, remainingPush);
 
     // Уменьшаем оставшийся откат
     const newStrength = Math.max(0, pushbackEffect.strength - pushbackDelta * 1000);

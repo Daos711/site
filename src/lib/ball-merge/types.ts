@@ -22,13 +22,40 @@ export const BALL_LEVELS: BallLevel[] = [
   { level: 9, radius: 231, color: '#fbbf24', glowColor: '#fcd34d', name: 'Золотой' },
 ];
 
-// Размеры игрового поля - увеличены на 25%
+// Режимы игры
+export type GameMode = 'normal' | 'large';
+
+export interface GameModeConfig {
+  id: GameMode;
+  name: string;
+  description: string;
+  gameHeight: number;
+}
+
+export const GAME_MODES: Record<GameMode, GameModeConfig> = {
+  normal: {
+    id: 'normal',
+    name: 'Обычный',
+    description: 'Классический размер стакана',
+    gameHeight: 525,
+  },
+  large: {
+    id: 'large',
+    name: 'Большой',
+    description: 'Высокий стакан — больше шансов собрать золотой шар!',
+    gameHeight: 945, // +80%
+  },
+};
+
+// Размеры игрового поля
 export const GAME_WIDTH = 875;
-export const GAME_HEIGHT = 525;
 export const WALL_THICKNESS = 25;
 export const DROP_ZONE_HEIGHT = 75;
 export const TOP_BUFFER = 188; // Дополнительное пространство сверху для отлетающих шаров
-export const CANVAS_HEIGHT = GAME_HEIGHT + TOP_BUFFER; // Полная высота канваса
+
+// Функции для получения размеров по режиму
+export const getGameHeight = (mode: GameMode): number => GAME_MODES[mode].gameHeight;
+export const getCanvasHeight = (mode: GameMode): number => GAME_MODES[mode].gameHeight + TOP_BUFFER;
 
 // Линия проигрыша
 export const DANGER_LINE_Y = DROP_ZONE_HEIGHT + 25;

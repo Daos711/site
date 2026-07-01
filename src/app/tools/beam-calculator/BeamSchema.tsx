@@ -171,7 +171,8 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
         if (reactions.RA !== undefined && reactions.RA !== 0) {
           const xA = reactions.xA ?? 0;
           const hasLoadAtA = hasLoadAt(xA);
-          // Реакции всегда относительно верхней плоскости балки
+          // Если опора A близко к левому краю — подпись справа, иначе слева
+          const isNearLeftEdge = xA < L * 0.15;
           elements.push(
             <ReactionArrow
               key="RA"
@@ -181,8 +182,8 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               name="R"
               subscript="A"
               valueText={`${formatNum(Math.abs(reactions.RA))} кН`}
-              labelSide="left"
-              labelYOffset={hasLoadAtA ? 70 : 40}
+              labelSide={isNearLeftEdge ? "right" : "left"}
+              labelYOffset={hasLoadAtA ? 20 : 0}
             />
           );
         }
@@ -201,31 +202,15 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
               subscript="B"
               valueText={`${formatNum(Math.abs(reactions.RB))} кН`}
               labelSide="left"
-              labelYOffset={hasLoadAtB ? 70 : 50}
+              labelYOffset={hasLoadAtB ? 20 : 0}
               labelXOffset={-30}
             />
           );
         }
 
-        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
-          const xf = reactions.xf ?? 0;
-          const hasLoadAtF = hasLoadAt(xf);
-          elements.push(
-            <ReactionArrow
-              key="Rf"
-              x={xToPx(xf)}
-              baseY={beamTop}
-              value={reactions.Rf}
-              name="R"
-              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
-              labelSide="left"
-              labelYOffset={hasLoadAtF ? 65 : 35}
-            />
-          );
-        }
-
-        // Реактивный момент Mf для консольных балок
-        if (reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9) {
+        // Реактивный момент Mf для консольных балок (рисуем ПЕРВЫМ, чтобы подпись R была ниже)
+        const hasMf = reactions.Mf !== undefined && Math.abs(reactions.Mf) > 1e-9;
+        if (hasMf) {
           const xf = reactions.xf ?? 0;
           const px = xToPx(xf);
           const H = 35;
@@ -234,7 +219,7 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const Cy = beamTop - gap - H;
 
           // Mf > 0 (против часовой) или Mf < 0 (по часовой)
-          const isCW = reactions.Mf < 0;
+          const isCW = reactions.Mf! < 0;
           const aLeft = (240 * Math.PI) / 180;
           const aRight = (330 * Math.PI) / 180;
           const pLeft = { x: px + R * Math.cos(aLeft), y: Cy + R * Math.sin(aLeft) };
@@ -245,9 +230,9 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
           const arcEnd = isCW ? pRight : pLeft;
           const sweepFlag = isCW ? 1 : 0;
 
-          // Подпись всегда справа и выше, чтобы не уходила за край
+          // Подпись момента: сверху
           const labelX = px + R + 8;
-          const labelY = Cy - 20;
+          const labelY = Cy - 25;
 
           elements.push(
             <g key="Mf">
@@ -260,9 +245,29 @@ export function BeamSchema({ input, result, xToPx, y, height }: BeamSchemaProps)
                 markerEnd="url(#arrowGreen)"
               />
               <text x={labelX} y={labelY} textAnchor="start" fill={COLORS.reaction} fontSize={13} fontWeight="600">
-                Mf = {formatNum(Math.abs(reactions.Mf))} кН·м
+                Mf = {formatNum(Math.abs(reactions.Mf!))} кН·м
               </text>
             </g>
+          );
+        }
+
+        if (reactions.Rf !== undefined && reactions.Rf !== 0) {
+          const xf = reactions.xf ?? 0;
+          const hasLoadAtF = hasLoadAt(xf);
+          // Если есть Mf — подпись R слева (Mf справа), иначе по позиции заделки
+          const isNearLeftEdge = xf < L * 0.15;
+          const labelSide = hasMf ? "left" : (isNearLeftEdge ? "right" : "left");
+          elements.push(
+            <ReactionArrow
+              key="Rf"
+              x={xToPx(xf)}
+              baseY={beamTop}
+              value={reactions.Rf}
+              name="R"
+              valueText={`${formatNum(Math.abs(reactions.Rf))} кН`}
+              labelSide={labelSide}
+              labelYOffset={hasLoadAtF ? 15 : 0}
+            />
           );
         }
 

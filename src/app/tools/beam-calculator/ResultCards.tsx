@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import type { BeamInput, BeamResult } from "@/lib/beam";
-import { generateReport } from "@/lib/beam";
+import { generateReport, getProfileTypeShortName, getProfileW, getProfileI } from "@/lib/beam";
 import { Latex } from "@/components/Latex";
 
 interface Props {
@@ -32,6 +32,7 @@ const UNIT_M = "\\,\\text{м}";
 const UNIT_MM = "\\,\\text{мм}";
 const UNIT_CM4 = "\\,\\text{см}^4";
 const UNIT_CM3 = "\\,\\text{см}^3";
+const UNIT_MPA = "\\,\\text{МПа}";
 
 export function ResultCards({ input, result, className, showButton = true, onReportRef }: Props) {
   const { reactions, Mmax, Qmax, y } = result;
@@ -239,13 +240,15 @@ export function ResultCards({ input, result, className, showButton = true, onRep
         </div>
       </div>
 
-      {/* Подобранное сечение (если задано sigma) */}
-      {result.diameter && result.W && result.I && (
+      {/* Сечение (круглое) */}
+      {result.sectionType === 'round' && result.diameter && result.W && result.I && (
         <div className="p-4 rounded-lg border border-border bg-card">
-          <h3 className="font-semibold mb-3 text-base text-foreground">Подбор сечения (круглое)</h3>
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (круглое)
+          </h3>
           <div className="space-y-2">
             <div>
-              <Latex tex={`d_{\\min} = ${formatNum(result.diameter * 1000)}${UNIT_MM}`} />
+              <Latex tex={`d${result.sectionMode === 'select' ? '_{\\min}' : ''} = ${formatNum(result.diameter * 1000)}${UNIT_MM}`} />
             </div>
             <div>
               <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
@@ -253,7 +256,151 @@ export function ResultCards({ input, result, className, showButton = true, onRep
             <div>
               <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
             </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Квадратное сечение */}
+      {result.sectionType === 'square' && result.squareSide && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (квадрат)
+          </h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`a = ${formatNum(result.squareSide * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Прямоугольное сечение */}
+      {result.sectionType === 'rectangle' && result.rectWidth && result.rectHeight && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (прямоугольник)
+          </h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`b = ${formatNum(result.rectWidth * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`h = ${formatNum(result.rectHeight * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Прямоугольная труба */}
+      {result.sectionType === 'rectangular-tube' && result.tubeOuterWidth && result.tubeOuterHeight && result.tubeThickness && result.W && result.I && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} (труба)
+          </h3>
+          <div className="space-y-2">
+            <div>
+              <Latex tex={`B = ${formatNum(result.tubeOuterWidth * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`H = ${formatNum(result.tubeOuterHeight * 1000)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`t = ${formatNum(result.tubeThickness * 1000, 1)}${UNIT_MM}`} />
+            </div>
+            <div>
+              <Latex tex={`W = ${formatNum(result.W * 1e6, 4)}${UNIT_CM3}`} />
+            </div>
+            <div>
+              <Latex tex={`I = ${formatNum(result.I * 1e8, 4)}${UNIT_CM4}`} />
+            </div>
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Профиль из ГОСТ */}
+      {result.selectedProfile && (
+        <div className="p-4 rounded-lg border border-border bg-card">
+          <h3 className="font-semibold mb-3 text-base text-foreground">
+            {result.sectionMode === 'given' ? 'Заданное сечение' : 'Подбор сечения'} ({getProfileTypeShortName(result.selectedProfile.type)})
+            {result.bendingAxis === 'y' && <span className="text-sm text-muted ml-2">(ось Y)</span>}
+          </h3>
+          <div className="space-y-2">
+            <div className="text-lg font-medium text-accent">
+              № {result.selectedProfile.number}
+            </div>
+            <div className="text-sm text-muted">
+              {result.selectedProfile.gost}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
+              <div>
+                <Latex tex={`h = ${result.selectedProfile.h}${UNIT_MM}`} />
+              </div>
+              <div>
+                <Latex tex={`b = ${result.selectedProfile.b}${UNIT_MM}`} />
+              </div>
+              <div>
+                <Latex tex={`W_${result.bendingAxis || 'x'} = ${formatNum(getProfileW(result.selectedProfile, result.bendingAxis))}${UNIT_CM3}`} />
+              </div>
+              <div>
+                <Latex tex={`I_${result.bendingAxis || 'x'} = ${formatNum(getProfileI(result.selectedProfile, result.bendingAxis))}${UNIT_CM4}`} />
+              </div>
+            </div>
+            {result.sectionMode === 'select' && result.Wreq && (
+              <div className="mt-2 pt-2 border-t border-border text-sm text-muted">
+                <Latex tex={`W_{\\text{треб}} = ${formatNum(result.Wreq)}${UNIT_CM3}`} />
+                <span className="ml-2 text-green-500">
+                  ({formatNum(getProfileW(result.selectedProfile, result.bendingAxis))} ≥ {formatNum(result.Wreq)} ✓)
+                </span>
+              </div>
+            )}
+            {result.sectionMode === 'given' && result.sigmaMax !== undefined && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <Latex tex={`\\sigma_{\\max} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Предупреждение если профиль не найден (только для ГОСТ профилей в режиме подбора) */}
+      {result.sectionMode === 'select' && (result.sectionType === 'i-beam' || result.sectionType === 'channel-u' || result.sectionType === 'channel-p') && !result.selectedProfile && result.Wreq && (
+        <div className="p-4 rounded-lg border border-red-500/30 bg-red-500/5">
+          <h3 className="font-semibold mb-2 text-base text-red-400">Профиль не найден</h3>
+          <p className="text-sm text-muted">
+            Требуемый момент сопротивления <Latex tex={`W_{\\text{треб}} = ${formatNum(result.Wreq)}${UNIT_CM3}`} /> превышает максимальный в сортаменте.
+          </p>
         </div>
       )}
 
@@ -294,6 +441,51 @@ export function ResultCards({ input, result, className, showButton = true, onRep
           </div>
         </div>
       </div>
+
+      {/* Ударное нагружение */}
+      {result.loadMode === 'impact' && result.Kd !== undefined && (
+        <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+          <h3 className="font-semibold mb-3 text-base text-foreground">Ударное нагружение</h3>
+          <div className="space-y-2">
+            <div className="text-sm text-muted mb-2">
+              Высота падения: <Latex tex={`H = ${formatNum((result.impactHeight ?? 0) * 100)}\\,\\text{см}`} />
+            </div>
+            {result.yStaticAtImpact !== undefined && (
+              <div>
+                <Latex tex={`\\delta_{\\text{ст}} = ${formatNum(result.yStaticAtImpact * 1000, 4)}${UNIT_MM}`} />
+                <span className="text-xs text-muted ml-2">(статический прогиб)</span>
+              </div>
+            )}
+            {result.springStiffness !== undefined && result.springDeflection !== undefined && (
+              <div>
+                <Latex tex={`\\delta_{\\text{пруж}} = ${formatNum(result.springDeflection * 1000, 4)}${UNIT_MM}`} />
+                <span className="text-xs text-muted ml-2">(осадка пружины, α = {formatNum(result.springStiffness)} см/кН)</span>
+              </div>
+            )}
+            <div className="mt-2 pt-2 border-t border-orange-500/20">
+              <Latex tex={`K_д = 1 + \\sqrt{1 + \\frac{2H}{\\delta_{\\text{ст}}}} = ${formatNum(result.Kd, 3)}`} />
+            </div>
+            {result.sigmaMax !== undefined && result.sigmaDynamic !== undefined && (
+              <div className="mt-2 space-y-1">
+                <div>
+                  <Latex tex={`\\sigma_{\\text{ст}} = ${formatNum(result.sigmaMax, 1)}${UNIT_MPA}`} />
+                </div>
+                <div>
+                  <Latex tex={`\\sigma_{\\text{дин}} = K_д \\cdot \\sigma_{\\text{ст}} = ${formatNum(result.sigmaDynamic, 1)}${UNIT_MPA}`} />
+                </div>
+                <div className="text-sm text-orange-400 mt-1">
+                  Разница: <Latex tex={`\\Delta\\sigma = ${formatNum(result.sigmaDynamic - result.sigmaMax, 1)}${UNIT_MPA}`} /> ({formatNum((result.sigmaDynamic / result.sigmaMax - 1) * 100, 1)}%)
+                </div>
+              </div>
+            )}
+            {result.yDynamic !== undefined && (
+              <div className="mt-2">
+                <Latex tex={`y_{\\text{дин}} = K_д \\cdot \\delta_{\\text{ст}} = ${formatNum(result.yDynamic * 1000, 4)}${UNIT_MM}`} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Кнопка отчёта */}
       {showButton && (

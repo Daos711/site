@@ -8,6 +8,15 @@ export interface Project {
 }
 
 export const projects: Project[] = [
+  // === Игры ===
+  {
+    id: "tribology-lab",
+    title: "Трибо-Лаб",
+    description: "Tower Defense + Merge. Защити подшипник от частиц износа.",
+    tags: ["игра", "TypeScript", "React", "web", "tower-defense"],
+    status: "prototype",
+    href: "/games/tribology-lab",
+  },
   {
     id: "digits",
     title: "Цифры",
@@ -25,12 +34,124 @@ export const projects: Project[] = [
     href: "/games/ball-merge",
   },
   {
+    id: "sokoban",
+    title: "Сокобан",
+    description: "Классическая головоломка. 155 уровней Microban.",
+    tags: ["игра", "TypeScript", "React", "web", "головоломка"],
+    status: "prototype",
+    href: "/games/sokoban",
+  },
+  {
+    id: "2048",
+    title: "2048",
+    description: "Соединяй числа и собери 2048. Классическая игра-головоломка.",
+    tags: ["игра", "TypeScript", "React", "web", "головоломка"],
+    status: "prototype",
+    href: "/games/2048",
+  },
+  {
+    id: "quick-math",
+    title: "Quick Math",
+    description: "Математический тренажёр. 20 примеров на скорость!",
+    tags: ["игра", "TypeScript", "React", "web", "тренажёр"],
+    status: "prototype",
+    href: "/games/quick-math",
+  },
+
+  // === Инструменты ===
+  {
+    id: "oscillator",
+    title: "Осциллятор",
+    description: "Интерактивная симуляция затухающих колебаний с фазовым портретом.",
+    tags: ["инструмент", "физика", "TypeScript", "React", "web", "визуализация"],
+    status: "prototype",
+    href: "/tools/oscillator",
+  },
+  {
     id: "beam-calculator",
     title: "Расчёт балки",
     description: "Реакции опор, эпюры M и Q, прогиб методом начальных параметров.",
     tags: ["инструмент", "сопромат", "TypeScript", "web"],
     status: "prototype",
     href: "/tools/beam-calculator",
+  },
+
+  // === Приложения ===
+  {
+    id: "philoquiz",
+    title: "PhiloQuiz",
+    description: "Викторина по философии. Проверь свои знания о великих мыслителях.",
+    tags: ["приложение", "TypeScript", "React", "web", "образование"],
+    status: "prototype",
+    href: "/apps/philoquiz",
+  },
+
+  // === Визуализации ===
+  {
+    id: "lorenz-attractor",
+    title: "Аттрактор Лоренца",
+    description: "3D-визуализация хаотической системы. Знаменитая «бабочка».",
+    tags: ["инструмент", "математика", "хаос", "визуализация"],
+    status: "prototype",
+    href: "/tools/lorenz",
+  },
+
+  // === Визуализации ===
+  {
+    id: "fractals",
+    title: "Фракталы",
+    description: "Мандельброт, Жюлиа, Burning Ship и другие. Бесконечный зум и красивые цвета.",
+    tags: ["инструмент", "математика", "фракталы", "визуализация"],
+    status: "prototype",
+    href: "/tools/fractals",
+  },
+  {
+    id: "double-pendulum",
+    title: "Двойной маятник",
+    description: "Хаос из простой механической системы.",
+    tags: ["инструмент", "физика", "хаос", "визуализация"],
+    status: "prototype",
+    href: "/tools/double-pendulum",
+  },
+  {
+    id: "fourier-series",
+    title: "Ряды Фурье",
+    description: "Как из синусов собираются любые формы волн.",
+    tags: ["инструмент", "математика", "визуализация"],
+    status: "prototype",
+    href: "/tools/fourier",
+  },
+  {
+    id: "game-of-life",
+    title: "Game of Life",
+    description: "Клеточный автомат Конвея. Эмерджентность из простых правил.",
+    tags: ["инструмент", "математика", "клеточные автоматы", "визуализация"],
+    status: "prototype",
+    href: "/tools/game-of-life",
+  },
+  {
+    id: "nbody",
+    title: "N-Body",
+    description: "Симуляция гравитационного взаимодействия N тел.",
+    tags: ["инструмент", "физика", "симуляция", "визуализация"],
+    status: "prototype",
+    href: "/tools/nbody",
+  },
+  {
+    id: "pathfinding",
+    title: "Поиск пути",
+    description: "Визуализация алгоритмов поиска пути: A*, Dijkstra, BFS.",
+    tags: ["инструмент", "алгоритмы", "визуализация"],
+    status: "prototype",
+    href: "/tools/pathfinding",
+  },
+  {
+    id: "sorting",
+    title: "Сортировки",
+    description: "Визуализация алгоритмов сортировки в реальном времени.",
+    tags: ["инструмент", "алгоритмы", "визуализация"],
+    status: "prototype",
+    href: "/tools/sorting",
   },
 ];
 
