@@ -118,6 +118,7 @@ export async function getScores(limit = 50): Promise<ScoreEntry[]> {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       },
+      cache: 'no-store',
     }
   );
 
