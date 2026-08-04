@@ -21,6 +21,122 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # --- Elka embed -------------------------------------------------------
+      # The bundle is a pre-built static page (~58 MB of art) that lives in the
+      # private repo Daos711/elka-bundle, release v1, asset dist-bundle.zip.
+      # It is downloaded here, unpacked into public/embeds/elka/<dir>, and
+      # shipped inside the Pages artifact. It is never committed: the unpack
+      # target is in .gitignore.
+      #
+      # Two values are derived from the ELKA_PASSWORD secret, with different
+      # prefixes so that neither one reveals the other:
+      #   <dir>    sha256("elka-path:" + word), first 32 hex chars
+      #            -> the folder the assets are unpacked into. Masked in the
+      #               log; it must not appear in this public repository.
+      #   <digest> sha256("elka-gate:" + word), full
+      #            -> baked into the page as NEXT_PUBLIC_ELKA_DIGEST so the
+      #               page can tell a right word from a wrong one.
+      # The page recomputes <dir> in the browser from the word the visitor
+      # types, so the asset path is never written down anywhere.
+      #
+      # To rotate: change ELKA_PASSWORD (and ELKA_BUNDLE_TOKEN if it also needs
+      # replacing) in repository secrets and re-run this workflow. Both derived
+      # values change together, so the old word stops matching and every old
+      # /embeds/elka/<dir>/ link 404s. Nothing else needs editing.
+      #
+      # If ELKA_PASSWORD is unset the embed is skipped and the page renders an
+      # inert "not built" state; the rest of the site deploys normally. If it
+      # IS set, a missing release or bad token fails the deploy rather than
+      # shipping a page whose word is accepted but whose assets 404.
+      - name: Derive Elka gate values
+        env:
+          ELKA_PASSWORD: ${{ secrets.ELKA_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ELKA_PASSWORD:-}" ]; then
+            echo "::warning::ELKA_PASSWORD is not set - the Elka embed will be skipped."
+            echo "ELKA_ENABLED=0" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          word="$(printf '%s' "$ELKA_PASSWORD" | tr -d '\r\n' \
+                  | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          dir="$(printf '%s' "elka-path:${word}" | sha256sum | cut -d' ' -f1 | cut -c1-32)"
+          digest="$(printf '%s' "elka-gate:${word}" | sha256sum | cut -d' ' -f1)"
+          # Mask the folder name before anything can print it. Actions logs on a
+          # public repository are public.
+          echo "::add-mask::$dir"
+          {
+            echo "ELKA_ENABLED=1"
+            echo "ELKA_DIR=$dir"
+            echo "NEXT_PUBLIC_ELKA_DIGEST=$digest"
+          } >> "$GITHUB_ENV"
+
+      - name: Fetch and unpack Elka bundle
+        if: env.ELKA_ENABLED == '1'
+        env:
+          ELKA_BUNDLE_TOKEN: ${{ secrets.ELKA_BUNDLE_TOKEN }}
+          BUNDLE_REPO: Daos711/elka-bundle
+          BUNDLE_TAG: v1
+          BUNDLE_ASSET: dist-bundle.zip
+        run: |
+          set -euo pipefail
+          if [ -z "${ELKA_BUNDLE_TOKEN:-}" ]; then
+            echo "::error::ELKA_PASSWORD is set but ELKA_BUNDLE_TOKEN is not."
+            exit 1
+          fi
+
+          release="$(curl -sS -w '\n%{http_code}' \
+            -H "Authorization: Bearer $ELKA_BUNDLE_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${BUNDLE_REPO}/releases/tags/${BUNDLE_TAG}")"
+          status="$(printf '%s' "$release" | tail -n1)"
+          if [ "$status" != "200" ]; then
+            echo "::error::Cannot read ${BUNDLE_REPO} release ${BUNDLE_TAG} (HTTP ${status}). Check that the release exists and that ELKA_BUNDLE_TOKEN grants Contents: Read on that repo."
+            exit 1
+          fi
+
+          asset_id="$(printf '%s' "$release" | sed '$d' \
+            | jq -r --arg n "$BUNDLE_ASSET" '.assets[] | select(.name==$n) | .id' | head -n1)"
+          if [ -z "$asset_id" ] || [ "$asset_id" = "null" ]; then
+            echo "::error::Release ${BUNDLE_TAG} of ${BUNDLE_REPO} has no asset named ${BUNDLE_ASSET}."
+            exit 1
+          fi
+
+          curl -sSfL --retry 3 --retry-delay 5 \
+            -H "Authorization: Bearer $ELKA_BUNDLE_TOKEN" \
+            -H "Accept: application/octet-stream" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o /tmp/elka-bundle.zip \
+            "https://api.github.com/repos/${BUNDLE_REPO}/releases/assets/${asset_id}"
+
+          target="public/embeds/elka/${ELKA_DIR}"
+          rm -rf public/embeds/elka
+          mkdir -p "$target"
+          unzip -q /tmp/elka-bundle.zip -d "$target"
+          rm -f /tmp/elka-bundle.zip
+
+          # Some zips wrap everything in a single top-level directory. Flatten it
+          # so index.html always sits at the root of <target>.
+          if [ ! -f "$target/index.html" ] \
+             && [ "$(find "$target" -mindepth 1 -maxdepth 1 | wc -l)" = "1" ]; then
+            inner="$(find "$target" -mindepth 1 -maxdepth 1 -type d)"
+            if [ -n "$inner" ] && [ -f "$inner/index.html" ]; then
+              shopt -s dotglob
+              mv "$inner"/* "$target"/
+              rmdir "$inner"
+              shopt -u dotglob
+            fi
+          fi
+          if [ ! -f "$target/index.html" ]; then
+            echo "::error::${BUNDLE_ASSET} does not contain an index.html at its root."
+            exit 1
+          fi
+
+          # Report size only - never a path, which would contain the folder name.
+          echo "Elka bundle unpacked: $(find "$target" -type f | wc -l) files, $(du -sh "$target" | cut -f1)."
+      # --- end Elka embed ---------------------------------------------------
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,6 +151,8 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # Set by "Derive Elka gate values"; empty when the embed is skipped.
+          NEXT_PUBLIC_ELKA_DIGEST: ${{ env.NEXT_PUBLIC_ELKA_DIGEST }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
