@@ -43,3 +43,7 @@ next-env.d.ts
 
 # Simulation results
 sim-results/
+
+# Elka embed: fetched from a private release during the deploy workflow and
+# unpacked here. Never commit it — this repository is public.
+/public/embeds/elka/
