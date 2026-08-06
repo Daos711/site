@@ -55,6 +55,28 @@ const DIR_LENGTH = 32;
 const EMBED_ROOT = "/embeds/elka";
 const SESSION_KEY = "elka.dir";
 
+/**
+ * Query parameters the gate forwards to the simulator.
+ *
+ * The iframe URL is built here, so `?dev=1` typed on the gate's own address never reached the
+ * frame — the owner had to open devtools and copy the frame URL by hand to get the developer
+ * strip. Forwarded as an allow-list rather than by passing `location.search` through: the gate's
+ * URL is also where the folder word is typed, and nothing about that may be handed to the frame.
+ */
+const FORWARDED_PARAMS = ["dev", "seed"] as const;
+
+/** `?dev=1&seed=…` for the iframe, or an empty string when neither was given. */
+function forwardedQuery(search: string): string {
+  const incoming = new URLSearchParams(search);
+  const forwarded = new URLSearchParams();
+  for (const key of FORWARDED_PARAMS) {
+    const value = incoming.get(key);
+    if (value !== null) forwarded.set(key, value);
+  }
+  const query = forwarded.toString();
+  return query ? `?${query}` : "";
+}
+
 /** Empty in the source tree; filled in by the deploy workflow. */
 const DIGEST = process.env.NEXT_PUBLIC_ELKA_DIGEST ?? "";
 
@@ -68,6 +90,9 @@ async function sha256Hex(input: string): Promise<string> {
 
 export function ElkaGate() {
   const [dir, setDir] = useState<string | null>(null);
+  // Read once on mount rather than during render: `location` does not exist while Next is
+  // rendering this on the server, and the value cannot change without a navigation anyway.
+  const [query, setQuery] = useState("");
   const [word, setWord] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -84,6 +109,10 @@ export function ElkaGate() {
     } catch {
       // Private mode with storage disabled — just ask for the word.
     }
+  }, []);
+
+  useEffect(() => {
+    setQuery(forwardedQuery(window.location.search));
   }, []);
 
   useEffect(() => {
@@ -192,7 +221,7 @@ export function ElkaGate() {
         }}
       >
         <iframe
-          src={`${EMBED_ROOT}/${dir}/index.html`}
+          src={`${EMBED_ROOT}/${dir}/index.html${query}`}
           title="Ёлка"
           allow="autoplay; fullscreen; gamepad"
           allowFullScreen
