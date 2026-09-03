@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "psn:poc": "node scripts/psn-poc/index.mjs",
+    "psn:poc:test": "node --test scripts/psn-poc/*.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
@@ -14,6 +16,7 @@
     "lucide-react": "^0.562.0",
     "matter-js": "^0.20.0",
     "next": "16.1.0",
+    "psn-api": "2.18.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0"

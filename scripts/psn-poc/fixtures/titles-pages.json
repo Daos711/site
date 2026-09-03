@@ -1,0 +1,59 @@
+{
+  "pages": [
+    {
+      "trophyTitles": [
+        {
+          "npCommunicationId": "NPWR90001_00",
+          "npServiceName": "trophy2",
+          "trophyTitleName": "Fixture Five",
+          "trophyTitleIconUrl": "https://example.invalid/fixture-five.png",
+          "trophyTitlePlatform": "PS5",
+          "progress": 55,
+          "definedTrophies": { "bronze": 8, "silver": 2, "gold": 1, "platinum": 1 },
+          "earnedTrophies": { "bronze": 4, "silver": 1, "gold": 0, "platinum": 0 },
+          "lastUpdatedDateTime": "2026-02-03T12:00:00Z"
+        },
+        {
+          "npCommunicationId": "NPWR90002_00",
+          "npServiceName": "trophy",
+          "trophyTitleName": "Fixture Four",
+          "trophyTitleIconUrl": "https://example.invalid/fixture-four.png",
+          "trophyTitlePlatform": "PS4,PSVITA",
+          "progress": 100,
+          "definedTrophies": { "bronze": 5, "silver": 3, "gold": 1, "platinum": 1 },
+          "earnedTrophies": { "bronze": 5, "silver": 3, "gold": 1, "platinum": 1 },
+          "lastUpdatedDateTime": "2026-03-03T12:00:00Z"
+        }
+      ],
+      "totalItemCount": 3,
+      "nextOffset": 2
+    },
+    {
+      "trophyTitles": [
+        {
+          "npCommunicationId": "NPWR90001_00",
+          "npServiceName": "trophy2",
+          "trophyTitleName": "Fixture Five",
+          "trophyTitleIconUrl": "https://example.invalid/fixture-five.png",
+          "trophyTitlePlatform": "PS5",
+          "progress": 55,
+          "definedTrophies": { "bronze": 8, "silver": 2, "gold": 1, "platinum": 1 },
+          "earnedTrophies": { "bronze": 4, "silver": 1, "gold": 0, "platinum": 0 },
+          "lastUpdatedDateTime": "2026-02-03T12:00:00Z"
+        },
+        {
+          "npCommunicationId": "NPWR90003_00",
+          "npServiceName": "trophy2",
+          "trophyTitleName": "Fixture Complete",
+          "trophyTitleIconUrl": "https://example.invalid/fixture-complete.png",
+          "trophyTitlePlatform": "PS5",
+          "progress": 100,
+          "definedTrophies": { "bronze": 2, "silver": 1, "gold": 1, "platinum": 0 },
+          "earnedTrophies": { "bronze": 2, "silver": 1, "gold": 1, "platinum": 0 },
+          "lastUpdatedDateTime": "2026-01-03T12:00:00Z"
+        }
+      ],
+      "totalItemCount": 3
+    }
+  ]
+}

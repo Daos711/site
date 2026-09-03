@@ -1,0 +1,37 @@
+name: PSN Trophy PoC
+
+on:
+  workflow_dispatch:
+    inputs:
+      np_communication_id:
+        description: Optional exact npCommunicationId to inspect
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  psn-poc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run psn:poc:test
+
+      - name: Run read-only PSN Trophy PoC
+        env:
+          PSN_NPSSO: ${{ secrets.PSN_NPSSO }}
+          PSN_POC_NP_COMMUNICATION_ID: ${{ inputs.np_communication_id }}
+        run: npm run psn:poc

@@ -47,3 +47,6 @@ sim-results/
 # Elka embed: fetched from a private release during the deploy workflow and
 # unpacked here. Never commit it — this repository is public.
 /public/embeds/elka/
+
+# Local read-only PSN Trophy PoC report. It may contain private profile data.
+/.tmp/psn-poc/

@@ -1,0 +1,106 @@
+{
+  "groups": {
+    "trophyGroups": [
+      {
+        "trophyGroupId": "002",
+        "trophyGroupName": "Second extra set",
+        "trophyGroupIconUrl": "https://example.invalid/group-002.png",
+        "definedTrophies": { "bronze": 1, "silver": 0, "gold": 0, "platinum": 0 }
+      },
+      {
+        "trophyGroupId": "default",
+        "trophyGroupName": "Base set",
+        "trophyGroupIconUrl": "https://example.invalid/group-default.png",
+        "definedTrophies": { "bronze": 1, "silver": 1, "gold": 0, "platinum": 0 }
+      },
+      {
+        "trophyGroupId": "001",
+        "trophyGroupName": "First extra set",
+        "trophyGroupIconUrl": "https://example.invalid/group-001.png",
+        "definedTrophies": { "bronze": 0, "silver": 0, "gold": 1, "platinum": 0 }
+      }
+    ]
+  },
+  "groupEarnings": {
+    "progress": 50,
+    "earnedTrophies": { "bronze": 1, "silver": 0, "gold": 1, "platinum": 0 },
+    "lastUpdatedDateTime": "2026-02-03T12:00:00Z",
+    "trophyGroups": [
+      {
+        "trophyGroupId": "001",
+        "progress": 100,
+        "earnedTrophies": { "bronze": 0, "silver": 0, "gold": 1, "platinum": 0 },
+        "lastUpdatedDateTime": "2026-02-02T12:00:00Z"
+      },
+      {
+        "trophyGroupId": "default",
+        "progress": 50,
+        "earnedTrophies": { "bronze": 1, "silver": 0, "gold": 0, "platinum": 0 },
+        "lastUpdatedDateTime": "2026-02-03T12:00:00Z"
+      },
+      {
+        "trophyGroupId": "002",
+        "progress": 0,
+        "earnedTrophies": { "bronze": 0, "silver": 0, "gold": 0, "platinum": 0 },
+        "lastUpdatedDateTime": null
+      }
+    ]
+  },
+  "metadata": [
+    {
+      "trophyId": 3,
+      "trophyGroupId": "001",
+      "trophyType": "gold",
+      "trophyName": "Extra challenge",
+      "trophyDetail": "Complete the extra challenge.",
+      "trophyHidden": false,
+      "trophyIconUrl": "https://example.invalid/trophy-3.png"
+    },
+    {
+      "trophyId": 1,
+      "trophyGroupId": "default",
+      "trophyType": "bronze",
+      "trophyName": "Token Collector",
+      "trophyDetail": "Collect one game token.",
+      "trophyHidden": false,
+      "trophyIconUrl": "https://example.invalid/trophy-1.png"
+    },
+    {
+      "trophyId": 2,
+      "trophyGroupId": "default",
+      "trophyType": "silver",
+      "trophyName": "Still exploring",
+      "trophyDetail": "Discover another route.",
+      "trophyHidden": true,
+      "trophyIconUrl": "https://example.invalid/trophy-2.png"
+    }
+  ],
+  "earned": [
+    {
+      "trophyId": 2,
+      "trophyType": "silver",
+      "trophyHidden": true,
+      "earned": false,
+      "trophyRare": 1,
+      "trophyEarnedRate": "4.5"
+    },
+    {
+      "trophyId": 3,
+      "trophyType": "gold",
+      "trophyHidden": false,
+      "earned": true,
+      "earnedDateTime": "2026-02-02T12:00:00Z",
+      "trophyRare": 2,
+      "trophyEarnedRate": "18.25"
+    },
+    {
+      "trophyId": 1,
+      "trophyType": "bronze",
+      "trophyHidden": false,
+      "earned": true,
+      "earnedDateTime": "2026-02-03T12:00:00Z",
+      "trophyRare": 3,
+      "trophyEarnedRate": "72.5"
+    }
+  ]
+}
