@@ -28,6 +28,18 @@ export function normalizeProfile(rawProfile) {
   };
 }
 
+export function deriveTitleStatus({
+  definedTrophies = {},
+  earnedTrophies = {},
+  progress = 0,
+}) {
+  return {
+    hasPlatinum: numberOrZero(definedTrophies.platinum) > 0,
+    platinumEarned: numberOrZero(earnedTrophies.platinum) > 0,
+    is100Percent: numberOrZero(progress) === 100,
+  };
+}
+
 function normalizePlatforms(value) {
   if (Array.isArray(value)) {
     return value.map(String).map((platform) => platform.trim()).filter(Boolean);
@@ -44,7 +56,7 @@ export function normalizeTitle(rawTitle) {
     throw new Error("A title has an unsupported npServiceName.");
   }
 
-  return {
+  const title = {
     npCommunicationId: String(rawTitle.npCommunicationId),
     npServiceName: rawTitle.npServiceName,
     titleName: String(rawTitle.trophyTitleName ?? ""),
@@ -55,6 +67,7 @@ export function normalizeTitle(rawTitle) {
     earnedTrophies: normalizeTrophyCounts(rawTitle.earnedTrophies),
     lastUpdatedDateTime: String(rawTitle.lastUpdatedDateTime ?? ""),
   };
+  return { ...title, ...deriveTitleStatus(title) };
 }
 
 function updatedAt(title) {
@@ -146,27 +159,35 @@ export function mergeTrophies(metadata, earnedState) {
 export function buildNormalizedReport({
   generatedAt,
   groupEarnings,
-  groups,
+  normalizedGroups,
   profile,
   selectedTitle,
   titles,
-  trophyEarnings,
-  trophyMetadata,
+  trophies,
+  validation,
 }) {
+  const summary = {
+    ...selectedTitle,
+    progress: numberOrZero(groupEarnings?.progress),
+    earnedTrophies: normalizeTrophyCounts(groupEarnings?.earnedTrophies),
+    lastUpdatedDateTime:
+      groupEarnings?.lastUpdatedDateTime ?? selectedTitle.lastUpdatedDateTime,
+  };
+
   return {
     generatedAt,
+    target: {
+      mode: "cross-account",
+      resolution: "universal-search",
+      exactOnlineIdMatch: true,
+    },
     profile: normalizeProfile(profile),
     titles: titles.map(normalizeTitle),
     selectedTitle: {
-      summary: {
-        ...selectedTitle,
-        progress: numberOrZero(groupEarnings?.progress),
-        earnedTrophies: normalizeTrophyCounts(groupEarnings?.earnedTrophies),
-        lastUpdatedDateTime:
-          groupEarnings?.lastUpdatedDateTime ?? selectedTitle.lastUpdatedDateTime,
-      },
-      groups: normalizeGroups(groups, groupEarnings),
-      trophies: mergeTrophies(trophyMetadata, trophyEarnings),
+      summary: { ...summary, ...deriveTitleStatus(summary) },
+      groups: normalizedGroups,
+      trophies,
     },
+    validation,
   };
 }

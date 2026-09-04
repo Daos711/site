@@ -18,10 +18,23 @@ test("PSN workflow is manual, read-only, Node 20, and does not publish reports",
   assert.match(workflow, /run: npm ci/);
   assert.match(workflow, /run: npm run psn:poc:test/);
   assert.match(workflow, /PSN_NPSSO: \$\{\{ secrets\.PSN_NPSSO \}\}/);
+  assert.doesNotMatch(workflow, /PSN_NPSSO: \$\{\{ (?:vars|inputs)\./);
+  assert.match(
+    workflow,
+    /PSN_TARGET_ONLINE_ID: \$\{\{ vars\.PSN_TARGET_ONLINE_ID \}\}/,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /PSN_TARGET_ONLINE_ID: \$\{\{ (?:secrets|inputs)\./,
+  );
   assert.match(
     workflow,
     /PSN_POC_NP_COMMUNICATION_ID: \$\{\{ inputs\.np_communication_id \}\}/,
   );
   assert.match(workflow, /run: npm run psn:poc/);
+  assert.ok(
+    workflow.indexOf("run: npm run psn:poc:test") <
+      workflow.lastIndexOf("run: npm run psn:poc"),
+  );
   assert.doesNotMatch(workflow, /upload-artifact|git push|deploy/i);
 });

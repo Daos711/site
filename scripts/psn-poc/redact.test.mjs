@@ -19,6 +19,8 @@ test("secret-like key names are rejected case-insensitively at any depth", () =>
     "cookie",
     "set-cookie",
     "authorization",
+    "accountId",
+    "onlineId",
     "secret",
   ];
 
@@ -73,4 +75,63 @@ test("validation errors never include the detected secret", () => {
 
   assert.ok(caught instanceof UnsafeReportError);
   assert.equal(caught.message.includes(secretValues[1]), false);
+});
+
+test("a nested raw authorization object is rejected", () => {
+  assert.throws(
+    () =>
+      assertReportSafe({
+        nested: { authorization: { accessToken: "sanitised-value" } },
+      }),
+    UnsafeReportError,
+  );
+});
+
+test("known target identifiers are rejected under neutral keys", () => {
+  const identifierValues = [
+    "9000000000000000001",
+    "fixture-target-player",
+  ];
+
+  for (const identifier of identifierValues) {
+    assert.throws(
+      () =>
+        assertReportSafe(
+          { neutral: `prefix-${identifier}-suffix` },
+          { identifierValues },
+        ),
+      UnsafeReportError,
+    );
+  }
+
+  assert.throws(
+    () =>
+      assertReportSafe(
+        { neutral: "ＦＩＸＴＵＲＥ－ＴＡＲＧＥＴ－ＰＬＡＹＥＲ" },
+        { identifierValues },
+      ),
+    UnsafeReportError,
+  );
+});
+
+test("a raw universal search response is rejected", () => {
+  assert.throws(
+    () =>
+      assertReportSafe({
+        domainResponses: [
+          {
+            domain: "SocialAllAccounts",
+            results: [
+              {
+                socialMetadata: {
+                  accountId: "9000000000000000001",
+                  onlineId: "fixture-target-player",
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    UnsafeReportError,
+  );
 });

@@ -1,16 +1,14 @@
-import {
-  exchangeAccessCodeForAuthTokens,
-  exchangeNpssoForAccessCode,
-} from "psn-api";
-
 import { runPsnStage } from "./errors.mjs";
+import { defaultPsnClient } from "./psn-client.mjs";
 
-export async function authenticateWithNpsso(npsso) {
+export async function authenticateWithNpsso(npsso, client = defaultPsnClient) {
   const accessCode = await runPsnStage("NPSSO exchange", () =>
-    exchangeNpssoForAccessCode(npsso),
+    client.exchangeNpssoForAccessCode(npsso),
+    { code: "NPSSO_EXCHANGE_FAILED" },
   );
   const tokens = await runPsnStage("access-token exchange", () =>
-    exchangeAccessCodeForAuthTokens(accessCode),
+    client.exchangeAccessCodeForAuthTokens(accessCode),
+    { code: "TOKEN_EXCHANGE_FAILED" },
   );
 
   return {

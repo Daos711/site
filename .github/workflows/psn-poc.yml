@@ -33,5 +33,6 @@ jobs:
       - name: Run read-only PSN Trophy PoC
         env:
           PSN_NPSSO: ${{ secrets.PSN_NPSSO }}
+          PSN_TARGET_ONLINE_ID: ${{ vars.PSN_TARGET_ONLINE_ID }}
           PSN_POC_NP_COMMUNICATION_ID: ${{ inputs.np_communication_id }}
         run: npm run psn:poc

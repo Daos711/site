@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  deriveTitleStatus,
   mergeTrophies,
   normalizeGroups,
   normalizeTitle,
@@ -16,6 +17,9 @@ test("normalizeTitle preserves PS5 trophy2 identity and platform", async () => {
   assert.equal(title.npCommunicationId, "NPWR90001_00");
   assert.equal(title.npServiceName, "trophy2");
   assert.deepEqual(title.platforms, ["PS5"]);
+  assert.equal(title.hasPlatinum, true);
+  assert.equal(title.platinumEarned, false);
+  assert.equal(title.is100Percent, false);
 });
 
 test("normalizeTitle preserves legacy trophy identity and shared platforms", async () => {
@@ -25,6 +29,9 @@ test("normalizeTitle preserves legacy trophy identity and shared platforms", asy
   assert.equal(title.npCommunicationId, "NPWR90002_00");
   assert.equal(title.npServiceName, "trophy");
   assert.deepEqual(title.platforms, ["PS4", "PSVITA"]);
+  assert.equal(title.hasPlatinum, true);
+  assert.equal(title.platinumEarned, true);
+  assert.equal(title.is100Percent, true);
 });
 
 test("mergeTrophies joins by trophyId regardless of raw array order", async () => {
@@ -82,4 +89,31 @@ test("selectSampleTitle falls back to the newest completed title", () => {
   ];
 
   assert.equal(selectSampleTitle(titles)?.npCommunicationId, "newer");
+});
+
+test("derived platinum and completion statuses remain independent", () => {
+  assert.deepEqual(
+    deriveTitleStatus({
+      definedTrophies: { platinum: 1 },
+      earnedTrophies: { platinum: 1 },
+      progress: 100,
+    }),
+    { hasPlatinum: true, platinumEarned: true, is100Percent: true },
+  );
+  assert.deepEqual(
+    deriveTitleStatus({
+      definedTrophies: { platinum: 1 },
+      earnedTrophies: { platinum: 0 },
+      progress: 75,
+    }),
+    { hasPlatinum: true, platinumEarned: false, is100Percent: false },
+  );
+  assert.deepEqual(
+    deriveTitleStatus({
+      definedTrophies: { platinum: 0 },
+      earnedTrophies: { platinum: 0 },
+      progress: 100,
+    }),
+    { hasPlatinum: false, platinumEarned: false, is100Percent: true },
+  );
 });

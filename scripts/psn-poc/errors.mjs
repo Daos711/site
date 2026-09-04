@@ -25,12 +25,13 @@ export class PsnPocError extends Error {
   }
 }
 
-export async function runPsnStage(stage, operation) {
+export async function runPsnStage(stage, operation, { code = null } = {}) {
   try {
     return await operation();
   } catch (error) {
     if (error instanceof PsnPocError) throw error;
     throw new PsnPocError(stage, {
+      code,
       status: readHttpStatus(error),
     });
   }
@@ -46,5 +47,5 @@ export function formatSafeError(error) {
     return `PSN PoC failed during ${error.stage}${suffix}.`;
   }
 
-  return "PSN PoC failed unexpectedly. No authentication details were printed.";
+  return "PSN PoC failed unexpectedly (code UNEXPECTED_ERROR). No authentication details were printed.";
 }

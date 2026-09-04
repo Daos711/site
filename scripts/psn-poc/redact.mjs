@@ -5,6 +5,8 @@ const FORBIDDEN_KEYS = new Set([
   "accesscode",
   "idtoken",
   "authorization",
+  "accountid",
+  "onlineid",
   "cookie",
   "cookies",
   "setcookie",
@@ -23,15 +25,31 @@ export class UnsafeReportError extends Error {
   }
 }
 
-export function assertReportSafe(value, { secretValues = [] } = {}) {
+export function assertReportSafe(
+  value,
+  { identifierValues = [], secretValues = [] } = {},
+) {
   const secrets = secretValues.filter(
-    (secret) => typeof secret === "string" && secret.length > 0,
+    (candidate) => typeof candidate === "string" && candidate.length > 0,
   );
+  const normalizedIdentifiers = identifierValues
+    .filter(
+      (candidate) => typeof candidate === "string" && candidate.length > 0,
+    )
+    .map((candidate) => candidate.normalize("NFKC").toLocaleLowerCase("en-US"));
   const visited = new Set();
 
   function visit(current) {
     if (typeof current === "string") {
-      if (secrets.some((secret) => current.includes(secret))) {
+      const normalizedCurrent = current
+        .normalize("NFKC")
+        .toLocaleLowerCase("en-US");
+      if (
+        secrets.some((secret) => current.includes(secret)) ||
+        normalizedIdentifiers.some((identifier) =>
+          normalizedCurrent.includes(identifier),
+        )
+      ) {
         throw new UnsafeReportError();
       }
       return;

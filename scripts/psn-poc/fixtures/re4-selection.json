@@ -1,0 +1,39 @@
+{
+  "titles": [
+    {
+      "npCommunicationId": "NPWR91003_00",
+      "npServiceName": "trophy2",
+      "titleName": "Resident Evil 4 Gold Edition",
+      "lastUpdatedDateTime": "2026-03-01T00:00:00Z"
+    },
+    {
+      "npCommunicationId": "NPWR91002_00",
+      "npServiceName": "trophy2",
+      "titleName": " Resident   Evil 4 ",
+      "lastUpdatedDateTime": "2026-02-01T00:00:00Z"
+    },
+    {
+      "npCommunicationId": "NPWR91001_00",
+      "npServiceName": "trophy2",
+      "titleName": "Resident Evil 4",
+      "lastUpdatedDateTime": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "detailsById": {
+    "NPWR91002_00": {
+      "groups": {
+        "trophyGroups": [
+          { "trophyGroupId": "default", "trophyGroupName": "Resident Evil 4" }
+        ]
+      }
+    },
+    "NPWR91001_00": {
+      "groups": {
+        "trophyGroups": [
+          { "trophyGroupId": "default", "trophyGroupName": "Resident Evil 4" },
+          { "trophyGroupId": "001", "trophyGroupName": " Separate   Ways " }
+        ]
+      }
+    }
+  }
+}
