@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { watchElkaFrame } from "./elka-frame-sizing";
 
 /* ──────────────────────────────────────────────────────────────────────────
  * Framing — the only place these values live. Tune here.
  *
  * The game paints itself bright blue and purple and sizes its own canvas to
- * the viewport, so the frame gives it a fixed height and otherwise stays out
+ * the viewport, so battle gets a fixed height and the menu gets its content height.
+ * The surrounding layout otherwise stays out
  * of its way: a dark page, a rounded panel, a soft outward shadow tinted
  * toward the game's own palette so the contrast reads as deliberate.
  * ────────────────────────────────────────────────────────────────────────── */
@@ -36,16 +38,21 @@ const FRAME = {
 } as const;
 
 function ElkaFrame({ src }: { src: string }) {
-  // Keep the viewport independent of the game. Long menus use native iframe scrolling;
-  // measuring their content here would feed viewport changes back into the battle canvas.
+  const frameRef = useRef<HTMLIFrameElement>(null);
   const stableHeight = `max(${FRAME.minHeight}px, calc(100dvh - ${FRAME.reserved}))`;
+
+  useEffect(() => {
+    if (frameRef.current) return watchElkaFrame(frameRef.current, stableHeight, FRAME.minHeight);
+  }, [src, stableHeight]);
 
   return (
     <iframe
+      ref={frameRef}
       src={src}
       title="Ёлка"
       allow="autoplay; fullscreen; gamepad"
       allowFullScreen
+      scrolling="no"
       className="w-full block border-0"
       style={{ height: stableHeight }}
     />
