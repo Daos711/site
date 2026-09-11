@@ -36,6 +36,8 @@ const FRAME = {
 } as const;
 
 function ElkaFrame({ src }: { src: string }) {
+  // Keep the viewport independent of the game. Long menus use native iframe scrolling;
+  // measuring their content here would feed viewport changes back into the battle canvas.
   const stableHeight = `max(${FRAME.minHeight}px, calc(100dvh - ${FRAME.reserved}))`;
 
   return (
@@ -44,9 +46,8 @@ function ElkaFrame({ src }: { src: string }) {
       title="Ёлка"
       allow="autoplay; fullscreen; gamepad"
       allowFullScreen
-      scrolling="no"
       className="w-full block border-0"
-      style={{ height: stableHeight, overflow: "hidden" }}
+      style={{ height: stableHeight }}
     />
   );
 }

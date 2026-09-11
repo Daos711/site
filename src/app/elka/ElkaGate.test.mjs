@@ -13,8 +13,7 @@ test("ElkaFrame has a stable, outer-viewport-owned height contract", () => {
     frameSource,
     /const stableHeight = `max\(\$\{FRAME\.minHeight\}px, calc\(100dvh - \$\{FRAME\.reserved\}\)\)`/,
   );
-  assert.match(frameSource, /style=\{\{ height: stableHeight, overflow: "hidden" \}\}/);
-  assert.match(frameSource, /scrolling="no"/);
+  assert.match(frameSource, /style=\{\{ height: stableHeight \}\}/);
 });
 
 test("ElkaFrame cannot feed embedded content measurements back into its viewport", () => {
@@ -35,15 +34,9 @@ test("ElkaFrame cannot feed embedded content measurements back into its viewport
   assert.doesNotMatch(frameSource, /\b(?:transform|zoom)\b/);
 });
 
-test("oscillating embedded content cannot oscillate the iframe height", () => {
-  const outerViewportHeight = 1411;
-  const reservedHeight = 12 * 16;
-  const observedContentHeights = Array.from({ length: 40 }, (_, index) =>
-    index % 2 === 0 ? 1210 : 1219,
-  );
-  const frameHeights = observedContentHeights.map(() =>
-    Math.max(420, outerViewportHeight - reservedHeight),
-  );
-
-  assert.deepEqual([...new Set(frameHeights)], [1219]);
+test("long menus retain native iframe scrolling so Play remains reachable", () => {
+  assert.ok(frameSource, "ElkaFrame source must be present");
+  assert.doesNotMatch(frameSource, /scrolling\s*=\s*["']no["']/);
+  assert.doesNotMatch(frameSource, /overflow(?:Y|Block)?\s*:\s*["'](?:hidden|clip)["']/);
+  assert.doesNotMatch(frameSource, /overflow(?:-y)?-(?:hidden|clip)/);
 });
