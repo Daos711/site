@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:elka-frame": "node --test src/app/elka/ElkaGate.test.mjs"
+    "test:elka-frame": "node --test src/app/elka/ElkaGate.test.mjs",
+    "predev": "node scripts/build-gothic-locks.mjs --prepare",
+    "prebuild": "node scripts/build-gothic-locks.mjs --prepare",
+    "postbuild": "node scripts/build-gothic-locks.mjs",
+    "test:gothic": "node --test src/lib/gothic-locks/solver.test.mjs src/lib/gothic-locks/catalog.test.mjs scripts/test-gothic-pwa.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

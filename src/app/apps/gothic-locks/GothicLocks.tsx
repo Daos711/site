@@ -1,0 +1,243 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Castle, Check, ChevronRight, Compass, Copy, Download, KeyRound, LockKeyhole, MapPin, Mountain, Search, ShieldCheck, Sparkles, Trees } from "lucide-react";
+import { LOCK_CATALOG as catalog } from "@/lib/gothic-locks/catalog";
+import type { LockEntry } from "@/lib/gothic-locks/catalog";
+import type { LockConfig, Move } from "@/lib/gothic-locks/types";
+import { groupMoves, simulateMove, validateConfig, verifySolution } from "@/lib/gothic-locks/simulator";
+import styles from "./gothic-locks.module.css";
+
+type Skill = "none" | "trained" | "master";
+type Saved = { skill: Skill; opened: string[]; recent: string[]; changed: string[]; progress: Record<string, { signature: string; step: number }> };
+type SolverResult = { status: string; moves?: Move[]; reason?: string };
+type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+const STORAGE = "lab.gothic-locks.v1";
+const EMPTY: Saved = { skill: "none", opened: [], recent: [], changed: [], progress: {} };
+const skills: { id: Skill; label: string }[] = [{ id: "none", label: "Без навыка" }, { id: "trained", label: "Обучен" }, { id: "master", label: "Мастер" }];
+const camps = [
+  { id: "old", name: "Старый лагерь", detail: "За стенами замка", icon: Castle },
+  { id: "new", name: "Новый лагерь", detail: "У озера и плотины", icon: Mountain },
+  { id: "swamp", name: "Болотный лагерь", detail: "Поселение Братства", icon: Trees },
+] as const;
+const campNames: Record<string, string> = { old: "Старый лагерь", new: "Новый лагерь", swamp: "Болотный лагерь", other: "Другие места" };
+const blankConfig = (n = 4): LockConfig => ({ positions: Array(n).fill(4), links: Array.from({ length: n }, () => Array(n).fill(0)), direction: "right-decreases" });
+const physicalDirection = (delta: number, config: LockConfig) => (delta === 1) === (config.direction === "right-increases") ? "вправо" : "влево";
+const normalize = (text: string) => text.toLocaleLowerCase("ru").replace(/ё/g, "е").trim();
+
+function readSaved(): Saved {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORAGE) || "null");
+    if (!raw || typeof raw !== "object") return EMPTY;
+    const ids = new Set(catalog.map((entry) => entry.id));
+    const list = (value: unknown) => Array.isArray(value) ? [...new Set(value.filter((id): id is string => typeof id === "string" && ids.has(id)))] : [];
+    const progress: Saved["progress"] = {};
+    if (raw.progress && typeof raw.progress === "object") for (const [id, value] of Object.entries(raw.progress)) {
+      const v = value as { signature?: unknown; step?: unknown };
+      if (ids.has(id) && v && typeof v.signature === "string" && Number.isInteger(v.step) && Number(v.step) >= 0) progress[id] = { signature: v.signature, step: Number(v.step) };
+    }
+    return { skill: skills.some((skill) => skill.id === raw.skill) ? raw.skill : "none", opened: list(raw.opened), recent: list(raw.recent).slice(0, 6), changed: list(raw.changed), progress };
+  } catch { return EMPTY; }
+}
+
+function SkillPicker({ value, onChange }: { value: Skill; onChange: (skill: Skill) => void }) {
+  return <div className={styles.skill} role="group" aria-label="Уровень взлома">{skills.map((skill) => <button key={skill.id} aria-pressed={value === skill.id} onClick={() => onChange(skill.id)}>{skill.label}</button>)}</div>;
+}
+
+function PlateDiagram({ positions, active, onPosition }: { positions: number[]; active?: number; onPosition?: (plate: number, value: number) => void }) {
+  return <figure className={styles.diagram}>
+    <figcaption>Пластины считаются <strong>снизу вверх</strong>. № 1 — самая нижняя.</figcaption>
+    <div className={styles.plateLegend}><span>Позиция 1 · левый край</span><span>7 · правый край</span></div>
+    <div className={styles.plateStack}>{positions.map((_, index) => positions.length - 1 - index).map((plate) => <div key={plate} className={`${styles.plate} ${active === plate ? styles.activePlate : ""}`}>
+      <span className={styles.plateNumber}>№ {plate + 1}</span>
+      <div className={styles.track}>{Array.from({ length: 7 }, (_, index) => index + 1).map((position) => onPosition ? <button key={position} type="button" aria-label={`Пластина ${plate + 1}, позиция ${position}`} aria-pressed={positions[plate] === position} onClick={() => onPosition(plate, position)} className={`${styles.pin} ${position === 4 ? styles.center : ""} ${positions[plate] === position ? styles.selectedPin : ""}`}>{position}</button> : <span key={position} className={`${styles.pin} ${position === 4 ? styles.center : ""} ${positions[plate] === position ? styles.selectedPin : ""}`}>{positions[plate] === position ? position : "·"}</span>)}</div>
+    </div>)}</div>
+    <p className={styles.hint}>Все штифты должны оказаться в центре — в позиции 4.</p>
+  </figure>;
+}
+
+function ManualEditor({ initial, onCalculate, onBack }: { initial?: LockConfig; onCalculate: (config: LockConfig) => void; onBack: () => void }) {
+  const [config, setConfig] = useState<LockConfig>(() => initial ? structuredClone(initial) : blankConfig());
+  const [errors, setErrors] = useState<string[]>([]);
+  const [confirmed, setConfirmed] = useState(false);
+  const update = (next: LockConfig) => { setConfig(next); setConfirmed(false); setErrors([]); };
+  return <section className={styles.editor}>
+    <button className={styles.back} onClick={onBack}><ArrowLeft size={17} /> Назад</button>
+    <div className={styles.eyebrow}>СОБСТВЕННАЯ КОНФИГУРАЦИЯ</div>
+    <h2>Моего сундука нет</h2>
+    <p className={styles.muted}>Введите текущее состояние механизма. Если отмычка сломалась, проверьте и положения, и связи заново.</p>
+    <div className={styles.editorControls}><label>Количество пластин<select value={config.positions.length} onChange={(event) => update(blankConfig(Number(event.target.value)))}>{[4, 5, 6, 7].map((count) => <option key={count} value={count}>{count}</option>)}</select></label><label>Движение вправо<select value={config.direction} onChange={(event) => update({ ...config, direction: event.target.value as LockConfig["direction"] })}><option value="right-increases">Увеличивает позицию (1 → 7)</option><option value="right-decreases">Уменьшает позицию (7 → 1)</option></select></label></div>
+    <h3>1. Положения штифтов</h3>
+    <p className={styles.hint}>Нажмите на позицию каждой пластины. Смотрите на механизм так же, как в игре.</p>
+    <PlateDiagram positions={config.positions} onPosition={(plate, value) => update({ ...config, positions: config.positions.map((current, index) => index === plate ? value : current) })} />
+    <h3>2. Направленные связи</h3>
+    <p className={styles.hint}>Строка — какую пластину двигаете. Столбец — какая двигается вместе с ней. «+» — в ту же сторону, «−» — в обратную, «0» — не двигается. Обратная связь не подразумевается.</p>
+    <div className={styles.matrixScroll} tabIndex={0} aria-label="Таблица связей, прокрутите в сторону при необходимости"><table className={styles.matrix}><thead><tr><th>Из ↓ / в →</th>{config.positions.map((_, index) => <th key={index}>№ {index + 1}</th>)}</tr></thead><tbody>{config.links.map((row, from) => <tr key={from}><th>№ {from + 1}</th>{row.map((value, to) => <td key={to}>{from === to ? <span className={styles.selfLink}>+</span> : <select aria-label={`Связь из пластины ${from + 1} в ${to + 1}`} value={value} onChange={(event) => update({ ...config, links: config.links.map((line, i) => line.map((v, j) => i === from && j === to ? Number(event.target.value) : v)) })}><option value={0}>0</option><option value={1}>+</option><option value={-1}>−</option></select>}</td>)}</tr>)}</tbody></table></div>
+    <label className={styles.checkLabel}><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> Я сверил все позиции, связи и направление с механизмом в игре</label>
+    {errors.length > 0 && <p role="alert" className={styles.notice}>{errors.join(" ")}</p>}
+    <button className={styles.primary} disabled={!confirmed} onClick={() => { const issues = validateConfig(config); setErrors(issues); if (!issues.length) onCalculate(structuredClone(config)); }}><KeyRound size={18} /> Рассчитать безопасное решение</button>
+  </section>;
+}
+
+function Solution({ config, entry, saved, setSaved, onEdit }: { config: LockConfig; entry?: LockEntry; saved: Saved; setSaved: (updater: (saved: Saved) => Saved) => void; onEdit: (config: LockConfig) => void }) {
+  const [result, setResult] = useState<SolverResult | null>(null);
+  const [step, setStep] = useState(0);
+  const [copyStatus, setCopyStatus] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const [resumed, setResumed] = useState(false);
+  const signature = JSON.stringify(config);
+  const resumeRef = useRef(entry ? saved.progress[entry.id] : undefined);
+  const groups = useMemo(() => groupMoves(result?.status === "solved" ? result.moves || [] : []), [result]);
+  useEffect(() => {
+    const issues = validateConfig(config);
+    if (issues.length) { setResult({ status: "invalid", reason: issues.join(" ") }); return; }
+    setResult(null); setStep(0);
+    let worker: Worker;
+    let timer: ReturnType<typeof setTimeout>;
+    try {
+      worker = new Worker("/apps/gothic-locks-worker.js", { type: "module" });
+      timer = setTimeout(() => { worker.terminate(); setResult({ status: "limit", reason: "Расчёт занял слишком много времени. Попробуйте ещё раз или уточните связи." }); }, 25000);
+      worker.onmessage = (event: MessageEvent<{ result?: SolverResult; error?: string }>) => {
+        clearTimeout(timer);
+        const value = event.data.result;
+        if (value?.status === "solved" && value.moves && verifySolution(config, value.moves)) {
+          setResult(value);
+          const previous = resumeRef.current;
+          const length = groupMoves(value.moves).length;
+          if (attempt === 0 && previous?.signature === signature && previous.step <= length) { setStep(previous.step); setResumed(previous.step > 0); }
+        } else setResult(value?.status === "solved" ? { status: "invalid", reason: "Последовательность не прошла проверку. Подсказки скрыты." } : value || { status: "invalid", reason: event.data.error || "Не удалось рассчитать решение." });
+        worker.terminate();
+      };
+      worker.onerror = () => { clearTimeout(timer); worker.terminate(); setResult({ status: "invalid", reason: "Не удалось загрузить решатель. Откройте приложение онлайн и повторите попытку." }); };
+      worker.postMessage({ config });
+    } catch { setResult({ status: "invalid", reason: "Браузер не смог запустить решатель." }); }
+    return () => { clearTimeout(timer); worker?.terminate(); };
+  }, [config, signature, attempt]);
+  const state = useMemo(() => {
+    let positions = [...config.positions];
+    for (const group of groups.slice(0, step)) for (let i = 0; i < group.count; i++) positions = simulateMove(config, positions, { plate: group.plate, direction: group.direction }) || positions;
+    return positions;
+  }, [config, groups, step]);
+  const changeStep = (next: number) => {
+    setStep(next); setResumed(false);
+    if (entry) setSaved((current) => ({ ...current, progress: { ...current.progress, [entry.id]: { signature, step: next } } }));
+  };
+  const current = groups[step];
+  const direction = current ? physicalDirection(current.direction, config) : "";
+  const text = groups.map((group, index) => `${index + 1}. Пластина № ${group.plate + 1} — ${physicalDirection(group.direction, config)} ${group.count} раз.`).join("\n");
+  return <section className={styles.solution}>
+    <SkillPicker value={saved.skill} onChange={(skill) => setSaved((current) => ({ ...current, skill }))} />
+    <p className={styles.hint}>Безопасная последовательность одинакова для трёх уровней, пока положения и связи совпадают. После ошибки или поломки сверьте все положения и связи. При изменении механизма введите новое состояние.</p>
+    <details className={styles.details}><summary>Сверить исходное состояние и связи</summary><PlateDiagram positions={config.positions} /><div className={styles.linkList}>{config.links.map((row, plate) => <p key={plate}><strong>№ {plate + 1}:</strong> {row.map((value, target) => target !== plate && value ? `№ ${target + 1} ${value === 1 ? "в ту же сторону" : "в обратную сторону"}` : "").filter(Boolean).join("; ") || "двигается отдельно"}</p>)}</div><p>Вправо — {config.direction === "right-increases" ? "к позиции 7" : "к позиции 1"}.</p></details>
+    {!result && <div className={styles.calculating} role="status"><span className={styles.spinner} /> Проверяем каждый ход…</div>}
+    {result && result.status !== "solved" && <div className={styles.notice} role="alert"><h3>{result.status === "unsolvable" ? "Безопасного решения нет" : result.status === "limit" ? "Расчёт не завершён" : "Не удалось выдать подсказку"}</h3><p>{result.reason || "Проверьте исходные положения и направленные связи. Решатель не предлагает ходы с повреждением отмычки."}</p><button className={styles.secondary} onClick={() => setAttempt((value) => value + 1)}>Повторить расчёт</button></div>}
+    {result?.status === "solved" && <>
+      {resumed && <p className={styles.notice}>Продолжение сохранённой инструкции. Убедитесь, что замок в игре остался в показанном ниже состоянии.</p>}
+      <div className={styles.command} aria-live="polite" aria-atomic="true">
+        <div className={styles.commandMeta}><span>{current ? `ШАГ ${step + 1} ИЗ ${groups.length}` : "ПОСЛЕДОВАТЕЛЬНОСТЬ ЗАВЕРШЕНА"}</span><span><ShieldCheck size={15} /> Без поломок</span></div>
+        {current ? <><h3>Пластина № {current.plate + 1}</h3><div className={styles.motion}>{direction === "влево" ? <ArrowLeft size={34} /> : <ArrowRight size={34} />} {direction} <strong>{current.count}</strong> раз</div><p>№ 1 — нижняя пластина. Выполните всю команду, затем нажмите «Готово».</p></> : <><h3>{groups.length ? "Все штифты в центре" : "Замок уже в открытом состоянии"}</h3><p>Если состояние в игре совпадает, замок должен открыться.</p></>}
+        <progress value={step} max={Math.max(groups.length, 1)} aria-label="Прогресс открытия" />
+      </div>
+      <div className={styles.stepActions}><button className={styles.secondary} disabled={step === 0} onClick={() => changeStep(Math.max(0, step - 1))}><ArrowLeft size={17} /> Назад</button>{current ? <button className={styles.primary} onClick={() => changeStep(step + 1)}>Готово, следующий шаг <ArrowRight size={17} /></button> : entry ? <button className={styles.primary} onClick={() => setSaved((current) => ({ ...current, opened: [...new Set([...current.opened, entry.id])] }))}><Check size={18} /> {saved.opened.includes(entry.id) ? "Отмечено: вскрыт" : "Отметить вскрытым"}</button> : null}</div>
+      <PlateDiagram positions={state} active={current?.plate} />
+      <p className={styles.hint}>На схеме — ожидаемое состояние <strong>до текущей команды</strong>.</p>
+      <p className={styles.hint}>«Назад» и «Начать заново» меняют только инструкцию. Они не отменяют движения в игре.</p>
+      <button className={styles.textButton} onClick={() => changeStep(0)}>Начать заново</button>
+      <details className={styles.details}><summary>Вся комбинация · {result.moves?.length || 0} движений</summary><ol className={styles.moveList}>{groups.map((group, index) => <li key={index} className={index === step ? styles.currentMove : ""}>№ {group.plate + 1} — {physicalDirection(group.direction, config)} {group.count} раз</li>)}</ol><button className={styles.secondary} onClick={async () => { try { await navigator.clipboard.writeText(`${entry?.name || "Мой замок"}\nПластины снизу вверх. Только для состояния ${config.positions.join(", ")}.\n${text}`); setCopyStatus("Комбинация скопирована"); } catch { setCopyStatus("Копирование недоступно. Выделите текст комбинации вручную."); } }}><Copy size={16} /> Копировать комбинацию</button><p role="status">{copyStatus}</p></details>
+    </>}
+    <button className={styles.changeState} onClick={() => onEdit({ ...config, positions: state })}>Положения изменились / отмычка сломалась</button>
+    <p className={styles.hint}>Расчёт проверен симуляцией. Проверка этой комбинации в вашей версии игры на PS5 не выполнена.</p>
+  </section>;
+}
+
+export default function GothicLocks() {
+  const [saved, setSaved] = useState<Saved>(EMPTY);
+  const [loaded, setLoaded] = useState(false);
+  const [storageIssue, setStorageIssue] = useState(false);
+  const [query, setQuery] = useState("");
+  const [camp, setCamp] = useState<string | null>(null);
+  const [valuable, setValuable] = useState(false);
+  const [hideOpened, setHideOpened] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [manual, setManual] = useState(false);
+  const [draft, setDraft] = useState<LockConfig>();
+  const [custom, setCustom] = useState<LockConfig>();
+  const [install, setInstall] = useState<InstallEvent | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [cacheReady, setCacheReady] = useState(false);
+  const headingRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setSaved(readSaved()); setLoaded(true);
+    const readHash = () => { const id = new URLSearchParams(window.location.hash.slice(1)).get("lock"); setSelected(id && catalog.some((entry) => entry.id === id) ? id : null); setManual(false); setCustom(undefined); };
+    readHash();
+    const updateOnline = () => setOffline(!navigator.onLine);
+    updateOnline();
+    const onInstall = (event: Event) => { event.preventDefault(); setInstall(event as InstallEvent); };
+    window.addEventListener("hashchange", readHash);
+    window.addEventListener("online", updateOnline); window.addEventListener("offline", updateOnline);
+    window.addEventListener("beforeinstallprompt", onInstall);
+    let alive = true;
+    const checkOffline = async () => {
+      if (!("serviceWorker" in navigator)) return;
+      const registration = await navigator.serviceWorker.getRegistration("/apps/gothic-locks");
+      if (!registration?.active) { if (alive) setCacheReady(false); return; }
+      const channel = new MessageChannel();
+      const timer = setTimeout(() => { channel.port1.close(); if (alive) setCacheReady(false); }, 5000);
+      channel.port1.onmessage = (event) => { clearTimeout(timer); channel.port1.close(); if (alive) setCacheReady(event.data?.ready === true); };
+      registration.active.postMessage({ type: "GOTHIC_CHECK_OFFLINE" }, [channel.port2]);
+    };
+    const refreshOffline = () => { void checkOffline().catch(() => { if (alive) setCacheReady(false); }); };
+    window.addEventListener("focus", refreshOffline);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("controllerchange", refreshOffline);
+    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+      navigator.serviceWorker.register("/apps/gothic-locks-sw.js", { scope: "/apps/gothic-locks" }).then(() => navigator.serviceWorker.ready).then(checkOffline).catch(() => { if (alive) setCacheReady(false); });
+    }
+    return () => { alive = false; window.removeEventListener("focus", refreshOffline); if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("controllerchange", refreshOffline); window.removeEventListener("hashchange", readHash); window.removeEventListener("online", updateOnline); window.removeEventListener("offline", updateOnline); window.removeEventListener("beforeinstallprompt", onInstall); };
+  }, []);
+  useEffect(() => {
+    if (!loaded) return;
+    try { localStorage.setItem(STORAGE, JSON.stringify(saved)); setStorageIssue(false); } catch { setStorageIssue(true); }
+  }, [saved, loaded]);
+  const entry = catalog.find((item) => item.id === selected);
+  const filtered = catalog.filter((item) => (!camp || item.camp === camp) && (!valuable || item.valuable) && (!hideOpened || !saved.opened.includes(item.id)) && normalize([item.name, item.originalName, item.sector, campNames[item.camp], ...item.contents].join(" ")).includes(normalize(query)));
+  const sectors = [...new Set(filtered.map((item) => `${item.camp}|${item.sector}`))];
+  const openEntry = (item: LockEntry) => { setSelected(item.id); setManual(false); setCustom(undefined); window.history.pushState(null, "", `#lock=${encodeURIComponent(item.id)}`); setSaved((current) => ({ ...current, recent: [item.id, ...current.recent.filter((id) => id !== item.id)].slice(0, 6) })); headingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const backToCatalog = () => { setSelected(null); setManual(false); setCustom(undefined); window.history.pushState(null, "", window.location.pathname); };
+  const edit = (config?: LockConfig) => { if (entry) setSaved((current) => { const progress = { ...current.progress }; delete progress[entry.id]; return { ...current, progress, changed: [...new Set([...current.changed, entry.id])] }; }); setDraft(config); setCustom(undefined); setManual(true); headingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  return <div className={styles.app} ref={headingRef}>
+    <header className={styles.header}><a href="/apps" className={styles.labLink}><ArrowLeft size={14} /> Приложения Lab</a><span className={styles.connection}><span className={cacheReady ? styles.readyDot : styles.statusDot} />{offline ? "Без интернета" : cacheReady ? "Доступно офлайн" : "Локальные сохранения"}</span></header>
+    <div className={styles.brand}><div className={styles.brandIcon}><KeyRound size={28} strokeWidth={1.4} /></div><div><span className={styles.eyebrow}>СПРАВОЧНИК КОЛОНИИ</span><h1>Gothic Remake <span>— Замки</span></h1></div></div>
+    {storageIssue && <p className={styles.notice} role="status">Браузер запретил сохранение. Отметки и настройки сохраняются только до закрытия страницы.</p>}
+    {manual ? <ManualEditor initial={draft} onCalculate={(config) => { setCustom(config); setManual(false); }} onBack={() => { setManual(false); setDraft(undefined); }} /> : custom ? <section><button className={styles.back} onClick={backToCatalog}><ArrowLeft size={17} /> К каталогу</button><h2>Мой замок</h2><p className={styles.muted}>Решение для введённого вами состояния.</p><Solution key={JSON.stringify(custom)} config={custom} saved={saved} setSaved={setSaved} onEdit={edit} /></section> : entry ? <section className={styles.entry}>
+      <button className={styles.back} onClick={backToCatalog}><ArrowLeft size={17} /> {camp ? campNames[camp] : "Все замки"}</button>
+      <div className={styles.eyebrow}>{campNames[entry.camp]} · {entry.type === "door" ? "ДВЕРЬ" : "СУНДУК"}</div>
+      <div className={styles.entryTitle}><h2>{entry.name}</h2><button className={`${styles.openedButton} ${saved.opened.includes(entry.id) ? styles.isOpened : ""}`} aria-pressed={saved.opened.includes(entry.id)} onClick={() => setSaved((current) => ({ ...current, opened: current.opened.includes(entry.id) ? current.opened.filter((id) => id !== entry.id) : [...current.opened, entry.id] }))}><Check size={16} /> {saved.opened.includes(entry.id) ? "Уже вскрыт" : "Отметить вскрытым"}</button></div>
+      <div className={styles.location}><MapPin size={20} /><div><strong>{entry.sector}</strong><p>{entry.route || "Точный маршрут пока не подтверждён. Сверьте название и исходное состояние замка."}{entry.floor ? ` Этаж: ${entry.floor}.` : ""}</p><a href="https://gothic1remake.th.gl/ru" target="_blank" rel="noreferrer">Открыть внешнюю карту ↗</a></div></div>
+      <p className={styles.hint}>Сверьте исходные позиции и связи: версия игры в источнике не указана.</p>
+      {entry.id === "cor-galom-second-variant" && <p className={styles.notice}>Второй сундук Кор Галома: источники расходятся. Это вариант с позицией 5 у второй пластины; при несовпадении введите состояние вручную.</p>}
+      <details className={styles.details}><summary>Добыча, источники и статус проверки</summary>
+      {entry.locationSources && <p className={styles.sourceNote}>Ориентиры: {entry.locationSources.map((source, index) => <span key={source.url}>{index > 0 ? " · " : ""}<a href={source.url} target="_blank" rel="noreferrer">{source.name} ↗</a></span>)}</p>}{entry.contents.length > 0 && <p className={styles.loot}><Sparkles size={16} /> Содержимое: {entry.contents.join(", ")}</p>}
+      {entry.warnings.map((warning) => <p key={warning} className={styles.notice}>{warning}</p>)}
+      <p className={styles.sourceNote}>Данные: <a href={entry.source.url} target="_blank" rel="noreferrer">{entry.source.name} ↗</a> · {entry.gameVersion ? `Версия ${entry.gameVersion}` : "Версия игры не указана"}. {entry.notes}</p>
+      </details>
+      {!loaded ? <p role="status">Загрузка сохранений…</p> : entry.config && saved.changed.includes(entry.id) ? <div className={styles.notice}><h3>Состояние этого замка изменено</h3><p>Прежняя инструкция сброшена. Введите текущие положения и связи или подтвердите, что механизм полностью возвращён к исходному состоянию из каталога.</p><PlateDiagram positions={entry.config.positions} /><details className={styles.details}><summary>Связи исходного состояния</summary>{entry.config.links.map((row, plate) => <p key={plate}>№ {plate + 1}: {row.map((value, target) => target !== plate && value ? `№ ${target + 1} ${value === 1 ? "в ту же сторону" : "в обратную"}` : "").filter(Boolean).join("; ") || "без связей"}</p>)}</details><button className={styles.primary} onClick={() => edit(entry.config || undefined)}>Ввести текущее состояние</button><button className={styles.secondary} onClick={() => setSaved((current) => ({ ...current, changed: current.changed.filter((id) => id !== entry.id) }))}>Проверил: исходные позиции и связи совпадают</button></div> : entry.config ? <Solution key={entry.id} config={entry.config} entry={entry} saved={saved} setSaved={setSaved} onEdit={edit} /> : <div className={styles.notice}><h3>Конфигурация неизвестна</h3><p>Для этого объекта ещё нет исходных данных, пригодных для расчёта.</p><button className={styles.primary} onClick={() => edit()}>Ввести состояние вручную</button></div>}
+    </section> : <>
+      <p className={styles.intro}>Найдите свой сундук. Откройте его шаг за шагом.</p>
+      <label className={styles.search}><Search size={20} /><input aria-label="Поиск сундука или персонажа" placeholder="Имя, сундук или место…" value={query} onChange={(event) => { setQuery(event.target.value); if (event.target.value) setCamp(null); }} />{query && <button aria-label="Очистить поиск" onClick={() => setQuery("")}>×</button>}</label>
+      <div className={styles.camps}>{camps.map(({ id, name, detail, icon: Icon }) => <button key={id} className={`${styles.camp} ${camp === id ? styles.selectedCamp : ""}`} aria-pressed={camp === id} onClick={() => { setCamp(camp === id ? null : id); setQuery(""); }}><Icon className={styles.campIcon} size={35} strokeWidth={1.3} /><div><h2>{name}</h2><p>{detail}</p><span>{catalog.filter((entry) => entry.camp === id).length} замков в каталоге</span></div><ChevronRight size={18} /></button>)}</div>
+      <div className={styles.browseBar}><button className={styles.textButton} aria-pressed={camp === "other"} onClick={() => { setCamp(camp === "other" ? null : "other"); setQuery(""); }}><Compass size={16} /> Другие места</button>{camp && <button className={styles.textButton} onClick={() => setCamp(null)}>Все лагеря</button>}<button className={styles.textButton} onClick={() => edit()}><KeyRound size={16} /> Моего сундука нет</button><span>{saved.opened.length} / {catalog.length} вскрыто</span></div>
+      <div className={styles.catalogLayout}><div>
+        <div className={styles.listHeader}><h2>{query ? "Результаты поиска" : camp ? campNames[camp] : "Каталог замков"}<span>{filtered.length}</span></h2></div>
+        <div className={styles.filters}><label><input type="checkbox" checked={hideOpened} onChange={(event) => setHideOpened(event.target.checked)} /> Скрыть вскрытые</label><label><input type="checkbox" checked={valuable} onChange={(event) => setValuable(event.target.checked)} /> Ценные предметы</label></div>
+        {filtered.length === 0 && <div className={styles.empty}><Search size={25} /><h3>Пока ничего не найдено</h3><p>{valuable ? "В каталоге нет объектов с подтверждёнными ценными предметами по этим условиям." : "Попробуйте другое имя или введите замок вручную."}</p><button className={styles.secondary} onClick={() => { setQuery(""); setCamp(null); setValuable(false); setHideOpened(false); }}>Сбросить фильтры</button></div>}
+        {sectors.map((sector) => <section className={styles.sector} key={sector}><h3>{!camp ? `${campNames[sector.split("|")[0]]} · ` : ""}{sector.split("|")[1]}</h3><div className={styles.lockList}>{filtered.filter((item) => `${item.camp}|${item.sector}` === sector).map((item) => <button className={styles.lockRow} key={item.id} onClick={() => openEntry(item)}><span className={styles.lockIcon}>{saved.opened.includes(item.id) ? <Check size={19} /> : <LockKeyhole size={19} />}</span><span><strong>{item.name}</strong><small>{saved.opened.includes(item.id) ? "Уже вскрыт" : item.config ? `${item.config.positions.length} пластин · есть расчёт` : "Нужна конфигурация"}</small></span><ChevronRight size={17} /></button>)}</div></section>)}
+      </div><aside className={styles.aside}>
+        <section className={styles.asideCard}><div className={styles.eyebrow}>ВАШ НАВЫК</div><SkillPicker value={saved.skill} onChange={(skill) => setSaved((current) => ({ ...current, skill }))} /><p>Сохраняется на этом устройстве.</p></section>
+        <section className={styles.manualCard}><KeyRound size={24} /><h3>Моего сундука нет</h3><p>Задайте положения и связи. Решатель проверит каждый ход.</p><button className={styles.primary} onClick={() => edit()}>Ввести замок <ArrowRight size={17} /></button></section>
+        {saved.recent.length > 0 && <section className={styles.asideCard}><div className={styles.eyebrow}>НЕДАВНО ПРОСМОТРЕННЫЕ</div>{saved.recent.map((id) => catalog.find((item) => item.id === id)).filter((item): item is LockEntry => !!item).map((item) => <button className={styles.recent} key={item.id} onClick={() => openEntry(item)}>{item.name}<ChevronRight size={15} /></button>)}</section>}
+        <section className={styles.asideCard}><ShieldCheck size={22} /><h3>Сначала проверка</h3><p>Алгоритм учитывает границы и направленные связи. Данные из сообщества; сверяйте исходное состояние со своей игрой.</p></section>
+      </aside></div>
+    </>}
+    <footer className={styles.footer}><details><summary>Об источниках, проверке и установке</summary><p>Неофициальный справочник Gothic 1 Remake. Алгоритм адаптирован из <a href="https://github.com/Murzav/gothic-lockpick-solver" target="_blank" rel="noreferrer">Murzav/gothic-lockpick-solver (MIT)</a>. Происхождение каждой записи указано в её карточке. <a href="/apps/gothic-locks-licenses.txt" target="_blank" rel="noreferrer">Лицензии и авторы</a>. Названия переведены для поиска; совпадение с русской локализацией игры не подтверждено.</p><p>Конфигурации проверяются математической симуляцией, не прохождением на PS5. После ошибки, изменения связей или обновления игры сверьте состояние и пересчитайте решение.</p><p>На Android откройте меню Chrome → «Добавить на главный экран» → «Установить». Дождитесь отметки «Доступно офлайн». Для установки нужен HTTPS; локальный предпросмотр работает на localhost.</p><p>Навык, недавние замки, отметки и шаги хранятся только в этом браузере. Очистка данных сайта удалит их. Карты и источники по внешним ссылкам требуют интернета.</p></details>{install && <button className={styles.secondary} onClick={async () => { await install.prompt(); await install.userChoice; setInstall(null); }}><Download size={17} /> Установить на телефон</button>}<span>Сделано для игры без лишних пауз</span></footer>
+  </div>;
+}

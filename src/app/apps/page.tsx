@@ -1,8 +1,16 @@
 import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/Card";
-import { BookOpen } from "lucide-react";
+import { BookOpen, KeyRound } from "lucide-react";
 
 const apps = [
+  {
+    id: "gothic-locks",
+    title: "Gothic Remake — Замки",
+    description: "Справочник сундуков и дверей. Пошаговый решатель, поиск и офлайн-доступ.",
+    href: "/apps/gothic-locks",
+    icon: KeyRound,
+    status: "prototype" as const,
+  },
   {
     id: "philoquiz",
     title: "PhiloQuiz",

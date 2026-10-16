@@ -78,6 +78,14 @@ export const projects: Project[] = [
 
   // === Приложения ===
   {
+    id: "gothic-locks",
+    title: "Gothic Remake — Замки",
+    description: "Русскоязычный справочник замков и безопасный пошаговый решатель с офлайн-доступом.",
+    tags: ["приложение", "TypeScript", "React", "PWA", "Gothic"],
+    status: "prototype",
+    href: "/apps/gothic-locks",
+  },
+  {
     id: "philoquiz",
     title: "PhiloQuiz",
     description: "Викторина по философии. Проверь свои знания о великих мыслителях.",
