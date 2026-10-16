@@ -50,7 +50,7 @@ worker.postMessage({ id: "optional-request-id", config, limits: { maxMillisecond
 // Ответ: { id, result: SolveResult } или { id, error: string }.
 ```
 
-Полные сторонние уведомления распространяются вместе с приложением в /apps/gothic-locks-licenses.txt. Сборка объединяет исходные vendor/Murzav-LICENSE.txt и vendor/Arminek-NOTICE.txt, сохраняет полные тексты, копирует результат в экспорт и кеширует его для просмотра офлайн.
+Полные сторонние уведомления распространяются вместе с приложением в /apps/gothic-locks-licenses.txt. Сборка объединяет исходные vendor/Murzav-LICENSE.txt, vendor/Arminek-NOTICE.txt, vendor/Ready-data-NOTICE.txt, vendor/UnlockMyLoot-LICENSE.txt и vendor/Religiosa-LICENSE.txt, сохраняет полные тексты, копирует результат в экспорт и кеширует его для просмотра офлайн.
 
 Worker исполняет те же `solver.ts` и `simulator.ts`, что проверяются тестами. Это не отдельная копия алгоритма. Изменённую конфигурацию нужно отправлять новым запросом; отмена длительного расчёта выполняется через `worker.terminate()`.
 
@@ -103,3 +103,7 @@ node scripts/test-gothic-pwa.mjs
 Иконки нарисованы специально для приложения простыми геометрическими фигурами; игровых изображений в них нет.
 
 Технические ссылки: [область действия Service Worker](https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register), [офлайн-работа PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation).
+
+## Готовые комбинации
+
+Каталог, 192 варианта готовых шагов и точные ссылки входят в статические JS-ресурсы и устанавливаются в кеш целиком. Внешние руководства требуют сети. При обновлении подпись сохранённого шага сверяется с текущим вариантом: несовпадение требует проверки фактического состояния, а не молчаливого запуска первого шага. Сохранённые отметки не очищаются.

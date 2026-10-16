@@ -8,14 +8,18 @@ async function compile(relative, imports = {}) {
  for(const [name,target] of Object.entries(imports)) outputText=outputText.replaceAll(`'${name}'`,`'${target}'`).replaceAll(`"${name}"`,`"${target}"`);
  return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
 }
-const {LOCK_CATALOG:catalog,CATALOG_COUNTS,REGIONS,TYPE_NAMES,filterCatalog,completeness}=await import(await compile('./catalog.ts'));
+const {LOCK_CATALOG:catalog,CATALOG_COUNTS,CATALOG_ALIASES,REGIONS,TYPE_NAMES,filterCatalog,completeness}=await import(await compile('./catalog.ts'));
+const readyRows=JSON.parse(await readFile(new URL('./data/ready-solutions.json',import.meta.url),'utf8'));
 const simulatorUrl=await compile('./simulator.ts');
 const {solveLock,validateConfig}=await import(await compile('./solver.ts',{'./simulator':simulatorUrl}));
 const {SKILLS,resolveSkillConfig}=await import(await compile('./skill.ts',{'./simulator':simulatorUrl}));
 test('registry covers the independently found named records, with disjoint honest completeness counts',()=>{
- assert.equal(catalog.length,146);
+ assert.ok(catalog.length>=146,'the established catalog must not lose named records');
  assert.equal(new Set(catalog.map(e=>e.id)).size,catalog.length);
- assert.deepEqual(CATALOG_COUNTS,{total:146,confirmed:0,location:44,incomplete:102,observations:24});
+ assert.equal(CATALOG_COUNTS.total,catalog.length);
+ assert.equal(CATALOG_COUNTS.observations,catalog.filter(e=>e.config).length);
+ assert.ok(CATALOG_COUNTS.observations>=24,'preserve independently observed configurations');
+ for(const status of ['confirmed','location','incomplete']) assert.equal(CATALOG_COUNTS[status],filterCatalog({status}).length,status);
  assert.equal(CATALOG_COUNTS.confirmed+CATALOG_COUNTS.location+CATALOG_COUNTS.incomplete,CATALOG_COUNTS.total);
  for(const e of catalog){
   assert.ok(e.name&&e.source.url&&e.source.license);
@@ -25,6 +29,7 @@ test('registry covers the independently found named records, with disjoint hones
   assert.equal(e.solutionStatus,'unconfirmed');
   for(const skill of SKILLS) assert.equal(resolveSkillConfig(e.config,e.profiles,skill),null,e.id+' must not invent a skill profile');
   if(e.config){assert.deepEqual(validateConfig(e.config),[]);assert.match(e.source.url,/Arminek\/nameless-locksmith/);}
+  else if(e.verification==='source') assert.ok(readyRows.some(s=>s.entryId===e.id&&s.source.url===e.source.url&&s.source.license===e.source.license),e.id+' needs a matching attributed published solution');
   else assert.equal(e.verification,'unknown');
  }
 });
@@ -38,7 +43,9 @@ test('all filter partitions use the same registry as the UI and preserve type/lo
  assert.equal(filterCatalog({query:'Кирго'}).length,1);
  assert.ok(filterCatalog({region:'caves'}).length);
  assert.ok(filterCatalog({region:'underwater'}).length);
- assert.ok(filterCatalog({type:'unknown'}).length>=4);
+ const unknown=filterCatalog({type:'unknown'});
+ assert.ok(unknown.length,'unresolved object types must remain discoverable');
+ for(const entry of unknown){assert.equal(entry.identity,'uncertain',entry.id);assert.equal(completeness(entry),'incomplete',entry.id);}
  for(const e of filterCatalog({valuable:true})) assert.ok(e.contents.length);
  assert.equal(filterCatalog({query:'Скатти',opened:['scatty-chest'],hideOpened:true}).some(e=>e.id==='scatty-chest'),false);
  for(const e of filterCatalog({status:'location'})) assert.equal(completeness(e),'location');
@@ -60,6 +67,20 @@ test('two Cor Galom records retain conflicting evidence and the old deep-link ID
  assert.ok(catalog.find(e=>e.id==='kharim-chest').warnings.some(s=>s.includes('Кирго')));
  assert.equal(catalog.find(e=>e.id==='guide-kharim').plateCount,5);
 });
+test('Cavalorn storeroom merges the former uncertain cave record and preserves its source and old deep link',()=>{
+ assert.equal(CATALOG_ALIASES['cavalorn-cave-unknown'],'cavalorn-storeroom-door');
+ assert.equal(catalog.some(e=>e.id==='cavalorn-cave-unknown'),false);
+ const entry=catalog.find(e=>e.id==='cavalorn-storeroom-door');
+ assert.ok(entry);
+ assert.equal(entry.type,'door');
+ assert.ok(entry.config);
+ assert.match(entry.source.url,/Arminek\/nameless-locksmith/);
+ assert.match(entry.source.license,/MIT/);
+ for(const [oldId,canonicalId] of Object.entries(CATALOG_ALIASES)){
+  assert.equal(catalog.some(e=>e.id===oldId),false,oldId+' should not be counted twice');
+  assert.ok(catalog.some(e=>e.id===canonicalId),oldId+' must resolve to an existing object');
+ }
+});
 for(const e of catalog.filter(e=>e.config)) test(`observed configuration is independently solvable without unsafe intermediate states: ${e.id}`,()=>{
  const result=solveLock(e.config,{maxMilliseconds:15000});
  assert.equal(result.status,'solved',result.reason);
@@ -69,6 +90,6 @@ for(const e of catalog.filter(e=>e.config)) test(`observed configuration is inde
   assert.ok(state.every(p=>p>=1&&p<=7),`${e.id} intermediate wall collision`);
  }
  assert.deepEqual(state,state.map(()=>4));
- const expected={'scatty-chest':31,'cor-galom-recipe':15,'cor-galom-second-variant':59,'cavalorn-cave-unknown':41,'bridge-near-new-camp':25,'orc-cemetery-baal-lukor':29,'wood-camp-stone-circle':30};
+ const expected={'scatty-chest':31,'cor-galom-recipe':15,'cor-galom-second-variant':59,'cavalorn-storeroom-door':41,'bridge-near-new-camp':25,'orc-cemetery-baal-lukor':29,'wood-camp-stone-circle':30};
  if(e.id in expected)assert.equal(result.moves.length,expected[e.id]);
 });

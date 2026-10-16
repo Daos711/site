@@ -1,0 +1,42 @@
+Dataset notices — 2026-10-16
+
+UnlockMyLoot / 108 seconds and attributed contributors (Влад, nepetacataria).
+Source: https://github.com/1h8s/unlockmyloot/tree/eee0bf50ebcb7fffd2b47954fd76bb015854e365
+License: AGPL-3.0. Original published observations, independently decoded and normalized.
+Source constants accompany the data in vendor/UnlockMyLoot-data-source.txt.
+No application code was copied. Skill models are independently inferred by exhaustive
+connection-removal checks against published routes; steps are independently recalculated.
+Corresponding editable derived data, reconstruction tool and verification tests:
+https://github.com/Daos711/site/tree/main/src/lib/gothic-locks
+https://github.com/Daos711/site/tree/main/scripts
+The AGPL terms continue to apply to the adapted UnlockMyLoot data.
+
+Viacheslav Azarov / religiosa1, gothic-lockpick-emulator (MIT), copyright 2026.
+https://github.com/religiosa1/gothic-lockpick-emulator
+Changes: reverse plate/connection axes to bottom-first, shift positions from0..6 to1..7;
+derive skill models and calculate sequences independently. Full MIT notice follows.
+
+The Games Wiki contributors; article created by frostbyte99, latest credited edit Novaterra.
+https://thegameswiki.com/gothic-1-remake/wiki/lockpicking
+Article footer license: Creative Commons Attribution-NonCommercial-ShareAlike4.0.
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+The adapted Wiki records retain CC BY-NC-SA4.0; other separately attributed records do not
+become CC licensed. This is an aggregate of separately licensed records.
+Changes: Russian object labels, normalized numbering/directions, atomic movements,
+omission of ambiguous composite rows, source-specific verification metadata.
+No warranty, endorsement or game verification is implied. Do not reuse the Wiki subset
+commercially without separate permission. Consult the linked legal code for full terms.
+
+Steam Nanomaks/Gra Airo and Lorthiz: references and independent comparison only;
+their compiled solution arrays, prose and screenshots are not redistributed.
+Game-file dumps from G1LockPickHelper and GothicSolve-derived arrays are not bundled.
+
+Fisk reconstruction — independently generated mathematical models and BFS routes.
+Generated numeric results: CC0-1.0, https://creativecommons.org/publicdomain/zero/1.0/
+No license to any external guide or game-file dump is claimed. External sources are
+linked as evidence of initial positions and reported physical movement observations.
+Every coefficient was independently enumerated; all feasible models were retained.
+A route is admitted only when every atomic press is valid in every retained model.
+The assumptions of direct signed links and sequential removal of 0/1/2 connections
+are explicit mathematical assumptions, not a claim of independent PS5 play-testing.
+Reconstruction tool: https://github.com/Daos711/site/tree/main/scripts

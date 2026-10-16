@@ -91,10 +91,11 @@ async function prepareLicenses() {
   const murzav = await readFile(join(sourceDirectory, "vendor", "Murzav-LICENSE.txt"), "utf8");
   const arminek = await readFile(join(sourceDirectory, "vendor", "Arminek-NOTICE.txt"), "utf8");
   const path = appPath + "-licenses.txt";
+  const additions = await Promise.all(["Ready-data-NOTICE.txt", "UnlockMyLoot-LICENSE.txt", "Religiosa-LICENSE.txt"].map(name=>readFile(join(sourceDirectory,"vendor",name),"utf8")));
   const notices = "Third-party notices / Gothic Remake — Замки\n\n" +
     "gothic-lockpick-solver — https://github.com/Murzav/gothic-lockpick-solver\n\n" +
     murzav.trimEnd() + "\n\n" + "=".repeat(72) + "\n\n" + arminek.trimEnd() + "\n";
-  await put(join(publicDirectory, path), notices);
+  await put(join(publicDirectory, path), notices + "\n" + additions.join("\n\n" + "=".repeat(72) + "\n\n"));
   return path;
 }
 

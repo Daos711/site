@@ -10,3 +10,5 @@
 .orderInput{display:block;width:100%;background:#242d1b;color:var(--ink);border:1px solid #4c593c;border-radius:5px;min-height:44px;padding:10px;margin:8px 0}.practiceControls{display:flex;flex-wrap:wrap;gap:12px}.practiceControls>div{display:flex;align-items:center;gap:7px}.practiceControls .secondary{padding:8px 11px}
 
 @media(min-width:601px){.regionFilters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.readyHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}.readyHeading>span{font-size:12px;color:var(--gold)}.guideLinks{margin:24px 0}.guideLinks .secondary{margin:10px 8px 0 0;text-decoration:none;font-size:12px!important}.catalogSkill{padding:16px;border:1px solid var(--line);border-radius:9px;background:var(--panel);margin:18px 0}.catalogSkill .skill{max-width:440px;margin-top:7px}.catalogSkill .checkLabel{margin:12px 0 0;min-height:44px}.variantPicker{display:block;font-size:12px;margin:18px 0;color:var(--faint)}.variantPicker select{width:100%;margin-top:7px}
