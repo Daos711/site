@@ -139,6 +139,7 @@ async function setupContext(browser, options = {}) {
     const swResponse=await context.request.get(new URL('/apps/gothic-locks-sw.js',base).href);
     metrics.cacheVersion=(await swResponse.text()).match(/const CACHE_VERSION = "([^"]+)"/)?.[1]||null;
     await goCatalog(page);
+    await waitText(page, 'Доступно офлайн');
     await compareRows(page,catalog,'live build has exact catalog');
     assert.ok((await page.getByTestId('catalog-coverage').innerText()).includes(`${catalog.length} карточек`));
     metrics.catalog = { objects: catalog.length, variants: ready.length };
