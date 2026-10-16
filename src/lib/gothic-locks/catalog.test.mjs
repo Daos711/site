@@ -2,52 +2,73 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import ts from 'typescript';
-
 async function compile(relative, imports = {}) {
-  const source = await readFile(new URL(relative, import.meta.url), 'utf8');
-  let { outputText } = ts.transpileModule(source, {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
-  });
-  for (const [name, target] of Object.entries(imports)) {
-    outputText = outputText.replaceAll(`'${name}'`, `'${target}'`).replaceAll(`"${name}"`, `"${target}"`);
-  }
-  return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
+ const source=await readFile(new URL(relative,import.meta.url),'utf8');
+ let {outputText}=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}});
+ for(const [name,target] of Object.entries(imports)) outputText=outputText.replaceAll(`'${name}'`,`'${target}'`).replaceAll(`"${name}"`,`"${target}"`);
+ return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
 }
-const { LOCK_CATALOG } = await import(await compile('./catalog.ts'));
-const simulatorUrl = await compile('./simulator.ts');
-const { solveLock, validateConfig } = await import(await compile('./solver.ts', { './simulator': simulatorUrl }));
-
-test('catalog reports its limited provenance and preserves distinct Cor Galom records', () => {
-  assert.equal(LOCK_CATALOG.length, 20);
-  assert.equal(new Set(LOCK_CATALOG.map(entry => entry.id)).size, LOCK_CATALOG.length);
-  for (const entry of LOCK_CATALOG) {
-    assert.equal(entry.verification, 'source');
-    assert.equal(entry.gameVersion, null);
-    assert.equal(entry.source.license, 'MIT');
-    assert.match(entry.source.url, /98739a78084a1506530c4081a83e30bc0ca1c526/);
-    assert.deepEqual(validateConfig(entry.config), []);
-  }
-  const first = LOCK_CATALOG.find(entry => entry.id === 'cor-galom-recipe');
-  const second = LOCK_CATALOG.find(entry => entry.id === 'cor-galom-second-variant');
-  assert.deepEqual(first.config.positions, [7, 7, 6, 1]);
-  assert.deepEqual(second.config.positions, [6, 5, 5, 7, 1, 4]);
-  assert.equal(second.floor, null);
-  assert.equal(second.route, null);
-  assert.ok(second.warnings.some(warning => warning.includes('6, 6, 5, 7, 1, 4')));
+const {LOCK_CATALOG:catalog,CATALOG_COUNTS,REGIONS,TYPE_NAMES,filterCatalog,completeness}=await import(await compile('./catalog.ts'));
+const simulatorUrl=await compile('./simulator.ts');
+const {solveLock,validateConfig}=await import(await compile('./solver.ts',{'./simulator':simulatorUrl}));
+const {SKILLS,resolveSkillConfig}=await import(await compile('./skill.ts',{'./simulator':simulatorUrl}));
+test('registry covers the independently found named records, with disjoint honest completeness counts',()=>{
+ assert.equal(catalog.length,146);
+ assert.equal(new Set(catalog.map(e=>e.id)).size,catalog.length);
+ assert.deepEqual(CATALOG_COUNTS,{total:146,confirmed:0,location:44,incomplete:102,observations:24});
+ assert.equal(CATALOG_COUNTS.confirmed+CATALOG_COUNTS.location+CATALOG_COUNTS.incomplete,CATALOG_COUNTS.total);
+ for(const e of catalog){
+  assert.ok(e.name&&e.source.url&&e.source.license);
+  assert.ok(REGIONS.some(r=>r.id===e.region),e.id);
+  assert.ok(TYPE_NAMES[e.type],e.id);
+  assert.equal(e.gameVersion,null);assert.equal(e.chapter,null);
+  assert.equal(e.solutionStatus,'unconfirmed');
+  for(const skill of SKILLS) assert.equal(resolveSkillConfig(e.config,e.profiles,skill),null,e.id+' must not invent a skill profile');
+  if(e.config){assert.deepEqual(validateConfig(e.config),[]);assert.match(e.source.url,/Arminek\/nameless-locksmith/);}
+  else assert.equal(e.verification,'unknown');
+ }
 });
-
-for (const entry of LOCK_CATALOG) {
-  test(`catalog config can be solved and independently replayed: ${entry.id}`, () => {
-    const result = solveLock(entry.config, { maxMilliseconds: 15000 });
-    assert.equal(result.status, 'solved', result.reason);
-    // Independent replay catches changed matrix orientation, invalid edges and bad imports.
-    let state = entry.config.positions.slice();
-    for (const move of result.moves) {
-      state = state.map((position, target) => position + move.direction * (target === move.plate ? 1 : entry.config.links[move.plate][target]));
-      assert.ok(state.every(position => position >= 1 && position <= 7));
-    }
-    assert.deepEqual(state, state.map(() => 4));
-    const knownLengths = { 'scatty-chest': 31, 'cor-galom-recipe': 15, 'cor-galom-second-variant': 59 };
-    if (entry.id in knownLengths) assert.equal(result.moves.length, knownLengths[entry.id]);
-  });
-}
+test('all filter partitions use the same registry as the UI and preserve type/location distinctions',()=>{
+ for(const [key,values] of [['region',REGIONS.map(r=>r.id)],['type',Object.keys(TYPE_NAMES)],['status',['confirmed','location','incomplete']]]) {
+  const partitions=values.flatMap(value=>filterCatalog({[key]:value}));
+  assert.equal(partitions.length,catalog.length,key);
+  assert.equal(new Set(partitions.map(e=>e.id)).size,catalog.length,key);
+ }
+ assert.equal(filterCatalog({query:'Фиска'}).length,10);
+ assert.equal(filterCatalog({query:'Кирго'}).length,1);
+ assert.ok(filterCatalog({region:'caves'}).length);
+ assert.ok(filterCatalog({region:'underwater'}).length);
+ assert.ok(filterCatalog({type:'unknown'}).length>=4);
+ for(const e of filterCatalog({valuable:true})) assert.ok(e.contents.length);
+ assert.equal(filterCatalog({query:'Скатти',opened:['scatty-chest'],hideOpened:true}).some(e=>e.id==='scatty-chest'),false);
+ for(const e of filterCatalog({status:'location'})) assert.equal(completeness(e),'location');
+});
+test('Fisk is ten distinct referenced objects, without fabricated source configurations',()=>{
+ const fisk=catalog.filter(e=>e.id.startsWith('fisk-'));
+ assert.equal(fisk.length,10);assert.equal(fisk.filter(e=>e.type==='door').length,2);assert.equal(fisk.filter(e=>e.type==='chest').length,8);
+ assert.deepEqual(fisk.filter(e=>e.type==='chest').map(e=>e.plateCount),[6,5,5,5,6,6,6,4]);
+ for(const e of fisk){assert.equal(e.config,null);assert.ok(e.source.url.endsWith('/blog/fisk/'));assert.equal(e.solutionStatus,'unconfirmed');}
+});
+test('two Cor Galom records retain conflicting evidence and the old deep-link ID',()=>{
+ const cor=catalog.filter(e=>e.id.startsWith('cor-galom'));
+ assert.equal(cor.length,2);
+ assert.deepEqual(cor[0].config.positions,[7,7,6,1]);
+ assert.deepEqual(cor[1].config.positions,[6,5,5,7,1,4]);
+ assert.equal(cor[1].identity,'uncertain');
+ assert.ok(cor[1].warnings.some(s=>s.includes('6, 6, 5, 7, 1, 4')));
+ assert.ok(cor[1].locationSources.some(s=>s.url.includes('bedroom')));
+ assert.ok(catalog.find(e=>e.id==='kharim-chest').warnings.some(s=>s.includes('Кирго')));
+ assert.equal(catalog.find(e=>e.id==='guide-kharim').plateCount,5);
+});
+for(const e of catalog.filter(e=>e.config)) test(`observed configuration is independently solvable without unsafe intermediate states: ${e.id}`,()=>{
+ const result=solveLock(e.config,{maxMilliseconds:15000});
+ assert.equal(result.status,'solved',result.reason);
+ let state=e.config.positions.slice();
+ for(const move of result.moves){
+  state=state.map((p,to)=>p+move.direction*(to===move.plate?1:e.config.links[move.plate][to]));
+  assert.ok(state.every(p=>p>=1&&p<=7),`${e.id} intermediate wall collision`);
+ }
+ assert.deepEqual(state,state.map(()=>4));
+ const expected={'scatty-chest':31,'cor-galom-recipe':15,'cor-galom-second-variant':59,'cavalorn-cave-unknown':41,'bridge-near-new-camp':25,'orc-cemetery-baal-lukor':29,'wood-camp-stone-circle':30};
+ if(e.id in expected)assert.equal(result.moves.length,expected[e.id]);
+});

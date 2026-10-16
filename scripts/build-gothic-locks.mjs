@@ -177,6 +177,24 @@ async function main() {
   // A directory index supports static servers without clean-URL rewrites.
   await mkdir(join(outputDirectory, "apps", "gothic-locks"), { recursive: true });
   await copyFile(join(outputDirectory, shell), join(outputDirectory, "apps", "gothic-locks", "index.html"));
+  // Keep the installed PWA and its scope at the existing canonical path.
+  // Both variants support static hosts with directory indexes or clean URLs.
+  const shortAlias = `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gothic Remake — Замки</title>
+  <link rel="canonical" href="https://daos711.ru/apps/gothic-locks/">
+</head>
+<body>
+  <p><a href="/apps/gothic-locks/">Открыть справочник замков Gothic Remake</a></p>
+  <script>window.location.replace("/apps/gothic-locks/" + window.location.search + window.location.hash);</script>
+</body>
+</html>
+`;
+  await put(join(outputDirectory, "apps", "g.html"), shortAlias);
+  await put(join(outputDirectory, "apps", "g", "index.html"), shortAlias);
   const initialPaths = [shell, ...staticPaths];
   if (await exists(join(outputDirectory, appPath + ".txt"))) initialPaths.push(appPath + ".txt");
   const precache = await collectPrecache(initialPaths);

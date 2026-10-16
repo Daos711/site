@@ -204,3 +204,39 @@ test("exported precache contains existing local files and all worker modules", a
   assert.ok(serviceWorker.includes(report.version));
   assert.ok(!serviceWorker.includes("__GOTHIC_CACHE_VERSION__"));
 });
+
+
+test("exported short aliases preserve the query and hash and keep the PWA scope", async (context) => {
+  try { await access(join(outRoot, "apps/gothic-locks-precache.json")); } catch {
+    context.skip("Run npm run build to validate the production aliases.");
+    return;
+  }
+  const index = await readFile(join(outRoot, "apps/g/index.html"), "utf8");
+  const cleanUrl = await readFile(join(outRoot, "apps/g.html"), "utf8");
+  assert.equal(cleanUrl, index);
+  assert.match(index, /<html lang="ru">/);
+  assert.match(index, /href="https:\/\/daos711\.ru\/apps\/gothic-locks\/"/);
+  assert.match(index, /<a href="\/apps\/gothic-locks\/">/);
+  assert.doesNotMatch(index, /http-equiv="refresh"/i, "a competing refresh would discard the incoming route");
+  const scripts = [...index.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  assert.equal(scripts.length, 1);
+  for (const path of ["/apps/g", "/apps/g/", "/apps/g.html"]) {
+    for (const suffix of ["", "?lock=scatty-chest#step-3", "?q=%D0%A4%D0%B8%D1%81%D0%BA&tag=a&tag=b#saved%2Flock", "?next=https%3A%2F%2Fexternal.test%2F#%D0%B7%D0%B0%D0%BC%D0%BE%D0%BA"]) {
+      const source = new URL(path + suffix, origin);
+      const replacements = [];
+      vm.runInNewContext(scripts[0][1], {
+        window: { location: { search: source.search, hash: source.hash, replace: (url) => replacements.push(url) } },
+      });
+      assert.equal(replacements.length, 1);
+      const destination = new URL(replacements[0], origin);
+      assert.equal(destination.origin, origin);
+      assert.equal(destination.pathname, "/apps/gothic-locks/");
+      assert.equal(destination.search, source.search);
+      assert.equal(destination.hash, source.hash);
+    }
+  }
+  const report = JSON.parse(await readFile(join(outRoot, "apps/gothic-locks-precache.json"), "utf8"));
+  assert.equal(report.scope, "/apps/gothic-locks");
+  assert.ok(!report.urls.includes("/apps/g.html"));
+  assert.ok(!report.urls.includes("/apps/g/index.html"));
+});
