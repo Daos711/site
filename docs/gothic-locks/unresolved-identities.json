@@ -1,0 +1,271 @@
+[
+  {
+    "source": "Steam",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9064903",
+    "candidates": [],
+    "reason": "Не установлена однозначная привязка к отдельному объекту."
+  },
+  {
+    "source": "Steam",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9064903",
+    "candidates": [
+      "gomez-chambers-door",
+      "guide-gomez",
+      "gomez-wall-chest"
+    ],
+    "reason": "Не установлена однозначная привязка к отдельному объекту."
+  },
+  {
+    "source": "Steam",
+    "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3742646934#comment_570415324159093833",
+    "candidates": [
+      "stone-fortress-first",
+      "stone-fortress-second"
+    ],
+    "reason": "Не установлена однозначная привязка к отдельному объекту."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-storage",
+    "candidates": [
+      "fisk-storage-door"
+    ],
+    "reason": "Описание склада с ключом может дублировать известную дверь Фиска."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/hill-cave-near-cavalorns-hut-chest",
+    "candidates": [],
+    "reason": "Схема Inferred; пещера у Кавалорна не локализована достаточно для отличия от других пещер."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/kharims-chest",
+    "candidates": [
+      "guide-kharim"
+    ],
+    "reason": "Харим/Кирго перепутаны в источниках; новую карточку не создаём."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/kirgos-chest",
+    "candidates": [
+      "kharim-chest"
+    ],
+    "reason": "Харим/Кирго перепутаны в источниках; новую карточку не создаём."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/lab-key-target",
+    "candidates": [],
+    "reason": "Техническая цель ключа лаборатории без установленного физического объекта."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/new-camp-tavern-underwater-chest-2",
+    "candidates": [
+      "new-camp-lake-sunken-chest-1"
+    ],
+    "reason": "Возможен третий подводный сундук, но ориентир пересекается с двумя сундуками озера; нужен визуальный матч."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/shamans-living-quarters-cave-cooking-camp-chest",
+    "candidates": [
+      "orc-shaman-cave-chest-3"
+    ],
+    "reason": "Сундук у котла может быть одним из трёх уже учтённых сундуков шаманов; пока не считаем четвёртым."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/stone-circle-key-target",
+    "candidates": [
+      "wood-camp-stone-circle"
+    ],
+    "reason": "Техническая цель ключа каменного круга не идентифицирована."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/sunken-tower-loot-cage",
+    "candidates": [
+      "xardas-sunken-tower-library-gate"
+    ],
+    "reason": "Клетка затопленной башни может совпадать с библиотечной решёткой."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/swamp-hut-chest",
+    "candidates": [
+      "new-camp-jan-near-lake-ruined-hut-chest"
+    ],
+    "reason": "GLP указывает Болотный лагерь, но числовой признак совпадает с хижиной у Джана. Географическое противоречие не позволяет импортировать как отдельный объект."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/tavern-cave-door",
+    "candidates": [
+      "silas-storeroom-door"
+    ],
+    "reason": "Пещерная дверь у таверны может совпадать с нижним входом; нет достаточного ориентира."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/water-mages-brewing-stand-chest",
+    "candidates": [
+      "guide-saturas"
+    ],
+    "reason": "Схема совпадает с домом Сатураса, но GLP называет лабораторией. Не создаём отдельную карточку без доказательства отличия."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-8",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-7",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-6",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-5",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-4",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-3",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-2",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fisks-hut-chest-1",
+    "candidates": [
+      "fisk-chest-1",
+      "fisk-chest-2",
+      "fisk-chest-3",
+      "fisk-chest-4",
+      "fisk-chest-5",
+      "fisk-chest-6",
+      "fisk-chest-7",
+      "fisk-chest-8"
+    ],
+    "reason": "Номера восьми сундуков разных руководств нельзя приравнивать без сопоставления ориентиров."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/baal-tarans-chest",
+    "candidates": [
+      "old-camp-graham-right-hut-chest"
+    ],
+    "reason": "Предварительно совпавший механизм и общий район недостаточны для точной привязки имени/хижины. Прямая ссылка убрана из authoritative mapping."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/bandit-camp-chest-1",
+    "candidates": [
+      "bandits-cave-chest-near-cavalorn"
+    ],
+    "reason": "Предварительно совпавший механизм и общий район недостаточны для точной привязки имени/хижины. Прямая ссылка убрана из authoritative mapping."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/bandit-camp-chest-2",
+    "candidates": [
+      "cavalorn-above"
+    ],
+    "reason": "Предварительно совпавший механизм и общий район недостаточны для точной привязки имени/хижины. Прямая ссылка убрана из authoritative mapping."
+  },
+  {
+    "source": "Gothic Lock Picking",
+    "url": "https://gothic-lock-picking.com/en/locks/fishing-huts-bone-crusher-blueprint-chest",
+    "candidates": [
+      "jan-opposite-hut-chest"
+    ],
+    "reason": "Предварительно совпавший механизм и общий район недостаточны для точной привязки имени/хижины. Прямая ссылка убрана из authoritative mapping."
+  }
+]

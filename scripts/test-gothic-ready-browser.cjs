@@ -35,7 +35,7 @@ function loadTs(filename) {
   return compiledModule.exports;
 }
 const lib = path.resolve(__dirname, '../src/lib/gothic-locks');
-const { LOCK_CATALOG: catalog, CATALOG_ALIASES: aliases } = loadTs(path.join(lib, 'catalog.ts'));
+const { LOCK_CATALOG: catalog, CATALOG_ALIASES: aliases, REGIONS, TYPE_NAMES, filterCatalog } = loadTs(path.join(lib, 'catalog.ts'));
 const { READY_SOLUTIONS: ready, SOLUTION_GUIDES: guides, solutionSignature } = loadTs(path.join(lib, 'ready-solutions.ts'));
 const rawReady = JSON.parse(fs.readFileSync(path.join(lib, 'data/ready-solutions.json'), 'utf8'));
 const catalogById = new Map(catalog.map(entry => [entry.id, entry]));
@@ -148,9 +148,10 @@ async function setupContext(browser, options = {}) {
     await waitText(page, 'Доступно офлайн');
     await compareRows(page, catalog, 'every catalog ID appears exactly once');
     const readyIds = new Set(ready.map(solution => solution.entryId));
-    const externalIds = new Set(guides.filter(guide => !readyIds.has(guide.entryId)).map(guide => guide.entryId));
+    const notRequiredIds = new Set(catalog.filter(entry=>entry.access==='key'||entry.access==='unlocked').map(entry=>entry.id));
+    const externalIds = new Set(guides.filter(guide => !readyIds.has(guide.entryId)&&!notRequiredIds.has(guide.entryId)).map(guide => guide.entryId));
     const coverageText = await page.getByTestId('catalog-coverage').innerText();
-    for (const text of [`${catalog.length} карточек`, `Готовая комбинация: ${readyIds.size}`, `Только внешнее руководство: ${externalIds.size}`, `Пока без решения: ${catalog.length - readyIds.size - externalIds.size}`]) assert.ok(coverageText.includes(text), text);
+    for (const text of [`${catalog.length} карточек`, `Готовая комбинация: ${readyIds.size}`, `Только внешнее руководство: ${externalIds.size}`, `Пока без решения: ${catalog.length - readyIds.size - externalIds.size - notRequiredIds.size}`]) assert.ok(coverageText.includes(text), text);
     assert.ok(coverageText.includes('один объект считается один раз'));
     record(`Production hydration, complete offline cache, all ${catalog.length} catalog IDs and disjoint coverage`);
 
@@ -161,9 +162,12 @@ async function setupContext(browser, options = {}) {
       await compareRows(page, expected, 'ready-only for ' + skill);
       assert.ok((await page.getByTestId('catalog-coverage').innerText()).includes(`Для вашего навыка готовые шаги: ${expected.length}.`));
       await page.getByRole('checkbox', { name: 'Есть готовая комбинация для выбранного навыка', exact: true }).uncheck();
-      for (const status of ['ready', 'simulated', 'published', 'external', 'missing']) {
+      for (const status of ['ready', 'simulated', 'published', 'external', 'missing', 'not-required']) {
         await page.getByRole('combobox', { name: 'Полнота данных', exact: true }).selectOption(status);
         const expected = catalog.filter(entry => {
+          const notRequired=entry.access==='key'||entry.access==='unlocked';
+          if(status==='not-required') return notRequired;
+          if(notRequired) return false;
           const rows = forSkill(entry.id, skill);
           if (status === 'ready') return rows.length;
           if (status === 'simulated' || status === 'published') return rows.some(row => row.verification === status);
@@ -173,7 +177,7 @@ async function setupContext(browser, options = {}) {
       }
       await page.getByRole('combobox', { name: 'Полнота данных', exact: true }).selectOption('');
     }
-    record('All three skill filters and five solution-status filters return exact IDs without fallback or overlapping object counts');
+    record('All three skill filters and six solution-status filters return exact IDs without fallback or overlapping object counts');
 
     for (const solution of ready) {
       await chooseSolution(page, solution);
@@ -299,8 +303,23 @@ async function setupContext(browser, options = {}) {
 
     await goCatalog(page); await selectSkill(page, 'none');
     await page.getByRole('textbox', { name: 'Поиск сундука или персонажа', exact: true }).fill('Фиск');
-    await compareRows(page, fisk, 'Fisk exact search');
+    const fiskSearch=filterCatalog({query:'Фиск'});
+    for(const entry of fisk) assert.ok(fiskSearch.some(item=>item.id===entry.id));
+    assert.ok(fiskSearch.some(entry=>entry.id==='old-camp-fisk-behind-hut-chest'));
+    assert.ok(!fiskSearch.some(entry=>entry.id==='scatty-chest'));
+    await compareRows(page, fiskSearch, 'Fisk owner and nearby landmarks');
     await page.getByRole('textbox', { name: 'Поиск сундука или персонажа', exact: true }).fill('');
+    for(const region of REGIONS){
+      await page.getByRole('combobox',{name:'Район Колонии',exact:true}).selectOption(region.id);
+      await compareRows(page,catalog.filter(entry=>entry.region===region.id),'region '+region.id);
+    }
+    await page.getByRole('combobox',{name:'Район Колонии',exact:true}).selectOption('');
+    for(const type of Object.keys(TYPE_NAMES)){
+      await page.getByRole('combobox',{name:'Тип объекта',exact:true}).selectOption(type);
+      await compareRows(page,catalog.filter(entry=>entry.type===type),'object type '+type);
+    }
+    await page.getByRole('combobox',{name:'Тип объекта',exact:true}).selectOption('');
+    record('Natural landmark search and every region/type filter match exact catalog IDs, including nearby Fisk huts');
     await page.getByRole('checkbox', { name: 'Скрыть вскрытые', exact: true }).check();
     await compareRows(page, catalog.filter(entry => entry.id !== scatty.entryId), 'hide opened');
     await page.getByRole('checkbox', { name: 'Скрыть вскрытые', exact: true }).uncheck();

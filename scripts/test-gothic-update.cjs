@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS browser regression harness. */
 /* Regression for upgrading an already-controlled legacy (20-card) installation.
  * Runs an isolated HTTP server on a free localhost port. Requires a fresh out/
  * build and PLAYWRIGHT_MODULE / CHROMIUM_PATH when not installed locally.
@@ -32,9 +33,9 @@ const mime = {
 async function expectedCatalogCount() {
   const source = await fs.readFile(path.join(root, 'src/lib/gothic-locks/catalog.ts'), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } });
-  const module = { exports: {} };
-  new Function('exports', 'require', 'module', outputText)(module.exports, require, module);
-  return module.exports.LOCK_CATALOG.length;
+  const compiledModule = { exports: {} };
+  new Function('exports', 'require', 'module', outputText)(compiledModule.exports, require, compiledModule);
+  return compiledModule.exports.LOCK_CATALOG.length;
 }
 const oldTemplate = execFileSync('git', ['show', '557085b:public/apps/gothic-locks-sw.js'], { cwd: root, encoding: 'utf8' });
 const oldWorker = oldTemplate.replace('__GOTHIC_CACHE_VERSION__', legacyVersion)
@@ -239,10 +240,10 @@ async function swStatus(page) {
     await freshContext.close();
     record('A fresh /apps/g/ visit with no existing registration installs and activates successfully, preserving the incoming route');
     assert.deepEqual(errors, []);
-    await page.screenshot({ path: path.join(artifacts, 'upgraded-mobile.png'), fullPage: true });
+    await page.screenshot({ path: path.join(artifacts, 'upgraded-mobile.png'), fullPage: false });
     await fs.writeFile(path.join(artifacts, 'result.json'), JSON.stringify({ passed: results.length, results, expectedCatalogCount: expectedCount, oldVersion: legacyVersion, currentVersion: currentReport.version, nextVersion, errors, requests }, null, 2));
   } catch (error) {
-    await page.screenshot({ path: path.join(artifacts, 'failure.png'), fullPage: true }).catch(() => {});
+    await page.screenshot({ path: path.join(artifacts, 'failure.png'), fullPage: false }).catch(() => {});
     await fs.writeFile(path.join(artifacts, 'failure.json'), JSON.stringify({ passed: results.length, results, error: String(error), mode, url: page.url(), errors, requests }, null, 2));
     throw error;
   } finally {

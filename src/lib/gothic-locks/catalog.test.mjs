@@ -25,7 +25,7 @@ test('registry covers the independently found named records, with disjoint hones
   assert.ok(e.name&&e.source.url&&e.source.license);
   assert.ok(REGIONS.some(r=>r.id===e.region),e.id);
   assert.ok(TYPE_NAMES[e.type],e.id);
-  assert.equal(e.gameVersion,null);assert.equal(e.chapter,null);
+  if(e.gameVersion!==null) assert.ok(e.gameVersion.trim()); if(e.chapter!==null) assert.ok(e.chapter.trim()&&e.locationSources?.length);
   assert.equal(e.solutionStatus,'unconfirmed');
   for(const skill of SKILLS) assert.equal(resolveSkillConfig(e.config,e.profiles,skill),null,e.id+' must not invent a skill profile');
   if(e.config){assert.deepEqual(validateConfig(e.config),[]);assert.match(e.source.url,/Arminek\/nameless-locksmith/);}
@@ -39,8 +39,8 @@ test('all filter partitions use the same registry as the UI and preserve type/lo
   assert.equal(partitions.length,catalog.length,key);
   assert.equal(new Set(partitions.map(e=>e.id)).size,catalog.length,key);
  }
- assert.equal(filterCatalog({query:'Фиска'}).length,10);
- assert.equal(filterCatalog({query:'Кирго'}).length,1);
+ for(const e of catalog.filter(e=>e.id.startsWith('fisk-'))) assert.ok(filterCatalog({query:'Фиска'}).some(found=>found.id===e.id));
+ assert.ok(filterCatalog({query:'Кирго'}).length>=1);
  assert.ok(filterCatalog({region:'caves'}).length);
  assert.ok(filterCatalog({region:'underwater'}).length);
  const unknown=filterCatalog({type:'unknown'});
@@ -92,4 +92,25 @@ for(const e of catalog.filter(e=>e.config)) test(`observed configuration is inde
  assert.deepEqual(state,state.map(()=>4));
  const expected={'scatty-chest':31,'cor-galom-recipe':15,'cor-galom-second-variant':59,'cavalorn-storeroom-door':41,'bridge-near-new-camp':25,'orc-cemetery-baal-lukor':29,'wood-camp-stone-circle':30};
  if(e.id in expected)assert.equal(result.moves.length,expected[e.id]);
+});
+
+
+test('search finds an unnamed landmark using Russian case endings, word order, and pin fingerprints',()=>{
+ const id='old-camp-abandoned-shack-chest';
+ for(const query of ['сундук в заброшенной хижине возле старого лагеря','ХИЖИНА ЗАБРОШЕННАЯ','725516','7-2-5-5-1-6','7 2 5 5 1 6']) assert.ok(filterCatalog({query}).some(e=>e.id===id),query);
+ assert.ok(!filterCatalog({query:'заброшенная хижина Фиска'}).some(e=>e.id===id),'all meaningful terms are required');
+ assert.ok(filterCatalog({camp:'old',region:'old-camp-outskirts'}).some(e=>e.id===id));
+ assert.match(catalog.find(e=>e.id===id).mapUrl,/planetofgothic\.de\/tools\/atlas\?poi=1890/);
+});
+
+test('catalog distinguishes key access, exact door types and unrelated similarly named objects',()=>{
+ for(const id of ['lees-cave-entrance','captains-shipwreck-cabin','abandoned-gallery-entrance']) assert.equal(catalog.find(e=>e.id===id).type,'door',id);
+ const santino=catalog.find(e=>e.id==='guide-santino');assert.equal(santino.region,'old-mine');
+ assert.ok(!santino.locationSources.some(s=>s.url.endsWith('/blog/santino/')));
+ assert.ok(filterCatalog({region:'ruined-tower'}).some(e=>e.id==='cavalorn-tower-door'));
+ for(const entry of catalog){
+  assert.ok(!entry.relatedIds?.includes(entry.id),entry.id+' self reference');
+  if(entry.mapUrl)assert.ok(entry.mapUrl.startsWith('https://'));
+  if(entry.access==='key'||entry.access==='unlocked')assert.ok(!readyRows.some(s=>s.entryId===entry.id),entry.id+' must not invent a lockpick solution');
+ }
 });

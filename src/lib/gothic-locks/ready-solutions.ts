@@ -13,6 +13,7 @@ export interface ReadySolution {
   config: LockConfig | null;
   configAlternatives?: LockConfig[];
   derivation?: 'observed' | 'inferred' | 'universal';
+  modelCoverage?: { kind: 'column-witnesses'; fullModelCount?: number; witnessCount: number; columnCounts: number[] };
   plateCount: number | null;
   /** Atomic movements; zero-based, bottom-first, in numbered-position coordinates. */
   moves: Move[];
@@ -41,6 +42,7 @@ export function solutionIssues(solution: ReadySolution): string[] {
   if (solution.plateCount !== null && (!Number.isInteger(solution.plateCount) || solution.plateCount < 4 || solution.plateCount > 7)) errors.push('Некорректное число пластин');
   if (!Array.isArray(solution.moves) || solution.moves.length === 0 || solution.moves.length > 5000) errors.push('Нет корректной последовательности');
   else if (solution.moves.some(move => !Number.isInteger(move.plate) || move.plate < 0 || move.plate >= (solution.plateCount ?? 7) || ![-1, 1].includes(move.direction))) errors.push('Некорректный ход');
+  if (solution.modelCoverage && (solution.modelCoverage.kind !== 'column-witnesses' || solution.modelCoverage.witnessCount !== solution.configAlternatives?.length || !Array.isArray(solution.modelCoverage.columnCounts) || solution.modelCoverage.columnCounts.length !== solution.plateCount || solution.modelCoverage.columnCounts.some(count => !Number.isInteger(count) || count < 1) || (solution.modelCoverage.fullModelCount !== undefined && (!Number.isSafeInteger(solution.modelCoverage.fullModelCount) || solution.modelCoverage.fullModelCount < solution.modelCoverage.witnessCount)))) errors.push('Некорректное покрытие моделей');
   if (errors.length) return errors;
   if (solution.config) {
     if (validateConfig(solution.config).length || solution.config.direction !== solution.direction || solution.config.positions.length !== solution.plateCount) errors.push('Некорректная конфигурация');
@@ -62,16 +64,18 @@ export const SOLUTION_GUIDES = guideData as SolutionGuide[];
 export const readyFor = (entryId: string, skill?: Skill) => READY_SOLUTIONS.filter(solution => solution.entryId === entryId && (!skill || solution.skill === skill));
 export const guidesFor = (entryId: string, skill?: Skill) => SOLUTION_GUIDES.filter(guide => guide.entryId === entryId && (!skill || guide.skill === skill || guide.skill === 'unknown'));
 export function solutionSignature(solution: ReadySolution): string {
-  return JSON.stringify({ ready: solution.id, skill: solution.skill, config: solution.config, alternatives: solution.configAlternatives, moves: solution.moves, direction: solution.direction });
+  return JSON.stringify({ ready: solution.id, skill: solution.skill, config: solution.config, alternatives: solution.configAlternatives, coverage: solution.modelCoverage, moves: solution.moves, direction: solution.direction });
 }
 export function restoredReadyStep(solution: ReadySolution, saved?: { signature: string; step: number }): number {
   const count = groupMoves(solution.moves).length;
   return saved?.signature === solutionSignature(solution) && Number.isInteger(saved.step) && saved.step >= 0 && saved.step <= count ? saved.step : 0;
 }
-export function solutionCoverage(entries: readonly { id: string; type: string }[], skill?: Skill) {
+export function solutionCoverage(entries: readonly { id: string; type: string; access?: string }[], skill?: Skill) {
   const withReady = new Set(READY_SOLUTIONS.filter(s => !skill || s.skill === skill).map(s => s.entryId));
   const withGuide = new Set(SOLUTION_GUIDES.filter(s => !skill || s.skill === skill || s.skill === 'unknown').map(s => s.entryId));
-  const ready = entries.filter(e => withReady.has(e.id)).length;
-  const external = entries.filter(e => !withReady.has(e.id) && withGuide.has(e.id)).length;
-  return { total: entries.length, chests: entries.filter(e => e.type === 'chest' || e.type === 'underwater').length, ready, external, missing: entries.length - ready - external };
+  const required = entries.filter(e => e.access !== 'unlocked' && e.access !== 'key');
+  const notRequired = entries.length - required.length;
+  const ready = required.filter(e => withReady.has(e.id)).length;
+  const external = required.filter(e => !withReady.has(e.id) && withGuide.has(e.id)).length;
+  return { total: entries.length, chests: entries.filter(e => e.type === 'chest' || e.type === 'underwater').length, ready, external, notRequired, missing: required.length - ready - external };
 }

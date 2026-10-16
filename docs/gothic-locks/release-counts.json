@@ -1,0 +1,927 @@
+{
+  "date": "2026-10-16",
+  "all": {
+    "total": 293,
+    "chests": 246,
+    "ready": 162,
+    "external": 123,
+    "notRequired": 7,
+    "missing": 1,
+    "simulatedObjects": 118,
+    "identityUncertain": 78,
+    "locationUnknown": 1
+  },
+  "chests": {
+    "total": 246,
+    "chests": 246,
+    "ready": 135,
+    "external": 108,
+    "notRequired": 2,
+    "missing": 1,
+    "simulatedObjects": 96,
+    "identityUncertain": 73,
+    "locationUnknown": 1
+  },
+  "doors": 42,
+  "underwaterChests": 6,
+  "otherTypes": 5,
+  "variants": 401,
+  "simulatedVariants": 354,
+  "publishedVariants": 47,
+  "skills": {
+    "none": {
+      "all": {
+        "total": 293,
+        "chests": 246,
+        "ready": 162,
+        "external": 123,
+        "notRequired": 7,
+        "missing": 1,
+        "simulatedObjects": 118,
+        "identityUncertain": 78,
+        "locationUnknown": 1
+      },
+      "chests": {
+        "total": 246,
+        "chests": 246,
+        "ready": 135,
+        "external": 108,
+        "notRequired": 2,
+        "missing": 1,
+        "simulatedObjects": 96,
+        "identityUncertain": 73,
+        "locationUnknown": 1
+      },
+      "variants": 165
+    },
+    "trained": {
+      "all": {
+        "total": 293,
+        "chests": 246,
+        "ready": 118,
+        "external": 166,
+        "notRequired": 7,
+        "missing": 2,
+        "simulatedObjects": 118,
+        "identityUncertain": 78,
+        "locationUnknown": 1
+      },
+      "chests": {
+        "total": 246,
+        "chests": 246,
+        "ready": 96,
+        "external": 146,
+        "notRequired": 2,
+        "missing": 2,
+        "simulatedObjects": 96,
+        "identityUncertain": 73,
+        "locationUnknown": 1
+      },
+      "variants": 118
+    },
+    "master": {
+      "all": {
+        "total": 293,
+        "chests": 246,
+        "ready": 118,
+        "external": 166,
+        "notRequired": 7,
+        "missing": 2,
+        "simulatedObjects": 118,
+        "identityUncertain": 78,
+        "locationUnknown": 1
+      },
+      "chests": {
+        "total": 246,
+        "chests": 246,
+        "ready": 96,
+        "external": 146,
+        "notRequired": 2,
+        "missing": 2,
+        "simulatedObjects": 96,
+        "identityUncertain": 73,
+        "locationUnknown": 1
+      },
+      "variants": 118
+    }
+  },
+  "camps": {
+    "old": {
+      "total": 141,
+      "chests": 118,
+      "ready": 86,
+      "external": 54,
+      "notRequired": 1,
+      "missing": 0,
+      "simulatedObjects": 52,
+      "identityUncertain": 40,
+      "locationUnknown": 0
+    },
+    "new": {
+      "total": 46,
+      "chests": 41,
+      "ready": 18,
+      "external": 27,
+      "notRequired": 0,
+      "missing": 1,
+      "simulatedObjects": 13,
+      "identityUncertain": 18,
+      "locationUnknown": 0
+    },
+    "swamp": {
+      "total": 14,
+      "chests": 14,
+      "ready": 8,
+      "external": 6,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 6,
+      "identityUncertain": 9,
+      "locationUnknown": 0
+    },
+    "other": {
+      "total": 92,
+      "chests": 73,
+      "ready": 50,
+      "external": 36,
+      "notRequired": 6,
+      "missing": 0,
+      "simulatedObjects": 47,
+      "identityUncertain": 11,
+      "locationUnknown": 1
+    }
+  },
+  "regions": [
+    {
+      "id": "old-camp",
+      "name": "Старый лагерь",
+      "total": 140,
+      "chests": 117,
+      "ready": 85,
+      "external": 54,
+      "notRequired": 1,
+      "missing": 0,
+      "simulatedObjects": 51,
+      "identityUncertain": 40,
+      "locationUnknown": 0
+    },
+    {
+      "id": "new-camp",
+      "name": "Новый лагерь",
+      "total": 46,
+      "chests": 41,
+      "ready": 18,
+      "external": 27,
+      "notRequired": 0,
+      "missing": 1,
+      "simulatedObjects": 13,
+      "identityUncertain": 18,
+      "locationUnknown": 0
+    },
+    {
+      "id": "swamp-camp",
+      "name": "Болотный лагерь",
+      "total": 14,
+      "chests": 14,
+      "ready": 8,
+      "external": 6,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 6,
+      "identityUncertain": 9,
+      "locationUnknown": 0
+    },
+    {
+      "id": "old-mine",
+      "name": "Старая шахта",
+      "total": 7,
+      "chests": 7,
+      "ready": 4,
+      "external": 3,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 3,
+      "identityUncertain": 2,
+      "locationUnknown": 0
+    },
+    {
+      "id": "free-mine",
+      "name": "Свободная шахта",
+      "total": 14,
+      "chests": 12,
+      "ready": 4,
+      "external": 9,
+      "notRequired": 1,
+      "missing": 0,
+      "simulatedObjects": 4,
+      "identityUncertain": 1,
+      "locationUnknown": 0
+    },
+    {
+      "id": "abandoned-mine",
+      "name": "Заброшенная шахта",
+      "total": 3,
+      "chests": 1,
+      "ready": 0,
+      "external": 1,
+      "notRequired": 2,
+      "missing": 0,
+      "simulatedObjects": 0,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "mountain-fortress",
+      "name": "Горная крепость",
+      "total": 8,
+      "chests": 6,
+      "ready": 4,
+      "external": 3,
+      "notRequired": 1,
+      "missing": 0,
+      "simulatedObjects": 3,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "ruined-tower",
+      "name": "Разрушенная башня",
+      "total": 3,
+      "chests": 2,
+      "ready": 3,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 3,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "fog-tower",
+      "name": "Туманная башня",
+      "total": 0,
+      "chests": 0,
+      "ready": 0,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 0,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "cavalorn",
+      "name": "Окрестности Кавалорна",
+      "total": 3,
+      "chests": 2,
+      "ready": 3,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 3,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "caves",
+      "name": "Пещеры",
+      "total": 5,
+      "chests": 4,
+      "ready": 3,
+      "external": 2,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 3,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "underwater",
+      "name": "Подводные области",
+      "total": 6,
+      "chests": 5,
+      "ready": 2,
+      "external": 4,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 2,
+      "identityUncertain": 1,
+      "locationUnknown": 1
+    },
+    {
+      "id": "orc-cemetery",
+      "name": "Кладбище орков",
+      "total": 2,
+      "chests": 0,
+      "ready": 1,
+      "external": 0,
+      "notRequired": 1,
+      "missing": 0,
+      "simulatedObjects": 1,
+      "identityUncertain": 1,
+      "locationUnknown": 0
+    },
+    {
+      "id": "forest",
+      "name": "Лес и лесорубы",
+      "total": 1,
+      "chests": 0,
+      "ready": 1,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 1,
+      "identityUncertain": 1,
+      "locationUnknown": 0
+    },
+    {
+      "id": "monastery",
+      "name": "Монастырь / испытание огня",
+      "total": 1,
+      "chests": 1,
+      "ready": 1,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 0,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "alberto-mine",
+      "name": "Шахта Альберто",
+      "total": 3,
+      "chests": 3,
+      "ready": 3,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 3,
+      "identityUncertain": 3,
+      "locationUnknown": 0
+    },
+    {
+      "id": "wilderness",
+      "name": "Дороги и дикая Колония",
+      "total": 2,
+      "chests": 1,
+      "ready": 2,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 2,
+      "identityUncertain": 1,
+      "locationUnknown": 0
+    },
+    {
+      "id": "unknown",
+      "name": "Место не установлено",
+      "total": 0,
+      "chests": 0,
+      "ready": 0,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 0,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "old-camp-outskirts",
+      "name": "Окрестности Старого лагеря",
+      "total": 1,
+      "chests": 1,
+      "ready": 1,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 1,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "old-citadel",
+      "name": "Старая цитадель",
+      "total": 3,
+      "chests": 3,
+      "ready": 2,
+      "external": 1,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 2,
+      "identityUncertain": 1,
+      "locationUnknown": 0
+    },
+    {
+      "id": "orc-territory",
+      "name": "Земли и город орков",
+      "total": 11,
+      "chests": 11,
+      "ready": 5,
+      "external": 6,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 5,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "xardas-tower",
+      "name": "Башня Ксардаса",
+      "total": 6,
+      "chests": 5,
+      "ready": 5,
+      "external": 1,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 5,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "shipwreck-coast",
+      "name": "Побережье и затонувший корабль",
+      "total": 4,
+      "chests": 3,
+      "ready": 2,
+      "external": 2,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 2,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "outlaws-camp",
+      "name": "Лагерь разбойников Квентина",
+      "total": 9,
+      "chests": 7,
+      "ready": 5,
+      "external": 4,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 5,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "exchange-zone",
+      "name": "Зона обмена",
+      "total": 1,
+      "chests": 0,
+      "ready": 0,
+      "external": 0,
+      "notRequired": 1,
+      "missing": 0,
+      "simulatedObjects": 0,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    },
+    {
+      "id": "sleeper-temple",
+      "name": "Храм Спящего",
+      "total": 0,
+      "chests": 0,
+      "ready": 0,
+      "external": 0,
+      "notRequired": 0,
+      "missing": 0,
+      "simulatedObjects": 0,
+      "identityUncertain": 0,
+      "locationUnknown": 0
+    }
+  ],
+  "guides": 1375,
+  "mathModelFamilies": 92,
+  "shack": [
+    {
+      "skill": "none",
+      "moves": 59,
+      "positions": [
+        7,
+        2,
+        5,
+        5,
+        1,
+        6
+      ]
+    },
+    {
+      "skill": "trained",
+      "moves": 26,
+      "positions": [
+        7,
+        2,
+        5,
+        5,
+        1,
+        6
+      ]
+    },
+    {
+      "skill": "master",
+      "moves": 16,
+      "positions": [
+        7,
+        2,
+        5,
+        5,
+        1,
+        6
+      ]
+    }
+  ],
+  "locationOnly": 72,
+  "incompleteObjects": [
+    {
+      "id": "kharim-chest",
+      "name": "Сундук Кирго / «Харима» — спорная запись",
+      "ready": false
+    },
+    {
+      "id": "cor-galom-second-variant",
+      "name": "Второй сундук Кор Галома — спальня / спорное состояние",
+      "ready": true
+    },
+    {
+      "id": "underwater-unspecified",
+      "name": "Подводный сундук — место не указано",
+      "ready": false
+    },
+    {
+      "id": "aarlan-cage",
+      "name": "Дверь камеры Арлина",
+      "ready": true
+    },
+    {
+      "id": "bridge-near-new-camp",
+      "name": "Замок у моста возле Нового лагеря",
+      "ready": true
+    },
+    {
+      "id": "orc-cemetery-baal-lukor",
+      "name": "Замок на Кладбище орков у Баала Лукора",
+      "ready": true
+    },
+    {
+      "id": "wood-camp-stone-circle",
+      "name": "Замок у лагеря лесорубов и каменного круга",
+      "ready": true
+    },
+    {
+      "id": "guide-alberto",
+      "name": "Сундук Альберто",
+      "ready": false
+    },
+    {
+      "id": "guide-baalcadar",
+      "name": "Сундук Баала Кадара",
+      "ready": true
+    },
+    {
+      "id": "guide-baalnamib",
+      "name": "Сундук Баала Намиба",
+      "ready": false
+    },
+    {
+      "id": "guide-baalorun",
+      "name": "Сундук Баала Оруна",
+      "ready": false
+    },
+    {
+      "id": "guide-baalparvez",
+      "name": "Сундук Баала Парвеза",
+      "ready": false
+    },
+    {
+      "id": "guide-baaltondral",
+      "name": "Сундук Баала Тондрала",
+      "ready": false
+    },
+    {
+      "id": "guide-balam",
+      "name": "Сундук Балама",
+      "ready": false
+    },
+    {
+      "id": "guide-bartholo",
+      "name": "Сундук Бартоло",
+      "ready": false
+    },
+    {
+      "id": "guide-bettingowner",
+      "name": "Сундук букмекера",
+      "ready": false
+    },
+    {
+      "id": "guide-blade",
+      "name": "Сундук Блэйда",
+      "ready": false
+    },
+    {
+      "id": "guide-bloodwyn",
+      "name": "Сундук Бладвина",
+      "ready": false
+    },
+    {
+      "id": "guide-bruce",
+      "name": "Сундук Брюса",
+      "ready": false
+    },
+    {
+      "id": "guide-bullit",
+      "name": "Сундук Буллита",
+      "ready": false
+    },
+    {
+      "id": "guide-buster",
+      "name": "Сундук Бастера",
+      "ready": false
+    },
+    {
+      "id": "guide-butch",
+      "name": "Сундук Бутча",
+      "ready": false
+    },
+    {
+      "id": "guide-cipher",
+      "name": "Сундук Сайфера",
+      "ready": false
+    },
+    {
+      "id": "guide-corangar",
+      "name": "Сундук Кор Ангара",
+      "ready": false
+    },
+    {
+      "id": "guide-cord",
+      "name": "Сундук Корда",
+      "ready": false
+    },
+    {
+      "id": "guide-cutter",
+      "name": "Сундук Каттера",
+      "ready": false
+    },
+    {
+      "id": "guide-damarok",
+      "name": "Сундук Дамарока",
+      "ready": false
+    },
+    {
+      "id": "guide-dexter",
+      "name": "Сундук Декстера",
+      "ready": false
+    },
+    {
+      "id": "guide-dusty",
+      "name": "Сундук Дасти",
+      "ready": false
+    },
+    {
+      "id": "guide-fingers",
+      "name": "Сундук Фингерса",
+      "ready": true
+    },
+    {
+      "id": "guide-fletcher",
+      "name": "Сундук Флетчера",
+      "ready": false
+    },
+    {
+      "id": "guide-fortuno",
+      "name": "Сундук Фортуно",
+      "ready": false
+    },
+    {
+      "id": "guide-gorhanis",
+      "name": "Сундук Гор Ханиса",
+      "ready": true
+    },
+    {
+      "id": "guide-gorn",
+      "name": "Сундук Горна",
+      "ready": false
+    },
+    {
+      "id": "guide-guy",
+      "name": "Сундук Гая",
+      "ready": false
+    },
+    {
+      "id": "guide-herek",
+      "name": "Сундук Херека",
+      "ready": false
+    },
+    {
+      "id": "guide-homer",
+      "name": "Сундук Гомера",
+      "ready": false
+    },
+    {
+      "id": "guide-jackal",
+      "name": "Сундук Шакала",
+      "ready": false
+    },
+    {
+      "id": "guide-jeremiah",
+      "name": "Сундук Иеремии",
+      "ready": false
+    },
+    {
+      "id": "guide-jesse",
+      "name": "Сундук Джесси",
+      "ready": false
+    },
+    {
+      "id": "guide-kharim",
+      "name": "Сундук Харима",
+      "ready": false
+    },
+    {
+      "id": "guide-lares",
+      "name": "Сундук Лареса",
+      "ready": false
+    },
+    {
+      "id": "guide-lefty",
+      "name": "Сундук Лефти",
+      "ready": false
+    },
+    {
+      "id": "guide-mordrag",
+      "name": "Сундук Мордрага",
+      "ready": false
+    },
+    {
+      "id": "guide-mud",
+      "name": "Сундук Мада",
+      "ready": true
+    },
+    {
+      "id": "guide-nyras",
+      "name": "Сундук Нираса",
+      "ready": true
+    },
+    {
+      "id": "guide-omid",
+      "name": "Сундук Омида",
+      "ready": false
+    },
+    {
+      "id": "guide-orik",
+      "name": "Сундук Орика",
+      "ready": false
+    },
+    {
+      "id": "guide-ricelord",
+      "name": "Сундук Рисового лорда",
+      "ready": false
+    },
+    {
+      "id": "guide-santino",
+      "name": "Сантино: сундук у лестницы склада",
+      "ready": true
+    },
+    {
+      "id": "guide-scar",
+      "name": "Сундук Шрама",
+      "ready": false
+    },
+    {
+      "id": "guide-scorpio",
+      "name": "Сундук Скорпио",
+      "ready": false
+    },
+    {
+      "id": "guide-sharky",
+      "name": "Сундук Шарки",
+      "ready": false
+    },
+    {
+      "id": "guide-silas",
+      "name": "Сундук Силаса",
+      "ready": false
+    },
+    {
+      "id": "guide-skip",
+      "name": "Сундук Скипа",
+      "ready": false
+    },
+    {
+      "id": "guide-sly",
+      "name": "Сундук Слая",
+      "ready": true
+    },
+    {
+      "id": "guide-snaf",
+      "name": "Снаф: сундук возле кровати",
+      "ready": false
+    },
+    {
+      "id": "guide-stone",
+      "name": "Сундук Стоуна",
+      "ready": false
+    },
+    {
+      "id": "guide-swiney",
+      "name": "Сундук Суини",
+      "ready": false
+    },
+    {
+      "id": "guide-thorus",
+      "name": "Сундук Торуса",
+      "ready": false
+    },
+    {
+      "id": "guide-torlof",
+      "name": "Сундук Торлофа",
+      "ready": false
+    },
+    {
+      "id": "guide-viran",
+      "name": "Сундук Вирана",
+      "ready": false
+    },
+    {
+      "id": "guide-wedge",
+      "name": "Сундук Веджа",
+      "ready": false
+    },
+    {
+      "id": "guide-whistler",
+      "name": "Сундук Уистлера",
+      "ready": true
+    },
+    {
+      "id": "guide-wolf",
+      "name": "Сундук Вольфа",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-1",
+      "name": "Сундук Фиска №1",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-2",
+      "name": "Сундук Фиска №2",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-3",
+      "name": "Сундук Фиска №3",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-4",
+      "name": "Сундук Фиска №4",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-5",
+      "name": "Сундук Фиска №5",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-6",
+      "name": "Сундук Фиска №6",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-7",
+      "name": "Сундук Фиска №7",
+      "ready": true
+    },
+    {
+      "id": "fisk-chest-8",
+      "name": "Сундук Фиска №8",
+      "ready": true
+    },
+    {
+      "id": "alberto-mine-hut-chest",
+      "name": "Шахта Альберто: сундук в хижине",
+      "ready": true
+    },
+    {
+      "id": "alberto-mine-upstairs-left-chest",
+      "name": "Шахта Альберто: верхний левый сундук",
+      "ready": true
+    },
+    {
+      "id": "alberto-mine-upstairs-right-chest",
+      "name": "Шахта Альберто: верхний правый сундук",
+      "ready": true
+    },
+    {
+      "id": "old-camp-north-gate-lock",
+      "name": "Замок справа от северных ворот",
+      "ready": true
+    },
+    {
+      "id": "old-citadel-golem-workshop-chest",
+      "name": "Сундук мастерской недостроенного голема",
+      "ready": false
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "auditVersion": 1,
+  "observedDate": "2026-10-16",
+  "scope": "Research only. No production changes, no protected bulk data imported, no contact sent.",
+  "sources": [
+    {
+      "id": "planet-of-gothic",
+      "name": "Planet of Gothic Atlas",
+      "urls": [
+        "https://www.planetofgothic.de/tools/atlas",
+        "https://www.planetofgothic.de/tools/lockpick"
+      ],
+      "observedDate": "2026-10-16",
+      "counts": {
+        "chestPoi": 447,
+        "doorPoi": 53,
+        "regionPages": 13,
+        "regionMapLinks": 447,
+        "distinctChestPoiAcrossRegions": 447,
+        "overlappingPoiAcrossRegions": 0,
+        "regionPickable": 299,
+        "regionOpen": 134,
+        "regionKey": 2,
+        "regionUnclassified": 12,
+        "regionKnownCouplings": 304,
+        "faqClaimKnownCouplings": 342,
+        "liveLockpickList": 354
+      },
+      "semantics": "POI containers and doors; some community entries explicitly unverified. Region totals are not proof of complete game coverage. FAQ342 differs from regional304; mixed door/chest list354 must not be relabeled342 verified chest solutions.",
+      "identification": {
+        "sourcePoiId": true,
+        "exampleUrl": "https://www.planetofgothic.de/tools/atlas?poi=1890",
+        "worldGuid": false,
+        "numericalCoordinatesInInspectedVisibleCard": false,
+        "russianNamesObserved": false,
+        "canonicalCrosswalkToLocalCatalog": false
+      },
+      "reuse": {
+        "dataLicense": null,
+        "status": "permission-not-found",
+        "bulkImportApproved": false,
+        "embedPermissionFound": false,
+        "externalLinkPermitted": true,
+        "evidence": [
+          "https://www.planetofgothic.de/impressum",
+          "https://www.planetofgothic.de/privacy",
+          "https://www.planetofgothic.de/about",
+          "https://www.planetofgothic.de/contact"
+        ],
+        "contact": "kontakt@planetofgothic.de",
+        "note": "Private non-commercial fan project disclaimer is not a reuse license. No contact sent."
+      }
+    },
+    {
+      "id": "thgl",
+      "name": "The Hidden Gaming Lair",
+      "urls": [
+        "https://gothic1remake.th.gl/guides/Chest",
+        "https://gothic1remake.th.gl/guides/Underwater%20Chest"
+      ],
+      "observedDate": "2026-10-16",
+      "counts": {
+        "chestMarkers": 386,
+        "underwaterChestMarkers": 16,
+        "sumOfCategories": 402
+      },
+      "semantics": "Publisher map-marker category counts; locked state, unique game-instance crosswalk and solution availability are not independently verified.",
+      "identification": {
+        "russianMapAvailable": true,
+        "visibleMarkerLinks": true,
+        "worldGuid": false,
+        "canonicalCrosswalkToLocalCatalog": false,
+        "numericalCoordinateExportApproved": false
+      },
+      "reuse": {
+        "dataLicense": null,
+        "status": "bulk-copy-explicitly-not-authorized",
+        "bulkImportApproved": false,
+        "embedPermissionFound": true,
+        "embedAttributionRequired": true,
+        "evidence": [
+          "https://www.th.gl/blog/code-private-again",
+          "https://www.th.gl/developers"
+        ],
+        "policyDate": "2026-10-12",
+        "note": "Author explicitly distinguishes viewing/contributing from hosting mirrors and data/tiles copying. Agreed partners may request access. Normal iframe use is free with visible TH.GL attribution."
+      }
+    },
+    {
+      "id": "gothic-tools",
+      "name": "Gothic.tools chest registry",
+      "urls": [
+        "https://www.gothic.tools/chests",
+        "https://www.gothic.tools/chests/map"
+      ],
+      "observedDate": "2026-10-16",
+      "counts": {
+        "containers": 272,
+        "locatedContainers": 260,
+        "withoutMapLocation": 12
+      },
+      "semantics": "Registry includes corpses and other loot containers; 272 is not a locked-chest count.",
+      "identification": {
+        "sourcePoiId": "not-established-from-public-list",
+        "worldGuid": false,
+        "numericalCoordinatesOnVisibleCards": "not-established",
+        "russianNamesObserved": false,
+        "canonicalCrosswalkToLocalCatalog": false
+      },
+      "reuse": {
+        "dataLicense": null,
+        "status": "permission-not-found",
+        "bulkImportApproved": false,
+        "embedPermissionFound": false,
+        "externalLinkPermitted": true,
+        "note": "Footer describes datamined game assets/stats; no open data license or export permission found on inspected public pages."
+      }
+    },
+    {
+      "id": "g1lockpickhelper",
+      "name": "G1LockPickHelper",
+      "urls": [
+        "https://www.nexusmods.com/gothic1remake/mods/654",
+        "https://github.com/tslaceo/G1LockPickHelper/tree/e8e8da84cd8e48bcf6ed8077c7c922e83a449144"
+      ],
+      "observedDate": "2026-10-16",
+      "counts": {
+        "definitions": 416,
+        "testPrefixed": 71,
+        "productionLookingDefinitions": 345,
+        "chestIdDefinitions": 307,
+        "doorIdDefinitions": 17,
+        "otherDefinitions": 21
+      },
+      "semantics": "Lock graph definitions, not unique confirmed world objects. Does not provide world actor coordinates, Russian object names, chapters or exact observed starting states.",
+      "identification": {
+        "graphUniqueName": true,
+        "worldGuid": false,
+        "coordinates": false,
+        "russianNamesObserved": false,
+        "canonicalCrosswalkToLocalCatalog": false
+      },
+      "reuse": {
+        "codeLicense": "MIT",
+        "dataLicense": null,
+        "status": "game-data-explicitly-excluded-from-MIT",
+        "bulkImportApproved": false,
+        "evidence": [
+          "https://github.com/tslaceo/G1LockPickHelper/blob/e8e8da84cd8e48bcf6ed8077c7c922e83a449144/LICENSE"
+        ],
+        "excludedFiles": [
+          "mod/G1LockPickHelper/Scripts/lockgraphs.lua",
+          "tests/fixtures/groundtruth.json"
+        ]
+      }
+    },
+    {
+      "id": "gothicsolve-dsazz",
+      "name": "GothicSolve / Dsazz catalog",
+      "urls": [
+        "https://www.gothicsolve.com/",
+        "https://github.com/Dsazz/gothic-remake-lockbreaker/commit/ce77835ebc34f260fc121d9de79cbc68fdd07426"
+      ],
+      "observedDate": "2026-10-16",
+      "counts": {
+        "dsazzDefinitions": 345
+      },
+      "semantics": "Previous authorized source audit identifies GothicSolve API provenance; this research did not fetch or bypass the API.",
+      "identification": {
+        "graphIds": true,
+        "worldGuid": "not-established",
+        "coordinates": "not-established",
+        "russianNamesObserved": "not-established"
+      },
+      "reuse": {
+        "codeLicense": "MIT in Dsazz repository",
+        "dataLicense": null,
+        "status": "upstream-data-permission-not-established",
+        "bulkImportApproved": false,
+        "note": "Repository code license is not proof of rights to the upstream game data or API dump."
+      }
+    },
+    {
+      "id": "thq-video-policy",
+      "name": "THQ Nordic video policy",
+      "urls": [
+        "https://thqnordic.com/legal/video-policy"
+      ],
+      "observedDate": "2026-10-16",
+      "reuse": {
+        "status": "video-permission-not-general-data-license",
+        "bulkImportApproved": false,
+        "note": "Permits gameplay videos under conditions; does not give blanket permission to extract and redistribute game assets separately."
+      }
+    }
+  ],
+  "decision": {
+    "eligibleFullWorldRegistryForBulkImport": null,
+    "approvedNewObjectCount": 0,
+    "exactMissingObjectCount": null,
+    "reason": "No inspected full registry has a verified reuse permission plus an independently established object-level crosswalk. Cannot subtract local150 mixed entries from external447 chest POI.",
+    "recommendedPath": [
+      "Keep the existing attributed TH.GL iframe; expose accurate external category counts with date and definition.",
+      "Link to Planet regional pages as a broader external checklist, clearly identifying unverified community entries.",
+      "Obtain explicit registry reuse permission or build original observations with stable world identity before importing an entire map.",
+      "Require region + landmark/coordinates + type + source object ID; do not merge by display name alone."
+    ]
+  }
+}

@@ -30,7 +30,7 @@ test("manifest uses scoped standalone start URL and real 192/512 PNG icons", asy
 
 test("distributed notices preserve complete upstream license texts", async () => {
   const notices = await readFile(join(publicRoot, "apps/gothic-locks-licenses.txt"), "utf8");
-  for (const name of ["Murzav-LICENSE.txt", "Arminek-NOTICE.txt"]) {
+  for (const name of ["Murzav-LICENSE.txt", "Arminek-NOTICE.txt", "Ready-data-NOTICE.txt", "UnlockMyLoot-LICENSE.txt", "Religiosa-LICENSE.txt", "Drvladis-LICENSE.txt"]) {
     const original = await readFile(join(root, "src/lib/gothic-locks/vendor", name), "utf8");
     assert.ok(notices.includes(original.trimEnd()), name + " remains complete");
   }

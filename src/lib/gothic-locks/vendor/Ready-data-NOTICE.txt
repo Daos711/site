@@ -40,3 +40,30 @@ A route is admitted only when every atomic press is valid in every retained mode
 The assumptions of direct signed links and sequential removal of 0/1/2 connections
 are explicit mathematical assumptions, not a claim of independent PS5 play-testing.
 Reconstruction tool: https://github.com/Daos711/site/tree/main/scripts
+
+
+Vladislav Durnev / drvladis — GothicRemakeLockOpener (MIT), copyright 2026.
+https://github.com/drvladis/GothicRemakeLockOpener/tree/d086b57e7b2a024f3f7344c6dad28248194360fa
+Licensed observation file: LocksCombinationsGothic1Remake.txt. Its original text and
+complete MIT notice accompany this release. No exception for this file was found
+in the license or source history. The original labels are cross-checked against
+independent location descriptions before attaching observations to catalog IDs.
+Changes: normalized atomic movements and bottom-first numbering; independently
+enumerated directed coefficients, skill-specific alternatives, and safe BFS routes.
+Mathematical inference is not a claim of independent in-game verification.
+For large ambiguous model families, valid witness graphs cover every feasible
+output column; checking all witnesses proves the route safe for every compatible
+model. The public reconstruction tool and synthetic tests explain this proof.
+
+
+Zorthrus / Land of Games — selected published commands, adapted to atomic moves.
+Article: https://landofgames.ru/articles/guides/29940-vse-sunduki-i-dveri-v-gothic-1-remake-kak-otkryt-kombinacii.html
+Terms checked 2026-10-16: https://landofgames.ru/user-policy.html
+LicenseRef-LandOfGames-7.7-7.8-Personal-Noncommercial-Attribution.
+Sections7.7–7.8 permit partial/full use for personal noncommercial purposes,
+with a direct search-indexable article link whose font is no smaller than the
+reused material. This site's use is personal and noncommercial as requested
+by its owner. Every adapted route displays that link with equal-size type.
+No images or third-party program code were copied. Source rights are retained;
+this subset is not MIT/CC0, and its use is conditional on the original terms.
+The routes are published instructions, not independently simulated game models.

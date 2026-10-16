@@ -208,11 +208,11 @@ test('ready unit: explicit guide skills stay restricted while genuinely unknown 
 });
 
 test('ready unit: ready, external and missing coverage are disjoint, skill-specific and count objects rather than variants', () => {
-  assert.deepEqual(fixtures.solutionCoverage(fixtureEntries), { total: 5, chests: 3, ready: 2, external: 2, missing: 1 });
+  assert.deepEqual(fixtures.solutionCoverage(fixtureEntries), { total: 5, chests: 3, ready: 2, external: 2, notRequired: 0, missing: 1 });
   for (const skill of ['none', 'trained', 'master']) {
-    assert.deepEqual(fixtures.solutionCoverage(fixtureEntries, skill), { total: 5, chests: 3, ready: 1, external: 2, missing: 2 });
+    assert.deepEqual(fixtures.solutionCoverage(fixtureEntries, skill), { total: 5, chests: 3, ready: 1, external: 2, notRequired: 0, missing: 2 });
   }
-  assert.deepEqual(fixtures.solutionCoverage([]), { total: 0, chests: 0, ready: 0, external: 0, missing: 0 });
+  assert.deepEqual(fixtures.solutionCoverage([]), { total: 0, chests: 0, ready: 0, external: 0, notRequired: 0, missing: 0 });
 });
 
 test('ready unit: resume uses grouped-command index, accepts completion and rejects stale or corrupt steps', () => {
@@ -307,6 +307,7 @@ test('ready data: exported choices and coverage preserve every catalog object wi
     const selected = new Set();
     const external = new Set();
     const missing = new Set();
+    const notRequired = new Set();
     for (const entry of catalog) {
       const solutions = production.readyFor(entry.id, skill);
       const guides = production.guidesFor(entry.id, skill);
@@ -318,7 +319,8 @@ test('ready data: exported choices and coverage preserve every catalog object wi
         assert.equal(guide.entryId, entry.id);
         assert.ok(guide.skill === skill || guide.skill === 'unknown');
       }
-      if (solutions.length) selected.add(entry.id);
+      if (entry.access==='key'||entry.access==='unlocked') { assert.equal(solutions.length,0,entry.id); notRequired.add(entry.id); }
+      else if (solutions.length) selected.add(entry.id);
       else if (guides.length) external.add(entry.id);
       else missing.add(entry.id);
     }
@@ -326,7 +328,47 @@ test('ready data: exported choices and coverage preserve every catalog object wi
     assert.equal(counts.ready, selected.size);
     assert.equal(counts.external, external.size);
     assert.equal(counts.missing, missing.size);
-    assert.equal(counts.ready + counts.external + counts.missing, catalog.length);
-    assert.equal(new Set([...selected, ...external, ...missing]).size, catalog.length);
+    assert.equal(counts.notRequired,notRequired.size);
+    assert.equal(counts.ready + counts.external + counts.missing + counts.notRequired, catalog.length);
+    assert.equal(new Set([...selected, ...external, ...missing, ...notRequired]).size, catalog.length);
   }
+});
+
+
+test('ready unit: column-cover metadata rejects malformed or truncated witness sets',()=>{
+ const covered={...copy(universal),modelCoverage:{kind:'column-witnesses',fullModelCount:2,witnessCount:2,columnCounts:[2,1,1,1]}};
+ assert.deepEqual(fixtures.solutionIssues(covered),[]);
+ for(const change of [s=>s.modelCoverage.columnCounts=null,s=>s.modelCoverage.columnCounts=[],s=>s.modelCoverage.columnCounts[0]=0,s=>s.modelCoverage.fullModelCount=1,s=>s.modelCoverage.witnessCount=1,s=>s.modelCoverage.kind='guess']) {const row=copy(covered);change(row);assert.ok(fixtures.solutionIssues(row).length);}
+});
+
+test('ready data: independent column certificates cover every admissible incoming influence and replay every prefix',async()=>{
+ const proofs=JSON.parse(await readFile(new URL('./data/column-coverage-proof.json',import.meta.url),'utf8'));
+ const covered=rawReady.filter(s=>s.modelCoverage);assert.ok(covered.length);
+ for(const solution of covered){
+  const proof=proofs[solution.id];assert.ok(proof,solution.id);
+  assert.equal(proof.distinctSkillModels,solution.modelCoverage.fullModelCount);
+  assert.deepEqual(proof.positions,solution.configAlternatives[0].positions);
+  for(let to=0;to<solution.plateCount;to++){
+   const expected=proof.columnPossibilities[to].map(c=>JSON.stringify(c)).sort();
+   const actual=[...new Set(solution.configAlternatives.map(c=>JSON.stringify(c.links.map((row,from)=>from===to?1:row[to]))))].sort();
+   assert.deepEqual(actual,expected,solution.id+' missing incoming column '+to);
+   assert.equal(expected.length,solution.modelCoverage.columnCounts[to]);
+   for(const column of proof.columnPossibilities[to]){
+    let value=proof.positions[to];
+    for(const move of solution.moves){value+=column[move.plate]*move.direction;assert.ok(value>=1&&value<=7,solution.id+' unsafe prefix');}
+    assert.equal(value,4,solution.id+' final pin position');
+   }
+  }
+ }
+});
+
+test('priority shack has exact skill-specific models, and its trained first command must not be played without skill',()=>{
+ const id='old-camp-abandoned-shack-chest';
+ const solutions=['none','trained','master'].map(skill=>production.readyFor(id,skill).find(s=>s.verification==='simulated'));
+ assert.ok(solutions.every(Boolean));
+ for(const solution of solutions){assert.deepEqual(solution.config.positions,[7,2,5,5,1,6]);replayEveryPress(solution);}
+ const [none,trained,master]=solutions;assert.equal(none.moves.length,59);assert.equal(trained.moves.length,26);assert.equal(master.moves.length,16);
+ assert.deepEqual(trained.moves.slice(0,3),Array.from({length:3},()=>({plate:0,direction:-1})));
+ assert.notDeepEqual(none.config.links,trained.config.links);
+ const wrongSkill={...trained,config:none.config};assert.ok(production.solutionIssues(wrongSkill).length);
 });
