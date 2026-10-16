@@ -8,7 +8,7 @@
     "notRequired": 7,
     "missing": 1,
     "simulatedObjects": 118,
-    "identityUncertain": 78,
+    "identityUncertain": 73,
     "locationUnknown": 1
   },
   "chests": {
@@ -19,7 +19,7 @@
     "notRequired": 2,
     "missing": 1,
     "simulatedObjects": 96,
-    "identityUncertain": 73,
+    "identityUncertain": 68,
     "locationUnknown": 1
   },
   "doors": 42,
@@ -38,7 +38,7 @@
         "notRequired": 7,
         "missing": 1,
         "simulatedObjects": 118,
-        "identityUncertain": 78,
+        "identityUncertain": 73,
         "locationUnknown": 1
       },
       "chests": {
@@ -49,7 +49,7 @@
         "notRequired": 2,
         "missing": 1,
         "simulatedObjects": 96,
-        "identityUncertain": 73,
+        "identityUncertain": 68,
         "locationUnknown": 1
       },
       "variants": 165
@@ -63,7 +63,7 @@
         "notRequired": 7,
         "missing": 2,
         "simulatedObjects": 118,
-        "identityUncertain": 78,
+        "identityUncertain": 73,
         "locationUnknown": 1
       },
       "chests": {
@@ -74,7 +74,7 @@
         "notRequired": 2,
         "missing": 2,
         "simulatedObjects": 96,
-        "identityUncertain": 73,
+        "identityUncertain": 68,
         "locationUnknown": 1
       },
       "variants": 118
@@ -88,7 +88,7 @@
         "notRequired": 7,
         "missing": 2,
         "simulatedObjects": 118,
-        "identityUncertain": 78,
+        "identityUncertain": 73,
         "locationUnknown": 1
       },
       "chests": {
@@ -99,7 +99,7 @@
         "notRequired": 2,
         "missing": 2,
         "simulatedObjects": 96,
-        "identityUncertain": 73,
+        "identityUncertain": 68,
         "locationUnknown": 1
       },
       "variants": 118
@@ -147,7 +147,7 @@
       "notRequired": 6,
       "missing": 0,
       "simulatedObjects": 47,
-      "identityUncertain": 11,
+      "identityUncertain": 6,
       "locationUnknown": 1
     }
   },
@@ -194,14 +194,14 @@
     {
       "id": "old-mine",
       "name": "Старая шахта",
-      "total": 7,
-      "chests": 7,
-      "ready": 4,
+      "total": 10,
+      "chests": 10,
+      "ready": 7,
       "external": 3,
       "notRequired": 0,
       "missing": 0,
-      "simulatedObjects": 3,
-      "identityUncertain": 2,
+      "simulatedObjects": 6,
+      "identityUncertain": 1,
       "locationUnknown": 0
     },
     {
@@ -214,7 +214,7 @@
       "notRequired": 1,
       "missing": 0,
       "simulatedObjects": 4,
-      "identityUncertain": 1,
+      "identityUncertain": 0,
       "locationUnknown": 0
     },
     {
@@ -345,19 +345,6 @@
       "missing": 0,
       "simulatedObjects": 0,
       "identityUncertain": 0,
-      "locationUnknown": 0
-    },
-    {
-      "id": "alberto-mine",
-      "name": "Шахта Альберто",
-      "total": 3,
-      "chests": 3,
-      "ready": 3,
-      "external": 0,
-      "notRequired": 0,
-      "missing": 0,
-      "simulatedObjects": 3,
-      "identityUncertain": 3,
       "locationUnknown": 0
     },
     {
@@ -531,7 +518,7 @@
       ]
     }
   ],
-  "locationOnly": 72,
+  "locationOnly": 74,
   "incompleteObjects": [
     {
       "id": "kharim-chest",
@@ -567,11 +554,6 @@
       "id": "wood-camp-stone-circle",
       "name": "Замок у лагеря лесорубов и каменного круга",
       "ready": true
-    },
-    {
-      "id": "guide-alberto",
-      "name": "Сундук Альберто",
-      "ready": false
     },
     {
       "id": "guide-baalcadar",
@@ -824,11 +806,6 @@
       "ready": false
     },
     {
-      "id": "guide-swiney",
-      "name": "Сундук Суини",
-      "ready": false
-    },
-    {
       "id": "guide-thorus",
       "name": "Сундук Торуса",
       "ready": false
@@ -896,21 +873,6 @@
     {
       "id": "fisk-chest-8",
       "name": "Сундук Фиска №8",
-      "ready": true
-    },
-    {
-      "id": "alberto-mine-hut-chest",
-      "name": "Шахта Альберто: сундук в хижине",
-      "ready": true
-    },
-    {
-      "id": "alberto-mine-upstairs-left-chest",
-      "name": "Шахта Альберто: верхний левый сундук",
-      "ready": true
-    },
-    {
-      "id": "alberto-mine-upstairs-right-chest",
-      "name": "Шахта Альберто: верхний правый сундук",
       "ready": true
     },
     {

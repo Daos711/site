@@ -1,12 +1,15 @@
 /** Independently curated factual index. See docs/gothic-locks/FULL-AUDIT.md for provenance and exclusions. */
 import type { LockConfig } from './types';
 import type { Skill } from './skill';
+export interface LootSource { name:string; url:string; author?:string; license?:string }
+export interface LootEvidence { coverage:'listed'|'partial'|'empty'; sources:LootSource[]; reviewedAt:string; note?:string }
 export interface LockEntry {
  id:string; name:string; originalName:string; camp:'old'|'new'|'swamp'|'other'; region:string; sector:string;
  route:string|null; type:'chest'|'door'|'underwater'|'other'|'unknown'; floor:string|null; contents:string[]; valuable:boolean;
  warnings:string[]; config:LockConfig|null; profiles?:Partial<Record<Skill,LockConfig>>; gameVersion:string|null; chapter:string|null;
  source:{name:string;url:string;license:string;revision?:string}; locationSources?:{name:string;url:string}[];
  verification:'source'|'unknown'; notes:string; locationPrecision:'landmark'|'area'|'unknown'; identity:'known'|'uncertain';
+ loot?:LootEvidence; lootExternal?:LootSource[];
  searchAliases?:string[];mapUrl?:string;access?:'lockpick'|'unlocked'|'key'|'unknown';
  relatedIds?:string[];tags?:string[];plateCount:number|null; solutionStatus:'confirmed'|'unconfirmed';
 }
@@ -71,10 +74,6 @@ export const REGIONS=[
   {
     "id": "monastery",
     "name": "Монастырь / испытание огня"
-  },
-  {
-    "id": "alberto-mine",
-    "name": "Шахта Альберто"
   },
   {
     "id": "wilderness",
@@ -373,7 +372,14 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Внутри Разрушенной башни найдите сундук возле лестницы. В гайде он обозначен как первый.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Примитивный меч × 1",
+      "Свиток «Огненная стрела» × 1",
+      "Отмычка × 1",
+      "Иззубренный топор × 1",
+      "Стрела × 7",
+      "Кусок руды × 26"
+    ],
     "valuable": false,
     "warnings": [
       "У второго сундука наверху башни другая конфигурация. Сверьте все шесть стартовых позиций."
@@ -482,7 +488,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "searchAliases": [
       "317432",
       "Кавалорн"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-destroyed-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Broken%20Tower%20Chest%20%231"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "tower-chest-second",
@@ -493,8 +515,15 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Поднимитесь наверх Разрушенной башни. Этот сундук расположен выше первого сундука у лестницы.",
     "type": "chest",
     "floor": "Наверху башни",
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Кольцо железной кожи × 1",
+      "Эссенция силы × 1",
+      "Железо × 4",
+      "Лабораторный флакон × 2",
+      "Соль × 2",
+      "Монета × 9"
+    ],
+    "valuable": true,
     "warnings": [
       "Автор исправил связь пластины 4 после повторного наблюдения. Использована исправленная запись источника."
     ],
@@ -602,7 +631,28 @@ export const LOCK_CATALOG:LockEntry[] = [
     "searchAliases": [
       "536727",
       "Кавалорн"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-upper-destroyed-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Broken%20Tower%20Chest%20%232"
+        },
+        {
+          "name": "Guszaban — GameFAQs, Ultimate Act I Progression Guide, v2",
+          "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Добыча относится к верхнему сундуку разрушенной башни. Меч из неоднозначного описания двух сундуков не включён."
+    }
   },
   {
     "id": "kharim-chest",
@@ -743,7 +793,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Старый лагерь: первый этаж здания у арены. Это отдельный шестипластинный сундук, а не пяти­пластинный сундук Скатти.",
     "type": "chest",
     "floor": "1-й этаж",
-    "contents": [],
+    "contents": [
+      "Сталь × 1",
+      "Рубин × 1",
+      "Золото",
+      "Кусок руды × 21"
+    ],
     "valuable": false,
     "warnings": [
       "Не путать с сундуками Скатти и Харима рядом с ареной. Сверьте шесть стартовых позиций."
@@ -845,7 +900,22 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "561321"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Guszaban — GameFAQs, Ultimate Act I Progression Guide, v2",
+          "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+        },
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Arena%20Chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. По одному рубину и стали независимо указаны в GameFAQs."
+    }
   },
   {
     "id": "scatty-chest",
@@ -857,8 +927,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Кольцо для задания Фингерса",
-      "Кольцо Скатти для Фингерса"
+      "Кольцо Скатти",
+      "Сковорода",
+      "Сыр",
+      "Хлеб",
+      "Бритва",
+      "Кирка",
+      "Кусок руды × 16"
     ],
     "valuable": true,
     "warnings": [
@@ -960,7 +1035,28 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "63217"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/walkthroughs/29870-priglashenie-v-staryj-lager-v-gothic-1-remake-kak-popast-v-zamok-i-vstupit-v-lager.html",
+          "author": "lyubov",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        },
+        {
+          "name": "The Game Slayer — Santosh Kumar",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-easy-steps-to-open-scattys-chest/"
+        },
+        {
+          "name": "Golden Lockpick — кольцо Скатти",
+          "url": "https://www.gothic-golden-lockpick-tool.com/blog/scatty/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источник от 7 июня, обновление 16 июня 2026; кроме руды количество отдельных предметов не указано."
+    }
   },
   {
     "id": "ubert-mine-second",
@@ -971,7 +1067,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В Старой шахте найдите склад, охраняемый Ульбертом на нижних уровнях. Вторая запись автора относится к сундуку за Ульбертом; рядом со складом есть второй тайник.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Золото × 1",
+      "Окорок × 3",
+      "Хлеб × 3",
+      "Пиво × 4",
+      "Яблоко × 7"
+    ],
     "valuable": false,
     "warnings": [
       "В исходнике имя записано как Ubert. Здесь пять пластин; у первого сундука — шесть. Принадлежность именно к тайнику с припасами отдельно не проверена."
@@ -1066,7 +1168,20 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "16233"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/walkthroughs/29922-kladovka-ulberta-v-gothic-1-remake-gde-nahoditsja-alef-i-kak-obchistit-sklad-s-pripasami.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Задний сундук с продовольствием: пройти справа вокруг кладовки."
+    }
   },
   {
     "id": "ubert-mine-first",
@@ -1077,7 +1192,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В Старой шахте спуститесь ниже места Аарона и Снайпса к Ульберту, который охраняет склад. Эта запись — первый сундук за ним по нумерации автора.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Факел × 5",
+      "Железо × 2",
+      "Свиток «Светоч» × 2"
+    ],
     "valuable": false,
     "warnings": [
       "В исходнике имя записано как Ubert. У двух сундуков за Ульбертом разные механизмы: здесь шесть пластин. Сверьте стартовые позиции."
@@ -1173,7 +1292,20 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "762642"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/walkthroughs/29922-kladovka-ulberta-v-gothic-1-remake-gde-nahoditsja-alef-i-kak-obchistit-sklad-s-pripasami.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Первый сундук склада. Второй контейнер источник отдельно описывает как спрятанный за кладовкой."
+    }
   },
   {
     "id": "aaron-chest",
@@ -1184,7 +1316,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В Старой шахте найдите Аарона возле его сундука в главном стволе; рядом находится Снайпс.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Отмычка × 7",
+      "Свиток «Исцеление» × 1",
+      "Пиво × 1",
+      "Кусок руды × 9"
+    ],
     "valuable": false,
     "warnings": [],
     "config": {
@@ -1283,7 +1420,20 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "156665"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/walkthroughs/29921-sunduk-arona-v-gothic-1-remake-kak-otvlech-arona-i-zabrat-soderzhimoe-sunduka.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Перечень из прохождения задания; руда за завершение задания в добычу сундука не включена."
+    }
   },
   {
     "id": "cor-galom-recipe",
@@ -1295,8 +1445,7 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": "1-й этаж",
     "contents": [
-      "Рецепт для задания Декстера",
-      "Рецепт для Декстера"
+      "Рецепт Кор Галома для Декстера"
     ],
     "valuable": true,
     "warnings": [
@@ -1386,7 +1535,24 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "7761"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-kor-galom/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/cor-galom-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источники называют квестовый рецепт; остальная добыча не установлена."
+    }
   },
   {
     "id": "cor-galom-second-variant",
@@ -1400,7 +1566,10 @@ export const LOCK_CATALOG:LockEntry[] = [
     "contents": [
       "Кольцо очищения",
       "Свиток пиромантии",
-      "Алхимические материалы"
+      "Сера × 3",
+      "Тёмный цветок × 3",
+      "Флакон × 2",
+      "Изваяние"
     ],
     "valuable": true,
     "warnings": [
@@ -1506,7 +1675,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "655714"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/cor-galom-bedroom-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "flooded-mine-left",
@@ -1517,7 +1696,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В Заброшенной шахте пройдите затопленные тоннели до финального зала с Неупокоенным орком и телом Каина. Нужен левый сундук в этом зале.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Сталь × 1",
+      "Посох Правосудия × 1",
+      "Золото (слиток) × 1",
+      "Монета × 13"
+    ],
     "valuable": false,
     "warnings": [
       "Не путать с подводным сундуком на развилке по пути к Каину: у него другой механизм."
@@ -1611,7 +1795,19 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "45651"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-sunken-cove/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "trial-of-fire-chest",
@@ -1622,7 +1818,14 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Малая пещера возле каменного круга с огненным ящером на востоке Колонии.",
     "type": "other",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Эссенция жизни × 1",
+      "Экстракт магической энергии × 1",
+      "Золото (слиток) × 1",
+      "Отмычка × 3",
+      "Древесина ивы × 2",
+      "Перо × 1"
+    ],
     "valuable": false,
     "warnings": [],
     "config": {
@@ -1737,7 +1940,19 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "517764"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-eastern-cave/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "stone-fortress-first",
@@ -1748,7 +1963,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В скрытой лаборатории Горной крепости. Гайд называет его первым сундуком; чтобы отличить от второго, сверяйте исходные позиции.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Целебный эликсир × 1",
+      "Целебный экстракт × 2",
+      "Целебная эссенция × 4"
+    ],
     "valuable": false,
     "warnings": [
       "Точная сторона помещения для первого сундука в проверенном гайде не указана."
@@ -1856,7 +2075,26 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "577631"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-fort-summit-near-skeleton/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/30066-vse-sunduki-v-gornom-forte-v-gothic-1-remake-gde-najti-kak-otkryt-i-chto-lezhit-vnutri.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Land of Games независимо перечисляет те же 4 целебные эссенции, 2 экстракта и 1 эликсир."
+    }
   },
   {
     "id": "stone-fortress-second",
@@ -1867,7 +2105,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В скрытой лаборатории Горной крепости. Это второй сундук по нумерации гайда; механизм отличается от первого.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Эликсир магической энергии × 1",
+      "Экстракт магической энергии × 2",
+      "Эссенция магической энергии × 3"
+    ],
     "valuable": false,
     "warnings": [
       "Точная сторона помещения для второго сундука в проверенном гайде не указана."
@@ -1975,7 +2217,26 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "226647"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-fort-summit-near-table/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/30066-vse-sunduki-v-gornom-forte-v-gothic-1-remake-gde-najti-kak-otkryt-i-chto-lezhit-vnutri.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Land of Games независимо перечисляет те же 3 эссенции, 2 экстракта и 1 эликсир магической энергии."
+    }
   },
   {
     "id": "stone-fortress-top",
@@ -1986,8 +2247,16 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "На вершине башни Горной крепости. В гайде для подъёма указан навык лазания и встреча с гарпиями.",
     "type": "chest",
     "floor": "Наверху башни",
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Руна «Кулак шторма» × 1",
+      "Ключ от сундука × 1",
+      "Кольцо озарения × 1",
+      "Меч «Приносящий победу» × 1",
+      "Экстракт ловкости × 1",
+      "Целебный экстракт × 3",
+      "Монета × 25"
+    ],
+    "valuable": true,
     "warnings": [],
     "config": {
       "positions": [
@@ -2092,7 +2361,34 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "274716"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-the-fort-summit/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/30066-vse-sunduki-v-gornom-forte-v-gothic-1-remake-gde-najti-kak-otkryt-i-chto-lezhit-vnutri.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        },
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9105528"
+        },
+        {
+          "name": "Gothic Lock Picking",
+          "url": "https://gothic-lock-picking.com/en/locks/mountain-fortress-top-tower-chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Второй источник подтверждает ключ, кольцо, руну, меч и 3 целебных экстракта; прочие предметы в этом источнике не перечислены."
+    }
   },
   {
     "id": "underwater-unspecified",
@@ -2740,24 +3036,26 @@ export const LOCK_CATALOG:LockEntry[] = [
   },
   {
     "id": "guide-alberto",
-    "name": "Сундук Альберто",
+    "name": "Сундук у Яна и Альберто",
     "originalName": "Alberto's chest",
     "camp": "other",
     "region": "old-mine",
-    "sector": "Старая шахта",
-    "route": null,
+    "sector": "Старая шахта — склад у Яна и Альберто",
+    "route": "Старая шахта, основной склад у Яна и Альберто; сундук справа от Яна.",
     "type": "chest",
-    "floor": null,
-    "contents": [],
-    "valuable": false,
-    "warnings": [
-      "Принадлежность объекта в источниках расходится; нужна проверка в игре."
+    "floor": "Нижний этаж склада",
+    "contents": [
+      "Целебная эссенция × 2",
+      "Кирка × 3",
+      "Факел × 4"
     ],
+    "valuable": false,
+    "warnings": [],
     "config": null,
     "gameVersion": null,
     "chapter": null,
-    "locationPrecision": "area",
-    "identity": "uncertain",
+    "locationPrecision": "landmark",
+    "identity": "known",
     "plateCount": 6,
     "solutionStatus": "unconfirmed",
     "source": {
@@ -2777,14 +3075,42 @@ export const LOCK_CATALOG:LockEntry[] = [
       {
         "name": "Gothic Lock Picking",
         "url": "https://gothic-lock-picking.com/en/locks/albertos-chest"
+      },
+      {
+        "name": "Lorthiz",
+        "url": "https://lorthiz.github.io/gothic-remake-solved-locks/search.html?s=721147"
+      },
+      {
+        "name": "GameFAQs — General Walkthrough",
+        "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+      },
+      {
+        "name": "Land of Games — Кладовка Ульберта",
+        "url": "https://landofgames.ru/articles/walkthroughs/29922-kladovka-ulberta-v-gothic-1-remake-gde-nahoditsja-alef-i-kak-obchistit-sklad-s-pripasami.html"
       }
     ],
     "verification": "unknown",
-    "notes": "Golden Lockpick указывает Старую шахту и шесть пластин. Три именованные карточки шахты Альберто в другом источнике имеют 5, 4 и 5 пластин; считать их дублями без подтверждения нельзя.",
+    "notes": "Место уточнено: склад Яна и Альберто в Старой шахте. Название источника «шахта Альберто» описывало место рядом с персонажем, а не отдельный подтверждённый район. Этаж, сторона и число пластин совпадают в независимых описаниях. Версия игры не установлена; собственной проверки в игре не было.",
     "tags": [
       "mine"
     ],
-    "searchAliases": []
+    "searchAliases": [
+      "Сундук Альберто",
+      "склад Яна",
+      "721147"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-jan-old-mine-on-right/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "guide-arto",
@@ -2799,8 +3125,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "contents": [
       "Кольцо мощи",
       "Экстракт жизни",
-      "Руда",
-      "Столовые приборы"
+      "Столовые приборы",
+      "Кусок руды × 22"
     ],
     "valuable": true,
     "warnings": [],
@@ -2855,7 +3181,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "265657"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/arto-near-bed-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "guide-baalcadar",
@@ -2959,7 +3295,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": null,
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Свиток «Сон»"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -2991,7 +3329,22 @@ export const LOCK_CATALOG:LockEntry[] = [
     "verification": "unknown",
     "notes": "Объект назван в публичном руководстве; точный ориентир, версия игры и матрица связей в реестр не перенесены. Решение не подтверждено.",
     "tags": [],
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Guszaban — GameFAQs",
+          "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+        },
+        {
+          "name": "Gothic Lock Picking",
+          "url": "https://gothic-lock-picking.com/en/locks/baal-oruns-chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Количество свитков не указано. Точное местоположение сундука и соответствие механизма требуют сверки."
+    }
   },
   {
     "id": "guide-baalparvez",
@@ -3447,7 +3800,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Храм Ю’Бериона, сундук в правой боковой комнате по описанию источников.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Экстракт магической энергии × 2",
+      "Зов сна",
+      "Велайис (Velayis) × 3",
+      "Жареное мясо × 4",
+      "Кусок руды × 10"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -3493,6 +3852,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "63167"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Planet of Gothic — Chanis Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/sumpflager#truhe-1949"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Атлас помечает карточки сообщества как непроверенные."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1949"
+      }
     ]
   },
   {
@@ -3860,9 +4236,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Эссенции исцеления",
-      "Отмычки",
-      "Руда"
+      "Эссенция исцеления × 5",
+      "Отмычка × 3",
+      "Кусок руды × 22"
     ],
     "valuable": false,
     "warnings": [],
@@ -3905,7 +4281,18 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "216547"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/diego-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "UnlockMyLoot приводит эти три количества со ссылкой на Game8. Прямую страницу Game8 независимо найти не удалось; это вторичное сообщение, а не отдельная игровая проверка. Припасы без названий не добавлены."
+    }
   },
   {
     "id": "guide-drago",
@@ -3917,7 +4304,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Покои магов Огня во внутреннем замке Старого лагеря: сундук в левой комнате.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Кусок руды × 22",
+      "Вино × 4",
+      "Экстракт магической энергии × 2",
+      "Могущественное искусство × 1",
+      "Основы магии × 1"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -3967,7 +4360,19 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "73737"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-firemages-rooms/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "guide-dusty",
@@ -4156,10 +4561,10 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Амулет защиты от пламени",
-      "Экстракт силы",
-      "Целебный эликсир",
-      "Северные тёмные цветки"
+      "Амулет защиты от пламени × 1",
+      "Экстракт силы × 1",
+      "Целебный эликсир × 1",
+      "Северный тёмный × 2"
     ],
     "valuable": true,
     "warnings": [],
@@ -4210,7 +4615,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "61217"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-gomez-room/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/gomez-bedside-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "guide-gorhanis",
@@ -4310,7 +4731,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Хижина картографа у северных ворот: слева, перед первым котлом.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Пустой свиток × 5",
+      "Полоски кожи × 2",
+      "Жареное мясо × 2",
+      "Миска (Schüssel)",
+      "Кусок руды × 12"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -4352,6 +4779,27 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "722613"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/graham-chest/"
+        },
+        {
+          "name": "Planet of Gothic — Grahams Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1802"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Атлас помечает карточки сообщества как непроверенные."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1802"
+      }
     ]
   },
   {
@@ -4364,7 +4812,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Хижина у входа во внутренний замок, напротив жилища Диего.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Сыр",
+      "Жареное мясо",
+      "Миска (Schüssel)",
+      "Кусок руды × 19"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -4402,6 +4855,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "62115"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Planet of Gothic — Gravos Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1803"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Атлас помечает карточки сообщества как непроверенные. Название зелья исключено: другие руководства называют иной лечебный предмет."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1803"
+      }
     ]
   },
   {
@@ -4414,7 +4884,15 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Возле Диего у замковых ворот, с левой стороны.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Полоски кожи",
+      "Сковорода",
+      "Сыр × 3",
+      "Хлеб × 2",
+      "Бритва",
+      "Миска (Schüssel)",
+      "Кусок руды × 5"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -4456,6 +4934,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "524145"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Planet of Gothic — Grims Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1804"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Атлас помечает карточки сообщества как непроверенные."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1804"
+      }
     ]
   },
   {
@@ -4802,7 +5297,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Старый лагерь, хижина Кайла в жилой части за рынком. В описании Lorthiz отмечен проход через две двери.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Сыр × 3",
+      "Вода",
+      "Кувшин",
+      "Кусок руды × 16"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -4844,6 +5344,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "717317"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Planet of Gothic — Kyles Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1828"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Атлас помечает карточки сообщества как непроверенные."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1828"
+      }
     ]
   },
   {
@@ -4900,8 +5417,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Сундук в помещении Ли в Новом лагере.",
     "type": "chest",
     "floor": null,
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Кольцо силы (Ring der Kraft)",
+      "Рисовый шнапс × 3",
+      "Сковорода",
+      "Амфора × 2",
+      "Рис × 4",
+      "Кувшин",
+      "Стрелы × 27",
+      "Кусок руды × 26"
+    ],
+    "valuable": true,
     "warnings": [],
     "config": null,
     "gameVersion": null,
@@ -4946,6 +5472,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "622457"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Planet of Gothic — Lees Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/neues-lager#truhe-1651"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Атлас помечает карточки сообщества как непроверенные."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1651"
+      }
     ]
   },
   {
@@ -5052,7 +5595,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Покои магов Огня во внутреннем замке Старого лагеря: правая комната, левый из трёх сундуков.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Целебный экстракт × 1",
+      "Эссенция магической энергии × 2",
+      "Свиток «Огненный шар» × 2",
+      "Свиток «Огненная стрела» × 3",
+      "Свиток «Превращение в мясного жука» × 1"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -5102,6 +5651,28 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "1411"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-firemages-in-front-of-sleeping-room/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Planet of Gothic — Miltens Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1829"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1829"
+      }
     ]
   },
   {
@@ -5154,7 +5725,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": null,
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Кусок руды × 3",
+      "Хлеб",
+      "Кувшин",
+      "Тарелка"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -5186,7 +5762,18 @@ export const LOCK_CATALOG:LockEntry[] = [
     "verification": "unknown",
     "notes": "Объект назван в публичном руководстве; точный ориентир, версия игры и матрица связей в реестр не перенесены. Решение не подтверждено.",
     "tags": [],
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Mud's%20Chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Соответствие сундука требует сверки по месту и исходным пластинам."
+    }
   },
   {
     "id": "guide-myxir",
@@ -5489,10 +6076,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Ключ от башни Ворона",
-      "Кольцо защиты от огня",
-      "Лечебные средства",
-      "Монеты"
+      "Кольцо защиты от огня × 1",
+      "Целебный экстракт × 2",
+      "Зов сна × 1",
+      "Подсвечник × 1",
+      "Столовые приборы × 2",
+      "Ключ от башни Ворона × 1",
+      "Монета × 40"
     ],
     "valuable": true,
     "warnings": [],
@@ -5551,7 +6141,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "7647275"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-2nd-floor-raven/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/voran-bedside-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "guide-ricelord",
@@ -5653,7 +6259,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Покои магов Огня во внутреннем замке Старого лагеря: правая комната, средний из трёх сундуков.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Вино × 2",
+      "Экстракт магической энергии × 1",
+      "Свиток «Светоч» × 2",
+      "Свиток «Телекинез» × 1"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -5703,6 +6314,33 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "4761"
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-firemages-in-far-corner-sleeping-room/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Gothic Lock Picking",
+          "url": "https://gothic-lock-picking.com/en/locks/rodriguezs-chest"
+        },
+        {
+          "name": "Planet of Gothic — Rodriguez’ Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1838"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источники расходятся в типе зелья жизни. Спорное зелье исключено до уточнения."
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1838"
+      }
     ]
   },
   {
@@ -5715,7 +6353,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Склад Сантино в Старой шахте; сундук в средней комнате у лестницы.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Куски руды"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -5751,7 +6391,24 @@ export const LOCK_CATALOG:LockEntry[] = [
     "verification": "unknown",
     "notes": "Объект назван в публичном руководстве; точный ориентир, версия игры и матрица связей в реестр не перенесены. Решение не подтверждено. Уточнение 16.10.2026: Golden называет Старый лагерь и другой исходный механизм; Wiki/SGC/Steam описывают сундук Старой шахты. Ссылку Golden нельзя считать доказательством идентичности.",
     "tags": [],
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-left-from-trader-old-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Santino's%20Chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источники называют 23 или 33 куска руды. Количество и точное соответствие сундука требуют проверки; число не указано."
+    }
   },
   {
     "id": "guide-saturas",
@@ -6121,7 +6778,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Спальня стражи внутри замка; сундук у прохода в правой комнате.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Жареное мясо × 4",
+      "Кружка × 1",
+      "Кусок руды × 16"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -6153,26 +6814,45 @@ export const LOCK_CATALOG:LockEntry[] = [
     "verification": "unknown",
     "notes": "Объект назван в публичном руководстве; точный ориентир, версия игры и матрица связей в реестр не перенесены. Решение не подтверждено. Уточнение 16.10.2026: Именной сундук Стоуна не совпадает с двумя сундуками непосредственно в кузнице.",
     "tags": [],
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-passage-on-right-in-guards-bedroom/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Физическое место — сундук у прохода правой спальни стражи. Имя владельца Стоун остаётся по Golden и не подтверждается SGC."
+    }
   },
   {
     "id": "guide-swiney",
-    "name": "Сундук Суини",
+    "name": "Сундук Суини, бригадира рудокопов",
     "originalName": "Swiney's chest",
     "camp": "other",
     "region": "free-mine",
-    "sector": "Свободная шахта",
-    "route": null,
+    "sector": "Свободная шахта — хижина Суини",
+    "route": "Свободная шахта, внутри хижины Суини — бригадира рудокопов.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Зелёный новичок × 4",
+      "Виноград × 1",
+      "Рис × 3",
+      "Полоски кожи × 2",
+      "Кусок руды × 15"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
     "gameVersion": null,
     "chapter": null,
-    "locationPrecision": "area",
-    "identity": "uncertain",
+    "locationPrecision": "landmark",
+    "identity": "known",
     "plateCount": 5,
     "solutionStatus": "unconfirmed",
     "source": {
@@ -6196,14 +6876,42 @@ export const LOCK_CATALOG:LockEntry[] = [
       {
         "name": "Gothic Lock Picking",
         "url": "https://gothic-lock-picking.com/en/locks/swineys-chest"
+      },
+      {
+        "name": "Lorthiz",
+        "url": "https://lorthiz.github.io/gothic-remake-solved-locks/search.html?s=67563"
+      },
+      {
+        "name": "Colony Guide — Swiney",
+        "url": "https://colony-guide.com/gothic-1-remake/npcs/swiney/"
+      },
+      {
+        "name": "NerdsChalk — Free Mine",
+        "url": "https://nerdschalk.com/gothic-1-remake-how-to-reach-the-free-mine-exact-location-route-and-step-by-step-guide/"
       }
     ],
     "verification": "unknown",
-    "notes": "Объект назван в публичном руководстве; точный ориентир, версия игры и матрица связей в реестр не перенесены. Решение не подтверждено.",
+    "notes": "Место уточнено: хижина Суини, бригадира рудокопов Свободной шахты. Имя, район и механизм согласуются в независимых описаниях. Версия игры не установлена; собственной проверки в игре не было.",
     "tags": [
       "mine"
     ],
-    "searchAliases": []
+    "searchAliases": [
+      "Сундук Суини",
+      "сундук бригадира рудокопов",
+      "67563"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-brigade-master-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "guide-thorus",
@@ -6295,7 +7003,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Покои магов Огня во внутреннем замке Старого лагеря: правая комната, правый из трёх сундуков.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Пергамент × 2",
+      "Вино × 1",
+      "Экстракт магической энергии × 1",
+      "Свиток «Огненная стрела» × 2",
+      "Свиток «Огненный дождь» × 1"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -6349,6 +7063,28 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "732617"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-firemages-sleeping-room/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Planet of Gothic — Torrez’ Truhe",
+          "url": "https://www.planetofgothic.de/tools/atlas/truhen/altes-lager#truhe-1862"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    },
+    "lootExternal": [
+      {
+        "name": "Planet of Gothic — выбранный сундук на карте",
+        "url": "https://www.planetofgothic.de/tools/atlas?poi=1862"
+      }
     ]
   },
   {
@@ -6489,7 +7225,14 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": null,
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Ивовая древесина × 2",
+      "Рис",
+      "Перья × 3",
+      "Виноград × 3",
+      "Факел",
+      "Кусок руды × 6"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -6525,7 +7268,18 @@ export const LOCK_CATALOG:LockEntry[] = [
     "verification": "unknown",
     "notes": "Объект назван в публичном руководстве; точный ориентир, версия игры и матрица связей в реестр не перенесены. Решение не подтверждено.",
     "tags": [],
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Wolf's%20Chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена. Соответствие сундука требует сверки по месту и исходным пластинам."
+    }
   },
   {
     "id": "guide-yberion",
@@ -6907,7 +7661,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Кладовая Фиска за внутренней дверью; сундук напротив двери.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Ртуть",
+      "Лечебное зелье",
+      "Зелье магической энергии"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -6945,7 +7703,18 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "343217"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9314192"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Количество и разновидности зелий не названы; неопределённые растения не перенесены."
+    }
   },
   {
     "id": "fisk-chest-6",
@@ -7057,7 +7826,10 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Кладовая Фиска; третий сундук по схеме Lorthiz, за стеллажом.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Зелье магической энергии × 2",
+      "Лечебное зелье × 3"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -7095,7 +7867,18 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "2111"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9314192"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Разновидности зелий и остальная добыча в источнике не уточнены."
+    }
   },
   {
     "id": "swamp-camp-forge-chest",
@@ -7108,8 +7891,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Одноручный топор",
-      "Металл, древесина и кожаные полоски"
+      "Топор × 1",
+      "Сталь × 2",
+      "Древесина дуба × 3",
+      "Полоски кожи × 3",
+      "Железо × 3",
+      "Древесина ивы × 4",
+      "Жвалы ползуна × 3"
     ],
     "valuable": false,
     "warnings": [],
@@ -7152,7 +7940,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "151726"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-swamp-camp-blacksmith/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/swamp-camp-forge-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "rice-lord-storeroom",
@@ -7313,9 +8117,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Кубки",
-      "Столовые приборы",
-      "Руда",
+      "Кубок × 6",
+      "Столовые приборы × 10",
+      "Кусок руды × 29",
       "Монеты"
     ],
     "valuable": false,
@@ -7367,7 +8171,24 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "764554"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-1st-floor-raven-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-left-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Количество монет противоречиво: SGC указывает 2521, UnlockMyLoot 2500. Количество не публикуется."
+    }
   },
   {
     "id": "raven-tower-right-chest",
@@ -7380,8 +8201,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Иззубренные топоры",
-      "Ржавые мечи"
+      "Иззубренный топор × 3",
+      "Ржавый меч × 2"
     ],
     "valuable": false,
     "warnings": [],
@@ -7432,7 +8253,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "722137"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-1st-floor-on-right-raven-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-right-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "silas-tavern-basement-chest",
@@ -7445,7 +8282,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "underwater",
     "floor": null,
     "contents": [
-      "Топор Брана, задание «По шею»"
+      "Короткий меч",
+      "Железо",
+      "Рисовый шнапс × 3",
+      "Монета × 25",
+      "Сера"
     ],
     "valuable": false,
     "warnings": [],
@@ -7490,7 +8331,22 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [
       "43725"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Neoseeker — Up To His Neck",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Up_To_His_Neck"
+        },
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9065810"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Добыча относится к подводному сундуку. Топор Брана находится в другом сундуке выше лестницы. Количество железа и серы не указано."
+    }
   },
   {
     "id": "silas-storeroom-chest",
@@ -7499,11 +8355,16 @@ export const LOCK_CATALOG:LockEntry[] = [
     "camp": "new",
     "region": "new-camp",
     "sector": "Новый лагерь",
-    "route": "За Силасом пройти дверь склада; сундук стоит справа.",
+    "route": "За дверью позади Силаса, сундук справа от тела Брана. Подводным путём сначала подняться из затопленного прохода по каменной лестнице.",
     "type": "chest",
     "floor": null,
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Топор Брана",
+      "Рис × 3",
+      "Чистый спирт × 2",
+      "Рисовый шнапс × 4"
+    ],
+    "valuable": true,
     "warnings": [],
     "config": null,
     "gameVersion": null,
@@ -7536,7 +8397,32 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "244627"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/walkthroughs/29883-po-samuju-sheju-v-gothic-1-remake-gde-najti-brana-i-kak-popast-v-podval-taverny.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        },
+        {
+          "name": "Neoseeker — Up To His Neck",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Up_To_His_Neck"
+        },
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9065810"
+        },
+        {
+          "name": "GamesFuze — Where to Find Bran",
+          "url": "https://gamesfuze.com/guides/where-to-find-bran-in-gothic-1-remake/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Топор Брана находится в этом сундуке возле тела Брана. Подводный сундук под таверной — отдельный объект."
+    }
   },
   {
     "id": "silas-storeroom-door",
@@ -7595,9 +8481,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Чертёж «Дробитель камней»"
+      "Чертёж дробителя камней × 1",
+      "Вино × 1",
+      "Столовые приборы × 2",
+      "Молот × 1",
+      "Кусок руды × 16"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [],
     "config": null,
     "gameVersion": null,
@@ -7634,7 +8524,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "517113"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-hut-near-new-camp/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Gothic Lock Picking",
+          "url": "https://gothic-lock-picking.com/en/locks/new-camp-hut-opposite-jan-chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "mercenary-near-grim-chest",
@@ -7697,12 +8603,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Чертёж королевского оружия",
-      "Руда",
-      "Рубины",
-      "Кубок"
+      "Чертёж королевского оружия × 1",
+      "Кусок руды × 42",
+      "Волчья шкура × 1",
+      "Рубин × 2",
+      "Кубок × 1"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [],
     "config": null,
     "gameVersion": null,
@@ -7743,7 +8650,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "1311"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-throne-room-gomez-castle/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/gomez-throne-hall-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "old-camp-dungeon-door",
@@ -7912,9 +8835,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Кольцо защиты от оружия",
-      "Экстракты жизни",
-      "Столовые приборы"
+      "Кольцо защиты от оружия × 1",
+      "Столовые приборы × 1"
     ],
     "valuable": true,
     "warnings": [],
@@ -7965,7 +8887,24 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "433216"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-second-floor-near-window-on-right/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/arto-far-bed-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Тип зелья спорен: SpecialGamesClub называет 2 целебных экстракта, UnlockMyLoot — 2 экстракта жизни. Спорный предмет исключён из перечня до уточнения."
+    }
   },
   {
     "id": "gomez-bedrooms-door",
@@ -8040,9 +8979,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Кольцо рудной кожи",
-      "Экстракты жизни",
-      "Вино и пиво"
+      "Кольцо рудной кожи × 1",
+      "Вино",
+      "Пиво"
     ],
     "valuable": true,
     "warnings": [],
@@ -8089,7 +9028,28 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "45777"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-near-window-2nd-floor-gomer-castle-on-left/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/gomez-bedrooms-far-chest/"
+        },
+        {
+          "name": "Steam — Nanomaks",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9356592"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "SGC и UnlockMyLoot дают 5 вина/7 пива; Steam даёт 3/5. Для напитков число не публикуется. Тип зелья спорен: SGC и Steam называют целебный экстракт, UnlockMyLoot — экстракт жизни. Предмет исключён до уточнения; количество напитков тоже расходится."
+    }
   },
   {
     "id": "gomez-bedrooms-near-chest",
@@ -8102,10 +9062,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Кольцо великой жизненной силы",
-      "Экстракт жизни",
-      "Целебный экстракт",
-      "Столовые приборы"
+      "Кольцо великой жизненной силы × 1",
+      "Столовые приборы × 1"
     ],
     "valuable": true,
     "warnings": [],
@@ -8152,7 +9110,28 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "363777"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-2nd-floor-near-stairs-on-left/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/gomez-bedrooms-near-chest/"
+        },
+        {
+          "name": "Steam — Nanomaks",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9356592"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источники расходятся в типах лечебных предметов. Сохранены кольцо и столовые приборы; зелья исключены из точного перечня до уточнения."
+    }
   },
   {
     "id": "raven-tower-floor2-stairs-chest",
@@ -8165,9 +9144,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Вино",
-      "Крепкое вино",
-      "Пиво"
+      "Вино × 12",
+      "Пиво × 26"
     ],
     "valuable": false,
     "warnings": [],
@@ -8218,7 +9196,24 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "235761"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-2nd-floor-raven-tower-on-right/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-floor2-stairs-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Тип крепкого напитка спорен: SpecialGamesClub называет крепкое пиво, UnlockMyLoot — крепкое вино; оба источника дают 8. Спорный предмет исключён до уточнения."
+    }
   },
   {
     "id": "raven-tower-floor2-chest-2",
@@ -8231,8 +9226,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Столовые приборы",
-      "Монеты"
+      "Столовый прибор × 12",
+      "Монета × 8897"
     ],
     "valuable": false,
     "warnings": [],
@@ -8279,7 +9274,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "27567"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-floor2-chest-2/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "raven-tower-floor3-entrance-chest",
@@ -8292,9 +9297,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Волчьи когти",
-      "Зубы",
-      "Столовые приборы"
+      "Волчий коготь × 11",
+      "Зуб × 8",
+      "Столовый прибор × 13"
     ],
     "valuable": false,
     "warnings": [],
@@ -8337,7 +9342,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "22657"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-floor3-entrance-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "raven-tower-floor3-empty-chest",
@@ -8349,9 +9364,7 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Третий этаж, после сундука у входа.",
     "type": "chest",
     "floor": null,
-    "contents": [
-      "Пусто по сообщению источника"
-    ],
+    "contents": [],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -8397,7 +9410,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "37131"
-    ]
+    ],
+    "loot": {
+      "coverage": "empty",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-floor3-empty-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "raven-tower-floor4-elixirs-chest",
@@ -8410,9 +9433,10 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Эликсиры магической энергии",
-      "Целебные эликсиры",
-      "Экстракты"
+      "Эликсир магической энергии × 3",
+      "Целебный эликсир × 2",
+      "Экстракт магической энергии × 2",
+      "Целебный экстракт"
     ],
     "valuable": false,
     "warnings": [],
@@ -8459,7 +9483,17 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "4667174"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-floor4-elixirs-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "raven-tower-floor4-food-chest",
@@ -8472,10 +9506,10 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Вино",
-      "Пиво",
-      "Окорока",
-      "Жареное мясо"
+      "Вино × 6",
+      "Пиво × 11",
+      "Окорок × 6",
+      "Жареное мясо × 9"
     ],
     "valuable": false,
     "warnings": [],
@@ -8526,7 +9560,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "572357"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-4th-floor-raven-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-floor4-food-chest/"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "raven-tower-top-chest",
@@ -8539,8 +9589,8 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Кольцо ловкости",
-      "Зов сна",
+      "Кольцо ловкости × 1",
+      "Зов сна × 4",
       "Велайис"
     ],
     "valuable": true,
@@ -8592,29 +9642,52 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [
       "541162"
-    ]
+    ],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-raven-chest-gomez-castle/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "UnlockMyLoot",
+          "url": "https://unlockmyloot.com/locks/raven-tower-top-chest/"
+        },
+        {
+          "name": "Steam — Nanomaks",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9357319"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "SGC и UnlockMyLoot дают 8 Велайис, Steam 9; количество не публикуется."
+    }
   },
   {
     "id": "alberto-mine-hut-chest",
-    "name": "Шахта Альберто: сундук в хижине",
+    "name": "Склад Яна и Альберто: нижний сундук",
     "originalName": "Шахта Альберто: сундук в хижине",
     "camp": "other",
-    "region": "alberto-mine",
-    "sector": "Шахта Альберто",
-    "route": "Нижний этаж хижины у шахты Альберто. Название шахты в источниках расходится; сверьте исходные позиции.",
+    "region": "old-mine",
+    "sector": "Старая шахта — склад у Яна и Альберто",
+    "route": "Старая шахта, склад рядом с Яном и Альберто; нижний этаж, возле лестницы слева от Яна, напротив входа.",
     "type": "chest",
-    "floor": null,
-    "contents": [],
-    "valuable": false,
-    "warnings": [
-      "Название шахты сообщено источником; принадлежность к большой Старой или Свободной шахте не подтверждена.",
-      "Источники расходятся в месте: шахта Альберто либо склад у Яна в Старой шахте. Применяйте подсказку только при совпадении исходных пластин."
+    "floor": "Нижний этаж склада",
+    "contents": [
+      "Хлеб × 6",
+      "Яблоко × 3",
+      "Суп из ползуна × 2",
+      "Пиво × 4"
     ],
+    "valuable": false,
+    "warnings": [],
     "config": null,
     "gameVersion": null,
     "chapter": null,
     "locationPrecision": "landmark",
-    "identity": "uncertain",
+    "identity": "known",
     "plateCount": 5,
     "solutionStatus": "unconfirmed",
     "source": {
@@ -8634,38 +9707,68 @@ export const LOCK_CATALOG:LockEntry[] = [
       {
         "name": "Gothic Lock Picking",
         "url": "https://gothic-lock-picking.com/en/locks/alberto-mine-hut-chest"
+      },
+      {
+        "name": "UnlockMyLoot",
+        "url": "https://unlockmyloot.com/en/locks/alberto-mine-hut-chest/"
+      },
+      {
+        "name": "Lorthiz",
+        "url": "https://lorthiz.github.io/gothic-remake-solved-locks/search.html?s=13765"
+      },
+      {
+        "name": "GameFAQs — General Walkthrough",
+        "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+      },
+      {
+        "name": "Land of Games — Кладовка Ульберта",
+        "url": "https://landofgames.ru/articles/walkthroughs/29922-kladovka-ulberta-v-gothic-1-remake-gde-nahoditsja-alef-i-kak-obchistit-sklad-s-pripasami.html"
       }
     ],
     "verification": "unknown",
-    "notes": "Местоположение и перечисленная добыча сообщены публичным руководством; в игре независимо не проверены. Схемы, готовые шаги и их проверка приведены отдельно в блоке комбинации. Версия игры не указана.",
+    "notes": "Место уточнено: склад Яна и Альберто в Старой шахте. Название источника «шахта Альберто» описывало место рядом с персонажем, а не отдельный подтверждённый район. Этаж, сторона и число пластин совпадают в независимых описаниях. Версия игры не установлена; собственной проверки в игре не было.",
     "tags": [
       "mine"
     ],
     "searchAliases": [
-      "13765"
-    ]
+      "13765",
+      "Шахта Альберто: сундук в хижине",
+      "склад Яна",
+      "сундук слева от Яна"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-near-stairs-near-jan-old-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "alberto-mine-upstairs-left-chest",
-    "name": "Шахта Альберто: верхний левый сундук",
+    "name": "Склад Яна и Альберто: верхний левый сундук",
     "originalName": "Шахта Альберто: верхний левый сундук",
     "camp": "other",
-    "region": "alberto-mine",
-    "sector": "Шахта Альберто",
-    "route": "Подняться по лестнице из хижины; левый из двух сундуков наверху. Название шахты в источниках расходится; сверьте исходные позиции.",
+    "region": "old-mine",
+    "sector": "Старая шахта — склад у Яна и Альберто",
+    "route": "Старая шахта, склад рядом с Яном и Альберто; подняться по внутренней лестнице и выбрать левый из двух сундуков.",
     "type": "chest",
-    "floor": null,
-    "contents": [],
-    "valuable": false,
-    "warnings": [
-      "Название шахты сообщено источником; принадлежность к большой Старой или Свободной шахте не подтверждена.",
-      "Источники расходятся в месте: шахта Альберто либо склад у Яна в Старой шахте. Применяйте подсказку только при совпадении исходных пластин."
+    "floor": "Верхний этаж склада, слева",
+    "contents": [
+      "Кусок руды × 23"
     ],
+    "valuable": false,
+    "warnings": [],
     "config": null,
     "gameVersion": null,
     "chapter": null,
     "locationPrecision": "landmark",
-    "identity": "uncertain",
+    "identity": "known",
     "plateCount": 4,
     "solutionStatus": "unconfirmed",
     "source": {
@@ -8685,38 +9788,67 @@ export const LOCK_CATALOG:LockEntry[] = [
       {
         "name": "Gothic Lock Picking",
         "url": "https://gothic-lock-picking.com/en/locks/alberto-mine-upstairs-left-chest"
+      },
+      {
+        "name": "UnlockMyLoot",
+        "url": "https://unlockmyloot.com/en/locks/alberto-mine-upstairs-left-chest/"
+      },
+      {
+        "name": "Lorthiz",
+        "url": "https://lorthiz.github.io/gothic-remake-solved-locks/search.html?s=1211"
+      },
+      {
+        "name": "GameFAQs — General Walkthrough",
+        "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+      },
+      {
+        "name": "Land of Games — Кладовка Ульберта",
+        "url": "https://landofgames.ru/articles/walkthroughs/29922-kladovka-ulberta-v-gothic-1-remake-gde-nahoditsja-alef-i-kak-obchistit-sklad-s-pripasami.html"
       }
     ],
     "verification": "unknown",
-    "notes": "Местоположение и перечисленная добыча сообщены публичным руководством; в игре независимо не проверены. Схемы, готовые шаги и их проверка приведены отдельно в блоке комбинации. Версия игры не указана.",
+    "notes": "Место уточнено: склад Яна и Альберто в Старой шахте. Название источника «шахта Альберто» описывало место рядом с персонажем, а не отдельный подтверждённый район. Этаж, сторона и число пластин совпадают в независимых описаниях. Версия игры не установлена; собственной проверки в игре не было.",
     "tags": [
       "mine"
     ],
     "searchAliases": [
-      "1211"
-    ]
+      "1211",
+      "Шахта Альберто: верхний левый сундук",
+      "склад Яна"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-left-on-2nd-floor-jan-old-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "alberto-mine-upstairs-right-chest",
-    "name": "Шахта Альберто: верхний правый сундук",
+    "name": "Склад Яна и Альберто: верхний правый сундук",
     "originalName": "Шахта Альберто: верхний правый сундук",
     "camp": "other",
-    "region": "alberto-mine",
-    "sector": "Шахта Альберто",
-    "route": "Наверху лестницы из хижины, справа от второго сундука. Название шахты в источниках расходится; сверьте исходные позиции.",
+    "region": "old-mine",
+    "sector": "Старая шахта — склад у Яна и Альберто",
+    "route": "Старая шахта, склад рядом с Яном и Альберто; подняться по внутренней лестнице и выбрать правый из двух сундуков.",
     "type": "chest",
-    "floor": null,
-    "contents": [],
-    "valuable": false,
-    "warnings": [
-      "Название шахты сообщено источником; принадлежность к большой Старой или Свободной шахте не подтверждена.",
-      "Источники расходятся в месте: шахта Альберто либо склад у Яна в Старой шахте. Применяйте подсказку только при совпадении исходных пластин."
+    "floor": "Верхний этаж склада, справа",
+    "contents": [
+      "Кусок руды × 32"
     ],
+    "valuable": false,
+    "warnings": [],
     "config": null,
     "gameVersion": null,
     "chapter": null,
     "locationPrecision": "landmark",
-    "identity": "uncertain",
+    "identity": "known",
     "plateCount": 5,
     "solutionStatus": "unconfirmed",
     "source": {
@@ -8736,16 +9868,46 @@ export const LOCK_CATALOG:LockEntry[] = [
       {
         "name": "Gothic Lock Picking",
         "url": "https://gothic-lock-picking.com/en/locks/alberto-mine-upstairs-right-chest"
+      },
+      {
+        "name": "UnlockMyLoot",
+        "url": "https://unlockmyloot.com/en/locks/alberto-mine-upstairs-right-chest/"
+      },
+      {
+        "name": "Lorthiz",
+        "url": "https://lorthiz.github.io/gothic-remake-solved-locks/search.html?s=17464"
+      },
+      {
+        "name": "GameFAQs — General Walkthrough",
+        "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+      },
+      {
+        "name": "Land of Games — Кладовка Ульберта",
+        "url": "https://landofgames.ru/articles/walkthroughs/29922-kladovka-ulberta-v-gothic-1-remake-gde-nahoditsja-alef-i-kak-obchistit-sklad-s-pripasami.html"
       }
     ],
     "verification": "unknown",
-    "notes": "Местоположение и перечисленная добыча сообщены публичным руководством; в игре независимо не проверены. Схемы, готовые шаги и их проверка приведены отдельно в блоке комбинации. Версия игры не указана.",
+    "notes": "Место уточнено: склад Яна и Альберто в Старой шахте. Название источника «шахта Альберто» описывало место рядом с персонажем, а не отдельный подтверждённый район. Этаж, сторона и число пластин совпадают в независимых описаниях. Версия игры не установлена; собственной проверки в игре не было.",
     "tags": [
       "mine"
     ],
     "searchAliases": [
-      "17464"
-    ]
+      "17464",
+      "Шахта Альберто: верхний правый сундук",
+      "склад Яна"
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-right-2nd-floor-jan-old-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "cavalorn-storeroom-door",
@@ -8877,7 +10039,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В пещере к западу от водоёма Нового лагеря; ориентир — Джако.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Зов сна × 1",
+      "Северный тёмный × 4",
+      "Болотник × 8",
+      "Кусок руды × 28"
+    ],
     "valuable": false,
     "warnings": [
       "Опубликованная комбинация предназначена для навыка «Без навыка». Исходные позиции и связи в wiki не приведены; проверка каждого хода на игровой схеме пока не выполнена."
@@ -8925,7 +10092,23 @@ export const LOCK_CATALOG:LockEntry[] = [
     "solutionStatus": "unconfirmed",
     "searchAliases": [
       "723713"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-cave-of-marsh/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Jacko's%20Chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "monastery-underground-cave-chest",
@@ -8937,8 +10120,14 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "В подземной пещере поверните направо и поднимитесь по уступам; сундук находится возле тел.",
     "type": "chest",
     "floor": null,
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Чертёж кровопийцы × 1",
+      "Целебная эссенция × 2",
+      "Отмычка × 1",
+      "Стрела × 9",
+      "Кусок руды × 16"
+    ],
+    "valuable": true,
     "warnings": [
       "Опубликованная комбинация предназначена для навыка «Без навыка». Исходные позиции и связи в wiki не приведены; проверка каждого хода на игровой схеме пока не выполнена."
     ],
@@ -8979,7 +10168,26 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "plateCount": null,
     "solutionStatus": "unconfirmed",
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-destroyed-monastery-cave/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/29940-vse-sunduki-i-dveri-v-gothic-1-remake-kak-otkryt-kombinacii.html#:~:text=%D0%A1%D1%83%D0%BD%D0%B4%D1%83%D0%BA%20%D0%B2%20%D0%A0%D0%B0%D0%B7%D1%80%D1%83%D1%88%D0%B5%D0%BD%D0%BD%D0%BE%D0%BC%20%D0%BC%D0%BE%D0%BD%D0%B0%D1%81%D1%82%D1%8B%D1%80%D0%B5",
+          "author": "Zorthrus",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Land of Games подтверждает чертёж, 2 лечебных зелья,отмычку, 9 стрел и 16 руды; точная разновидность зелий взята из SGC."
+    }
   },
   {
     "id": "new-camp-peasant-housing-door",
@@ -9049,7 +10257,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Заброшенная кузница возле моста к Горной крепости.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Орочий молот",
+      "Эликсир магической энергии",
+      "Свиток «Огненный шар»"
+    ],
     "valuable": false,
     "warnings": [
       "Опубликованная комбинация предназначена для навыка «Без навыка». Исходные позиции и связи в wiki не приведены; проверка каждого хода на игровой схеме пока не выполнена."
@@ -9087,7 +10299,24 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "plateCount": null,
     "solutionStatus": "unconfirmed",
-    "searchAliases": []
+    "searchAliases": [],
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/29953-oruzhie-v-gothic-1-remake-gde-najti-luchshee.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        },
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Orc%20Hammer%20Chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена."
+    }
   },
   {
     "id": "xardas-tower-third-floor-chest",
@@ -9099,8 +10328,15 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Третий этаж жилой башни Ксардаса в южной части Долины рудников.",
     "type": "chest",
     "floor": "Третий этаж",
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Пергамент × 4",
+      "Экстракт магической энергии × 2",
+      "Формула эликсира духа × 1",
+      "Формула эликсира жизни × 1",
+      "Кольцо непобедимости × 1",
+      "Свиток «Призыв голема» × 1"
+    ],
+    "valuable": true,
     "warnings": [
       "Опубликованная комбинация предназначена для навыка «Без навыка». Исходные позиции и связи в wiki не приведены; проверка каждого хода на игровой схеме пока не выполнена."
     ],
@@ -9147,7 +10383,19 @@ export const LOCK_CATALOG:LockEntry[] = [
     "solutionStatus": "unconfirmed",
     "searchAliases": [
       "136312"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-xardas-tower-3rd-floor/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "old-camp-abandoned-shack-chest",
@@ -9219,7 +10467,19 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "plateCount": 6,
     "solutionStatus": "unconfirmed",
-    "mapUrl": "https://www.planetofgothic.de/tools/atlas?poi=1890"
+    "mapUrl": "https://www.planetofgothic.de/tools/atlas?poi=1890",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-lock-abandoned-shack/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "old-camp-market-upper-storehouse-door",
@@ -10122,7 +11382,20 @@ export const LOCK_CATALOG:LockEntry[] = [
       "1153"
     ],
     "plateCount": 4,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/29940-vse-sunduki-i-dveri-v-gothic-1-remake-kak-otkryt-kombinacii.html#:~:text=%D0%A1%D1%83%D0%BD%D0%B4%D1%83%D0%BA%20%D0%B2%20%D1%81%D0%BA%D0%B2%D0%BE%D0%B7%D0%BD%D0%BE%D0%B9%20%D0%BB%D0%B0%D1%87%D1%83%D0%B3%D0%B5",
+          "author": "Zorthrus",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источник указывает единственный предмет."
+    }
   },
   {
     "id": "old-camp-huno-opposite-left-chest",
@@ -11413,7 +12686,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "12741"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-right-from-trader-old-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "santino-storehouse-upstairs-chest",
@@ -11467,7 +12752,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "11443"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-over-trader-old-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "free-mine-above-entrance-chest",
@@ -11525,7 +12822,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "717651"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-before-entering-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "free-mine-outer-cave-chest",
@@ -11537,9 +12846,7 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Верхний тоннель возле Окила; источники называют также пещерой снаружи шахты.",
     "type": "chest",
     "floor": null,
-    "contents": [
-      "Пусто по источнику"
-    ],
+    "contents": [],
     "valuable": false,
     "warnings": [
       "SpecialGamesClub публикует только уровень «Без навыка»; раздел «Обученный» пока пуст."
@@ -11583,7 +12890,20 @@ export const LOCK_CATALOG:LockEntry[] = [
       "45651"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "empty",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-outside-of-cave-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источник сообщает, что сундук пуст; версия игры не указана."
+    }
   },
   {
     "id": "free-mine-highest-hut-chest",
@@ -11642,7 +12962,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "741417"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-highest-in-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "bandits-cave-chest-near-cavalorn",
@@ -11711,7 +13043,7 @@ export const LOCK_CATALOG:LockEntry[] = [
       "Лабораторный флакон × 2",
       "Кусок руды × 8"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [
       "SpecialGamesClub публикует только уровень «Без навыка»; раздел «Обученный» пока пуст."
     ],
@@ -11753,7 +13085,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "37775"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-waterfall-new-camp/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "new-camp-jan-near-lake-ruined-hut-chest",
@@ -11860,7 +13204,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "67672"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-underwater-near-new-camp/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "new-camp-under-opposite-hut-chest",
@@ -11915,7 +13271,12 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Ярус над воротами Нового лагеря, комната с воротным колесом.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Слабые лечебные травы × 2",
+      "Рисовый шнапс × 4",
+      "Хлеб × 3",
+      "Рис × 8"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -11954,7 +13315,18 @@ export const LOCK_CATALOG:LockEntry[] = [
       "726775"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Mercenary%20Watchtower%20Chest%20%231"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена."
+    }
   },
   {
     "id": "mercenary-watchtower-chest-2",
@@ -11966,7 +13338,10 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Верхняя площадка башни над воротами, где стоит Джарвис.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Короткий лук",
+      "Стрелы × 7"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -12007,7 +13382,18 @@ export const LOCK_CATALOG:LockEntry[] = [
       "441345"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Gothic.tools team — Lockpicking & Chest Solutions",
+          "url": "https://www.gothic.tools/guides/lockpicking-and-chest-solutions#:~:text=Mercenary%20Watchtower%20Chest%20%232"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Названия самостоятельно переведены; официальная русская локализация не подтверждена."
+    }
   },
   {
     "id": "new-camp-upper-first-hut-chest",
@@ -12252,8 +13638,15 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Внутри каюты разбитого корабля на берегу огненных ящеров.",
     "type": "chest",
     "floor": null,
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Амулет брони",
+      "Рубин",
+      "Стрелы",
+      "Болты",
+      "Монеты",
+      "Железная древесина"
+    ],
+    "valuable": true,
     "warnings": [],
     "config": null,
     "gameVersion": null,
@@ -12291,7 +13684,28 @@ export const LOCK_CATALOG:LockEntry[] = [
       "716521"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/29946-kapitanskij-kljuch-v-gothic-1-remake-kak-otkryt-dver-na-korable.html",
+          "author": "Zorthrus",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        },
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9356576"
+        },
+        {
+          "name": "Guszaban — GameFAQs, General Walkthrough",
+          "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Количество предметов в текстовом перечне не уточнено. Экстракт силы и монеты на полке каюты не добавлены в сундук."
+    }
   },
   {
     "id": "swamp-focus-zombie-cave-chest",
@@ -12311,7 +13725,7 @@ export const LOCK_CATALOG:LockEntry[] = [
       "Железо × 1",
       "Кусок руды × 14"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [
       "SpecialGamesClub публикует только уровень «Без навыка»; раздел «Обученный» пока пуст."
     ],
@@ -12361,7 +13775,23 @@ export const LOCK_CATALOG:LockEntry[] = [
       "521711"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-under-altar/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9356576"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "shipwreck-coast-secret-troll-cave-chest",
@@ -12373,8 +13803,13 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Тайная пещера в скалах над кораблём, с гоблинами и троллем; правый сундук.",
     "type": "chest",
     "floor": null,
-    "contents": [],
-    "valuable": false,
+    "contents": [
+      "Капитанский ключ",
+      "Эликсиры магической энергии",
+      "Целебный экстракт",
+      "Кусок руды × 15"
+    ],
+    "valuable": true,
     "warnings": [],
     "config": null,
     "gameVersion": null,
@@ -12410,7 +13845,24 @@ export const LOCK_CATALOG:LockEntry[] = [
       "25161"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/29946-kapitanskij-kljuch-v-gothic-1-remake-kak-otkryt-dver-na-korable.html",
+          "author": "Zorthrus",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        },
+        {
+          "name": "Nanomaks — Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3744092839#9356576"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Ключ и зелья перечислены в Land of Games; 15 кусков руды — в руководстве Steam. Полный состав и количества зелий не установлены."
+    }
   },
   {
     "id": "shipwreck-troll-cave-chest-2",
@@ -12523,7 +13975,20 @@ export const LOCK_CATALOG:LockEntry[] = [
     "solutionStatus": "unconfirmed",
     "relatedIds": [
       "mountain-fortress-forge-orc-hammer-chest"
-    ]
+    ],
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-cave-with-not-finished-golem/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Перечень относится к сундуку напротив недостроенного голема. Его соответствие отдельной карточке кузницы Горной крепости пока не установлено."
+    }
   },
   {
     "id": "mountain-fortress-cellar-right-grate",
@@ -12683,7 +14148,26 @@ export const LOCK_CATALOG:LockEntry[] = [
       "432217"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-fort-summit-near-statues/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        },
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/30066-vse-sunduki-v-gornom-forte-v-gothic-1-remake-gde-najti-kak-otkryt-i-chto-lezhit-vnutri.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Land of Games подтверждает тот же набор из 4 видов предметов."
+    }
   },
   {
     "id": "old-citadel-ruined-tower-chest",
@@ -12760,7 +14244,7 @@ export const LOCK_CATALOG:LockEntry[] = [
       "Перо × 5",
       "Арбалет × 1"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [
       "SpecialGamesClub публикует только уровень «Без навыка»; раздел «Обученный» пока пуст."
     ],
@@ -12810,7 +14294,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "276732"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-destroyed-fortress/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-town-approach-tower-chest",
@@ -12870,7 +14366,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "13643"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-tower-before-orcs-town/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-territory-razor-cave-chest",
@@ -12931,7 +14439,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "716463"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-cave-razorteeth-orcs-land/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "xardas-tower-demon-chest",
@@ -12994,7 +14514,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "251261"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-behind-demon-xardas-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "free-mine-left-storehouse-chest-1",
@@ -13051,7 +14583,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "77355"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-free-mine-on-left-2nd-floor/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-shaman-cave-chest-1",
@@ -13315,7 +14859,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "132316"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-under-stairs-xardas-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "abandoned-mine-underwater-chest",
@@ -13431,7 +14987,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "717146"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-left-far-cage-dining-old-camp/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "old-camp-guard-dining-room-entrance-door",
@@ -13538,7 +15106,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "75276"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-left-from-stairs-guards-sleeping-room/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "old-camp-guard-dining-room-far-cell-right-chest",
@@ -13594,7 +15174,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "77543"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-right-far-cage-dining-room/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "old-camp-guard-dining-room-far-cell-door",
@@ -13697,7 +15289,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "37741"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-free-mine-outside-on-2nd-floor/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "free-mine-crawler-cave-approach-chest",
@@ -13758,7 +15362,20 @@ export const LOCK_CATALOG:LockEntry[] = [
       "551111"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-before-crawler-cave-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Наименование «Целительные травы 1» оставлено как в источнике; разновидность требует проверки в игре."
+    }
   },
   {
     "id": "free-mine-entrance-bridge-chest",
@@ -13775,7 +15392,7 @@ export const LOCK_CATALOG:LockEntry[] = [
       "Зелье быстрого исцеления × 1",
       "Чертёж Мясника × 1"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [
       "SpecialGamesClub публикует только уровень «Без навыка»; раздел «Обученный» пока пуст."
     ],
@@ -13817,7 +15434,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "547211"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-under-bridge-near-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "free-mine-main-hall-approach-chest",
@@ -13875,7 +15504,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "272746"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-before-main-hall-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "okyls-free-mine-chest",
@@ -13928,7 +15569,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "71766"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-behind-okil-free-mine/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "xardas-tower-experimental-chamber-chest",
@@ -13990,7 +15643,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "156473"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-cage-2nd-floor-xardas-tower/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "xardas-tower-upper-room-chest",
@@ -14053,7 +15718,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "175647"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-2nd-floor-xardas-tower-right-from-table/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "xardas-tower-private-room-chest",
@@ -14114,7 +15791,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "767351"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-left-in-xardas-bedroom/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-territory-border-cave-chest",
@@ -14172,7 +15861,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "215512"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-before-orcs-lands/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-temple-lower-rotunda-left-chest",
@@ -14230,7 +15931,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "247755"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-left-chokcha-orc/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-temple-lower-rotunda-right-chest",
@@ -14288,7 +16001,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "45577"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-right-chockcha-orcs/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "orc-temple-upper-rotunda-chest",
@@ -14307,7 +16032,7 @@ export const LOCK_CATALOG:LockEntry[] = [
       "Стрела × 5",
       "Болт × 7"
     ],
-    "valuable": false,
+    "valuable": true,
     "warnings": [
       "SpecialGamesClub публикует только уровень «Без навыка»; раздел «Обученный» пока пуст."
     ],
@@ -14347,7 +16072,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "474717"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-front-of-sanctuary-orcs/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "xardas-sunken-tower-library-gate",
@@ -15349,7 +17086,7 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Древняя рудная броня"
+      "Древние рудные доспехи"
     ],
     "valuable": true,
     "warnings": [],
@@ -15379,7 +17116,18 @@ export const LOCK_CATALOG:LockEntry[] = [
     "tags": [],
     "searchAliases": [],
     "plateCount": null,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Gothic Lock Picking",
+          "url": "https://gothic-lock-picking.com/en/locks/gomezs-ancient-ore-armor-chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Источник указывает доспехи; полный состав сундука не установлен. Нужен ключ Гомеза."
+    }
   },
   {
     "id": "new-camp-baal-kagan-fireplace-hut-chest",
@@ -15564,7 +17312,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "type": "chest",
     "floor": null,
     "contents": [
-      "Доспехи королевского стражника"
+      "Доспехи королевского стражника × 1",
+      "Пергамент × 3",
+      "Кусок руды × 12"
     ],
     "valuable": true,
     "warnings": [],
@@ -15597,7 +17347,20 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [],
     "plateCount": null,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "Land of Games",
+          "url": "https://landofgames.ru/articles/guides/30066-vse-sunduki-v-gornom-forte-v-gothic-1-remake-gde-najti-kak-otkryt-i-chto-lezhit-vnutri.html",
+          "author": "Droommar",
+          "license": "Пользовательское соглашение §7.7–7.8: личное некоммерческое использование с прямой индексируемой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Ключевой сундук спальни барона. Ключ лежит в другом сундуке на вершине башни."
+    }
   },
   {
     "id": "new-camp-gorns-hut-chest",
@@ -15955,7 +17718,11 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Вершина разрушенной башни южнее входа в город орков; требуется подъём по уступам.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Рог × 1",
+      "Экстракт ловкости × 1",
+      "Рецепт заклинания «Превращение в кусача» × 1"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -15992,7 +17759,19 @@ export const LOCK_CATALOG:LockEntry[] = [
       "13642"
     ],
     "plateCount": 5,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-on-orc-tower-near-xardas/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   },
   {
     "id": "outlaws-loot-cave-left-grate",
@@ -16139,7 +17918,9 @@ export const LOCK_CATALOG:LockEntry[] = [
     "route": "Основная часть лагеря разбойников, рядом с хижиной Квентина.",
     "type": "chest",
     "floor": null,
-    "contents": [],
+    "contents": [
+      "Ключ от пещеры с добычей разбойников"
+    ],
     "valuable": false,
     "warnings": [],
     "config": null,
@@ -16170,7 +17951,22 @@ export const LOCK_CATALOG:LockEntry[] = [
       "353131"
     ],
     "plateCount": 6,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "partial",
+      "sources": [
+        {
+          "name": "Gothic Lock Picking",
+          "url": "https://gothic-lock-picking.com/en/locks/outlaws-loot-cave"
+        },
+        {
+          "name": "Gothic Lock Picking — сундук Квентина",
+          "url": "https://gothic-lock-picking.com/en/locks/quentins-chest"
+        }
+      ],
+      "reviewedAt": "2026-10-16",
+      "note": "Подтверждён только ключ. Добыча за решёткой не приписана сундуку Квентина."
+    }
   },
   {
     "id": "old-camp-training-grounds-lower-chest",
@@ -16306,9 +18102,22 @@ export const LOCK_CATALOG:LockEntry[] = [
     ],
     "searchAliases": [],
     "plateCount": null,
-    "solutionStatus": "unconfirmed"
+    "solutionStatus": "unconfirmed",
+    "loot": {
+      "coverage": "listed",
+      "sources": [
+        {
+          "name": "SpecialGamesClub",
+          "url": "https://specialgamesclub.ru/article/guide/gothic-1-remake-chest-in-cave-of-molerat/",
+          "author": "Евгений Баранов",
+          "license": "Факты из руководства; частичное использование с прямой ссылкой"
+        }
+      ],
+      "reviewedAt": "2026-10-16"
+    }
   }
 ];
+
 
 export const CATALOG_ALIASES:Record<string,string>={"cavalorn-cave-unknown":"cavalorn-storeroom-door","new-camp-peasant-upstairs-grate":"new-camp-peasant-housing-door"};
 

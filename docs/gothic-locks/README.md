@@ -6,11 +6,14 @@
 
 Текущий аудит и правила подсчёта: [COLONY-EXPANSION.md](./COLONY-EXPANSION.md). Предыдущий выпуск150 карточек: [READY-COMBINATIONS.md](./READY-COMBINATIONS.md). Исторический аудит 146 карточек: [FULL-AUDIT.md](./FULL-AUDIT.md). Проверки: [TESTING.md](./TESTING.md). Офлайн и хостинг: [PWA.md](./PWA.md).
 
+Сведения о добыче: 102 из 246 сундуков — 72 опубликованных перечня, 28 частичных или спорных списков и 2 пустых по сообщению источников. Ещё 144 сундука без сверенного перечня. Заполнены 43 ранее пустые карточки. [Аудит добычи](./LOOT-AUDIT.md).
+
 ## Проверка и сборка
 
 - npm run build — static export, Worker, лицензии, precache и короткий адрес.
-- npm run test:gothic — 78 проверок решателя, каталога, профилей, прогресса и PWA.
+- npm run test:gothic — 81 проверка решателя, каталога, профилей, прогресса и PWA.
 - python scripts/test-gothic-column-cover.py — независимое доказательство покрытия на синтетических примерах.
+- node scripts/test-gothic-loot-browser.cjs — содержимое всех сундуков, атрибуция, мобильный экран и офлайн.
 - node scripts/test-gothic-expansion-browser.cjs — хижина, источники, ключи и новые фильтры на телефоне.
 - node scripts/test-gothic-ready-browser.cjs — текущая браузерная приёмка всей базы и трёх навыков.
 - node scripts/test-gothic-update.cjs — миграция старого офлайн-каталога на текущий без потери отметок.

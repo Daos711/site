@@ -18,3 +18,10 @@
 .licensedCredit{margin:16px 0}
 .licensedCredit a{font-size:30px;line-height:1.3;color:var(--gold);text-decoration:underline;overflow-wrap:anywhere}
 .licensedCredit p{font-size:12px;color:#aeb39f;line-height:1.6;margin:5px 0}
+
+/* Item facts and their direct source links use the same readable text size. */
+.lootBlock{margin:16px 0}
+.lootList,.lootSources{font-size:.85rem;line-height:1.65}
+.lootList{margin:8px 0 12px;padding-left:24px}
+.lootList li{padding:2px 0;overflow-wrap:anywhere}
+.lootSources a{font-size:inherit;color:var(--gold);text-decoration:underline;overflow-wrap:anywhere}

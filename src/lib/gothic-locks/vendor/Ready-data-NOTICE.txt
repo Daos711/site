@@ -67,3 +67,21 @@ by its owner. Every adapted route displays that link with equal-size type.
 No images or third-party program code were copied. Source rights are retained;
 this subset is not MIT/CC0, and its use is conditional on the original terms.
 The routes are published instructions, not independently simulated game models.
+
+
+Loot facts — independently curated 2026-10-16.
+Direct article links and credited authors are attached to each loot record.
+SpecialGamesClub / Евгений Баранов: the article/footer permits partial copying
+with a direct link and prohibits full copying. We retain short normalized item
+facts, not article prose, screenshots or the complete guide collection.
+https://specialgamesclub.ru/
+Land of Games: authors credited per article (lyubov, Droommar, Zorthrus).
+The same sections 7.7–7.8 personal/noncommercial and attribution conditions above
+apply to these selected facts; direct credits use no smaller type than item lists.
+UnlockMyLoot, GameSlayer, GameFAQs, Steam, Gothic Lock Picking, Planet of Gothic
+and Gothic.tools: selected factual observations and direct source references.
+No blanket open license is asserted for those websites or their compiled databases.
+The complete TH.GL, Wikily, Planet or Gothic.tools arrays are not redistributed.
+An item absent from a partial list is not proven absent from the game chest.
+Conflicting quantities/types are withheld. Game patch and local gameplay verification
+are unknown unless separately stated. See docs/gothic-locks/LOOT-AUDIT.md.

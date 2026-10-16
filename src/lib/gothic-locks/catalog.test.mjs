@@ -114,3 +114,46 @@ test('catalog distinguishes key access, exact door types and unrelated similarly
   if(entry.access==='key'||entry.access==='unlocked')assert.ok(!readyRows.some(s=>s.entryId===entry.id),entry.id+' must not invent a lockpick solution');
  }
 });
+
+
+test('loot evidence distinguishes published lists, partial information, empty and unknown chests',()=>{
+ for(const entry of catalog){
+  if(entry.contents.length && ['chest','underwater'].includes(entry.type))assert.ok(entry.loot?.sources.length,entry.id+' needs direct loot provenance');
+  if(!entry.loot)continue;
+  assert.ok(['listed','partial','empty'].includes(entry.loot.coverage),entry.id);
+  assert.match(entry.loot.reviewedAt,/^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(entry.loot.sources.length,entry.id);
+  assert.equal(new Set(entry.loot.sources.map(s=>s.url)).size,entry.loot.sources.length);
+  for(const source of entry.loot.sources)assert.equal(new URL(source.url).protocol,'https:');
+  if(entry.loot.coverage==='empty'){assert.deepEqual(entry.contents,[]);assert.equal(entry.valuable,false);}
+  else assert.ok(entry.contents.length,entry.id);
+  assert.ok(!entry.contents.some(item=>/^Пусто(?:\s|$)/i.test(item)),entry.id+' empty is a status, not loot');
+ }
+ for(const status of ['listed','partial','empty'])assert.ok(catalog.some(e=>e.loot?.coverage===status));
+ assert.ok(catalog.some(e=>e.type==='chest'&&!e.loot&&!e.contents.length));
+});
+
+test('loot stays attached to the correct floor, underwater route and mine storehouse',()=>{
+ const entry=id=>catalog.find(e=>e.id===id);
+ assert.ok(entry('tower-chest-first').contents.includes('Кусок руды × 26'));
+ assert.ok(entry('tower-chest-second').contents.includes('Кольцо железной кожи × 1'));
+ assert.ok(!entry('tower-chest-second').contents.some(item=>/меч/i.test(item)));
+ assert.ok(!entry('silas-tavern-basement-chest').contents.some(item=>/Брана/.test(item)));
+ assert.ok(entry('silas-storeroom-chest').contents.includes('Топор Брана'));
+ assert.match(entry('silas-storeroom-chest').route,/справа от тела Брана/);
+ assert.equal(entry('guide-santino').loot.coverage,'partial');
+ assert.ok(!entry('guide-santino').contents.some(item=>/23|33/.test(item)));
+ assert.ok(!entry('guide-rodriguez').contents.some(item=>/жизн/i.test(item)));
+ for(const id of ['guide-alberto','alberto-mine-hut-chest','alberto-mine-upstairs-left-chest','alberto-mine-upstairs-right-chest']){
+  assert.equal(entry(id).region,'old-mine');
+  assert.ok(filterCatalog({query:'Альберто'}).some(e=>e.id===id));
+ }
+ assert.ok(!REGIONS.some(r=>r.id==='alberto-mine'));
+});
+
+test('loot search finds distinctive items without requiring the owner name',()=>{
+ for(const [query,id] of [['кольцо железной кожи','tower-chest-second'],['топор Брана','silas-storeroom-chest'],['кольцо очищения','old-camp-abandoned-shack-chest']]){
+  assert.ok(filterCatalog({query}).some(e=>e.id===id),query);
+ }
+ assert.ok(!filterCatalog({query:'топор Брана'}).some(e=>e.id==='silas-tavern-basement-chest'));
+});
