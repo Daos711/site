@@ -8,6 +8,7 @@ import type { LockConfig, Move } from "@/lib/gothic-locks/types";
 import { groupMoves, simulateMove, validateConfig, verifySolution } from "@/lib/gothic-locks/simulator";
 import { configForPrecision, PRECISION_BY_SKILL, resolveSkillConfig } from "@/lib/gothic-locks/skill";
 import type { OrderedConnection } from "@/lib/gothic-locks/skill";
+import { updateGothicApp } from "@/lib/gothic-locks/pwa-update";
 import styles from "./gothic-locks.module.css";
 
 type Skill = "none" | "trained" | "master";
@@ -186,6 +187,9 @@ export default function GothicLocks() {
   const [install, setInstall] = useState<InstallEvent | null>(null);
   const [offline, setOffline] = useState(false);
   const [cacheReady, setCacheReady] = useState(false);
+  const [updateAvailable,setUpdateAvailable]=useState(false);
+  const [updating,setUpdating]=useState(false);
+  const [updateError,setUpdateError]=useState("");
   const headingRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setSaved(readSaved()); setLoaded(true);
@@ -207,13 +211,21 @@ export default function GothicLocks() {
       channel.port1.onmessage = (event) => { clearTimeout(timer); channel.port1.close(); if (alive) setCacheReady(event.data?.ready === true); };
       registration.active.postMessage({ type: "GOTHIC_CHECK_OFFLINE" }, [channel.port2]);
     };
+    let registration:ServiceWorkerRegistration|undefined;
+    let watched:ServiceWorker|null=null;
+    let lastUpdateCheck=0;
+    const watchState=()=>{if(alive && registration?.waiting) setUpdateAvailable(true);};
+    const watchUpdate=()=>{watched?.removeEventListener("statechange",watchState);watched=registration?.installing||null;watched?.addEventListener("statechange",watchState);watchState();};
+    const hadController=!!navigator.serviceWorker?.controller;
     const refreshOffline = () => { void checkOffline().catch(() => { if (alive) setCacheReady(false); }); };
-    window.addEventListener("focus", refreshOffline);
-    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("controllerchange", refreshOffline);
+    const onFocus=()=>{refreshOffline();if(registration && Date.now()-lastUpdateCheck>60000){lastUpdateCheck=Date.now();void registration.update().catch(()=>{});}};
+    const onControllerChange=()=>{refreshOffline();if(alive && hadController) setUpdateAvailable(true);};
+    window.addEventListener("focus", onFocus);
+    if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/apps/gothic-locks-sw.js", { scope: "/apps/gothic-locks" }).then(() => navigator.serviceWorker.ready).then(checkOffline).catch(() => { if (alive) setCacheReady(false); });
+      navigator.serviceWorker.register("/apps/gothic-locks-sw.js", { scope: "/apps/gothic-locks", updateViaCache:"none" }).then((value) => { if(!alive)return;registration=value;registration.addEventListener("updatefound",watchUpdate);watchUpdate();return navigator.serviceWorker.ready; }).then(()=>{if(alive)return checkOffline();}).catch(() => { if (alive) setCacheReady(false); });
     }
-    return () => { alive = false; window.removeEventListener("focus", refreshOffline); if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("controllerchange", refreshOffline); window.removeEventListener("hashchange", readHash); window.removeEventListener("online", updateOnline); window.removeEventListener("offline", updateOnline); window.removeEventListener("beforeinstallprompt", onInstall); };
+    return () => { alive = false; registration?.removeEventListener("updatefound",watchUpdate);watched?.removeEventListener("statechange",watchState);window.removeEventListener("focus", onFocus); if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange); window.removeEventListener("hashchange", readHash); window.removeEventListener("online", updateOnline); window.removeEventListener("offline", updateOnline); window.removeEventListener("beforeinstallprompt", onInstall); };
   }, []);
   useEffect(() => {
     if (!loaded) return;
@@ -234,6 +246,7 @@ export default function GothicLocks() {
   const edit = (config?: LockConfig) => { setConfirmedState(null); if (entry) setSaved((current) => { const progress = { ...current.progress }; delete progress[entry.id]; return { ...current, progress, changed: [...new Set([...current.changed, entry.id])] }; }); setDraft(config); setCustom(undefined); setManual(true); headingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); };
   return <div className={styles.app} ref={headingRef}>
     <header className={styles.header}><a href="/apps" className={styles.labLink}><ArrowLeft size={14} /> Приложения Lab</a><span className={styles.connection}><span className={cacheReady ? styles.readyDot : styles.statusDot} />{offline ? "Без интернета" : cacheReady ? "Доступно офлайн" : "Локальные сохранения"}</span></header>
+    {updateAvailable && <div className={styles.notice} role="status"><strong>Доступна новая версия справочника.</strong><p>Отметки сохранятся. Текущий ручной ввод завершите перед обновлением.</p><button className={styles.primary} disabled={updating} onClick={async()=>{setUpdating(true);setUpdateError("");try{await updateGothicApp();window.location.reload();}catch(error){setUpdateError(error instanceof Error?error.message:"Не удалось обновить приложение.");setUpdating(false);}}}>{updating ? "Обновляем…" : "Обновить справочник"}</button>{updateError&&<p>{updateError}</p>}</div>}
     <div className={styles.brand}><div className={styles.brandIcon}><KeyRound size={28} strokeWidth={1.4} /></div><div><span className={styles.eyebrow}>СПРАВОЧНИК КОЛОНИИ</span><h1>Gothic Remake <span>— Замки</span></h1></div></div>
     {storageIssue && <p className={styles.notice} role="status">Браузер запретил сохранение. Отметки и настройки сохраняются только до закрытия страницы.</p>}
     {manual ? <ManualEditor initial={draft} skill={saved.skill} onSkill={changeSkill} onCalculate={(config) => { setCustom(config); setManual(false); }} onBack={() => { setManual(false); setDraft(undefined); }} /> : custom ? <section><button className={styles.back} onClick={backToCatalog}><ArrowLeft size={17} /> К каталогу</button><h2>Мой замок</h2><p className={styles.muted}>Решение для введённого вами состояния.</p><Solution key={JSON.stringify(custom)} config={custom} saved={saved} setSaved={setSaved} onEdit={edit} /></section> : entry ? <section className={styles.entry}>
@@ -270,6 +283,6 @@ export default function GothicLocks() {
         <section className={styles.asideCard}><ShieldCheck size={22} /><h3>Сначала проверка</h3><p>Алгоритм учитывает границы и направленные связи. Данные из сообщества; сверяйте исходное состояние со своей игрой.</p></section>
       </aside></div>
     </>}
-    <footer className={styles.footer}><details><summary>Об источниках, проверке и установке</summary><p>Неофициальный справочник Gothic 1 Remake. Алгоритм адаптирован из <a href="https://github.com/Murzav/gothic-lockpick-solver" target="_blank" rel="noreferrer">Murzav/gothic-lockpick-solver (MIT)</a>. Происхождение каждой записи указано в её карточке. <a href="/apps/gothic-locks-licenses.txt" target="_blank" rel="noreferrer">Лицензии и авторы</a>. Названия переведены для поиска; совпадение с русской локализацией игры не подтверждено.</p><p>Учтены 24 наблюдения Arminek и именованные упоминания в публичных руководствах. 416 графов G1LockPickHelper включают 71 тестовый; игровые массивы не распространяются. Карта TH.GL встроена по разрешённым условиям, её база не скопирована. В каталог не добавляются анонимные карточки ради количества.</p><p>Конфигурации проверяются математической симуляцией, не прохождением на PS5. После ошибки, изменения связей или обновления игры сверьте состояние и пересчитайте решение.</p><p>На Android откройте меню Chrome → «Добавить на главный экран» → «Установить». Дождитесь отметки «Доступно офлайн». Для установки нужен HTTPS; локальный предпросмотр работает на localhost.</p><p>Навык, недавние замки, отметки и шаги хранятся только в этом браузере. Очистка данных сайта удалит их. Карты и источники по внешним ссылкам требуют интернета.</p></details>{install && <button className={styles.secondary} onClick={async () => { await install.prompt(); await install.userChoice; setInstall(null); }}><Download size={17} /> Установить на телефон</button>}<span>Сделано для игры без лишних пауз</span></footer>
+    <footer className={styles.footer}><details><summary>Об источниках, проверке и установке</summary><p>Неофициальный справочник Gothic 1 Remake. Алгоритм адаптирован из <a href="https://github.com/Murzav/gothic-lockpick-solver" target="_blank" rel="noreferrer">Murzav/gothic-lockpick-solver (MIT)</a>. Происхождение каждой записи указано в её карточке. <a href="/apps/gothic-locks-licenses.txt" target="_blank" rel="noreferrer">Лицензии и авторы</a>. Названия переведены для поиска; совпадение с русской локализацией игры не подтверждено.</p><p>Учтены 24 наблюдения Arminek и именованные упоминания в публичных руководствах. 416 графов G1LockPickHelper включают 71 тестовый; игровые массивы не распространяются. Карта TH.GL встроена по разрешённым условиям, её база не скопирована. В каталог не добавляются анонимные карточки ради количества.</p><p>Конфигурации проверяются математической симуляцией, не прохождением на PS5. После ошибки, изменения связей или обновления игры сверьте состояние и пересчитайте решение.</p><p>На Android откройте меню Chrome → «Добавить на главный экран» → «Установить». Дождитесь отметки «Доступно офлайн». Для установки нужен HTTPS; локальный предпросмотр работает на localhost.</p><p>Навык, недавние замки, отметки и шаги хранятся только в этом браузере. Очистка данных сайта удалит их. Карты и источники по внешним ссылкам требуют интернета.</p></details>{install && <button className={styles.secondary} onClick={async () => { await install.prompt(); await install.userChoice; setInstall(null); }}><Download size={17} /> Установить на телефон</button>}<span>Каталог: {catalog.length} карточек · выпуск 16.10.2026 · <a href="/apps/g/?update=1">Проверить обновление</a></span></footer>
   </div>;
 }

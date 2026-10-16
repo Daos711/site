@@ -66,7 +66,7 @@ test("generated module worker returns independently verified safe moves and hand
   }
 });
 
-async function serviceWorkerHarness({ missing = false } = {}) {
+async function serviceWorkerHarness({ missing = false, appWindow = false } = {}) {
   const paths = ["/apps/gothic-locks.html", "/apps/gothic-locks-worker.js", "/apps/gothic-locks-licenses.txt"];
   const template = await readFile(join(publicRoot, "apps/gothic-locks-sw.js"), "utf8");
   const source = template.replace("__GOTHIC_CACHE_VERSION__", "test-version").replace("/* GOTHIC_PRECACHE */ []", JSON.stringify(paths));
@@ -99,7 +99,7 @@ async function serviceWorkerHarness({ missing = false } = {}) {
     async skipWaiting() { state.skipped = true; },
     clients: {
       async claim() { state.claimed = true; },
-      async matchAll() { return [{ postMessage: (message) => state.messages.push(message) }]; },
+      async matchAll() { return [{ url: appWindow ? origin + "/apps/gothic-locks/" : undefined, postMessage: (message) => state.messages.push(message) }]; },
     },
   };
   vm.runInNewContext(source, {
@@ -218,14 +218,18 @@ test("exported short aliases preserve the query and hash and keep the PWA scope"
   assert.match(index, /href="https:\/\/daos711\.ru\/apps\/gothic-locks\/"/);
   assert.match(index, /<a href="\/apps\/gothic-locks\/">/);
   assert.doesNotMatch(index, /http-equiv="refresh"/i, "a competing refresh would discard the incoming route");
-  const scripts = [...index.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  const scripts = [...index.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
   assert.equal(scripts.length, 1);
   for (const path of ["/apps/g", "/apps/g/", "/apps/g.html"]) {
     for (const suffix of ["", "?lock=scatty-chest#step-3", "?q=%D0%A4%D0%B8%D1%81%D0%BA&tag=a&tag=b#saved%2Flock", "?next=https%3A%2F%2Fexternal.test%2F#%D0%B7%D0%B0%D0%BC%D0%BE%D0%BA"]) {
       const source = new URL(path + suffix, origin);
       const replacements = [];
-      vm.runInNewContext(scripts[0][1], {
-        window: { location: { search: source.search, hash: source.hash, replace: (url) => replacements.push(url) } },
+      let updated = false;
+      const element = { textContent: "", hidden: false, href: "", addEventListener() {} };
+      await vm.runInNewContext(scripts[0][1].replace(/import \{ updateGothicApp \} from [^;]+;/, ""), {
+        updateGothicApp: async () => { updated = true; },
+        document: { getElementById: () => element, querySelector: () => element },
+        window: { location: { search: source.search, hash: source.hash, replace: (url) => { assert.equal(updated,true); replacements.push(url); } } },
       });
       assert.equal(replacements.length, 1);
       const destination = new URL(replacements[0], origin);
@@ -239,4 +243,31 @@ test("exported short aliases preserve the query and hash and keep the PWA scope"
   assert.equal(report.scope, "/apps/gothic-locks");
   assert.ok(!report.urls.includes("/apps/g.html"));
   assert.ok(!report.urls.includes("/apps/g/index.html"));
+});
+
+test("explicit update activates only after all offline resources are present", async () => {
+ const harness=await serviceWorkerHarness();
+ await harness.dispatch("message",{data:{type:"GOTHIC_APPLY_UPDATE"}});
+ assert.equal(harness.state.skipped,false,"an empty cache cannot activate");
+ await harness.dispatch("install");
+ const cache=harness.stores.get("gothic-locks-v1-test-version");
+ const resource=cache.get(origin+"/apps/gothic-locks-worker.js");
+ cache.delete(origin+"/apps/gothic-locks-worker.js");
+ await harness.dispatch("message",{data:{type:"GOTHIC_APPLY_UPDATE"}});
+ assert.equal(harness.state.skipped,false,"a partially evicted cache cannot activate");
+ cache.set(origin+"/apps/gothic-locks-worker.js",resource);
+ await harness.dispatch("message",{data:{type:"GOTHIC_APPLY_UPDATE"}});
+ assert.equal(harness.state.skipped,true);
+});
+test("explicit activation retains other open tabs' old chunks and unrelated caches",async()=>{
+ const harness=await serviceWorkerHarness({appWindow:true});
+ harness.stores.get("gothic-locks-v1-old").set(origin+"/_next/static/chunks/legacy.js",new Response("legacy chunk"));
+ await harness.dispatch("install");
+ await harness.dispatch("message",{data:{type:"GOTHIC_APPLY_UPDATE"}});
+ await harness.dispatch("activate");
+ assert.ok(harness.stores.has("gothic-locks-v1-old"));
+ assert.ok(harness.stores.has("other-app-cache"));
+ assert.equal(await(await harness.request("/_next/static/chunks/legacy.js","cors")).text(),"legacy chunk");
+ assert.equal(harness.state.networkCalls,0);
+ assert.equal(await(await harness.request("/apps/gothic-locks/")).text(),"<html>offline app</html>");
 });

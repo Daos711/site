@@ -24,8 +24,14 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   if (!PRECACHE_URLS.length) return;
   event.waitUntil((async () => {
-    const names = await caches.keys();
-    await Promise.all(names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME).map((name) => caches.delete(name)));
+    const openWindows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const hasAppWindows = openWindows.some((client) => client.url && APP_ROUTES.has(new URL(client.url).pathname));
+    // Explicit activation can leave another tab running old HTML. Preserve its
+    // hashed chunks until a later activation with no app windows can collect them.
+    if (!hasAppWindows) {
+      const names = await caches.keys();
+      await Promise.all(names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME).map((name) => caches.delete(name)));
+    }
     await self.clients.claim();
     const clients = await self.clients.matchAll({ type: "window" });
     for (const client of clients) client.postMessage({ type: "GOTHIC_OFFLINE_READY" });
@@ -45,13 +51,31 @@ self.addEventListener("fetch", (event) => {
   }
   // Controlled documents can request shared chunks outside the document scope.
   // Only this app's explicit entries are served; other site pages pass through.
-  if (!PRECACHE_PATHS.has(url.pathname)) return;
+  if (!PRECACHE_PATHS.has(url.pathname)) {
+    if (url.pathname.startsWith("/_next/static/")) event.respondWith((async () => {
+      for (const name of await caches.keys()) {
+        if (!name.startsWith(CACHE_PREFIX) || name === CACHE_NAME) continue;
+        const cached = await (await caches.open(name)).match(url.pathname);
+        if (cached) return cached;
+      }
+      return fetch(request);
+    })());
+    return;
+  }
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     return (await cache.match(url.pathname)) || fetch(request);
   })());
 });
 self.addEventListener("message", (event) => {
+  if (event.data?.type === "GOTHIC_APPLY_UPDATE") {
+    event.waitUntil((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const resources = await Promise.all(PRECACHE_URLS.map((url) => cache.match(url)));
+      // A user may request activation only after the full offline build exists.
+      if (PRECACHE_URLS.length && resources.every(Boolean)) await self.skipWaiting();
+    })());
+  }
   if (event.data?.type === "GOTHIC_CHECK_OFFLINE" && event.ports[0]) {
     event.waitUntil((async () => {
       const cache = await caches.open(CACHE_NAME);

@@ -31,7 +31,7 @@ const within = (directory, path) => {
 
 // Compile the worker from the same simulator used by the UI and tests.
 async function prepareWorker() {
-  const queue = ["solver.ts"];
+  const queue = ["solver.ts", "pwa-update.ts"];
   const modules = new Set();
   while (queue.length) {
     const filename = queue.shift();
@@ -188,8 +188,24 @@ async function main() {
   <link rel="canonical" href="https://daos711.ru/apps/gothic-locks/">
 </head>
 <body>
-  <p><a href="/apps/gothic-locks/">Открыть справочник замков Gothic Remake</a></p>
-  <script>window.location.replace("/apps/gothic-locks/" + window.location.search + window.location.hash);</script>
+  <p id="status" role="status">Обновляем справочник. Ваши отметки сохранятся…</p>
+  <p><a href="/apps/gothic-locks/">Открыть сохранённую версию справочника</a></p>
+  <button id="retry" hidden>Повторить обновление</button>
+  <script type="module">
+    import { updateGothicApp } from "/apps/gothic-locks-core/pwa-update.js";
+    const destination = "/apps/gothic-locks/" + window.location.search + window.location.hash;
+    const status = document.getElementById("status");
+    const retry = document.getElementById("retry");
+    document.querySelector("a").href = destination;
+    async function openCurrent() {
+      retry.hidden = true;
+      status.textContent = "Обновляем справочник. Ваши отметки сохранятся…";
+      try { await updateGothicApp(); window.location.replace(destination); }
+      catch (error) { status.textContent = error.message || "Обновление недоступно. Проверьте интернет."; retry.hidden = false; }
+    }
+    retry.addEventListener("click", openCurrent);
+    openCurrent();
+  </script>
 </body>
 </html>
 `;
