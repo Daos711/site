@@ -14,7 +14,7 @@ function load(file) {
   return mod.exports;
 }
 const { GAME_CATALOGS, getGame } = load(fileURLToPath(new URL('./catalog.ts', import.meta.url)));
-const { gothicPreset, PRESET_LESSONS } = load(fileURLToPath(new URL('./preset.ts', import.meta.url)));
+const { gothicPreset, PRESET_LESSONS, PRESET_MAPS, PRESET_TROPHIES } = load(fileURLToPath(new URL('./preset.ts', import.meta.url)));
 const game = getGame('gothic-remake');
 const category = name => game.items.filter(item => item.category === name);
 const byId = id => { const item = game.items.find(item => item.id === id); assert.ok(item, id); return item; };
@@ -81,20 +81,20 @@ test('book possession, delivery and completion are separate; recommended chapter
   assert.match(byId('bestiary-5').conditions, /снежного мракориса/);
 });
 
-test('explicit personal preset identifies seven confirmed lessons and one map, preserves unknown maps and claims only the known PSN trophy', () => {
+test('explicit personal preset identifies seven confirmed lessons, four named maps and five known PSN trophies', () => {
   assert.deepEqual(PRESET_LESSONS, ['lesson-diving', 'lesson-lockpicking-trained', 'lesson-acrobatics', 'lesson-inscription', 'lesson-scavenger-riding', 'lesson-one-handed-trained', 'lesson-climbing']);
   const inputs = gothicPreset();
   for (const input of inputs) if (!['run', 'journal'].includes(input.entityId)) byId(input.entityId);
   const observed = inputs.filter(input => input.field === 'observed' && input.value === true);
-  assert.deepEqual(new Set(observed.map(input => input.entityId)), new Set([...PRESET_LESSONS, 'map-swamp-camp']));
+  assert.deepEqual(new Set(observed.map(input => input.entityId)), new Set([...PRESET_LESSONS, ...PRESET_MAPS]));
   assert.ok(observed.every(input => input.runId === null));
   assert.equal(PRESET_LESSONS.length, 7);
   for (const entityId of PRESET_LESSONS) assert.ok(inputs.some(input => input.entityId === entityId && input.runId === 'first-playthrough' && input.field === 'status' && input.value === 'done'));
   assert.equal(inputs.find(input => input.field === 'reportedLessons').value, 7);
-  assert.equal(inputs.find(input => input.field === 'reportedMaps').value, 3);
+  assert.equal(inputs.find(input => input.field === 'reportedMaps').value, 4);
   assert.match(inputs.find(input => input.entityId === 'journal').value, /7\/46/);
   const awards = inputs.filter(input => input.entityId.startsWith('trophy-'));
-  assert.deepEqual(awards.map(input => [input.entityId, input.runId, input.field, input.value]), [['trophy-swamp-camp', null, 'status', 'done']]);
+  assert.deepEqual(awards.map(input => [input.entityId, input.runId, input.field, input.value]), PRESET_TROPHIES.map(id => [id, null, 'status', 'done']));
   assert.ok(!inputs.some(input => input.runId === 'permadeath-plan' && input.entityId !== 'run'));
   assert.equal(inputs.find(input => input.runId === 'permadeath-plan' && input.field === 'status').value, 'planned');
 });

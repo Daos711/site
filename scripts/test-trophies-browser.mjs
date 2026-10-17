@@ -3,13 +3,14 @@
  * Run against a built local export: TROPHIES_TEST_URL=http://127.0.0.1:8765.
  */
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { pathToFileURL } from 'node:url';
 
-test('real guest walkthrough, save branches, durable progress and mobile offline UI', { skip: !process.env.PLAYWRIGHT_MODULE, timeout: 120000 }, async t => {
+test('real guest walkthrough, save branches, durable progress and mobile offline UI', { skip: !process.env.PLAYWRIGHT_MODULE, timeout: 180000 }, async t => {
   const base = new URL(process.env.TROPHIES_TEST_URL || 'http://127.0.0.1:8765');
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(base.hostname), 'Browser tests are restricted to localhost.');
   const modulePath = process.env.PLAYWRIGHT_MODULE.endsWith('.js') ? process.env.PLAYWRIGHT_MODULE : join(process.env.PLAYWRIGHT_MODULE, 'index.mjs');
@@ -29,7 +30,11 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   const eventually = async (read, expected, label) => { const deadline = Date.now() + 6000; while (Date.now() < deadline) { if (await read() === expected) return; await new Promise(done => setTimeout(done, 35)); } assert.equal(await read(), expected, label); };
   const tracker = page.getByTestId('trophy-tracker');
   const guide = page.getByTestId('interactive-guide');
-  const tab = name => tracker.getByRole('navigation', { name: 'Раздел трекера' }).getByRole('button', { name, exact: true }).click();
+  const tab = async name => {
+    const extra = ['Прохождения', 'История', 'Сохранения'].includes(name);
+    const target = tracker.getByRole('navigation', { name: extra ? 'Дополнительные разделы' : 'Раздел трекера', includeHidden: true }).getByRole('button', { name, exact: true, includeHidden: true });
+    await reveal(target); await target.click();
+  };
   const ready = () => page.getByTestId('interactive-guide').waitFor({ state: 'visible' });
   const record = () => page.evaluate(async () => {
     const db = await new Promise((resolve, reject) => { const request = indexedDB.open('lab-trophies-v1'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
@@ -44,49 +49,129 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
       db.close(); return row.events.length > before;
     }, count);
   };
-  const confirmTransitionIfShown = async () => { const dialog = page.getByRole('dialog', { name: 'Проверка перед сюжетным решением' }); if (await dialog.isVisible()) await dialog.getByRole('button', { name: 'Подтвердить выполненное действие', exact: true }).click(); };
+  const confirmTransitionIfShown = async () => { const dialog = page.getByRole('dialog', { name: 'Проверка перед сюжетным решением' }); if (await dialog.isVisible()) await dialog.getByRole('button', { name: 'Сделал — сохранить отметку', exact: true }).click(); };
   const reveal = async locator => { await locator.evaluate(element => { for (let parent = element.parentElement; parent; parent = parent.parentElement) if (parent.tagName === 'DETAILS') parent.open = true; }); };
   const selectVisible = async (locator, value) => { await reveal(locator); await locator.selectOption(value); };
-  const currentRecommendation = () => guide.locator('article[data-route-id]').filter({ hasText: 'Следующий рекомендуемый шаг' }).first();
+  const currentRecommendation = () => guide.getByTestId('next-action');
+  const openCardActions = async card => { await reveal(card.getByRole('button', { name: /^(Отложить|Вернуть в маршрут|Отменить отметку)$/, includeHidden: true })); };
+  const openRoute = async () => { const more = guide.getByTestId('guide-more'); if (!await more.evaluate(element => element.open)) await more.locator('summary').first().click(); };
+  const closeRoute = async () => { const more = guide.getByTestId('guide-more'); if (await more.evaluate(element => element.open)) await more.locator('summary').first().click(); };
+  const mapCount = value => tracker.getByRole('button', { name: new RegExp('^' + value + '/12.*карт получено') });
 
   await page.goto(new URL('/trophies/gothic-remake', base).href);
   await page.getByTestId('onboarding').waitFor();
-  assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '0');
+  assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).count(), 0, 'Empty onboarding has no misleading trophy progress.');
   await tracker.getByRole('button', { name: 'Загрузить мой начальный прогресс', exact: true }).click();
   await ready();
   const runId = await tracker.getByLabel('Прохождение', { exact: true }).inputValue();
   assert.equal(runId, 'first-playthrough');
-  assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '1');
+  assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '5');
   assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('max'), '41');
   let row = await record();
   assert.equal(row.events.filter(e => e.runId === null && e.field === 'observed' && e.entityId.startsWith('lesson-') && e.value === true).length, 7);
   assert.equal(field(row, runId, 'run', 'reportedLessons'), 7);
-  assert.equal(row.events.filter(e => e.runId === null && e.field === 'observed' && e.entityId.startsWith('map-') && e.value === true).length, 1);
-  assert.equal(field(row, runId, 'run', 'reportedMaps'), 3);
-  mark('Initial progress: 41 PSN trophies, 7 confirmed lessons out of 46, 1 map vs 3 reported.');
+  assert.equal(row.events.filter(e => e.runId === null && e.field === 'observed' && e.entityId.startsWith('map-') && e.value === true).length, 4);
+  assert.equal(field(row, runId, 'run', 'reportedMaps'), 4);
+  assert.equal(field(row, runId, 'bestiary-2', 'stage:found'), true);
+  assert.notEqual(field(row, runId, 'bestiary-2', 'status'), 'done');
+  assert.equal(field(row, runId, 'run', 'campMembership'), 'none');
+  assert.equal(field(row, runId, 'run', 'nextAction'), 'join-old-camp');
+  const initialRecord = structuredClone(row);
+  assert.equal(await guide.locator('article[data-route-id]').count(), 1, 'Only one action card is mounted by default.');
+  assert.equal(await guide.getByTestId('guide-more').evaluate(element => element.open), false);
+  assert.equal(await currentRecommendation().getAttribute('data-route-id'), 'join-old-camp');
+  assert.ok(['check', 'blocked'].includes(await currentRecommendation().getAttribute('data-route-status')), 'A personal plan does not invent fulfilled camp conditions.');
+  await currentRecommendation().getByRole('button', { name: 'Уже сделал в игре', exact: true }).click();
+  const plannedCheckpoint = page.getByRole('dialog', { name: 'Проверка перед сюжетным решением' });
+  await plannedCheckpoint.waitFor();
+  assert.match(await plannedCheckpoint.textContent(), /Сделайте отдельное сохранение на PS5/);
+  const beforeFailedWrite = (await record()).events.length;
+  await page.evaluate(() => {
+    window.__trophyOriginalPut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (...args) {
+      if (this.name === 'workspaces') throw new DOMException('Browser test: local write unavailable', 'QuotaExceededError');
+      return window.__trophyOriginalPut.apply(this, args);
+    };
+  });
+  try {
+    await plannedCheckpoint.getByRole('button', { name: 'Сделал — сохранить отметку', exact: true }).click();
+    await plannedCheckpoint.getByRole('alert').waitFor();
+    assert.match(await plannedCheckpoint.getByRole('alert').textContent(), /Не удалось сохранить отметку/);
+    assert.equal(await plannedCheckpoint.isVisible(), true, 'A failed write cannot dismiss the safety checkpoint as if completion succeeded.');
+    assert.equal((await record()).events.length, beforeFailedWrite);
+  } finally {
+    await page.evaluate(() => { IDBObjectStore.prototype.put = window.__trophyOriginalPut; delete window.__trophyOriginalPut; });
+  }
+  await plannedCheckpoint.getByRole('button', { name: 'Вернуться к проверке', exact: true }).click();
+  assert.notEqual(field(await record(), runId, 'route:join-old-camp', 'status'), 'done');
+  await openRoute();
+  await guide.getByTestId('guide-more').locator('article[data-route-status="available"]').first().waitFor();
+  assert.ok(await guide.getByTestId('guide-more').locator('article[data-route-status="available"]').count() > 0, 'The engine recommendation remains available beside a personal plan even without a selected location.');
+  await closeRoute();
+  const planTitle = await currentRecommendation().getByRole('heading', { level: 3 }).textContent();
+  await openCardActions(currentRecommendation());
+  await currentRecommendation().getByRole('button', { name: 'Отложить', exact: true }).click();
+  await eventually(async () => (await currentRecommendation().getAttribute('data-route-id')) !== 'join-old-camp', true);
+  await openRoute();
+  await guide.getByRole('button', { name: 'Полный маршрут', exact: true }).click();
+  await guide.getByLabel('Поиск по маршруту').fill(planTitle);
+  const postponedPlan = guide.locator('[data-route-id="join-old-camp"]');
+  await eventually(() => postponedPlan.getAttribute('data-route-postponed'), 'true');
+  assert.ok(['check', 'blocked'].includes(await postponedPlan.getAttribute('data-route-status')), 'Postponing cannot hide the actual unverified conditions.');
+  await openCardActions(postponedPlan);
+  await postponedPlan.getByRole('button', { name: 'Вернуть в маршрут', exact: true }).click();
+  await eventually(() => currentRecommendation().getAttribute('data-route-id'), 'join-old-camp');
+  await guide.getByLabel('Поиск по маршруту').fill('');
+  await closeRoute();
+  await openCardActions(currentRecommendation());
+  await currentRecommendation().getByRole('button', { name: 'Убрать из моего плана', exact: true }).click();
+  await eventually(async () => (await currentRecommendation().getAttribute('data-route-id')) !== 'join-old-camp', true);
+  mark('Explicit preset: 7/46 lessons, 4/12 maps, 5/41 PSN trophies, only the found book stage; selected camp plan shows real conditions and cancellable checkpoint.');
+
+  await tab('Мой прогресс');
+  await selectVisible(tracker.getByLabel('Категория', { exact: true }), 'maps');
+  const newCampMap = tracker.locator('[data-item-id="map-new-camp"]');
+  assert.equal(await newCampMap.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), false);
+  assert.equal(await newCampMap.getByRole('checkbox').count(), 1, 'The current save has one ordinary completion checkbox.');
+  await mapCount(4).waitFor();
+  await newCampMap.getByRole('checkbox', { name: /^Выполнено:/ }).click();
+  await mapCount(5).waitFor();
+  row = await record();
+  assert.equal(field(row, runId, 'map-new-camp', 'status'), 'done');
+  assert.equal(field(row, null, 'map-new-camp', 'observed'), true);
+  await tracker.getByRole('button', { name: 'Отменить', exact: true }).click();
+  await mapCount(4).waitFor();
+  row = await record();
+  assert.notEqual(field(row, runId, 'map-new-camp', 'status'), 'done');
+  assert.notEqual(field(row, null, 'map-new-camp', 'observed'), true);
+  await page.reload(); await ready(); await mapCount(4).waitFor();
+  mark('One map checkbox changes 4→5 and writes current/global progress atomically; snackbar undo restores both and survives reload.');
 
   const initialRecommendation = await currentRecommendation().getAttribute('data-route-id');
   assert.ok(initialRecommendation, 'A real recommended action is shown.');
   const firstTitle = await currentRecommendation().getByRole('heading', { level: 3 }).textContent();
-  await currentRecommendation().getByRole('button', { name: 'Подтвердить выполнение', exact: true }).click(); await confirmTransitionIfShown();
+  await currentRecommendation().getByRole('button', { name: 'Сделал', exact: true }).click(); await confirmTransitionIfShown();
   await page.waitForFunction(id => {
-    const card = [...document.querySelectorAll('[data-testid="interactive-guide"] article[data-route-id]')].find(element => element.textContent.includes('Следующий рекомендуемый шаг'));
+    const card = document.querySelector('[data-testid="next-action"]');
     return card?.getAttribute('data-route-id') !== id;
   }, initialRecommendation);
   await tracker.getByRole('button', { name: 'Отменить', exact: true }).click();
-  await page.waitForFunction(id => [...document.querySelectorAll('[data-testid="interactive-guide"] article[data-route-id]')].some(element => element.getAttribute('data-route-id') === id && element.textContent.includes('Следующий рекомендуемый шаг')), initialRecommendation);
+  await eventually(() => currentRecommendation().getAttribute('data-route-id'), initialRecommendation);
+  await openCardActions(currentRecommendation());
   await currentRecommendation().getByRole('button', { name: 'Отложить', exact: true }).click();
+  await openRoute();
   await guide.getByRole('button', { name: 'Полный маршрут', exact: true }).click();
   await guide.getByLabel('Поиск по маршруту').fill(firstTitle);
   const postponed = guide.locator(`[data-route-id="${initialRecommendation}"]`);
   await eventually(() => postponed.getAttribute('data-route-status'), 'postponed');
+  await openCardActions(postponed);
   await postponed.getByRole('button', { name: 'Вернуть в маршрут' }).click();
   await guide.getByLabel('Поиск по маршруту').fill('');
   const arbitrary = guide.locator(`article[data-route-status="available"]:not([data-route-id="${initialRecommendation}"])`).first();
   const arbitraryId = await arbitrary.getAttribute('data-route-id');
-  await arbitrary.getByRole('button', { name: 'Подтвердить выполнение', exact: true }).click(); await confirmTransitionIfShown();
+  await arbitrary.getByRole('button', { name: 'Сделал', exact: true }).click(); await confirmTransitionIfShown();
   await page.waitForFunction(id => document.querySelector(`[data-route-id="${id}"]`)?.getAttribute('data-route-status') === 'done', arbitraryId);
-  await guide.getByRole('button', { name: 'Продолжить', exact: true }).click();
+  await closeRoute();
   mark('Recommendation advances after explicit completion, undo restores it, postpone/return and arbitrary order work.');
 
   await selectVisible(guide.getByLabel('Глава в гайде'), '2');
@@ -104,25 +189,28 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   await tracker.getByRole('button', { name: 'Создать ветку из текущей', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('[aria-label="Сохранение персонажа"]').value !== 'main');
   const branch = await tracker.getByLabel('Сохранение персонажа').inputValue();
-  await tab('Гайд к платине');
+  await tab('Что дальше');
   await selectVisible(guide.getByLabel('Лагерь персонажа', { exact: true }), 'new');
-  await tab('Чек-лист');
+  await tab('Мой прогресс');
   await selectVisible(tracker.getByLabel('Категория', { exact: true }), 'lessons');
   const diving = tracker.locator('[data-item-id="lesson-diving"]');
-  await diving.getByRole('checkbox', { name: /^Выполнено:/ }).click(); await eventually(() => diving.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), false);
-  assert.equal(await diving.getByRole('checkbox', { name: /^Изучение записано:/ }).isChecked(), true);
+  await diving.getByRole('checkbox', { name: /^Выполнено:/ }).click();
+  await page.getByRole('dialog', { name: 'Снять отметку' }).getByRole('button', { name: 'Загрузил старое сохранение', exact: true }).click();
+  await eventually(() => diving.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), false);
+  assert.equal(await diving.getByRole('checkbox', { name: /^Получено раньше:/, includeHidden: true }).isChecked(), true);
   await selectVisible(tracker.getByLabel('Категория', { exact: true }), 'trophies');
+  await reveal(tracker.getByRole('checkbox', { name: 'Показывать спойлеры следующих глав', includeHidden: true }));
   await tracker.getByRole('checkbox', { name: 'Показывать спойлеры следующих глав' }).check();
   assert.equal(await tracker.locator('[data-item-id]').count(), 41);
-  await tracker.locator('[data-item-id="trophy-new-camp"]').getByRole('checkbox').click();
-  await eventually(() => tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '2');
+  await tracker.locator('[data-item-id="trophy-old-camp"]').getByRole('checkbox').click();
+  await eventually(() => tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '6');
   await selectVisible(tracker.getByLabel('Сохранение персонажа'), 'main');
   await selectVisible(tracker.getByLabel('Категория', { exact: true }), 'lessons');
   assert.equal(await tracker.locator('[data-item-id]').count(), 46);
   await eventually(() => diving.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), true);
-  assert.equal(await diving.getByRole('checkbox', { name: /^Изучение записано:/ }).isChecked(), true);
-  await eventually(() => tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '2');
-  await tab('Гайд к платине');
+  assert.equal(await diving.getByRole('checkbox', { name: /^Получено раньше:/, includeHidden: true }).isChecked(), true);
+  await eventually(() => tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '6');
+  await tab('Что дальше');
   await eventually(() => guide.getByLabel('Лагерь персонажа', { exact: true }).inputValue(), 'none');
   await selectVisible(tracker.getByLabel('Сохранение персонажа'), branch);
   await eventually(() => guide.getByLabel('Лагерь персонажа', { exact: true }).inputValue(), 'new');
@@ -130,10 +218,11 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   await selectVisible(tracker.getByLabel('Прохождение', { exact: true }), 'permadeath-plan');
   await page.reload(); await ready();
   assert.equal(await tracker.getByLabel('Прохождение', { exact: true }).inputValue(), 'permadeath-plan');
-  await eventually(() => tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '2');
-  await tab('Чек-лист');
+  await eventually(() => tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '6');
+  await tab('Мой прогресс');
+  await selectVisible(tracker.getByLabel('Категория', { exact: true }), 'lessons');
   await eventually(() => diving.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), false);
-  assert.equal(await diving.getByRole('checkbox', { name: /^Изучение записано:/ }).isChecked(), true);
+  assert.equal(await diving.getByRole('checkbox', { name: /^Получено раньше:/, includeHidden: true }).isChecked(), true);
   await selectVisible(tracker.getByLabel('Прохождение', { exact: true }), runId);
   mark('Separate save branch and playthrough states; manual PSN trophies and learned history survive returning to the main save. UI matches all 41 trophies and 46 lessons.');
 
@@ -173,7 +262,7 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   await tracker.getByLabel('Импорт JSON').setInputFiles(exportedPath);
   await tracker.getByRole('button', { name: 'Отмена', exact: true }).click();
 
-  await tab('Гайд к платине');
+  await tab('Что дальше');
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -188,7 +277,7 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   await context.setOffline(true);
   await page.reload(); await ready();
   const offlineRow = await record();
-  await currentRecommendation().getByRole('button', { name: 'Подтвердить выполнение', exact: true }).click(); await confirmTransitionIfShown();
+  await currentRecommendation().getByRole('button', { name: 'Сделал', exact: true }).click(); await confirmTransitionIfShown();
   await changed(offlineRow.events.length);
   const offlineCount = (await record()).events.length;
   await page.reload(); await ready();
@@ -207,9 +296,10 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   const independent = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await independent.route('**/*', localOnly);
   const secondPage = await independent.newPage();
+  secondPage.on('pageerror', error => pageErrors.push(error.message));
   await secondPage.goto(new URL('/trophies/gothic-remake', base).href);
   await secondPage.getByTestId('onboarding').waitFor();
-  assert.equal(await secondPage.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '0');
+  assert.equal(await secondPage.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).count(), 0);
   mark('Independent browser context has no guest progress from the first device.');
   await secondPage.getByRole('button', { name: 'Загрузить мой начальный прогресс', exact: true }).click();
   await secondPage.getByTestId('interactive-guide').waitFor();
@@ -217,11 +307,54 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   for (const width of [390, 320]) {
     await secondPage.setViewportSize({ width, height: 844 });
     await secondPage.evaluate(() => window.scrollTo(0, 0));
-    const card = secondPage.getByTestId('interactive-guide').locator('article[data-route-id]').filter({ hasText: 'Следующий рекомендуемый шаг' }).first();
+    const card = secondPage.getByTestId('next-action');
     const position = await card.boundingBox();
     console.log(`Clean initial ${width}px: recommended card y=${Math.round(position?.y ?? -1)}`);
+    assert.ok(position && position.y < 1050, 'The next step is close to the top of the mobile page.');
+    assert.equal(await secondPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
     await secondPage.screenshot({ path: join(artifacts, `initial-guide-${width}.png`), fullPage: true });
   }
+  const legacyContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await legacyContext.route('**/*', localOnly);
+  const legacyPage = await legacyContext.newPage();
+  legacyPage.on('pageerror', error => pageErrors.push(error.message));
+  await legacyPage.goto(new URL('/trophies/gothic-remake', base).href);
+  await legacyPage.getByTestId('onboarding').waitFor();
+  const legacy = structuredClone(initialRecord);
+  legacy.events = legacy.events.filter(event => event.field !== 'personalUpdate20261017'
+    && !['map-old-camp', 'map-colony', 'map-old-mine-old-camp', 'bestiary-2', 'trophy-new-camp', 'trophy-swamp-camp', 'trophy-mud-freak', 'trophy-master-garrett'].includes(event.entityId));
+  const legacyMapEvent = { ...legacy.events.find(event => event.entityId === 'map-swamp-camp' && event.field === 'status'), id: randomUUID(), entityId: 'map-new-camp', clock: Math.max(...legacy.events.map(event => event.clock)) + 1, parents: [] };
+  legacy.events.push(legacyMapEvent);
+  legacy.events.find(event => event.entityId === 'journal').value = 'Старая личная заметка — сохранить.';
+  legacy.pendingIds = legacy.events.map(event => event.id);
+  await legacyPage.evaluate(async row => {
+    const db = await new Promise((resolve, reject) => { const request = indexedDB.open('lab-trophies-v1'); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+    await new Promise((resolve, reject) => { const transaction = db.transaction('workspaces', 'readwrite'); transaction.objectStore('workspaces').put(row); transaction.oncomplete = resolve; transaction.onerror = () => reject(transaction.error); });
+    db.close();
+  }, legacy);
+  await legacyPage.reload(); await legacyPage.getByTestId('interactive-guide').waitFor();
+  const legacyTracker = legacyPage.getByTestId('trophy-tracker');
+  await legacyPage.getByTestId('progress-update').waitFor();
+  assert.equal(await legacyTracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '1', 'Existing progress is never silently replaced by a newer preset.');
+  await legacyTracker.getByRole('button', { name: /^1\/12.*карт получено/ }).click();
+  const legacyMap = legacyTracker.locator('[data-item-id="map-new-camp"]');
+  assert.equal(await legacyMap.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), true);
+  await legacyMap.getByRole('button', { name: 'Учесть в прогрессе', exact: true }).click();
+  await legacyTracker.getByRole('button', { name: /^2\/12.*карт получено/ }).waitFor();
+  await legacyTracker.getByRole('button', { name: 'Отменить', exact: true }).click();
+  await legacyTracker.getByRole('button', { name: /^1\/12.*карт получено/ }).waitFor();
+  assert.equal(await legacyMap.getByRole('checkbox', { name: /^Выполнено:/ }).isChecked(), true, 'Undo of reconciliation preserves an old current-save completion.');
+  await legacyMap.getByRole('button', { name: 'Учесть в прогрессе', exact: true }).click();
+  await legacyTracker.getByRole('button', { name: /^2\/12.*карт получено/ }).waitFor();
+  await legacyPage.getByTestId('progress-update').getByRole('button', { name: 'Записать этот прогресс', exact: true }).click();
+  await legacyTracker.getByRole('button', { name: /^5\/12.*карт получено/ }).waitFor();
+  await eventually(() => legacyTracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '5');
+  assert.equal(await legacyPage.getByTestId('progress-update').count(), 0);
+  await legacyTracker.getByRole('navigation', { name: 'Раздел трекера' }).getByRole('button', { name: 'Заметки', exact: true }).click();
+  assert.equal(await legacyTracker.getByLabel('Заметки', { exact: true }).inputValue(), 'Старая личная заметка — сохранить.');
+  await legacyPage.reload(); await legacyPage.getByTestId('interactive-guide').waitFor();
+  assert.equal(await legacyPage.getByTestId('progress-update').count(), 0);
+  mark('Legacy completed map can be reconciled with undo; personal progress update is explicit, retains extra maps/notes, and is not repeated on reload.');
   assert.deepEqual(pageErrors, [], 'No uncaught browser errors.');
   await writeFile(join(artifacts, 'report.json'), JSON.stringify({ productionTouched: false, authentication: 'guest; cloud transport tested separately against local PostgreSQL', checked, pageErrors }, null, 2));
   console.log('Trophy browser artifacts: ' + artifacts);

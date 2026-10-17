@@ -11,7 +11,7 @@ interface WorkspaceRecord { version: 1; workspaceId: string; events: TrackerEven
 export interface TrackerStore {
   init(): Promise<void>; getSnapshot(): TrackerSnapshot; subscribe(listener: () => void): () => void;
   dispatch(input: EventInput): Promise<TrackerEvent>; batchDispatch(inputs: EventInput[]): Promise<TrackerEvent[]>;
-  undo(eventId: string): Promise<TrackerEvent>; exportData(): TrackerExport;
+  undo(eventId: string): Promise<TrackerEvent>; undoBatch(eventIds: readonly string[]): Promise<TrackerEvent[]>; exportData(): TrackerExport;
   importData(data: unknown, options?: { mode: 'merge' }): Promise<number>;
   listBackups(): Promise<LocalBackup[]>; restoreBackup(id: string): Promise<number>;
   mergeRemote(events: TrackerEvent[]): Promise<void>; acknowledge(ids: string[]): Promise<void>;
@@ -118,6 +118,21 @@ export function createTrackerStore(options: { workspaceId: string; databaseName?
     async dispatch(input) { return (await mutate(row => append(row, [input])))[0]; },
     batchDispatch(inputs) { return mutate(row => { if (inputs.length > 1) backup(row, 'Перед групповым изменением'); return append(row, inputs); }); },
     undo(eventId) { return mutate(row => { const event = createUndoEvent(row.events, eventId, snapshot.deviceId); row.events.push(event); row.pendingIds.push(event.id); return clone(event); }); },
+    undoBatch(eventIds) {
+      const ids = [...eventIds];
+      return mutate(row => {
+        if (!ids.length || ids.length > 256 || new Set(ids).size !== ids.length) throw new Error('Некорректный список изменений для отмены');
+        if (ids.length > 1) backup(row, 'Перед отменой действия');
+        const added: TrackerEvent[] = [];
+        for (const id of ids) {
+          const event = createUndoEvent(row.events, id, snapshot.deviceId);
+          row.events.push(event); added.push(event);
+        }
+        row.events = mergeEvents(row.events);
+        row.pendingIds.push(...added.map(event => event.id));
+        return clone(added);
+      });
+    },
     exportData() { return { format: 'lab-trophies', version: 1, exportedAt: new Date().toISOString(), events: clone([...snapshot.events]) }; },
     importData(data, importOptions = { mode: 'merge' }) {
       const parsed = parseImport(data);

@@ -28,12 +28,12 @@ test('an empty visitor has no preset, runs, observations or PSN awards', () => {
   assert.deepEqual(S.listRuns([], game.id), []); assert.deepEqual(S.customItems([], game.id), []);
 });
 
-test('personal preset records seven confirmed lessons and keeps map totals separate from the one identified map', () => {
+test('personal preset records seven confirmed lessons, four named maps and five PSN awards', () => {
   const events = fromInputs(P.gothicPreset());
-  assert.equal(S.gameSummary(events, game).lessons, 7); assert.equal(S.gameSummary(events, game).maps, 1);
-  assert.equal(S.gameSummary(events, game).earned, 1);
+  assert.equal(S.gameSummary(events, game).lessons, 7); assert.equal(S.gameSummary(events, game).maps, 4);
+  assert.equal(S.gameSummary(events, game).earned, 5);
   assert.equal(S.valueAt(events, game.id, 'first-playthrough', 'run', 'reportedLessons'), 7);
-  assert.equal(S.valueAt(events, game.id, 'first-playthrough', 'run', 'reportedMaps'), 3);
+  assert.equal(S.valueAt(events, game.id, 'first-playthrough', 'run', 'reportedMaps'), 4);
   assert.deepEqual(new Set(S.listRuns(events, game.id)), new Set(['first-playthrough', 'permadeath-plan']));
   assert.equal(S.itemStatus(events, game.id, 'permadeath-plan', item('lesson-diving')), 'todo');
   assert.equal(S.valueAt(events, game.id, 'permadeath-plan', 'run', 'status'), 'planned');

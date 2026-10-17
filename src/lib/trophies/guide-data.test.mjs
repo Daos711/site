@@ -68,7 +68,7 @@ test('confirmed initial facts recommend backup, then raid, then separate confirm
   assert.equal(evaluate(events).next.node.id, 'new-camp-the-raid');
   add(events, { entityId: 'new-camp-the-raid', value: 'done' });
   assert.equal(evaluate(events).next.node.id, 'join-new-camp');
-  assert.equal(S.gameSummary(events, game).earned, 1, 'route completion must not grant another PSN trophy');
+  assert.equal(S.gameSummary(events, game).earned, 5, 'route completion must not grant another PSN trophy');
   assert.match(node('new-camp-the-raid').instruction, /ДО итогового разговора/);
 });
 
