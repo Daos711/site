@@ -81,15 +81,18 @@ test('book possession, delivery and completion are separate; recommended chapter
   assert.match(byId('bestiary-5').conditions, /снежного мракориса/);
 });
 
-test('explicit personal preset identifies five lessons and one map, preserves unknown counts and claims only the known PSN trophy', () => {
-  assert.deepEqual(PRESET_LESSONS, ['lesson-diving', 'lesson-lockpicking-trained', 'lesson-acrobatics', 'lesson-inscription', 'lesson-scavenger-riding']);
+test('explicit personal preset identifies seven confirmed lessons and one map, preserves unknown maps and claims only the known PSN trophy', () => {
+  assert.deepEqual(PRESET_LESSONS, ['lesson-diving', 'lesson-lockpicking-trained', 'lesson-acrobatics', 'lesson-inscription', 'lesson-scavenger-riding', 'lesson-one-handed-trained', 'lesson-climbing']);
   const inputs = gothicPreset();
   for (const input of inputs) if (!['run', 'journal'].includes(input.entityId)) byId(input.entityId);
   const observed = inputs.filter(input => input.field === 'observed' && input.value === true);
   assert.deepEqual(new Set(observed.map(input => input.entityId)), new Set([...PRESET_LESSONS, 'map-swamp-camp']));
   assert.ok(observed.every(input => input.runId === null));
-  assert.equal(inputs.find(input => input.field === 'reportedLessons').value, 6);
+  assert.equal(PRESET_LESSONS.length, 7);
+  for (const entityId of PRESET_LESSONS) assert.ok(inputs.some(input => input.entityId === entityId && input.runId === 'first-playthrough' && input.field === 'status' && input.value === 'done'));
+  assert.equal(inputs.find(input => input.field === 'reportedLessons').value, 7);
   assert.equal(inputs.find(input => input.field === 'reportedMaps').value, 3);
+  assert.match(inputs.find(input => input.entityId === 'journal').value, /7\/46/);
   const awards = inputs.filter(input => input.entityId.startsWith('trophy-'));
   assert.deepEqual(awards.map(input => [input.entityId, input.runId, input.field, input.value]), [['trophy-swamp-camp', null, 'status', 'done']]);
   assert.ok(!inputs.some(input => input.runId === 'permadeath-plan' && input.entityId !== 'run'));

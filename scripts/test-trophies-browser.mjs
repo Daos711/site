@@ -59,11 +59,11 @@ test('real guest walkthrough, save branches, durable progress and mobile offline
   assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('value'), '1');
   assert.equal(await tracker.getByRole('progressbar', { name: 'Полученные трофеи PSN' }).getAttribute('max'), '41');
   let row = await record();
-  assert.equal(row.events.filter(e => e.runId === null && e.field === 'observed' && e.entityId.startsWith('lesson-') && e.value === true).length, 5);
-  assert.equal(field(row, runId, 'run', 'reportedLessons'), 6);
+  assert.equal(row.events.filter(e => e.runId === null && e.field === 'observed' && e.entityId.startsWith('lesson-') && e.value === true).length, 7);
+  assert.equal(field(row, runId, 'run', 'reportedLessons'), 7);
   assert.equal(row.events.filter(e => e.runId === null && e.field === 'observed' && e.entityId.startsWith('map-') && e.value === true).length, 1);
   assert.equal(field(row, runId, 'run', 'reportedMaps'), 3);
-  mark('Initial progress: 41 PSN trophies, 5 identified lessons vs 6 reported, 1 map vs 3 reported.');
+  mark('Initial progress: 41 PSN trophies, 7 confirmed lessons out of 46, 1 map vs 3 reported.');
 
   const initialRecommendation = await currentRecommendation().getAttribute('data-route-id');
   assert.ok(initialRecommendation, 'A real recommended action is shown.');

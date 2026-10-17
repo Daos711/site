@@ -129,8 +129,8 @@ function Workspace({ workspaceId, ownerId, game, signIn }: { workspaceId: string
         <div><span className={styles.eyebrow}>{game.platform} · Журнал прохождения</span><h1>{game.title}</h1><p>Помнить важное. Играть в своём темпе.</p></div>
         <div className={styles.platinum}><Trophy size={26} /><strong>{summary!.earned}<span> / {summary!.trophies}</span></strong><small>трофеев PSN отмечено</small><progress aria-label="Полученные трофеи PSN" value={summary!.earned} max={summary!.trophies} /></div>
       </section>
-      {ready && !runs.length && <section className={styles.onboarding} data-testid="onboarding"><h2>С чего продолжим?</h2><p>Можно перенести заданные вами отметки первого прохождения: глава 1, «Новичок», путь мага Огня, пять известных уроков из шести в счётчике игры.</p>
-        <div className={styles.actions}><button className={styles.primary} disabled={!canInitialize} onClick={() => void perform(() => store.batchDispatch(gothicPreset()), 'Начальный прогресс записан. Шестой урок и две карты оставлены неопознанными.')}>Загрузить мой начальный прогресс</button>
+      {ready && !runs.length && <section className={styles.onboarding} data-testid="onboarding"><h2>С чего продолжим?</h2><p>Можно перенести заданные вами отметки первого прохождения: глава 1, «Новичок», путь мага Огня, семь подтверждённых вами уроков (7/46).</p>
+        <div className={styles.actions}><button className={styles.primary} disabled={!canInitialize} onClick={() => void perform(() => store.batchDispatch(gothicPreset()), 'Начальный прогресс записан: 7/46 уроков. Две карты у Грэма оставлены неопознанными.')}>Загрузить мой начальный прогресс</button>
         <button disabled={!canInitialize} onClick={() => void perform(() => store.batchDispatch(runInputs(game.id, crypto.randomUUID(), 'Первое прохождение')))}>Начать с чистого листа</button></div>
         <p className={styles.hint}>{!cloudChecked ? "Сначала проверим облачные сохранения. При недоступном облаке можно работать в гостевом режиме. " : ""}Начальные отметки применяются только по этой кнопке. Существующая история не заменяется.</p>
       </section>}
