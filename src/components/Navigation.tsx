@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { Menu, X, LogIn, LogOut } from "lucide-react";
 import { useAuth } from "./AuthProvider";
@@ -10,6 +11,7 @@ const navItems = [
   { href: "/tools", label: "Инструменты" },
   { href: "/models", label: "Модели" },
   { href: "/games", label: "Игры" },
+  { href: "/trophies", label: "Трофеи" },
   { href: "/apps", label: "Приложения" },
   { href: "/projects", label: "Проекты" },
   { href: "/about", label: "О сайте" },
@@ -63,14 +65,12 @@ export function Navigation() {
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/" className="text-lg font-semibold hover:text-accent transition-colors">
-            Lab
-          </a>
+          <Link href="/" className="text-lg font-semibold hover:text-accent transition-colors">Lab</Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href === "/trophies" && pathname.startsWith("/trophies/"));
               return (
                 <a
                   key={item.href}
@@ -211,7 +211,7 @@ export function Navigation() {
           <div className="md:hidden pb-4">
             <div className="flex flex-col gap-1">
               {navItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || (item.href === "/trophies" && pathname.startsWith("/trophies/"));
                 return (
                   <a
                     key={item.href}

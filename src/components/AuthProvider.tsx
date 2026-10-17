@@ -33,20 +33,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // Проверяем авторизацию при загрузке
-    getCurrentUser().then((authUser) => {
+    let alive = true;
+    let authRevision = 0;
+    const initialRevision = authRevision;
+    const unsubscribe = onAuthStateChange((authUser) => {
+      if (!alive) return;
+      authRevision++;
       setUser(authUser);
       setPlayerId(getPlayerId(authUser));
       setLoading(false);
     });
-
-    // Подписываемся на изменения
-    const unsubscribe = onAuthStateChange((authUser) => {
+    getCurrentUser().then((authUser) => {
+      if (!alive || authRevision !== initialRevision) return;
       setUser(authUser);
       setPlayerId(getPlayerId(authUser));
-    });
-
-    return () => unsubscribe();
+      setLoading(false);
+    }).catch(() => { if (alive) setLoading(false); });
+    return () => { alive = false; unsubscribe(); };
   }, []);
 
   const handleSignIn = useCallback(async (redirectTo?: string) => {

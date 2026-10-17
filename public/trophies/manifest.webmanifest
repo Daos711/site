@@ -1,0 +1,16 @@
+{
+  "id": "/trophies",
+  "name": "Трофеи Lab — гайд к платине",
+  "short_name": "Трофеи Lab",
+  "description": "Интерактивный гайд к платине и личный прогресс PlayStation.",
+  "lang": "ru",
+  "start_url": "/trophies",
+  "scope": "/trophies",
+  "display": "standalone",
+  "background_color": "#14171e",
+  "theme_color": "#14171e",
+  "icons": [
+    { "src": "/trophies/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/trophies/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

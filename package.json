@@ -8,10 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "test:elka-frame": "node --test src/app/elka/ElkaGate.test.mjs",
-    "predev": "node scripts/build-gothic-locks.mjs --prepare",
-    "prebuild": "node scripts/build-gothic-locks.mjs --prepare",
-    "postbuild": "node scripts/build-gothic-locks.mjs",
-    "test:gothic": "node --test src/lib/gothic-locks/solver.test.mjs src/lib/gothic-locks/skill.test.mjs src/lib/gothic-locks/catalog.test.mjs src/lib/gothic-locks/ready.test.mjs scripts/test-gothic-pwa.mjs"
+    "predev": "node scripts/build-gothic-locks.mjs --prepare && node scripts/build-trophies.mjs --prepare",
+    "prebuild": "node scripts/build-gothic-locks.mjs --prepare && node scripts/build-trophies.mjs --prepare",
+    "postbuild": "node scripts/build-gothic-locks.mjs && node scripts/build-trophies.mjs",
+    "test:gothic": "node --test src/lib/gothic-locks/solver.test.mjs src/lib/gothic-locks/skill.test.mjs src/lib/gothic-locks/catalog.test.mjs src/lib/gothic-locks/ready.test.mjs scripts/test-gothic-pwa.mjs",
+    "test:trophies": "node --test src/lib/trophies/*.test.mjs scripts/test-trophies-rls.mjs scripts/test-trophies-pwa.mjs",
+    "test:trophies:browser": "node scripts/test-trophies-browser.mjs",
+    "test:trophies:sync": "node --test scripts/test-trophies-sync-integration.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
@@ -24,6 +27,7 @@
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
     "@netlify/plugin-nextjs": "^5.15.3",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
@@ -34,6 +38,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
+    "fake-indexeddb": "^6.2.6",
     "tailwindcss": "^4",
     "typescript": "5.9.3"
   }

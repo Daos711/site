@@ -1,0 +1,4383 @@
+{
+  "gameId": "gothic-remake",
+  "locations": [
+    {
+      "id": "colony",
+      "name": "Колония: без привязки к месту"
+    },
+    {
+      "id": "old-camp",
+      "name": "Старый лагерь"
+    },
+    {
+      "id": "old-camp-castle",
+      "name": "Замок Старого лагеря"
+    },
+    {
+      "id": "new-camp",
+      "name": "Новый лагерь"
+    },
+    {
+      "id": "new-camp-lake",
+      "name": "Озеро и рыбацкая деревня у Нового лагеря"
+    },
+    {
+      "id": "water-mages",
+      "name": "Квартал магов Воды"
+    },
+    {
+      "id": "swamp-camp",
+      "name": "Болотный лагерь"
+    },
+    {
+      "id": "cavalorn",
+      "name": "Хижина Кавалорна"
+    },
+    {
+      "id": "old-mine",
+      "name": "Старая шахта"
+    },
+    {
+      "id": "old-mine-road",
+      "name": "Дорога между Старой шахтой и Старым лагерем"
+    },
+    {
+      "id": "old-camp-south",
+      "name": "Южные окрестности Старого лагеря"
+    },
+    {
+      "id": "fog-tower",
+      "name": "Туманная башня"
+    },
+    {
+      "id": "mountain-fortress",
+      "name": "Горный форт"
+    },
+    {
+      "id": "old-citadel",
+      "name": "Старая цитадель"
+    },
+    {
+      "id": "xardas-tower",
+      "name": "Башня Ксардаса"
+    },
+    {
+      "id": "sunken-tower",
+      "name": "Затонувшая башня Ксардаса"
+    },
+    {
+      "id": "orc-territory",
+      "name": "Орочьи земли"
+    },
+    {
+      "id": "orc-enclave",
+      "name": "Орочий анклав"
+    },
+    {
+      "id": "sleeper-temple",
+      "name": "Храм Спящего"
+    },
+    {
+      "id": "first-focus-cliff",
+      "name": "Утёс первого юнитора"
+    },
+    {
+      "id": "northern-tundra",
+      "name": "Северная тундра"
+    },
+    {
+      "id": "swamp",
+      "name": "Болота у лагеря Братства"
+    },
+    {
+      "id": "free-mine",
+      "name": "Свободная шахта"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "lesson-one-handed-trained",
+      "itemId": "lesson-one-handed-trained",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp",
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Оплатить урок у одного из учителей. Где: Арена Старого лагеря; Новый лагерь. К кому: Скатти, Корд.",
+      "alternatives": [],
+      "rewards": [
+        "Одноручное оружие — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-one-handed-master",
+      "itemId": "lesson-one-handed-master",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp",
+        "new-camp"
+      ],
+      "requires": [
+        "lesson-one-handed-trained"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. Оплатить урок у одного из учителей. Где: Арена Старого лагеря; Новый лагерь. К кому: Скатти, Корд.",
+      "alternatives": [],
+      "rewards": [
+        "Одноручное оружие — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-two-handed-trained",
+      "itemId": "lesson-two-handed-trained",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp",
+        "new-camp",
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "twoHandedTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Проверить, что ранг и диалог выбранного учителя дают обучение двуручному оружию.",
+          "verified": true
+        }
+      ],
+      "blockers": [
+        {
+          "field": "necromancerTrainingConflict",
+          "op": "eq",
+          "value": true,
+          "label": "Есть сообщения о блокировке Ли после VI круга; проверьте текущий патч.",
+          "verified": false
+        }
+      ],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Нужен подходящий ранг лагеря: стражник, наёмник или храмовник. Точный актуальный порог одноручного навыка проверить в диалоге. Где: Соответственно Старый, Новый и Болотный лагеря. К кому: Торус, Ли, Кор Ангар.",
+      "alternatives": [
+        "Торус у стражи, Ли у наёмников или Кор Ангар у храмовников. Выбор другой фракции сам по себе не исключает весь навык."
+      ],
+      "rewards": [
+        "Двуручное оружие — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Steam — блокировка обучения Ли после VI круга, ответ разработчика",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/581678051258026839/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.5 CL172709",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.5.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-two-handed-master",
+      "itemId": "lesson-two-handed-master",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp",
+        "new-camp",
+        "swamp-camp"
+      ],
+      "requires": [
+        "lesson-two-handed-trained"
+      ],
+      "conditions": [
+        {
+          "field": "twoHandedTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Проверить, что ранг и диалог выбранного учителя дают обучение двуручному оружию.",
+          "verified": true
+        }
+      ],
+      "blockers": [
+        {
+          "field": "necromancerTrainingConflict",
+          "op": "eq",
+          "value": true,
+          "label": "Есть сообщения о блокировке Ли после VI круга; проверьте текущий патч.",
+          "verified": false
+        }
+      ],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. Нужен подходящий ранг лагеря: стражник, наёмник или храмовник. Точный актуальный порог одноручного навыка проверить в диалоге. Где: Соответственно Старый, Новый и Болотный лагеря. К кому: Торус, Ли, Кор Ангар.",
+      "alternatives": [
+        "Торус у стражи, Ли у наёмников или Кор Ангар у храмовников. Выбор другой фракции сам по себе не исключает весь навык."
+      ],
+      "rewards": [
+        "Двуручное оружие — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Steam — блокировка обучения Ли после VI круга, ответ разработчика",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/581678051258026839/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.5 CL172709",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.5.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-bow-trained",
+      "itemId": "lesson-bow-trained",
+      "chapter": 1,
+      "locationIds": [
+        "cavalorn",
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-string-wielder"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Оплатить урок у одного из учителей. Где: Хижина Кавалорна между лагерями; Новый лагерь. К кому: Кавалорн, Волк.",
+      "alternatives": [],
+      "rewards": [
+        "Лук — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-bow-master",
+      "itemId": "lesson-bow-master",
+      "chapter": 1,
+      "locationIds": [
+        "cavalorn",
+        "new-camp"
+      ],
+      "requires": [
+        "lesson-bow-trained"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-string-wielder"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. Оплатить урок у одного из учителей. Где: Хижина Кавалорна между лагерями; Новый лагерь. К кому: Кавалорн, Волк.",
+      "alternatives": [],
+      "rewards": [
+        "Лук — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-crossbow-trained",
+      "itemId": "lesson-crossbow-trained",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp-castle",
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "crossbowTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Скорпио должен предлагать текущему персонажу обучение арбалету.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-string-wielder"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "В главе3 доступ связан со стражей; альтернативный маршрут — Скорпио у Кавалорна с главы4. Где: Двор замка Старого лагеря; с главы4 у Кавалорна. К кому: Скорпио.",
+      "alternatives": [
+        "Стража в главе 3; позднее Скорпио у Кавалорна с главы 4. Патч 1.0.3 исправлял позднее обучение."
+      ],
+      "rewards": [
+        "Арбалет — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-crossbow-master",
+      "itemId": "lesson-crossbow-master",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp-castle",
+        "cavalorn"
+      ],
+      "requires": [
+        "lesson-crossbow-trained"
+      ],
+      "conditions": [
+        {
+          "field": "crossbowTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Скорпио должен предлагать текущему персонажу обучение арбалету.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-string-wielder"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. В главе3 доступ связан со стражей; альтернативный маршрут — Скорпио у Кавалорна с главы4. Где: Двор замка Старого лагеря; с главы4 у Кавалорна. К кому: Скорпио.",
+      "alternatives": [
+        "Стража в главе 3; позднее Скорпио у Кавалорна с главы 4. Патч 1.0.3 исправлял позднее обучение."
+      ],
+      "rewards": [
+        "Арбалет — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-fists-trained",
+      "itemId": "lesson-fists-trained",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp",
+        "new-camp-lake"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала принести лекарство от Кроноса; для мастерства выполнить тренировочный бой с Джаном. Где: Дом у озера возле Нового лагеря. К кому: Джан.",
+      "alternatives": [],
+      "rewards": [
+        "Кулачный бой — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-fists-master",
+      "itemId": "lesson-fists-master",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp",
+        "new-camp-lake"
+      ],
+      "requires": [
+        "lesson-fists-trained"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. Сначала принести лекарство от Кроноса; для мастерства выполнить тренировочный бой с Джаном. Где: Дом у озера возле Нового лагеря. К кому: Джан.",
+      "alternatives": [],
+      "rewards": [
+        "Кулачный бой — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-orc-weapons-trained",
+      "itemId": "lesson-orc-weapons-trained",
+      "chapter": 5,
+      "locationIds": [
+        "orc-enclave"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 5,
+          "label": "Доступ этого сюжетного шага открывается с главы 5.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Два учебных боя Чокты: сначала кусач, затем ящер; соблюдать правила арены. Где: Арена под храмом в Орочьем анклаве. К кому: Чокта.",
+      "alternatives": [],
+      "rewards": [
+        "Оружие орков — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Neoseeker — A Warrior’s Honor",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/A_Warriors_Honor"
+        },
+        {
+          "name": "Colony Guide — Чокта",
+          "url": "https://colony-guide.com/gothic-1-remake/npcs/chokta/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-orc-weapons-master",
+      "itemId": "lesson-orc-weapons-master",
+      "chapter": 5,
+      "locationIds": [
+        "orc-enclave"
+      ],
+      "requires": [
+        "lesson-orc-weapons-trained"
+      ],
+      "conditions": [
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 5,
+          "label": "Доступ этого сюжетного шага открывается с главы 5.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-adept-of-arms"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. Два учебных боя Чокты: сначала кусач, затем ящер; соблюдать правила арены. Где: Арена под храмом в Орочьем анклаве. К кому: Чокта.",
+      "alternatives": [],
+      "rewards": [
+        "Оружие орков — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Neoseeker — A Warrior’s Honor",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/A_Warriors_Honor"
+        },
+        {
+          "name": "Colony Guide — Чокта",
+          "url": "https://colony-guide.com/gothic-1-remake/npcs/chokta/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-lockpicking-trained",
+      "itemId": "lesson-lockpicking-trained",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp",
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "У Фингерса может потребоваться «Кольцо для Фингерса»; проверить доступный диалог у Веджа. Где: Старый лагерь; Новый лагерь. К кому: Фингерс, Ведж.",
+      "alternatives": [],
+      "rewards": [
+        "Вскрытие замков — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-lockpicking-master",
+      "itemId": "lesson-lockpicking-master",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp",
+        "new-camp"
+      ],
+      "requires": [
+        "lesson-lockpicking-trained"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. У Фингерса может потребоваться «Кольцо для Фингерса»; проверить доступный диалог у Веджа. Где: Старый лагерь; Новый лагерь. К кому: Фингерс, Ведж.",
+      "alternatives": [],
+      "rewards": [
+        "Вскрытие замков — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-pickpocketing-trained",
+      "itemId": "lesson-pickpocketing-trained",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp",
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Открыть обучение у выбранного учителя и оплатить нужную ступень. Где: Старый лагерь; Новый лагерь. К кому: Фингерс, Ведж.",
+      "alternatives": [],
+      "rewards": [
+        "Карманная кража — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-pickpocketing-master",
+      "itemId": "lesson-pickpocketing-master",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp",
+        "new-camp"
+      ],
+      "requires": [
+        "lesson-pickpocketing-trained"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала освоить предыдущую ступень. Открыть обучение у выбранного учителя и оплатить нужную ступень. Где: Старый лагерь; Новый лагерь. К кому: Фингерс, Ведж.",
+      "alternatives": [],
+      "rewards": [
+        "Карманная кража — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-orcish-trained",
+      "itemId": "lesson-orcish-trained",
+      "chapter": 4,
+      "locationIds": [
+        "xardas-tower"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 4,
+          "label": "Доступ этого сюжетного шага открывается с главы 4.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Продвинуть сюжетную встречу с Ксардасом. Где: Башня Ксардаса. К кому: Ксардас.",
+      "alternatives": [],
+      "rewards": [
+        "Орочий язык — обучен",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Colony Guide — орочий язык",
+          "url": "https://colony-guide.com/gothic-1-remake/skills/orcish/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-orcish-master",
+      "itemId": "lesson-orcish-master",
+      "chapter": 4,
+      "locationIds": [
+        "orc-territory"
+      ],
+      "requires": [
+        "lesson-orcish-trained"
+      ],
+      "conditions": [
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 4,
+          "label": "Доступ этого сюжетного шага открывается с главы 4.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-foreign-language-master"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Помочь Ур-Шаку в задании об изгнанном шамане и поговорить с ним. Где: Старая цитадель. К кому: Ур-Шак.",
+      "alternatives": [],
+      "rewards": [
+        "Орочий язык — мастер",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Colony Guide — орочий язык",
+          "url": "https://colony-guide.com/gothic-1-remake/skills/orcish/"
+        },
+        {
+          "name": "Wotpack — изгнанный шаман",
+          "url": "https://wotpack.ru/en/izgnannyy-shaman-v-gothic-1-remake-gde-nayti-orka-ur-shaka/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-acrobatics",
+      "itemId": "lesson-acrobatics",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp",
+        "new-camp-lake"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Оплатить обучение. Где: Новый лагерь. К кому: Бастер.",
+      "alternatives": [],
+      "rewards": [
+        "Акробатика",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-alchemy",
+      "itemId": "lesson-alchemy",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-castle",
+        "water-mages"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Получить доступ к одному из учителей; ранняя глава зависит от маршрута. Где: Помещения магов Огня или Воды. К кому: Дамарок, Риордан.",
+      "alternatives": [],
+      "rewards": [
+        "Алхимия",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Neoseeker — Испытание огня",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Trial_Of_Fire"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-climbing",
+      "itemId": "lesson-climbing",
+      "chapter": 1,
+      "locationIds": [
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Открыть обучение в разговоре с Тероном и выполнить его условия. Где: Болотный лагерь. К кому: Терон.",
+      "alternatives": [],
+      "rewards": [
+        "Скалолазание",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-diving",
+      "itemId": "lesson-diving",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp",
+        "new-camp-lake"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Оплатить урок у Гомера. Где: Плотина Нового лагеря. К кому: Гомер.",
+      "alternatives": [],
+      "rewards": [
+        "Ныряние",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-inscription",
+      "itemId": "lesson-inscription",
+      "chapter": 1,
+      "locationIds": [
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Усыпить одного из слушателей Кадара, чтобы открыть диалог; затем изучить изготовление свитков. Где: Болотный лагерь, место обучения послушников. К кому: Баал Кадар.",
+      "alternatives": [],
+      "rewards": [
+        "Изготовление свитков",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Neoseeker — Испытание огня",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Trial_Of_Fire"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-scavenger-riding",
+      "itemId": "lesson-scavenger-riding",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp-south"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Выполнить задание Коселя «Эй ты, птичка» для получения ездового падальщика. Где: Хижина на пути между Старым и Новым лагерями. К кому: Косель (Cohsel).",
+      "alternatives": [],
+      "rewards": [
+        "Езда на падальщике",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "PC Gamer — езда на падальщике",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-scavenger-mount-unlock/"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "WTFTime — Эй ты, птичка",
+          "url": "https://wtftime.ru/guides/164955/ej-ty-ptichka-v-gothic-1-remake-kak-priruchit-ezdovogo-padalschika/"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-one-hand-smithing",
+      "itemId": "lesson-one-hand-smithing",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Оплатить базовое кузнечное обучение. Где: Кузница внешнего кольца Старого лагеря. К кому: Хуно.",
+      "alternatives": [],
+      "rewards": [
+        "Ковка одноручного оружия",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-two-hand-smithing",
+      "itemId": "lesson-two-hand-smithing",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-castle",
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Продвинутое кузнечное обучение; условия доступа зависят от фракции и главы. Где: Кузница замка Старого лагеря; кузница Болотного лагеря. К кому: Стоун, Дарион.",
+      "alternatives": [],
+      "rewards": [
+        "Ковка двуручного оружия",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.5 CL172709",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.5.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-magic-circle-1",
+      "itemId": "lesson-magic-circle-1",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-castle",
+        "water-mages",
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "magicTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Подтвердить доступ к учителю кругов своей магической фракции.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Доступ зависит от выбранной магической фракции. Где: Учителя магии соответствующих лагерей. К кому: Корристо, Сатурас, Баал Кадар.",
+      "alternatives": [
+        "Корристо — маги Огня; Сатурас — маги Воды; Баал Кадар — соответствующее обучение Братства. Не требовать путь мага Огня от всех персонажей."
+      ],
+      "rewards": [
+        "Круг магии 1",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-magic-circle-2",
+      "itemId": "lesson-magic-circle-2",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-castle",
+        "water-mages",
+        "swamp-camp"
+      ],
+      "requires": [
+        "lesson-magic-circle-1"
+      ],
+      "conditions": [
+        {
+          "field": "magicTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Подтвердить доступ к учителю кругов своей магической фракции.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Доступ зависит от выбранной магической фракции. Нужен предыдущий круг. Где: Учителя магии соответствующих лагерей. К кому: Корристо, Сатурас, Баал Кадар.",
+      "alternatives": [
+        "Корристо — маги Огня; Сатурас — маги Воды; Баал Кадар — соответствующее обучение Братства. Не требовать путь мага Огня от всех персонажей."
+      ],
+      "rewards": [
+        "Круг магии 2",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-magic-circle-3",
+      "itemId": "lesson-magic-circle-3",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-castle",
+        "water-mages",
+        "swamp-camp"
+      ],
+      "requires": [
+        "lesson-magic-circle-2"
+      ],
+      "conditions": [
+        {
+          "field": "magicTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Подтвердить доступ к учителю кругов своей магической фракции.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Доступ зависит от выбранной магической фракции. Нужен предыдущий круг. Где: Учителя магии соответствующих лагерей. К кому: Корристо, Сатурас, Баал Кадар.",
+      "alternatives": [
+        "Корристо — маги Огня; Сатурас — маги Воды; Баал Кадар — соответствующее обучение Братства. Не требовать путь мага Огня от всех персонажей."
+      ],
+      "rewards": [
+        "Круг магии 3",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-magic-circle-4",
+      "itemId": "lesson-magic-circle-4",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-castle",
+        "water-mages",
+        "swamp-camp"
+      ],
+      "requires": [
+        "lesson-magic-circle-3"
+      ],
+      "conditions": [
+        {
+          "field": "magicTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Подтвердить доступ к учителю кругов своей магической фракции.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Доступ зависит от выбранной магической фракции. Нужен предыдущий круг. Где: Учителя магии соответствующих лагерей. К кому: Корристо, Сатурас, Баал Кадар.",
+      "alternatives": [
+        "Корристо — маги Огня; Сатурас — маги Воды; Баал Кадар — соответствующее обучение Братства. Не требовать путь мага Огня от всех персонажей."
+      ],
+      "rewards": [
+        "Круг магии 4",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-magic-circle-5",
+      "itemId": "lesson-magic-circle-5",
+      "chapter": null,
+      "locationIds": [
+        "water-mages"
+      ],
+      "requires": [
+        "lesson-magic-circle-4"
+      ],
+      "conditions": [
+        {
+          "field": "waterMageTrainingAvailable",
+          "op": "eq",
+          "value": true,
+          "label": "Для V круга подтвердить доступ к обучению у Сатураса.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Нужен четвёртый круг и доступ к обучению магов Воды. Где: Новый лагерь, маги Воды. К кому: Сатурас.",
+      "alternatives": [],
+      "rewards": [
+        "Круг магии 5",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "GIGA — учителя и условия обучения",
+          "url": "https://www.giga.de/games/gothic-remake-alle-lehrer-fuer-lektionen-und-skills-finden--01KT9N3NJGDW786GZGPEEH2AF9",
+          "author": "Christopher Bahner"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-magic-circle-6",
+      "itemId": "lesson-magic-circle-6",
+      "chapter": 5,
+      "locationIds": [
+        "xardas-tower"
+      ],
+      "requires": [
+        "lesson-magic-circle-5"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever",
+        "trophy-abracadabra"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Нужен пятый круг; поздняя сюжетная доступность проверяется в диалоге. Закончить нужное обучение у Ли до смены магической принадлежности. Где: Башня Ксардаса. К кому: Ксардас.",
+      "alternatives": [
+        "Перед сменой магической принадлежности проверить недоученные ступени у Ли; сообщение о блокировке не считается вечным правилом патча."
+      ],
+      "rewards": [
+        "Круг магии 6",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Steam — блокировка обучения Ли после VI круга, ответ разработчика",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/581678051258026839/"
+        },
+        {
+          "name": "ShowGamer — VI круг магии",
+          "url": "https://showgamer.com/en/guides/4633-kak-izuchit-shestoy-krug-magii",
+          "author": "Yulia Kushnareva"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.5 CL172709",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.5.txt"
+        }
+      ],
+      "preferredRole": "Маг"
+    },
+    {
+      "id": "lesson-extract-claws",
+      "itemId": "lesson-extract-claws",
+      "chapter": 1,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Открыть диалог обучения и оплатить навык. Где: Охотники на дорогах Колонии. К кому: Дракс, Эйдан.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение когтей",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-extract-teeth",
+      "itemId": "lesson-extract-teeth",
+      "chapter": 1,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Открыть диалог обучения и оплатить навык. Где: Охотники на дорогах Колонии. К кому: Дракс, Эйдан.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение зубов",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-fur",
+      "itemId": "lesson-take-fur",
+      "chapter": 1,
+      "locationIds": [
+        "cavalorn",
+        "old-camp-south",
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Изучить навык у доступного охотника. Где: Дороги между лагерями. К кому: Дракс, Эйдан, Кавалорн.",
+      "alternatives": [],
+      "rewards": [
+        "Снятие шкур пушных зверей",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-skin",
+      "itemId": "lesson-take-skin",
+      "chapter": 1,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Изучить отдельный навык обработки рептилий. Где: Охотники на дорогах Колонии. К кому: Дракс, Эйдан.",
+      "alternatives": [],
+      "rewards": [
+        "Снятие шкур рептилий",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-extract-stings",
+      "itemId": "lesson-extract-stings",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp",
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Купить и прочитать книгу; одной покупки недостаточно. Где: Книга «Шершни» у Волка; также указан Баал Кадар.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение жал шершней",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Steam — жала и ядовитые железы являются разными навыками",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/564785190210304709/"
+        },
+        {
+          "name": "GameFAQs — прохождение ремейка",
+          "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-fins",
+      "itemId": "lesson-take-fins",
+      "chapter": 2,
+      "locationIds": [
+        "first-focus-cliff"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Найти и прочитать книгу об огненных ящерах. Рекомендуемый этап: глава 2; это не доказанный запрет раннего получения. Где: Пещера возле утёса с первым юнитором над Болотным лагерем.",
+      "alternatives": [],
+      "rewards": [
+        "Срезание гребней огненных ящеров",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Colony Guide — гребни огненных ящеров",
+          "url": "https://colony-guide.com/gothic-1-remake/skills/take-fins/"
+        },
+        {
+          "name": "Colony Guide — книга об огненных ящерах",
+          "url": "https://colony-guide.com/gothic-1-remake/items/the-fire-lizard-compendium/"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-skull-armor",
+      "itemId": "lesson-take-skull-armor",
+      "chapter": 1,
+      "locationIds": [
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:delivered",
+          "op": "eq",
+          "value": true,
+          "label": "Передать Кавалорну бестиарий 1; завершать последующую охоту до урока не требуется.",
+          "verified": true,
+          "entityId": "bestiary-1",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Передать бестиарий I и ответить на вопросы. Где: Хижина между Старым и Новым лагерями. К кому: Кавалорн.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение черепных пластин падальщиков",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-extract-organ",
+      "itemId": "lesson-extract-organ",
+      "chapter": 2,
+      "locationIds": [
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:quest-completed",
+          "op": "eq",
+          "value": true,
+          "label": "Выполнить поручение бестиария 2 и передать требуемую добычу Кавалорну.",
+          "verified": true,
+          "entityId": "bestiary-2",
+          "scope": "run"
+        },
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 2,
+          "label": "Доступ этого сюжетного шага открывается с главы 2.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Передать бестиарий II и железу феромонов королевы ползунов. Где: Хижина между Старым и Новым лагерями. К кому: Кавалорн.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение органов",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-scutes",
+      "itemId": "lesson-take-scutes",
+      "chapter": null,
+      "locationIds": [
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:delivered",
+          "op": "eq",
+          "value": true,
+          "label": "Передать Кавалорну бестиарий 3; завершать последующую охоту до урока не требуется.",
+          "verified": true,
+          "entityId": "bestiary-3",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Передать бестиарий III; отдельно выполнить задание с тремя пластинами ящеров. Где: Хижина между Старым и Новым лагерями. К кому: Кавалорн.",
+      "alternatives": [],
+      "rewards": [
+        "Снятие костяных пластин",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-shark-skin",
+      "itemId": "lesson-take-shark-skin",
+      "chapter": null,
+      "locationIds": [
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:delivered",
+          "op": "eq",
+          "value": true,
+          "label": "Передать Кавалорну бестиарий 4; завершать последующую охоту до урока не требуется.",
+          "verified": true,
+          "entityId": "bestiary-4",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Передать бестиарий IV; охота после урока завершает отдельное поручение. Где: Хижина между Старым и Новым лагерями. К кому: Кавалорн.",
+      "alternatives": [],
+      "rewards": [
+        "Снятие шкуры болотожора",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-extract-spine",
+      "itemId": "lesson-extract-spine",
+      "chapter": 4,
+      "locationIds": [
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:quest-completed",
+          "op": "eq",
+          "value": true,
+          "label": "Выполнить поручение бестиария 5 и передать требуемую добычу Кавалорну.",
+          "verified": true,
+          "entityId": "bestiary-5",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Передать бестиарий V и шкуру снежного мракориса. Где: Хижина между Старым и Новым лагерями. К кому: Кавалорн.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение хребта мракориса",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Neoseeker — Beasts of Khorinis V",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Beasts_Of_Khorinis_V"
+        },
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-extract-secretion",
+      "itemId": "lesson-extract-secretion",
+      "chapter": 2,
+      "locationIds": [
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 2,
+          "label": "Доступ этого сюжетного шага открывается с главы 2.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "В сюжетной подготовке к шахте победить Гор На Дуна и снова поговорить с Кор Ангаром. Где: Болотный лагерь, тренировочная площадка. К кому: Кор Ангар.",
+      "alternatives": [],
+      "rewards": [
+        "Извлечение секрета ползунов",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Neoseeker — логово ползунов",
+          "url": "https://www.neoseeker.com/gothic-1-remake/walkthrough/The_Minecrawlers_Nest"
+        },
+        {
+          "name": "Jason’s Video Games Source — запись получения Extract Secretion",
+          "url": "https://open.video/%40jasonsvideogamessource-com/v/gothic-remake-chapter-2-the-minecrawler-nest-meet-cor-angar-defeat-gor-na-dun-extract-secretion"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.5 CL172709",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.5.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-plates",
+      "itemId": "lesson-take-plates",
+      "chapter": null,
+      "locationIds": [
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Поговорить с Волком о доспехах из панцирей ползунов и получить урок до охоты. Где: Новый лагерь. К кому: Волк.",
+      "alternatives": [],
+      "rewards": [
+        "Снятие панцирей ползунов",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Planet of Gothic — учителя",
+          "url": "https://www.planetofgothic.com/tools/atlas/uebersicht/lehrer"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "lesson-take-ulu-mulu",
+      "itemId": "lesson-take-ulu-mulu",
+      "chapter": 4,
+      "locationIds": [
+        "orc-territory"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 4,
+          "label": "Доступ этого сюжетного шага открывается с главы 4.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-overachiever"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Обсудить изготовление Улу-Мулу и получить единый навык добычи его компонентов. Где: Старая цитадель / сюжетная встреча с Ур-Шаком. К кому: Ур-Шак.",
+      "alternatives": [],
+      "rewards": [
+        "Добыча трофеев для Улу-Мулу",
+        "Один уникальный урок в журнале; PSN-зачёт подтверждается отдельно"
+      ],
+      "sources": [
+        {
+          "name": "Colony Guide — трофеи для Улу-Мулу",
+          "url": "https://colony-guide.com/gothic-1-remake/skills/take-ulu-mulu/"
+        },
+        {
+          "name": "Sarkoth — обновлённый перечень 46 уроков и обсуждение PS5",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1u2ropu/list_of_all_49_skills_for_overachiever/",
+          "author": "Sarkoth"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.3 CL170287",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.3.txt"
+        }
+      ]
+    },
+    {
+      "id": "map-colony",
+      "itemId": "map-colony",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Купить карту. Где: Грэм или Декстер, Старый лагерь.",
+      "alternatives": [
+        "Купить у Грэма.",
+        "Купить у Декстера."
+      ],
+      "rewards": [
+        "Карта Колонии",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "PC Gamer — покупка карт",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-map-location/"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-old-camp",
+      "itemId": "map-old-camp",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Купить карту Старого лагеря. Где: Грэм, Старый лагерь.",
+      "alternatives": [],
+      "rewards": [
+        "Карта Старого лагеря",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "PC Gamer — покупка карт",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-map-location/"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-new-camp",
+      "itemId": "map-new-camp",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Купить отдельную карту лагеря. Где: Кронос, Новый лагерь.",
+      "alternatives": [],
+      "rewards": [
+        "Карта Нового лагеря",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "GameFAQs — прохождение ремейка",
+          "url": "https://gamefaqs.gamespot.com/ps5/288748-gothic-1-remake/faqs/82626/general-walkthrough"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-swamp-camp",
+      "itemId": "map-swamp-camp",
+      "chapter": 1,
+      "locationIds": [
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Открыть торговлю у Кадара и купить карту. Где: Баал Кадар, Болотный лагерь.",
+      "alternatives": [],
+      "rewards": [
+        "Карта Болотного лагеря",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "VGTimes — расположение карт",
+          "url": "https://vgtimes.com/guides/159313-gothic-1-remake-all-map-locations-and-how-to-get-them.html",
+          "author": "Vladyslav Shamshurov"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-old-mine-old-camp",
+      "itemId": "map-old-mine-old-camp",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Получить карту для проверки доверия Диего. Где: Грэм, Старый лагерь.",
+      "alternatives": [],
+      "rewards": [
+        "Путь к Старой шахте из Старого лагеря",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "VGTimes — расположение карт",
+          "url": "https://vgtimes.com/guides/159313-gothic-1-remake-all-map-locations-and-how-to-get-them.html",
+          "author": "Vladyslav Shamshurov"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-old-mine-swamp-camp",
+      "itemId": "map-old-mine-swamp-camp",
+      "chapter": 2,
+      "locationIds": [
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Взять у Кор Галома в сюжетном маршруте или купить у Фортуно начиная с главы3. Где: Кор Галом; с главы3 также Фортуно. Это отдельный предмет от карты Грэма; поздняя покупка не требует нового вступления в Братство.",
+      "alternatives": [
+        "Получить у Кор Галома по сюжету.",
+        "С патча 1.0.4 купить у Фортуно после начала главы 3."
+      ],
+      "rewards": [
+        "Путь к Старой шахте из Болотного лагеря",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-cliff-route",
+      "itemId": "map-cliff-route",
+      "chapter": 2,
+      "locationIds": [
+        "first-focus-cliff"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Получить у Нираса в задании о первом юниторе. Где: Нирас у Болотного лагеря.",
+      "alternatives": [],
+      "rewards": [
+        "Схема пути к юнитору на утёсе",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "Neoseeker — первый юнитор и карта Нираса",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/The_Focus_Stone"
+        },
+        {
+          "name": "VGTimes — расположение карт",
+          "url": "https://vgtimes.com/guides/159313-gothic-1-remake-all-map-locations-and-how-to-get-them.html",
+          "author": "Vladyslav Shamshurov"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        }
+      ]
+    },
+    {
+      "id": "map-fog-tower",
+      "itemId": "map-fog-tower",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Получить указание места встречи у Туманной башни. Где: Диего, начало главы3.",
+      "alternatives": [],
+      "rewards": [
+        "Карта с отмеченным маяком",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "VGTimes — расположение карт",
+          "url": "https://vgtimes.com/guides/159313-gothic-1-remake-all-map-locations-and-how-to-get-them.html",
+          "author": "Vladyslav Shamshurov"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Mobalytics / dxvis — глава3",
+          "url": "https://mobalytics.gg/gamebase/guides/gothic-1-remake-chapter-3-walkthrough-focus-stones",
+          "author": "dxvis"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-focus-stones",
+      "itemId": "map-focus-stones",
+      "chapter": 3,
+      "locationIds": [
+        "fog-tower"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Пройти встречу по поиску оставшихся юниторов и проверить новую карту. Где: Встреча друзей у Туманной башни.",
+      "alternatives": [],
+      "rewards": [
+        "Карта юниторов",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Mobalytics / dxvis — глава3",
+          "url": "https://mobalytics.gg/gamebase/guides/gothic-1-remake-chapter-3-walkthrough-focus-stones",
+          "author": "dxvis"
+        },
+        {
+          "name": "Shtung — проверка текста карты юниторов при создании UI-мода",
+          "url": "https://www.nexusmods.com/gothic1remake/mods/645"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-orc-territory",
+      "itemId": "map-orc-territory",
+      "chapter": 4,
+      "locationIds": [
+        "orc-territory"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Получить после помощи изгнанному шаману. Где: Ур-Шак, Старая цитадель.",
+      "alternatives": [],
+      "rewards": [
+        "Рисунок орочьих земель",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "Gothic.tools — рисунок орочьих земель",
+          "url": "https://www.gothic.tools/books/drawing-of-the-orc-territory"
+        },
+        {
+          "name": "Wotpack — изгнанный шаман",
+          "url": "https://wotpack.ru/en/izgnannyy-shaman-v-gothic-1-remake-gde-nayti-orka-ur-shaka/"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-orc-enclave",
+      "itemId": "map-orc-enclave",
+      "chapter": 5,
+      "locationIds": [
+        "orc-enclave"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Забрать карту со стола. Где: Помещение вождя орков, стол справа.",
+      "alternatives": [],
+      "rewards": [
+        "Карта Орочьего анклава",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "VGTimes — расположение карт",
+          "url": "https://vgtimes.com/guides/159313-gothic-1-remake-all-map-locations-and-how-to-get-them.html",
+          "author": "Vladyslav Shamshurov"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "map-sleeper-temple",
+      "itemId": "map-sleeper-temple",
+      "chapter": 5,
+      "locationIds": [
+        "sleeper-temple"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-map-sniffer"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Осмотреть помещение под статуей и подобрать схему. Где: Ранняя часть храма Спящего, помещение со скелетами и статуей.",
+      "alternatives": [],
+      "rewards": [
+        "Схема храма Спящего",
+        "Отдельный вариант карты; достижение порога PSN не вычисляется"
+      ],
+      "sources": [
+        {
+          "name": "VGTimes — расположение карт",
+          "url": "https://vgtimes.com/guides/159313-gothic-1-remake-all-map-locations-and-how-to-get-them.html",
+          "author": "Vladyslav Shamshurov"
+        },
+        {
+          "name": "Yamasuda — 12 карт; обновление о Фортуно в комментарии 1 августа",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/573793348713813262/",
+          "author": "Yamasuda; TeCHneTi0R"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Steam — историческое обсуждение порога PS5 10 карт",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402402416/?ctp=4&l=english"
+        }
+      ]
+    },
+    {
+      "id": "bestiary-1",
+      "itemId": "bestiary-1",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp-lake",
+        "old-camp",
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-anatomaniac"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Забрать/купить книгу и передать Кавалорну; пройти проверку знаний. Где: Дом Джана у озера возле Нового лагеря; альтернативно Фиск. К кому: Кавалорн. Отдельно отмечайте нахождение, передачу и завершение поручения. Урок не отмечается автоматически.",
+      "alternatives": [
+        "Дом Джана у озера.",
+        "Купить у Фиска."
+      ],
+      "rewards": [
+        "Связанный урок: Извлечение черепных пластин падальщиков"
+      ],
+      "sources": [
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        }
+      ]
+    },
+    {
+      "id": "bestiary-2",
+      "itemId": "bestiary-2",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp",
+        "old-mine",
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-anatomaniac"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Передать книгу Кавалорну; в главе 2 добыть железу королевы ползунов. Где: Дом Волка в Новом лагере; альтернативно сундук Старой шахты. К кому: Кавалорн. Отдельно отмечайте нахождение, передачу и завершение поручения. Урок не отмечается автоматически.",
+      "alternatives": [
+        "Дом Волка в Новом лагере.",
+        "Тайный сундук в Старой шахте."
+      ],
+      "rewards": [
+        "Связанный урок: Извлечение органов"
+      ],
+      "sources": [
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "bestiary-3",
+      "itemId": "bestiary-3",
+      "chapter": null,
+      "locationIds": [
+        "old-camp-south",
+        "cavalorn"
+      ],
+      "requires": [
+        "lesson-take-scutes"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-anatomaniac"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Найти книгу во втором сундуке; у Кавалорна получить урок и принести три пластины ящеров. Где: Пещера возле сломанной телеги за постом к юго-западу от Старого лагеря. К кому: Кавалорн. Отдельно отмечайте нахождение, передачу и завершение поручения. Урок не отмечается автоматически.",
+      "alternatives": [],
+      "rewards": [
+        "Связанный урок: Снятие костяных пластин"
+      ],
+      "sources": [
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        }
+      ]
+    },
+    {
+      "id": "bestiary-4",
+      "itemId": "bestiary-4",
+      "chapter": 1,
+      "locationIds": [
+        "swamp",
+        "cavalorn"
+      ],
+      "requires": [
+        "lesson-take-shark-skin"
+      ],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-anatomaniac"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Передать книгу; освоить обработку болотожора, затем выполнить охотничье поручение. Где: Дом Шрета на западной стороне южных болот. К кому: Кавалорн. Отдельно отмечайте нахождение, передачу и завершение поручения. Урок не отмечается автоматически.",
+      "alternatives": [],
+      "rewards": [
+        "Связанный урок: Снятие шкуры болотожора"
+      ],
+      "sources": [
+        {
+          "name": "Land of Games — бестиарии",
+          "url": "https://landofgames.ru/articles/guides/29898-vse-bestiarii-horinisa-v-gothic-1-remake-gde-najti-knigi-i-komu-ih-otdat.html",
+          "author": "Droommar"
+        },
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        }
+      ]
+    },
+    {
+      "id": "bestiary-5",
+      "itemId": "bestiary-5",
+      "chapter": 4,
+      "locationIds": [
+        "xardas-tower",
+        "northern-tundra",
+        "cavalorn"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-anatomaniac"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Передать книгу; принести шкуру снежного мракориса из северной тундры. Где: Круглый стол на верхнем этаже башни Ксардаса. К кому: Кавалорн. Отдельно отмечайте нахождение, передачу и завершение поручения. Урок не отмечается автоматически.",
+      "alternatives": [],
+      "rewards": [
+        "Связанный урок: Извлечение хребта мракориса"
+      ],
+      "sources": [
+        {
+          "name": "SPACE4GAMES — пять бестиариев",
+          "url": "https://space4games.com/en/games-en/gothic-1-remake-bestiary-guide/",
+          "author": "Josef Erl"
+        },
+        {
+          "name": "Neoseeker — Beasts of Khorinis V",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Beasts_Of_Khorinis_V"
+        },
+        {
+          "name": "Alkimia / THQ Nordic — 1.0.4 CL171261",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "chromanin-1",
+      "itemId": "chromanin-1",
+      "chapter": 3,
+      "locationIds": [
+        "fog-tower"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-true-stranger"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Победить скелета-мага и прочитать первый том. Рекомендуемый этап: глава 3; это не доказанный запрет раннего получения. Где: Подземелье Туманной башни, скелет-маг. Отметьте чтение в стадии книги; это открывает следующую часть цепочки. Рекомендуемая глава не является доказанным запретом раннего поиска.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Land of Games — Хроманин",
+          "url": "https://landofgames.ru/articles/guides/29931-hromanin-v-gothic-1-remake-raspolozhenie-vseh-knig-i-prohozhdenie-kvesta-neznakomec.html"
+        },
+        {
+          "name": "TheGameSlayer — шесть книг Хроманин",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-complete-guide-to-all-6-chromanin-books-locations/",
+          "author": "Santosh Kumar"
+        },
+        {
+          "name": "VGTimes — Хроманин",
+          "url": "https://vgtimes.com/guides/158687-gothic-1-remake-all-chromanin-book-locations.html"
+        }
+      ]
+    },
+    {
+      "id": "chromanin-2",
+      "itemId": "chromanin-2",
+      "chapter": 3,
+      "locationIds": [
+        "new-camp-lake"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:read",
+          "op": "eq",
+          "value": true,
+          "label": "Сначала прочитать «Хроманин 1»; одной отметки нахождения недостаточно.",
+          "verified": true,
+          "entityId": "chromanin-1",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-true-stranger"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала найти и прочитать «Хроманин 1». Осмотреть стол в высокой рыбацкой постройке и прочитать книгу. Рекомендуемый этап: глава 3; это не доказанный запрет раннего получения. Где: Рыбацкая деревня у озера возле Нового лагеря. Отметьте чтение в стадии книги; это открывает следующую часть цепочки. Рекомендуемая глава не является доказанным запретом раннего поиска.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Land of Games — Хроманин",
+          "url": "https://landofgames.ru/articles/guides/29931-hromanin-v-gothic-1-remake-raspolozhenie-vseh-knig-i-prohozhdenie-kvesta-neznakomec.html"
+        },
+        {
+          "name": "TheGameSlayer — шесть книг Хроманин",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-complete-guide-to-all-6-chromanin-books-locations/",
+          "author": "Santosh Kumar"
+        },
+        {
+          "name": "VGTimes — Хроманин",
+          "url": "https://vgtimes.com/guides/158687-gothic-1-remake-all-chromanin-book-locations.html"
+        }
+      ]
+    },
+    {
+      "id": "chromanin-3",
+      "itemId": "chromanin-3",
+      "chapter": 3,
+      "locationIds": [
+        "mountain-fortress"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:read",
+          "op": "eq",
+          "value": true,
+          "label": "Сначала прочитать «Хроманин 2»; одной отметки нахождения недостаточно.",
+          "verified": true,
+          "entityId": "chromanin-2",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-true-stranger"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала найти и прочитать «Хроманин 2». Открыть проход в библиотеке; найти книгу в дальней комнате. Рекомендуемый этап: глава 3; это не доказанный запрет раннего получения. Где: Горный форт, скрытые помещения над библиотекой. Отметьте чтение в стадии книги; это открывает следующую часть цепочки. Рекомендуемая глава не является доказанным запретом раннего поиска.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Land of Games — Хроманин",
+          "url": "https://landofgames.ru/articles/guides/29931-hromanin-v-gothic-1-remake-raspolozhenie-vseh-knig-i-prohozhdenie-kvesta-neznakomec.html"
+        },
+        {
+          "name": "TheGameSlayer — шесть книг Хроманин",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-complete-guide-to-all-6-chromanin-books-locations/",
+          "author": "Santosh Kumar"
+        },
+        {
+          "name": "VGTimes — Хроманин",
+          "url": "https://vgtimes.com/guides/158687-gothic-1-remake-all-chromanin-book-locations.html"
+        }
+      ]
+    },
+    {
+      "id": "chromanin-4",
+      "itemId": "chromanin-4",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:read",
+          "op": "eq",
+          "value": true,
+          "label": "Сначала прочитать «Хроманин 3»; одной отметки нахождения недостаточно.",
+          "verified": true,
+          "entityId": "chromanin-3",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-true-stranger"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала найти и прочитать «Хроманин 3». Пройти к пыточной и взять книгу со стола. Рекомендуемый этап: глава 3; это не доказанный запрет раннего получения. Где: Подземелья замка Старого лагеря, пыточная. Отметьте чтение в стадии книги; это открывает следующую часть цепочки. Рекомендуемая глава не является доказанным запретом раннего поиска.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Land of Games — Хроманин",
+          "url": "https://landofgames.ru/articles/guides/29931-hromanin-v-gothic-1-remake-raspolozhenie-vseh-knig-i-prohozhdenie-kvesta-neznakomec.html"
+        },
+        {
+          "name": "TheGameSlayer — шесть книг Хроманин",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-complete-guide-to-all-6-chromanin-books-locations/",
+          "author": "Santosh Kumar"
+        },
+        {
+          "name": "VGTimes — Хроманин",
+          "url": "https://vgtimes.com/guides/158687-gothic-1-remake-all-chromanin-book-locations.html"
+        }
+      ]
+    },
+    {
+      "id": "chromanin-5",
+      "itemId": "chromanin-5",
+      "chapter": 4,
+      "locationIds": [
+        "old-citadel"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:read",
+          "op": "eq",
+          "value": true,
+          "label": "Сначала прочитать «Хроманин 4»; одной отметки нахождения недостаточно.",
+          "verified": true,
+          "entityId": "chromanin-4",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-true-stranger"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала найти и прочитать «Хроманин 4». Открыть путь с помощью колокола; осмотреть столик в зале. Рекомендуемый этап: глава 4; это не доказанный запрет раннего получения. Где: Подземелье Старой цитадели, зал каменного голема. Отметьте чтение в стадии книги; это открывает следующую часть цепочки. Рекомендуемая глава не является доказанным запретом раннего поиска.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Land of Games — Хроманин",
+          "url": "https://landofgames.ru/articles/guides/29931-hromanin-v-gothic-1-remake-raspolozhenie-vseh-knig-i-prohozhdenie-kvesta-neznakomec.html"
+        },
+        {
+          "name": "TheGameSlayer — шесть книг Хроманин",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-complete-guide-to-all-6-chromanin-books-locations/",
+          "author": "Santosh Kumar"
+        },
+        {
+          "name": "VGTimes — Хроманин",
+          "url": "https://vgtimes.com/guides/158687-gothic-1-remake-all-chromanin-book-locations.html"
+        }
+      ]
+    },
+    {
+      "id": "chromanin-6",
+      "itemId": "chromanin-6",
+      "chapter": 4,
+      "locationIds": [
+        "fog-tower"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "stage:read",
+          "op": "eq",
+          "value": true,
+          "label": "Сначала прочитать «Хроманин 5»; одной отметки нахождения недостаточно.",
+          "verified": true,
+          "entityId": "chromanin-5",
+          "scope": "run"
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-true-stranger"
+      ],
+      "required": true,
+      "missable": false,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Сначала найти и прочитать «Хроманин 5». Вернуться, найти и прочитать последний том; завершить встречу после чтения. Рекомендуемый этап: глава 4; это не доказанный запрет раннего получения. Где: Подземелье Туманной башни, возле арены первого скелета-мага. Отметьте чтение в стадии книги; это открывает следующую часть цепочки. Рекомендуемая глава не является доказанным запретом раннего поиска.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Land of Games — Хроманин",
+          "url": "https://landofgames.ru/articles/guides/29931-hromanin-v-gothic-1-remake-raspolozhenie-vseh-knig-i-prohozhdenie-kvesta-neznakomec.html"
+        },
+        {
+          "name": "TheGameSlayer — шесть книг Хроманин",
+          "url": "https://thegameslayer.com/guides/gothic-1-remake-complete-guide-to-all-6-chromanin-books-locations/",
+          "author": "Santosh Kumar"
+        },
+        {
+          "name": "VGTimes — Хроманин",
+          "url": "https://vgtimes.com/guides/158687-gothic-1-remake-all-chromanin-book-locations.html"
+        }
+      ]
+    },
+    {
+      "id": "camp-choice-backup",
+      "itemId": "camp-choice-backup",
+      "chapter": 1,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-old-camp",
+        "trophy-new-camp",
+        "trophy-swamp-camp"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 5000,
+      "instruction": "Перед итоговым разговором о вступлении сделайте отдельное игровое сохранение. Для плана «Новый лагерь ради трофея → основная ветка Старого лагеря» сохраните точку возврата ДО отчёта Ларесу. Это рекомендация безопасного маршрута, а не требование игры.",
+      "alternatives": [
+        "Чтобы отдельно учитывать героя в этой ветке, откройте «Прохождения» и создайте ветку из текущего сохранения. Это не создаёт файл сохранения на PS5."
+      ],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "PC Gamer — вступление в Новый лагерь",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-new-camp/"
+        }
+      ],
+      "transition": false
+    },
+    {
+      "id": "new-camp-supply-list",
+      "itemId": "new-camp-supply-list",
+      "chapter": 1,
+      "locationIds": [
+        "old-mine",
+        "new-camp",
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-new-camp"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 200,
+      "instruction": "До передачи списка Диего проверить этап изменения списка у Лареса. До завершения истории со списком Старой шахты. Проверьте в журнале, была ли ветка со списком уже завершена. Не повторяйте её ради технической отметки, если Ларес уже выдал «Налёт».",
+      "alternatives": [
+        "Если «Налёт» уже доступен, не заставлять повторно отмечать подготовительные поручения."
+      ],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Planet of Gothic — вступление в Новый лагерь",
+          "url": "https://www.planetofgothic.com/tools/atlas/quests/aufnahme-in-das-neue-lager"
+        }
+      ]
+    },
+    {
+      "id": "new-camp-the-raid",
+      "itemId": "new-camp-the-raid",
+      "chapter": 1,
+      "locationIds": [
+        "old-mine-road",
+        "new-camp"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "raidReady",
+          "op": "eq",
+          "value": true,
+          "label": "Подтвердить, что «Налёт» уже получен и доступен в журнале этой ветки.",
+          "verified": true
+        }
+      ],
+      "blockers": [
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "old",
+          "label": "В этой ветке уже выбран другой лагерь; патч 1.0.4 завершает Convoy неудачей.",
+          "verified": true
+        },
+        {
+          "field": "action:join-old-camp",
+          "op": "eq",
+          "value": true,
+          "label": "Отмечено вступление в другой лагерь текущего прохождения.",
+          "verified": true
+        },
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "swamp",
+          "label": "В этой ветке уже выбран другой лагерь; патч 1.0.4 завершает Convoy неудачей.",
+          "verified": true
+        },
+        {
+          "field": "action:join-swamp-camp",
+          "op": "eq",
+          "value": true,
+          "label": "Отмечено вступление в другой лагерь текущего прохождения.",
+          "verified": true
+        }
+      ],
+      "trophyIds": [
+        "trophy-new-camp"
+      ],
+      "required": true,
+      "missable": true,
+      "verified": true,
+      "priority": 4000,
+      "instruction": "Закончите полевую часть «Налёта» и подготовьте отчёт Ларесу. ДО итогового разговора создайте отдельное сохранение: сдача задания приводит к вступлению в Новый лагерь. Для основного пути Старого лагеря после фиксации трофея вернитесь в выбранную ветку сохранения; историю PSN и состояние персонажа не смешивайте.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Neoseeker — The Raid",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/The_Raid"
+        },
+        {
+          "name": "Alkimia — официальный changelog 1.0.4",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "PC Gamer — вступление в Новый лагерь",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-new-camp/",
+          "author": "Rory Norris"
+        }
+      ],
+      "transition": true
+    },
+    {
+      "id": "old-camp-fire-mage-plan",
+      "itemId": "old-camp-fire-mage-plan",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [
+        "lesson-alchemy",
+        "lesson-inscription"
+      ],
+      "conditions": [
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "old",
+          "label": "Этот маршрут посвящения относится к Старому лагерю.",
+          "verified": true
+        },
+        {
+          "field": "chapter",
+          "op": "gte",
+          "value": 3,
+          "label": "Доступ этого сюжетного шага открывается с главы 3.",
+          "verified": true
+        }
+      ],
+      "blockers": [
+        {
+          "field": "oldCampProfession",
+          "op": "eq",
+          "value": "guard",
+          "label": "Выбрана профессия стражника: она исключает посвящение мага Огня на этой развилке.",
+          "verified": true
+        }
+      ],
+      "trophyIds": [
+        "trophy-way-of-the-guild",
+        "trophy-abracadabra"
+      ],
+      "required": false,
+      "missable": false,
+      "verified": true,
+      "priority": 250,
+      "instruction": "В Старом лагере выберите путь мага при предложении повышения Торуса. Для «Испытания огня» нужны алхимия и изготовление свитков; продолжите разговоры с Корристо и Мильтеном. Путь стражника и путь мага Огня на этой развилке взаимоисключающие. Подробные условия разговора проверьте по источнику.",
+      "alternatives": [],
+      "rewards": [
+        "Посвящение в маги Огня после выполнения задания; доступ к соответствующему обучению"
+      ],
+      "sources": [
+        {
+          "name": "PlayStationTrophies — список PS5",
+          "url": "https://www.playstationtrophies.org/game/gothic-remake/trophies/"
+        },
+        {
+          "name": "Neoseeker — Trial Of Fire",
+          "url": "https://www.neoseeker.com/gothic-1-remake/guides/Trial_Of_Fire"
+        }
+      ],
+      "title": "Подготовить посвящение в маги Огня",
+      "preferredRole": "Маг Огня"
+    },
+    {
+      "id": "escape-plan-syra",
+      "itemId": "escape-plan-syra",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-fixer"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Поговорить с кухаркой Старого лагеря и завершить её начальное поручение, связанное с Буллитом. После доступа во внутренний двор, до событий главы 4.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Sir Lauchboy — The Fixer, TrueAchievements",
+          "url": "https://www.trueachievements.com/a639024/the-fixer-achievement"
+        }
+      ]
+    },
+    {
+      "id": "escape-plan-secrets",
+      "itemId": "escape-plan-secrets",
+      "chapter": 3,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-fixer"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Обсудить убежище для женщин в Болотном лагере, затем поговорить с Сирой, Велайей и Серафией. До сюжетного разрыва со Старым лагерем.",
+      "alternatives": [
+        "Рекомендуемый порядок: начальное поручение Сиры → «Тайны» → развязка побега; точные альтернативные ветки требуют проверки."
+      ],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Patch Crazy — задание Secrets",
+          "url": "https://patchcrazy.co.uk/syras-hidden-quest-secrets-guide-gothic-1-remake/"
+        }
+      ]
+    },
+    {
+      "id": "escape-plan-resolution",
+      "itemId": "escape-plan-resolution",
+      "chapter": 4,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-the-fixer"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Довести текущую ветку задания до завершения. Не считать гибель кого-либо обязательной. После подготовительных разговоров; исход зависит от предшествующих решений.",
+      "alternatives": [
+        "Сохраните выбранную ветку перед развязкой; гибель участников не объявлена обязательным условием трофея."
+      ],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Alkimia — официальный changelog 1.0.4",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        },
+        {
+          "name": "Sir Lauchboy — The Fixer, TrueAchievements",
+          "url": "https://www.trueachievements.com/a639024/the-fixer-achievement"
+        }
+      ]
+    },
+    {
+      "id": "mud-ambient-dialogues",
+      "itemId": "mud-ambient-dialogues",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-mud-freak"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Сохранить спутника живым и выслушать его обычные обращения до силового завершения общения. Пока NPC продолжает следовать за героем.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "kwasowsky — наблюдения диалогов Мада (Mud), Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3755188151"
+        }
+      ]
+    },
+    {
+      "id": "mud-direct-dialogues",
+      "itemId": "mud-direct-dialogues",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-mud-freak"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Пройти доступные прямые темы разговора; количество услышанных реплик не доказывает автоматически PSN-трофей. До окончательного ухода или смерти NPC.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "kwasowsky — наблюдения диалогов Мада (Mud), Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3755188151"
+        }
+      ]
+    },
+    {
+      "id": "mud-final-dialogues",
+      "itemId": "mud-final-dialogues",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-mud-freak"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "По наблюдениям игроков последние реплики связаны с ударами. Сохранить отдельную ветку и не убивать NPC. После обычных диалогов; точный триггер PS5 требует проверки.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "kwasowsky — наблюдения диалогов Мада (Mud), Steam",
+          "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3755188151"
+        }
+      ]
+    },
+    {
+      "id": "gomez-peaceful-branch",
+      "itemId": "gomez-peaceful-branch",
+      "chapter": 5,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-mercy-over-madness",
+        "trophy-armor-geddon"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Не убивать Гомеза и не брать рудную броню раньше разговора о сделке. Перед решающим разговором о рудных доспехах.",
+      "alternatives": [
+        "Проверить мирную сделку до получения рудной брони; источники сообщества не заменяют проверку текущей ветки."
+      ],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Sir Lauchboy — Mercy Over Madness, TrueAchievements",
+          "url": "https://www.trueachievements.com/a639027/mercy-over-madness-achievement"
+        },
+        {
+          "name": "Steam — обсуждение мирного исхода с Гомезом",
+          "url": "https://steamcommunity.com/app/1297900/discussions/0/563659184402386575/"
+        }
+      ]
+    },
+    {
+      "id": "sunken-tower-teleport-rune",
+      "itemId": "sunken-tower-teleport-rune",
+      "chapter": 5,
+      "locationIds": [
+        "sunken-tower"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-mercy-over-madness"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Проверить наличие руны, которую руководства связывают с мирной сделкой с Гомезом; не продавать до разрешения ветки. Линия затонувшей башни Ксардаса, до сделки о доспехах.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Sir Lauchboy — Mercy Over Madness, TrueAchievements",
+          "url": "https://www.trueachievements.com/a639027/mercy-over-madness-achievement"
+        }
+      ]
+    },
+    {
+      "id": "ore-armor-obtained",
+      "itemId": "ore-armor-obtained",
+      "chapter": 5,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-armor-geddon"
+      ],
+      "required": false,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Отметить фактическое получение брони после выбранной развязки с Гомезом. Сначала проверить трофей милосердия.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "PlayStationTrophies — список PS5",
+          "url": "https://www.playstationtrophies.org/game/gothic-remake/trophies/"
+        },
+        {
+          "name": "Sir Lauchboy — Mercy Over Madness, TrueAchievements",
+          "url": "https://www.trueachievements.com/a639027/mercy-over-madness-achievement"
+        }
+      ]
+    },
+    {
+      "id": "single-armor-full-mods",
+      "itemId": "single-armor-full-mods",
+      "chapter": null,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-pimp-my-armor"
+      ],
+      "required": false,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Сверить все доступные модификации одного выбранного доспеха; не объединять улучшения разных комплектов. При доступном мастере и достаточной руде; цены зависят от патча.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Gothic.tools — достижения",
+          "url": "https://www.gothic.tools/achievements"
+        },
+        {
+          "name": "Alkimia — официальный changelog 1.0.4",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.4.txt"
+        }
+      ]
+    },
+    {
+      "id": "xardas-private-room",
+      "itemId": "xardas-private-room",
+      "chapter": 5,
+      "locationIds": [
+        "xardas-tower"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-in-bed-with-xardas"
+      ],
+      "required": false,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Проверить доступ в верхние личные покои; руководство предлагает превращение в гарпию. После получения подходящего свитка и доступа к башне.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Gothic.tools — достижения",
+          "url": "https://www.gothic.tools/achievements"
+        }
+      ]
+    },
+    {
+      "id": "transformation-varieties",
+      "itemId": "transformation-varieties",
+      "chapter": null,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-transformer"
+      ],
+      "required": false,
+      "missable": false,
+      "verified": false,
+      "priority": 10,
+      "instruction": "Вести перечень разных использованных форм; покупка свитка не равна превращению. Полный перечень форм PS5 требует отдельной сверки.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "Gothic.tools — достижения",
+          "url": "https://www.gothic.tools/achievements"
+        }
+      ]
+    },
+    {
+      "id": "sleepless-run-integrity",
+      "itemId": "sleepless-run-integrity",
+      "chapter": null,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "sleep",
+          "op": "eq",
+          "value": "intact",
+          "label": "Условие отсутствия сна должно сохраняться в этой ветке.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-insomnia-champion"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": true,
+      "priority": 0,
+      "instruction": "Сверьте журнал прохождения без сна. Если герой спал — отметьте нарушение этой ветки; при сомнении оставьте проверку. Ожидание реального времени не требует сна персонажа. Трофей подтверждается только по факту PSN.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "PlayStationTrophies — список PS5",
+          "url": "https://www.playstationtrophies.org/game/gothic-remake/trophies/"
+        },
+        {
+          "name": "Сообщения игроков PS5 о перепутанных трофеях",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1wvc6uj/swapped_trophies_on_ps5/"
+        }
+      ]
+    },
+    {
+      "id": "permadeath-run-start",
+      "itemId": "permadeath-run-start",
+      "chapter": 1,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "permadeath",
+          "op": "eq",
+          "value": true,
+          "label": "Этот шаг относится к отдельному прохождению с включённой перманентной смертью.",
+          "verified": true
+        }
+      ],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-no-time-to-die"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "Проверьте включение режима перманентной смерти в новом игровом прохождении и запишите версию. План второй попытки не означает, что она уже началась. Не меняйте из-за этой отметки режим первого героя.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "PlayStationTrophies — список PS5",
+          "url": "https://www.playstationtrophies.org/game/gothic-remake/trophies/"
+        },
+        {
+          "name": "Сообщения игроков PS5 о перепутанных трофеях",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1wvc6uj/swapped_trophies_on_ps5/"
+        }
+      ]
+    },
+    {
+      "id": "final-psn-verification",
+      "itemId": "final-psn-verification",
+      "chapter": 6,
+      "locationIds": [
+        "colony"
+      ],
+      "requires": [],
+      "conditions": [],
+      "blockers": [],
+      "trophyIds": [
+        "trophy-no-time-to-die",
+        "trophy-insomnia-champion"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": true,
+      "priority": 10,
+      "instruction": "После финала сверяйте названия реально выданных PSN-трофеев. Журнал сна, режим перманентной смерти и сообщения о прежних ошибках не подтверждают награду автоматически.",
+      "alternatives": [],
+      "rewards": [],
+      "sources": [
+        {
+          "name": "PlayStationTrophies — список PS5",
+          "url": "https://www.playstationtrophies.org/game/gothic-remake/trophies/"
+        },
+        {
+          "name": "Сообщения игроков PS5 о перепутанных трофеях",
+          "url": "https://www.reddit.com/r/worldofgothic/comments/1wvc6uj/swapped_trophies_on_ps5/"
+        },
+        {
+          "name": "Alkimia — официальный changelog 1.0.5",
+          "url": "https://files.gothic-game.com/changelogs/G1R_Patch_1.0.5.txt"
+        }
+      ]
+    },
+    {
+      "id": "join-new-camp",
+      "title": "Зафиксировать вступление в Новый лагерь",
+      "instruction": "После итогового разговора Лареса проверьте фактическое вступление. Отдельно подтвердите показанный PSN-трофей. Если это пробная ветка, вернитесь к сохранению до вступления и восстановите состояние текущего персонажа в трекере.",
+      "chapter": 1,
+      "locationIds": [
+        "new-camp"
+      ],
+      "requires": [
+        "new-camp-the-raid"
+      ],
+      "conditions": [],
+      "blockers": [
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "old",
+          "label": "Текущий герой уже вступил в другой лагерь.",
+          "verified": true
+        },
+        {
+          "field": "action:join-old-camp",
+          "op": "eq",
+          "value": true,
+          "label": "В этой ветке уже отмечено другое вступление.",
+          "verified": true
+        },
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "swamp",
+          "label": "Текущий герой уже вступил в другой лагерь.",
+          "verified": true
+        },
+        {
+          "field": "action:join-swamp-camp",
+          "op": "eq",
+          "value": true,
+          "label": "В этой ветке уже отмечено другое вступление.",
+          "verified": true
+        }
+      ],
+      "trophyIds": [
+        "trophy-new-camp"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": true,
+      "priority": 3900,
+      "transition": true,
+      "alternatives": [
+        "Альтернативные лагеря получать в отдельных игровых ветках; общий PSN подтверждать вручную."
+      ],
+      "rewards": [
+        "Вступление в выбранный лагерь; подтверждение трофея вручную"
+      ],
+      "sources": [
+        {
+          "name": "PC Gamer — вступление в Новый лагерь",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-new-camp/",
+          "author": "Rory Norris"
+        }
+      ]
+    },
+    {
+      "id": "join-old-camp",
+      "title": "Вступить в Старый лагерь в основной ветке",
+      "instruction": "Сверьте готовность вступления в игровом журнале, сохраните отдельную ветку и завершите диалог приёма. Отметка трофея другой ветки не означает членство текущего героя.",
+      "chapter": 1,
+      "locationIds": [
+        "old-camp-castle"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "oldCampAdmissionReady",
+          "op": "eq",
+          "value": true,
+          "label": "Проверить готовность финального диалога приёма в журнале текущего героя.",
+          "verified": true
+        }
+      ],
+      "blockers": [
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "new",
+          "label": "Текущий герой уже вступил в другой лагерь.",
+          "verified": true
+        },
+        {
+          "field": "action:join-new-camp",
+          "op": "eq",
+          "value": true,
+          "label": "В этой ветке уже отмечено другое вступление.",
+          "verified": true
+        },
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "swamp",
+          "label": "Текущий герой уже вступил в другой лагерь.",
+          "verified": true
+        },
+        {
+          "field": "action:join-swamp-camp",
+          "op": "eq",
+          "value": true,
+          "label": "В этой ветке уже отмечено другое вступление.",
+          "verified": true
+        }
+      ],
+      "trophyIds": [
+        "trophy-old-camp"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": true,
+      "priority": 300,
+      "transition": true,
+      "alternatives": [
+        "Альтернативные лагеря получать в отдельных игровых ветках; общий PSN подтверждать вручную."
+      ],
+      "rewards": [
+        "Вступление в выбранный лагерь; подтверждение трофея вручную"
+      ],
+      "sources": [
+        {
+          "name": "PC Gamer — вступление в Новый лагерь",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-new-camp/",
+          "author": "Rory Norris"
+        }
+      ],
+      "preferredRole": "Маг Огня"
+    },
+    {
+      "id": "join-swamp-camp",
+      "title": "Вступить в Болотный лагерь в отдельной ветке",
+      "instruction": "Сверьте готовность вступления в игровом журнале, сохраните отдельную ветку и завершите диалог приёма. Отметка трофея другой ветки не означает членство текущего героя.",
+      "chapter": 1,
+      "locationIds": [
+        "swamp-camp"
+      ],
+      "requires": [],
+      "conditions": [
+        {
+          "field": "swampCampAdmissionReady",
+          "op": "eq",
+          "value": true,
+          "label": "Проверить готовность финального диалога приёма в журнале текущего героя.",
+          "verified": true
+        }
+      ],
+      "blockers": [
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "old",
+          "label": "Текущий герой уже вступил в другой лагерь.",
+          "verified": true
+        },
+        {
+          "field": "action:join-old-camp",
+          "op": "eq",
+          "value": true,
+          "label": "В этой ветке уже отмечено другое вступление.",
+          "verified": true
+        },
+        {
+          "field": "campMembership",
+          "op": "eq",
+          "value": "new",
+          "label": "Текущий герой уже вступил в другой лагерь.",
+          "verified": true
+        },
+        {
+          "field": "action:join-new-camp",
+          "op": "eq",
+          "value": true,
+          "label": "В этой ветке уже отмечено другое вступление.",
+          "verified": true
+        }
+      ],
+      "trophyIds": [
+        "trophy-swamp-camp"
+      ],
+      "required": false,
+      "missable": true,
+      "verified": true,
+      "priority": 300,
+      "transition": true,
+      "alternatives": [
+        "Альтернативные лагеря получать в отдельных игровых ветках; общий PSN подтверждать вручную."
+      ],
+      "rewards": [
+        "Вступление в выбранный лагерь; подтверждение трофея вручную"
+      ],
+      "sources": [
+        {
+          "name": "PC Gamer — вступление в Новый лагерь",
+          "url": "https://www.pcgamer.com/games/rpg/gothic-1-remake-new-camp/",
+          "author": "Rory Norris"
+        }
+      ]
+    }
+  ]
+}
